@@ -13,5 +13,7 @@ input: mouse, keyboard, gamepad
 - SDL2_Mixer
 - Lua
 
+For now these are hard-included in the project in the `lib` directory, but later I will try to seperate them from the source code.
+
 ## Compiling
 - `make`
