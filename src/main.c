@@ -4,8 +4,7 @@
 #include "computer.h"
 #include "backend/backend.h"
 #include "util/util.h"
-
-#define BACKEND_SDL2
+#include "api/api.h"
 
 int main(int argc, char *argv[]) {
 	computer_t computer = {0};
@@ -24,6 +23,20 @@ int main(int argc, char *argv[]) {
 	for (int i = 0; i < 480; i++) {
 		computer.ram.framebuffer.data[i] = 32;
 	}
+
+	api_cls(&computer, 7);
+
+	api_rectf(&computer, 64 + 1, 1, 3, 3, 4);
+	api_rect(&computer, 64 + 5, 1, 3, 3, 0);
+	
+	// api_rect(&computer, 9, 1, 10, 10, 0);
+	
+	api_rect(&computer, 64 + 0, 0, 50, 25, 0);
+	
+	for (int i = 0; i < PALETTE_SIZE; i++) {
+		api_rectf(&computer, (i % 8) * 8, (i / 8) * 8, 8, 8, i);
+	}
+	api_line(&computer, 64 + 0, 0, 10, 25, 4);
 
 	backend_init("zinc95", 2);
 

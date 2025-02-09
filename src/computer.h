@@ -1,17 +1,14 @@
 #pragma once
 
 #include <inttypes.h>
+#include <stdbool.h>
 
 #define RAM_SIZE (4 * 1024 * 1024)
-// #define SCREEN_BUFFER_ADDRESS 0x000000
-// #define PALETTE_ADDRESS 0x04B000
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
 
 #define PALETTE_SIZE 256
-
-#define MAX_COLORS 256
 
 #define FPS 60
 
@@ -29,19 +26,8 @@ typedef struct framebuffer {
 	uint8_t data[SCREEN_WIDTH * SCREEN_HEIGHT];
 } framebuffer_t;
 
+// 4MB RAM (excluding what the lua code takes up)
 typedef union ram {
-	/*	
-	4MB RAM (excluding what the lua code takes up)
-	
-	1MB VRAM
-	  Contains screen buffer, color palette, etc.
-	512KB sprites
-
-	so
-
-	000000 - 4B000 screen buffer
-	*/
-
 	struct {
 		framebuffer_t framebuffer;
 		palette_t palette;
@@ -55,6 +41,14 @@ typedef struct computer {
 	ram_t ram;
 } computer_t;
 
+// This function currently only allocates memory for the fantasy ram
 void computer_init(computer_t *computer);
 
+// Generate a buffer of rgb_color_t using palette so it can be rendered by a backend later
 void generate_rgb_framebuffer(computer_t *computer);
+
+// Check if a given point is within the bounds of the framebuffer
+bool point_in_bounds(int x, int y);
+
+// Set a pixel in the framebuffer
+void set_pixel(computer_t *computer, int x, int y, int color);

@@ -22,3 +22,18 @@ void generate_rgb_framebuffer(computer_t *computer) {
 		}
 	}
 }
+
+bool point_in_bounds(int x, int y) {
+	if (x < 0) return false;
+	if (x >= SCREEN_WIDTH) return false;
+	if (y < 0) return false;
+	if (x >= SCREEN_HEIGHT) return false;
+
+	return true;
+}
+
+void set_pixel(computer_t *computer, int x, int y, int color) {
+	if (point_in_bounds(x, y)) {
+		computer->ram.framebuffer.data[y * SCREEN_WIDTH + x] = color;
+	}
+}

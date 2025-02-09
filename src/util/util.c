@@ -10,7 +10,7 @@ void load_palette_from_disk(computer_t *computer, const char filename[]) {
 	
 	int index = 0;
 	char line[8];
-	while (fgets(line, sizeof(line), file) && index < MAX_COLORS) {
+	while (fgets(line, sizeof(line), file) && index < PALETTE_SIZE) {
 		uint32_t packed;
 		sscanf(line, "%06X\n", &packed);
 		
