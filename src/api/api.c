@@ -6,7 +6,25 @@
 void api_cls(computer_t *computer, int color) {
 	for (int y = 0; y < SCREEN_HEIGHT; y++) {
 		for (int x = 0; x < SCREEN_WIDTH; x++) {
-			computer->ram.framebuffer.data[y * SCREEN_WIDTH + x] = color;
+			computer->ram->framebuffer.data[y * SCREEN_WIDTH + x] = color;
+		}
+	}
+}
+
+static void draw_sprite(computer_t *computer, int index, int x, int y) {
+	for (int i = 0; i < SPRITE_HEIGHT; i++) {
+		for (int j = 0; j < SPRITE_WIDTH; j++) {
+			uint8_t color = computer->ram->spritesheet.sprites[index].data[i * SPRITE_WIDTH + j];
+			set_pixel(computer, x + j, y + i, color);
+		}
+	}
+}
+
+void api_spr(computer_t *computer, int index, int x, int y, int width, int height) {
+	for (int i = 0; i < height; i++) {
+		for (int j = 0; j < width; j++) {
+			int new_index = index + i * SPRITE_SHEET_WIDTH + j;
+			draw_sprite(computer, new_index, x + j, y + i);
 		}
 	}
 }

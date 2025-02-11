@@ -20,9 +20,7 @@ void load_palette_from_disk(computer_t *computer, const char filename[]) {
 			.b = (packed & 0x0000FF),
 		};
 
-		// printf("r: %d, g: %d, b: %d\n", color.r, color.g, color.b);
-		
-		computer->ram.palette.colors[index] = color;
+		computer->ram->palette.colors[index] = color;
 		index++;
 	}
 

@@ -80,7 +80,7 @@ void sdl2_init(char title[], int initial_scale) {
 		printf("Failed to initialize SDL2: %s\n", SDL_GetError());
 		exit(EXIT_FAILURE);
 	}
-
+	
 	window = SDL_CreateWindow(
 		title,
 		SDL_WINDOWPOS_UNDEFINED,
@@ -93,13 +93,14 @@ void sdl2_init(char title[], int initial_scale) {
 		printf("Failed to create SDL2 window\n");
 		exit(EXIT_FAILURE);
 	}
-
-	renderer = SDL_CreateRenderer(window, -1, 0);
+	
+	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 	if (renderer == NULL) {
 		printf("Failed to create SDL2 renderer\n");
+		SDL_DestroyWindow(window);
 		exit(EXIT_FAILURE);
 	}
-
+	
 	resize_window();
 
 	// Create screen texture

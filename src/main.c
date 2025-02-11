@@ -14,14 +14,14 @@ int main(int argc, char *argv[]) {
 	
 	// memset(mem.framebuffer.data, 1, SCREEN_WIDTH * SCREEN_HEIGHT);
 
-	computer.ram.framebuffer.data[0] = 1;
-	computer.ram.framebuffer.data[1] = 1;
-	computer.ram.framebuffer.data[2] = 2;
-	computer.ram.framebuffer.data[3] = 2;
-	computer.ram.framebuffer.data[642] = 2;
+	computer.ram->framebuffer.data[0] = 1;
+	computer.ram->framebuffer.data[1] = 1;
+	computer.ram->framebuffer.data[2] = 2;
+	computer.ram->framebuffer.data[3] = 2;
+	computer.ram->framebuffer.data[642] = 2;
 
 	for (int i = 0; i < 480; i++) {
-		computer.ram.framebuffer.data[i] = 32;
+		computer.ram->framebuffer.data[i] = 32;
 	}
 
 	api_cls(&computer, 7);
@@ -37,6 +37,24 @@ int main(int argc, char *argv[]) {
 		api_rectf(&computer, (i % 8) * 8, (i / 8) * 8, 8, 8, i);
 	}
 	api_line(&computer, 64 + 0, 0, 10, 25, 4);
+
+	api_spr(&computer, 0, 128, 128, 1, 1);
+
+	api_cls(&computer, 7);
+
+	for (int i = 0; i < SPRITE_PAGE_HEIGHT; i++) {
+		for (int j = 0; j < SPRITE_SHEET_WIDTH; j++) {
+			int index = i * SPRITE_SHEET_WIDTH + j;
+			int x = 0 + (j * SPRITE_WIDTH);
+			int y = 50 + i * SPRITE_HEIGHT;
+			api_spr(&computer, index, x, y, 1, 1);
+			// printf("ja toch %d %d %d\n", index, x, y);
+		}
+	}
+
+	for (int i = 0; i < PALETTE_SIZE; i++) {
+		api_rectf(&computer, (i % 32) * 8, 40 + 256 + (i / 32) * 8, 8, 8, i);
+	}
 
 	backend_init("zinc95", 2);
 
