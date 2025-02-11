@@ -14,4 +14,6 @@ void backend_tick_end(computer_t *computer);
 
 bool window_is_open();
 
+void get_mouse_pos(int *x, int *y);
+
 void backend_quit();

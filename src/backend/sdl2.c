@@ -111,6 +111,14 @@ bool sdl2_window_is_open() {
 	return running;
 }
 
+void sdl2_get_mouse_pos(int *x, int *y) {
+	int sdl_x, sdl_y;
+	SDL_GetMouseState(&sdl_x, &sdl_y);
+
+	*x = (sdl_x - viewport_offset_x * scale) / scale;
+	*y = (sdl_y - viewport_offset_y * scale) / scale;
+}
+
 void sdl2_tick(computer_t *computer) {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {

@@ -39,6 +39,12 @@ bool window_is_open() {
 	#endif
 }
 
+void get_mouse_pos(int *x, int *y) {
+	#ifdef BACKEND_SDL2
+	sdl2_get_mouse_pos(x, y);
+	#endif
+}
+
 void backend_quit() {
 	#ifdef BACKEND_SDL2
 	sdl2_quit();

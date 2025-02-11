@@ -48,7 +48,6 @@ int main(int argc, char *argv[]) {
 			int x = 0 + (j * SPRITE_WIDTH);
 			int y = 50 + i * SPRITE_HEIGHT;
 			api_spr(&computer, index, x, y, 1, 1);
-			// printf("ja toch %d %d %d\n", index, x, y);
 		}
 	}
 
@@ -62,6 +61,10 @@ int main(int argc, char *argv[]) {
 		backend_tick(&computer);
 
 		// TODO: Call game update function
+
+		// int x, y;
+		// get_mouse_pos(&x, &y);
+		// printf("mouse pos: %d %d\n", x, y);
 
 		// TODO: Call game draw function
 
