@@ -11,6 +11,10 @@ void api_cls(computer_t *computer, int color);
 // --- Graphics/Map
 // Draw a sprite
 void api_spr(computer_t *computer, int index, int x, int y, int width, int height);
+
+// Draw a scaled sprite
+void api_sspr(computer_t *computer, int index, int x, int y, int width, int height, int scale);
+
 // Draw a portion of the map
 void api_map(computer_t *computer, int x, int y, int width, int height);
 

@@ -5,6 +5,7 @@
 #include "backend/backend.h"
 #include "util/util.h"
 #include "api/api.h"
+#include "editors/sprite.h"
 
 int main(int argc, char *argv[]) {
 	computer_t computer = {0};
@@ -42,18 +43,18 @@ int main(int argc, char *argv[]) {
 
 	api_cls(&computer, 7);
 
-	for (int i = 0; i < SPRITE_PAGE_HEIGHT; i++) {
-		for (int j = 0; j < SPRITE_SHEET_WIDTH; j++) {
-			int index = i * SPRITE_SHEET_WIDTH + j;
-			int x = 0 + (j * SPRITE_WIDTH);
-			int y = 50 + i * SPRITE_HEIGHT;
-			api_spr(&computer, index, x, y, 1, 1);
-		}
-	}
+	// for (int i = 0; i < SPRITE_PAGE_HEIGHT; i++) {
+	// 	for (int j = 0; j < SPRITE_SHEET_WIDTH; j++) {
+	// 		int index = i * SPRITE_SHEET_WIDTH + j;
+	// 		int x = 0 + (j * SPRITE_WIDTH);
+	// 		int y = 50 + i * SPRITE_HEIGHT;
+	// 		api_spr(&computer, index, x, y, 1, 1);
+	// 	}
+	// }
 
-	for (int i = 0; i < PALETTE_SIZE; i++) {
-		api_rectf(&computer, (i % 32) * 8, 40 + 256 + (i / 32) * 8, 8, 8, i);
-	}
+	// for (int i = 0; i < PALETTE_SIZE; i++) {
+	// 	api_rectf(&computer, (i % 32) * 8, 40 + 256 + (i / 32) * 8, 8, 8, i);
+	// }
 
 	backend_init("zinc95", 2);
 
@@ -67,6 +68,9 @@ int main(int argc, char *argv[]) {
 		// printf("mouse pos: %d %d\n", x, y);
 
 		// TODO: Call game draw function
+		sprite_editor_update(&computer);
+		
+		sprite_editor_draw(&computer);
 
 		backend_render(&computer);
 

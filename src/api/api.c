@@ -20,11 +20,29 @@ static void draw_sprite(computer_t *computer, int index, int x, int y) {
 	}
 }
 
+static void draw_sprite_scaled(computer_t *computer, int index, int x, int y, int scale) {
+	for (int i = 0; i < SPRITE_HEIGHT; i++) {
+		for (int j = 0; j < SPRITE_WIDTH; j++) {
+			uint8_t color = computer->ram->spritesheet.sprites[index].data[i * SPRITE_WIDTH + j];
+			api_rectf(computer, x + (j * scale), y + (i * scale), scale, scale, color);
+		}
+	}
+}
+
 void api_spr(computer_t *computer, int index, int x, int y, int width, int height) {
 	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < width; j++) {
 			int new_index = index + i * SPRITE_SHEET_WIDTH + j;
 			draw_sprite(computer, new_index, x + j, y + i);
+		}
+	}
+}
+
+void api_sspr(computer_t *computer, int index, int x, int y, int width, int height, int scale) {
+	for (int i = 0; i < height; i++) {
+		for (int j = 0; j < width; j++) {
+			int new_index = index + i * SPRITE_SHEET_WIDTH + j;
+			draw_sprite_scaled(computer, new_index, x + j, y + i, scale);
 		}
 	}
 }
