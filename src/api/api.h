@@ -70,3 +70,6 @@ bool api_mouse_btnp(computer_t *computer, int button);
 
 // Check if a mouse button is released
 bool api_mouse_btnr(computer_t *computer, int button);
+
+// --- Text
+void api_text(computer_t *computer, char text[], int x, int y, int color);

@@ -4,16 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-// static uint8_t sample_sprite[] = {
-// 	0, 0, 0, 0, 0, 0, 0, 0,
-// 	0, 12, 0, 0, 0, 0, 12, 0,
-// 	0, 0, 0, 0, 0, 0, 0, 0,
-// 	0, 0, 0, 0, 0, 0, 0, 0,
-// 	0, 0, 0, 0, 0, 0, 0, 0,
-// 	0, 2, 0, 0, 0, 0, 2, 0,
-// 	0, 0, 2, 2, 2, 2, 0, 0,
-// 	0, 0, 0, 0, 0, 0, 0, 0,
-// };
+#include "res.h"
 
 static uint8_t sample_sprite[] = {
 	0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0,
@@ -43,7 +34,10 @@ void computer_init(computer_t *computer) {
 	}
 	memset(computer->ram, 0, RAM_SIZE);
 
-	memcpy(&computer->ram->spritesheet.sprites[0], sample_sprite, sizeof(sprite_t)); 
+	memcpy(&computer->ram->spritesheet.sprites[0], sample_sprite, sizeof(sprite_t));
+
+	computer->ram->palette = default_palette;
+	computer->ram->font_data = default_font;
 }
 
 void generate_rgb_framebuffer(computer_t *computer) {

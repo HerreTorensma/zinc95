@@ -12,10 +12,6 @@ int main(int argc, char *argv[]) {
 	computer_t computer = {0};
 	computer_init(&computer);
 
-	load_palette_from_disk(&computer, "palette.txt");
-	
-	// memset(mem.framebuffer.data, 1, SCREEN_WIDTH * SCREEN_HEIGHT);
-
 	computer.ram->framebuffer.data[0] = 1;
 	computer.ram->framebuffer.data[1] = 1;
 	computer.ram->framebuffer.data[2] = 2;

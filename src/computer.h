@@ -20,6 +20,7 @@
 #define SPRITE_PAGE_HEIGHT 16
 
 #define VISIBLE_CHARACTERS_SIZE 96
+#define VISIBLE_CHARACTERS_START 32
 #define MAX_CHARACTER_WIDTH 16
 #define MAX_CHARACTER_HEIGHT 16
 
@@ -46,19 +47,6 @@ typedef struct framebuffer {
 	uint8_t data[SCREEN_WIDTH * SCREEN_HEIGHT];
 } framebuffer_t;
 
-typedef struct font_meta {
-	uint8_t max_width;
-	uint8_t height;
-	uint8_t spacing;
-
-	uint8_t widths[VISIBLE_CHARACTERS_SIZE];
-} font_meta_t;
-
-// Each character in a font is 16*16 pixels
-typedef struct font_data {
-	uint8_t data[VISIBLE_CHARACTERS_SIZE * MAX_CHARACTER_WIDTH * MAX_CHARACTER_HEIGHT];
-} font_data_t;
-
 typedef struct sprite {
 	uint8_t data[SPRITE_WIDTH * SPRITE_HEIGHT];
 } sprite_t;
@@ -69,12 +57,27 @@ typedef struct spritesheet {
 	sprite_t sprites[SPRITE_SHEET_WIDTH * SPRITE_SHEET_HEIGHT];
 } spritesheet_t;
 
+typedef struct font_meta {
+	uint8_t max_width;
+	uint8_t height;
+	uint8_t spacing;
+
+	uint8_t widths[VISIBLE_CHARACTERS_SIZE];
+} font_meta_t;
+
+// Each character in a font is 16*16 pixels
+typedef union font_data {
+	sprite_t sprites[VISIBLE_CHARACTERS_SIZE];
+	uint8_t data[VISIBLE_CHARACTERS_SIZE * MAX_CHARACTER_WIDTH * MAX_CHARACTER_HEIGHT];
+} font_data_t;
+
 // 8MB RAM (excluding what the lua code takes up)
 typedef union ram {
 	struct {
 		framebuffer_t framebuffer;
 		palette_t palette;
 		spritesheet_t spritesheet;
+		font_data_t font_data;
 	};
 
 	uint8_t data[RAM_SIZE];

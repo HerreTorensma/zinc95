@@ -13,19 +13,19 @@ void api_cls(computer_t *computer, int color) {
 	}
 }
 
-static void draw_sprite(computer_t *computer, int index, int x, int y) {
+static void draw_sprite(computer_t *computer, sprite_t *sprite, int x, int y) {
 	for (int i = 0; i < SPRITE_HEIGHT; i++) {
 		for (int j = 0; j < SPRITE_WIDTH; j++) {
-			uint8_t color = computer->ram->spritesheet.sprites[index].data[i * SPRITE_WIDTH + j];
+			uint8_t color = sprite->data[i * SPRITE_WIDTH + j];
 			set_pixel(computer, x + j, y + i, color);
 		}
 	}
 }
 
-static void draw_sprite_scaled(computer_t *computer, int index, int x, int y, int scale) {
+static void draw_sprite_scaled(computer_t *computer, sprite_t *sprite, int x, int y, int scale) {
 	for (int i = 0; i < SPRITE_HEIGHT; i++) {
 		for (int j = 0; j < SPRITE_WIDTH; j++) {
-			uint8_t color = computer->ram->spritesheet.sprites[index].data[i * SPRITE_WIDTH + j];
+			uint8_t color = sprite->data[i * SPRITE_WIDTH + j];
 			api_rectf(computer, x + (j * scale), y + (i * scale), scale, scale, color);
 		}
 	}
@@ -35,7 +35,7 @@ void api_spr(computer_t *computer, int index, int x, int y, int width, int heigh
 	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < width; j++) {
 			int new_index = index + i * SPRITE_SHEET_WIDTH + j;
-			draw_sprite(computer, new_index, x + j, y + i);
+			draw_sprite(computer, &computer->ram->spritesheet.sprites[new_index], x + j, y + i);
 		}
 	}
 }
@@ -44,7 +44,7 @@ void api_sspr(computer_t *computer, int index, int x, int y, int width, int heig
 	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < width; j++) {
 			int new_index = index + i * SPRITE_SHEET_WIDTH + j;
-			draw_sprite_scaled(computer, new_index, x + j, y + i, scale);
+			draw_sprite_scaled(computer, &computer->ram->spritesheet.sprites[new_index], x + j, y + i, scale);
 		}
 	}
 }
@@ -123,4 +123,23 @@ bool api_mouse_btnp(computer_t *computer, int button) {
 
 bool api_mouse_btnr(computer_t *computer, int button) {
 	return input_mouse_button_released(button);
+}
+
+static void draw_char(computer_t *computer, sprite_t *sprite, int x, int y, int color) {
+	for (int i = 0; i < SPRITE_HEIGHT; i++) {
+		for (int j = 0; j < SPRITE_WIDTH; j++) {
+			uint8_t pixel = sprite->data[i * SPRITE_WIDTH + j];
+			if (pixel == 0) {
+				continue;
+			}
+			pixel = color;
+			set_pixel(computer, x + j, y + i, pixel);
+		}
+	}
+}
+
+void api_text(computer_t *computer, char text[], int x, int y, int color) {
+	for (int i = 0; i < strlen(text); i++) {
+		draw_char(computer, &computer->ram->font_data.sprites[text[i] - VISIBLE_CHARACTERS_START], x + i * 12, y, color);
+	}
 }

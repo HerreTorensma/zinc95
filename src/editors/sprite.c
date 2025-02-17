@@ -1,5 +1,7 @@
 #include "sprite.h"
 
+#include <stdio.h>
+
 #include "../api/api.h"
 #include "../backend/backend.h"
 #include "../util/util.h"
@@ -94,4 +96,10 @@ void sprite_editor_draw(computer_t *computer) {
 
 	draw_in_frame(computer, sprite_editor_rect);
 	api_sspr(computer, selected_index, sprite_editor_rect.x, sprite_editor_rect.y, 1, 1, 16);
+
+	api_text(computer, "Font rendering works let's go!!!", 32, 32, 0);
+
+	char buffer[32];
+	sprintf(buffer, "spr: %04d\n", selected_index);
+	api_text(computer, buffer, sprite_sheet_rect.x, sprite_sheet_rect.y - 16, 0);
 }
