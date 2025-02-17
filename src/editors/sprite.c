@@ -11,7 +11,8 @@
 #define COLOR_PICKER_Y (SPRITE_SHEET_Y + 256 + 4)
 
 static uint8_t selected_color = 63;
-static int selected_index = 34;
+// static int selected_index = 34;
+static int selected_index = 0;
 
 void sprite_editor_update(computer_t *computer) {
 	int x, y;

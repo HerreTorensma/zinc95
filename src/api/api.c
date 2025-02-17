@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <math.h>
 
+#include "../backend/input.h"
+
 void api_cls(computer_t *computer, int color) {
 	for (int y = 0; y < SCREEN_HEIGHT; y++) {
 		for (int x = 0; x < SCREEN_WIDTH; x++) {
@@ -97,4 +99,28 @@ void api_rectf(computer_t *computer, int x, int y, int w, int h, int color) {
 			set_pixel(computer, j, i, color);
 		}
 	}
+}
+
+bool api_key(computer_t *computer, int key) {
+	return input_key_held(key);
+}
+
+bool api_keyp(computer_t *computer, int key) {
+	return input_key_pressed(key);
+}
+
+bool api_keyr(computer_t *computer, int key) {
+	return input_key_released(key);
+}
+
+bool api_mouse_btn(computer_t *computer, int button) {
+	return input_mouse_button_held(button);
+}
+
+bool api_mouse_btnp(computer_t *computer, int button) {
+	return input_mouse_button_pressed(button);
+}
+
+bool api_mouse_btnr(computer_t *computer, int button) {
+	return input_mouse_button_released(button);
 }

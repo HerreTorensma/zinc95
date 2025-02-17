@@ -6,6 +6,7 @@
 #include "util/util.h"
 #include "api/api.h"
 #include "editors/sprite.h"
+#include "backend/input.h"
 
 int main(int argc, char *argv[]) {
 	computer_t computer = {0};
@@ -60,14 +61,10 @@ int main(int argc, char *argv[]) {
 
 	while (window_is_open()) {
 		backend_tick(&computer);
-
 		// TODO: Call game update function
 
-		// int x, y;
-		// get_mouse_pos(&x, &y);
-		// printf("mouse pos: %d %d\n", x, y);
-
 		// TODO: Call game draw function
+
 		sprite_editor_update(&computer);
 		
 		sprite_editor_draw(&computer);

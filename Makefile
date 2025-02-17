@@ -16,7 +16,7 @@ else
 	endif
 endif
 
-SRC = src/main.c src/backend/backend.c src/backend/sdl2.c src/computer.c src/util/util.c src/api/api.c src/editors/sprite.c
+SRC = src/main.c src/backend/backend.c src/backend/sdl2.c src/computer.c src/util/util.c src/api/api.c src/editors/sprite.c src/backend/input.c
 OBJ = $(SRC:.c = .o)
 
 all: $(OBJ)

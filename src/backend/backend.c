@@ -5,8 +5,6 @@
 #include "sdl2.h"
 #include "../computer.h"
 
-#define BACKEND_SDL2
-
 void backend_init(char title[], int initial_scale) {
 	#ifdef BACKEND_SDL2
 	sdl2_init(title, initial_scale);

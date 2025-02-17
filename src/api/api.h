@@ -51,3 +51,22 @@ void api_rectf(computer_t *computer, int x, int y, int w, int h, int color);
 
 // Draw an unfilled circle
 void api_circ(computer_t *computer, int x, int y, int r, bool filled, int color);
+
+// --- Input
+// Check if a key is held
+bool api_key(computer_t *computer, int key);
+
+// Check if a key is pressed
+bool api_keyp(computer_t *computer, int key);
+
+// Check if a key is released
+bool api_keyr(computer_t *computer, int key);
+
+// Check if a mouse button is held
+bool api_mouse_btn(computer_t *computer, int button);
+
+// Check if a mouse button is pressed
+bool api_mouse_btnp(computer_t *computer, int button);
+
+// Check if a mouse button is released
+bool api_mouse_btnr(computer_t *computer, int button);

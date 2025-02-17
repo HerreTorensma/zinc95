@@ -13,6 +13,16 @@ static SDL_Renderer *renderer = NULL;
 static uint32_t pixels[SCREEN_WIDTH * SCREEN_HEIGHT] = {0};
 static SDL_Texture *screen_texture = NULL;
 
+typedef struct sdl2_input {
+	uint8_t prev_key_state[512];
+	uint8_t key_state[512];
+
+	uint32_t prev_mouse_state;
+	uint32_t mouse_state;
+} sdl2_input_t;
+
+static sdl2_input_t sdl2_input = {0};
+
 static void resize_window() {
 	int window_width, window_height;
 	SDL_GetWindowSize(window, &window_width, &window_height);
@@ -141,6 +151,8 @@ void sdl2_tick(computer_t *computer) {
 			}
 		}
 	}
+
+	sdl2_input_update();
 }
 
 void sdl2_render(computer_t *computer) {
@@ -161,4 +173,110 @@ void sdl2_quit() {
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
+}
+
+static SDL_Scancode key_to_sdl2_scancode(key_t key) {
+	switch (key) {
+		case KEY_A: return SDL_SCANCODE_A;
+		case KEY_B: return SDL_SCANCODE_B;
+		case KEY_C: return SDL_SCANCODE_C;
+		case KEY_D: return SDL_SCANCODE_D;
+		case KEY_E: return SDL_SCANCODE_E;
+		case KEY_F: return SDL_SCANCODE_F;
+		case KEY_G: return SDL_SCANCODE_G;
+		case KEY_H: return SDL_SCANCODE_H;
+		case KEY_I: return SDL_SCANCODE_I;
+		case KEY_J: return SDL_SCANCODE_J;
+		case KEY_K: return SDL_SCANCODE_K;
+		case KEY_L: return SDL_SCANCODE_L;
+		case KEY_M: return SDL_SCANCODE_M;
+		case KEY_N: return SDL_SCANCODE_N;
+		case KEY_O: return SDL_SCANCODE_O;
+		case KEY_P: return SDL_SCANCODE_P;
+		case KEY_Q: return SDL_SCANCODE_Q;
+		case KEY_R: return SDL_SCANCODE_R;
+		case KEY_S: return SDL_SCANCODE_S;
+		case KEY_T: return SDL_SCANCODE_T;
+		case KEY_U: return SDL_SCANCODE_U;
+		case KEY_V: return SDL_SCANCODE_V;
+		case KEY_W: return SDL_SCANCODE_W;
+		case KEY_X: return SDL_SCANCODE_X;
+		case KEY_Y: return SDL_SCANCODE_Y;
+		case KEY_Z: return SDL_SCANCODE_Z;
+		default: return SDL_SCANCODE_UNKNOWN;
+	}
+}
+
+static int mouse_button_to_sdl2_button(mouse_button_t button) {
+	switch (button) {
+		case MOUSE_BUTTON_LEFT: return 1;
+		case MOUSE_BUTTON_MIDDLE: return 2;
+		case MOUSE_BUTTON_RIGHT: return 3;
+	}
+}
+
+void sdl2_input_update() {
+	memcpy(sdl2_input.prev_key_state, sdl2_input.key_state, 256 * sizeof(uint8_t));
+
+	const uint8_t *state = SDL_GetKeyboardState(NULL);
+	memcpy(sdl2_input.key_state, state, 256 * sizeof(uint8_t));
+
+	sdl2_input.prev_mouse_state = sdl2_input.mouse_state;
+	
+	int x, y;
+	sdl2_input.mouse_state = SDL_GetMouseState(&x, &y);
+}
+
+bool sdl2_input_key_pressed(key_t key) {
+	SDL_Scancode scancode = key_to_sdl2_scancode(key);
+
+	if (sdl2_input.key_state[scancode] && !sdl2_input.prev_key_state[scancode]) {
+		return true;
+	}
+	return false;
+}
+
+bool sdl2_input_key_held(key_t key) {
+	SDL_Scancode scancode = key_to_sdl2_scancode(key);
+
+	if (sdl2_input.key_state[scancode]) {
+		return true;
+	}
+	return false;
+}
+
+bool sdl2_input_key_released(key_t key) {
+	SDL_Scancode scancode = key_to_sdl2_scancode(key);
+
+	if (!sdl2_input.key_state[scancode] && sdl2_input.prev_key_state[scancode]) {
+		return true;
+	}
+	return false;
+}
+
+bool sdl2_input_mouse_button_pressed(mouse_button_t button) {
+	int sdl2_button = mouse_button_to_sdl2_button(button);
+
+	if (sdl2_input.mouse_state & SDL_BUTTON(sdl2_button) && !(sdl2_input.prev_mouse_state & SDL_BUTTON(sdl2_button))) {
+		return true;
+	}
+	return false;
+}
+
+bool sdl2_input_mouse_button_released(mouse_button_t button) {
+	int sdl2_button = mouse_button_to_sdl2_button(button);
+
+	if (!(sdl2_input.mouse_state & SDL_BUTTON(sdl2_button)) && sdl2_input.prev_mouse_state & SDL_BUTTON(sdl2_button)) {
+		return true;
+	}
+	return false;
+}
+
+bool sdl2_input_mouse_button_held(mouse_button_t button) {
+	int sdl2_button = mouse_button_to_sdl2_button(button);
+
+	if (sdl2_input.mouse_state & SDL_BUTTON(sdl2_button)) {
+		return true;
+	}
+	return false;
 }
