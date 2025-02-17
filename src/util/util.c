@@ -45,7 +45,12 @@ void load_palette_from_disk(computer_t *computer, const char filename[]) {
 // 	api_line(computer, x + w - 1, y + 1, x + w - 1, y + h - 1, 23);
 // }
 
-void draw_out_frame(computer_t *computer, int x, int y, int w, int h) {
+void draw_out_frame(computer_t *computer, rect_t rect) {
+	int x = rect.x;
+	int y = rect.y;
+	int w = rect.w;
+	int h = rect.h;
+
 	// Because we draw lines it will include x + w or y + h in the pixels drawn
 	// Which we don't want so subtract 1
 	w--;
@@ -74,7 +79,17 @@ void draw_out_frame(computer_t *computer, int x, int y, int w, int h) {
 	// api_rectf(computer, x + 2, y + 2, w - 3, h - 3, 7);
 }
 
-void draw_in_frame(computer_t *computer, int x, int y, int w, int h) {
+void draw_in_frame(computer_t *computer, rect_t rect) {
+	int x = rect.x;
+	int y = rect.y;
+	int w = rect.w;
+	int h = rect.h;
+
+	x -= 2;
+	y -= 2;
+	w += 4;
+	h += 4;
+
 	// Again, because we draw lines it will include x + w or y + h in the pixels drawn
 	// Which we don't want so subtract 1
 	w--;

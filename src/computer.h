@@ -25,6 +25,13 @@
 
 #define FPS 60
 
+typedef struct rect {
+	int x;
+	int y;
+	int w;
+	int h;
+} rect_t;
+
 typedef struct rgb_color {
 	uint8_t r;
 	uint8_t g;
@@ -89,3 +96,5 @@ bool point_in_bounds(int x, int y);
 
 // Set a pixel in the framebuffer
 void set_pixel(computer_t *computer, int x, int y, int color);
+
+bool point_in_rect(int x, int y, rect_t rect);

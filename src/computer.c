@@ -69,3 +69,11 @@ void set_pixel(computer_t *computer, int x, int y, int color) {
 		computer->ram->framebuffer.data[y * SCREEN_WIDTH + x] = color;
 	}
 }
+
+bool point_in_rect(int x, int y, rect_t rect) {
+	if (x >= rect.x && x < rect.x + rect.w && y >= rect.y && y < rect.y + rect.h) {
+		return true;
+	}
+
+	return false;
+}

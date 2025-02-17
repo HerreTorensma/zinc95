@@ -59,6 +59,8 @@ int main(int argc, char *argv[]) {
 
 	backend_init("zinc95", 2);
 
+	sprite_editor_init(&computer);
+
 	while (window_is_open()) {
 		backend_tick(&computer);
 		// TODO: Call game update function
