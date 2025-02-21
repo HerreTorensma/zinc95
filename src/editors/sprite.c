@@ -48,6 +48,10 @@ void sprite_editor_update(computer_t *computer) {
 		int cell_y = (y - sprite_editor_rect.y) / 16;
 		
 		if (api_mouse_btn(computer, 1)) {
+			if (api_key(computer, 64)) {
+				selected_color = computer->ram->spritesheet.sprites[selected_index].data[cell_y * SPRITE_WIDTH + cell_x];
+			}
+
 			computer->ram->spritesheet.sprites[selected_index].data[cell_y * SPRITE_WIDTH + cell_x] = selected_color;
 		}
 

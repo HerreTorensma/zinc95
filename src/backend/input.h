@@ -42,6 +42,8 @@ typedef enum key {
 	KEY_8,
 	KEY_9,
 	KEY_0,
+
+	KEY_LALT = 64,
 } key_t;
 
 typedef enum mouse_button {

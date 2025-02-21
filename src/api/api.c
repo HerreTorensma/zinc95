@@ -140,6 +140,6 @@ static void draw_char(computer_t *computer, sprite_t *sprite, int x, int y, int 
 
 void api_text(computer_t *computer, char text[], int x, int y, int color) {
 	for (int i = 0; i < strlen(text); i++) {
-		draw_char(computer, &computer->ram->font_data.sprites[text[i] - VISIBLE_CHARACTERS_START], x + i * 12, y, color);
+		draw_char(computer, &computer->ram->font_data.sprites[text[i] - VISIBLE_CHARACTERS_START], x + i * 6, y, color);
 	}
 }

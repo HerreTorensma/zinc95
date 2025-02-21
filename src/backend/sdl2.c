@@ -203,6 +203,8 @@ static SDL_Scancode key_to_sdl2_scancode(key_t key) {
 		case KEY_X: return SDL_SCANCODE_X;
 		case KEY_Y: return SDL_SCANCODE_Y;
 		case KEY_Z: return SDL_SCANCODE_Z;
+
+		case KEY_LALT: return SDL_SCANCODE_LALT;
 		default: return SDL_SCANCODE_UNKNOWN;
 	}
 }
