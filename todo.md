@@ -24,6 +24,9 @@
 	- Bucket fill tool
 	- Copy sprite and paste it in another
 	- Show current color and palette index
+	- Make spritesheet a union that can also be accessed as a 2d array of "pages" of 32x32 sprites
+
+- For text rendering: do inline sprites with some string formatting
 
 ### Would like to have
 - [ ] Pseudo 3d by raycasting

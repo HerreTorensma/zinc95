@@ -5,7 +5,7 @@
 #include "backend/backend.h"
 #include "util/util.h"
 #include "api/api.h"
-#include "editors/sprite.h"
+#include "workspaces/menu.h"
 #include "backend/input.h"
 
 int main(int argc, char *argv[]) {
@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
 
 	backend_init("zinc95", 2);
 
-	sprite_editor_init(&computer);
+	workspace_menu_init(&computer);
 
 	while (window_is_open()) {
 		backend_tick(&computer);
@@ -63,9 +63,9 @@ int main(int argc, char *argv[]) {
 
 		// TODO: Call game draw function
 
-		sprite_editor_update(&computer);
+		workspace_menu_update(&computer);
 		
-		sprite_editor_draw(&computer);
+		workspace_menu_draw(&computer);
 
 		backend_render(&computer);
 

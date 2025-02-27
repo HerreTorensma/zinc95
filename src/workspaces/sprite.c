@@ -6,7 +6,6 @@
 #include "../backend/backend.h"
 #include "../util/util.h"
 
-static rect_t screen_rect = {0};
 static rect_t sprite_sheet_rect = {0};
 static rect_t color_picker_rect = {0};
 static rect_t sprite_editor_rect = {0};
@@ -15,7 +14,6 @@ static uint8_t selected_color = 0;
 static int selected_index = 0;
 
 void sprite_editor_init(computer_t *computer) {
-	screen_rect = (rect_t){0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
 	sprite_sheet_rect = (rect_t){4, 152, 256, 256};
 	color_picker_rect = (rect_t){4, sprite_sheet_rect.y + sprite_sheet_rect.h + 4, 256, 64};
 	sprite_editor_rect = (rect_t){324, sprite_sheet_rect.y, 256, 256};
@@ -62,10 +60,6 @@ void sprite_editor_update(computer_t *computer) {
 }
 
 void sprite_editor_draw(computer_t *computer) {
-	api_cls(computer, 7);
-
-	draw_out_frame(computer, screen_rect);
-
 	draw_in_frame(computer, sprite_sheet_rect);
 	for (int i = 0; i < SPRITE_PAGE_HEIGHT; i++) {
 		for (int j = 0; j < SPRITE_SHEET_WIDTH; j++) {
@@ -104,6 +98,14 @@ void sprite_editor_draw(computer_t *computer) {
 	api_text(computer, "Font rendering works let's go!!!", 32, 32, 0);
 
 	char buffer[32];
-	sprintf(buffer, "spr: %04d\n", selected_index);
-	api_text(computer, buffer, sprite_sheet_rect.x, sprite_sheet_rect.y - 16, 0);
+	draw_in_frame(computer, (rect_t){sprite_sheet_rect.x, sprite_sheet_rect.y - 40, 16, 16});
+	api_rectf(computer, sprite_sheet_rect.x, sprite_sheet_rect.y - 40, 16, 16, selected_color);
+	sprintf(buffer, "#%03d\n", selected_color);
+	api_text(computer, buffer, sprite_sheet_rect.x + 20, sprite_sheet_rect.y - 36, 0);
+
+	draw_in_frame(computer, (rect_t){sprite_sheet_rect.x, sprite_sheet_rect.y - 20, 16, 16});
+	// api_rectf(computer, sprite_sheet_rect.x, sprite_sheet_rect.y - 16, 16, 16, selected_color);
+	api_spr(computer, selected_index, sprite_sheet_rect.x, sprite_sheet_rect.y - 20, 1, 1);
+	sprintf(buffer, "#%04d\n", selected_index);
+	api_text(computer, buffer, sprite_sheet_rect.x + 20, sprite_sheet_rect.y - 16, 0);
 }

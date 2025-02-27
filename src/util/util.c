@@ -1,5 +1,6 @@
 #include "util.h"
 #include "../api/api.h"
+#include "../backend/backend.h"
 
 #include <stdio.h>
 
@@ -74,4 +75,40 @@ void draw_in_frame(computer_t *computer, rect_t rect) {
 	api_line(computer, x + w - 1, y + 1, x + w - 1, y + h - 1, 7);
 
 	// api_rectf(computer, x + 2, y + 2, w - 3, h - 3, 15);
+}
+
+bool button_ex(computer_t *computer, char text[], rect_t rect, bool appear_pressed) {
+	int x, y;
+	get_mouse_pos(&x, &y);
+
+	bool return_value = false;
+	
+	if (point_in_rect(x, y, rect)) {
+		if (api_mouse_btn(computer, 1)) {
+			appear_pressed = true;
+			return_value = true;
+		}
+	}
+	
+	if (appear_pressed) {
+		rect_t new_rect = {
+			.x = rect.x + 2,
+			.y = rect.y + 2,
+			.w = rect.w - 4,
+			.h = rect.h - 4,
+		};
+		
+		draw_in_frame(computer, new_rect);
+		api_text(computer, text, rect.x + 3, rect.y + 3, 0);
+
+	} else {
+		draw_out_frame(computer, rect);
+		api_text(computer, text, rect.x + 3, rect.y + 3, 0);
+	}
+	
+	return return_value;
+}
+
+bool button(computer_t *computer, char text[], rect_t rect) {
+	return button_ex(computer, text, rect, false);
 }

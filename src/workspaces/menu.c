@@ -1,0 +1,106 @@
+#include "menu.h"
+
+#include <stdio.h>
+
+#include "../util/util.h"
+#include "../api/api.h"
+
+#include "sprite.h"
+#include "console.h"
+
+typedef enum workspace_type {
+	WORKSPACE_CONSOLE,
+	WORKSPACE_CODE,
+	WORKSPACE_SPRITE,
+	WORKSPACE_MAP,
+	WORKSPACE_SOUND,
+	WORKSPACE_MUSIC,
+} workspace_type_t;
+
+static workspace_type_t active_workspace = WORKSPACE_SPRITE;
+
+static rect_t bar_rect = {0};
+static rect_t screen_rect = {0};
+
+rect_t workspace_rect = {0, 20, SCREEN_WIDTH, SCREEN_HEIGHT - 20};
+
+void workspace_menu_init(computer_t *computer) {
+	bar_rect = (rect_t){0, 0, SCREEN_WIDTH, 20};
+	screen_rect = (rect_t){0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+
+	console_init(computer);
+	sprite_editor_init(computer);
+}
+
+void workspace_menu_update(computer_t *computer) {
+	switch (active_workspace) {
+		case WORKSPACE_CONSOLE:
+			console_update(computer);
+		
+		case WORKSPACE_CODE:
+			break;
+
+		case WORKSPACE_SPRITE:
+			sprite_editor_update(computer);
+			break;
+
+		case WORKSPACE_MAP:
+			break;
+
+		case WORKSPACE_SOUND:
+			break;
+
+		case WORKSPACE_MUSIC:
+			break;
+
+		default:
+			break;
+	}
+}
+
+void workspace_menu_draw(computer_t *computer) {
+	api_cls(computer, 7);
+
+	draw_out_frame(computer, screen_rect);
+	
+	// Menu bar
+	draw_out_frame(computer, bar_rect);
+	button(computer, "", (rect_t){2, 2, 16, 16});
+	if (button_ex(computer, "Console", (rect_t){128 + 64*0, 2, 64, 16}, active_workspace == WORKSPACE_CONSOLE)) {
+		active_workspace = WORKSPACE_CONSOLE;
+	}
+	button(computer, "Code", (rect_t){128 + 64*1, 2, 64, 16});
+	if (button_ex(computer, "Sprite", (rect_t){128 + 64*2, 2, 64, 16}, active_workspace == WORKSPACE_SPRITE)) {
+		active_workspace = WORKSPACE_SPRITE;
+	}
+	button(computer, "Map", (rect_t){128 + 64*3, 2, 64, 16});
+	button(computer, "Sound", (rect_t){128 + 64*4, 2, 64, 16});
+	button(computer, "Music", (rect_t){128 + 64*5, 2, 64, 16});
+
+	button(computer, "", (rect_t){SCREEN_WIDTH-16-16-2, 2, 16, 16});
+	button(computer, "", (rect_t){SCREEN_WIDTH-16-2, 2, 16, 16});
+
+	switch (active_workspace) {
+		case WORKSPACE_CONSOLE:
+			console_draw(computer);
+		
+		case WORKSPACE_CODE:
+			break;
+
+		case WORKSPACE_SPRITE:
+			sprite_editor_draw(computer);
+			break;
+
+		case WORKSPACE_MAP:
+			break;
+
+		case WORKSPACE_SOUND:
+			break;
+
+		case WORKSPACE_MUSIC:
+			break;
+
+		default:
+			break;
+	}
+}
