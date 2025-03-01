@@ -6,7 +6,7 @@
 
 void backend_init(char title[], int initial_scale);
 
-void backend_tick(computer_t *computer);
+void backend_tick_start(computer_t *computer);
 
 void backend_render(computer_t *computer);
 

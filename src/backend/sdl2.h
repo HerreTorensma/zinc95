@@ -12,7 +12,7 @@ bool sdl2_window_is_open();
 
 void sdl2_get_mouse_pos(int *x, int *y);
 
-void sdl2_tick(computer_t *computer);
+void sdl2_tick_start(computer_t *computer);
 
 void sdl2_render(computer_t *computer);
 

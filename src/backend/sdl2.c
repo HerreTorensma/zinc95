@@ -129,7 +129,7 @@ void sdl2_get_mouse_pos(int *x, int *y) {
 	*y = (sdl_y - viewport_offset_y * scale) / scale;
 }
 
-void sdl2_tick(computer_t *computer) {
+void sdl2_tick_start(computer_t *computer) {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		if (event.type == SDL_QUIT) {
@@ -205,6 +205,8 @@ static SDL_Scancode key_to_sdl2_scancode(key_t key) {
 		case KEY_Z: return SDL_SCANCODE_Z;
 
 		case KEY_LALT: return SDL_SCANCODE_LALT;
+		case KEY_ESC: return SDL_SCANCODE_ESCAPE;
+		
 		default: return SDL_SCANCODE_UNKNOWN;
 	}
 }

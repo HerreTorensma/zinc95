@@ -11,9 +11,9 @@ void backend_init(char title[], int initial_scale) {
 	#endif
 }
 
-void backend_tick(computer_t *computer) {
+void backend_tick_start(computer_t *computer) {
 	#ifdef BACKEND_SDL2
-	sdl2_tick(computer);
+	sdl2_tick_start(computer);
 	#endif
 }
 

@@ -83,10 +83,20 @@ typedef union ram {
 	uint8_t data[RAM_SIZE];
 } ram_t;
 
+typedef enum computer_state {
+	STATE_EDITING,
+	STATE_PLAYING,
+} computer_state_t;
+
 typedef struct computer {
 	rgb_color_t rgb_framebuffer[SCREEN_WIDTH * SCREEN_HEIGHT];
 	ram_t *ram;
+	computer_state_t state;
 } computer_t;
+
+void set_global_computer(computer_t *computer);
+
+computer_t *get_global_computer();
 
 // This function currently only allocates memory for the fantasy ram
 void computer_init(computer_t *computer);
@@ -100,4 +110,11 @@ bool point_in_bounds(int x, int y);
 // Set a pixel in the framebuffer
 void set_pixel(computer_t *computer, int x, int y, int color);
 
+// Check if an x, y coordinate is inside a given rect
 bool point_in_rect(int x, int y, rect_t rect);
+
+// Play the currently loaded game
+void play_game(computer_t *computer);
+
+// Quit the currently loaded game
+void quit_game(computer_t *computer);

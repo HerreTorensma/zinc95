@@ -78,7 +78,9 @@ void workspace_menu_draw(computer_t *computer) {
 	button(computer, "Music", (rect_t){128 + 64*5, 2, 64, 16});
 
 	button(computer, "", (rect_t){SCREEN_WIDTH-16-16-2, 2, 16, 16});
-	button(computer, "", (rect_t){SCREEN_WIDTH-16-2, 2, 16, 16});
+	if (button(computer, "", (rect_t){SCREEN_WIDTH-16-2, 2, 16, 16})) {
+		play_game(computer);
+	}
 
 	switch (active_workspace) {
 		case WORKSPACE_CONSOLE:

@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "res.h"
+#include "api/lua_api.h"
 
 static uint8_t sample_sprite[] = {
 	0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0,
@@ -24,6 +25,16 @@ static uint8_t sample_sprite[] = {
 	3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3,
 	0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0,
 };
+
+static computer_t *_computer;
+
+void set_global_computer(computer_t *computer) {
+	_computer = computer;
+}
+
+computer_t *get_global_computer() {
+	return _computer;
+}
 
 void computer_init(computer_t *computer) {
 	// Allocate 8MB ram
@@ -70,4 +81,19 @@ bool point_in_rect(int x, int y, rect_t rect) {
 	}
 
 	return false;
+}
+
+void play_game(computer_t *computer) {
+	// Init the lua stuff
+	lua_init();
+	lua_call_init();
+
+	// Set the state
+	computer->state = STATE_PLAYING;
+}
+
+void quit_game(computer_t *computer) {
+	computer->state = STATE_EDITING;
+	
+	lua_quit();
 }

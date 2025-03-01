@@ -41,4 +41,9 @@
 - Make most basic form of map editor
 - Make each UI element focusable
 
+- Tidying up
+	- Everywhere static global variables are used prefix with _
+	- Fix compiler warnings
+	- Pass ram instead of computer (?)
+
 ### Done
