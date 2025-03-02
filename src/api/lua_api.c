@@ -39,14 +39,15 @@ static void lua_spr(lua_State *lua) {
 	}
 }
 
-void lua_init() {
+void lua_init(computer_t *computer) {
 	_lua = luaL_newstate();
 	luaL_openlibs(_lua);
 
 	lua_register(_lua, "cls", lua_cls);
 	lua_register(_lua, "spr", lua_spr);
 
-	if (luaL_dofile(_lua, "test.lua") != LUA_OK) {
+	// if (luaL_dofile(_lua, "test.lua") != LUA_OK) {
+	if (luaL_dostring(_lua, computer->code->buffer) != LUA_OK) {
 		printf("Error loading Lua script: %s\n", lua_tostring(_lua, -1));
 		lua_pop(_lua, 1);
 	}

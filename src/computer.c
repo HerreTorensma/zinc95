@@ -49,6 +49,13 @@ void computer_init(computer_t *computer) {
 
 	computer->ram->palette = default_palette;
 	computer->ram->font_data = default_font;
+
+	computer->code = malloc(CODE_SIZE);
+	if (computer->code == NULL) {
+		printf("Couldn't allocate memory for code.\n");
+		exit(EXIT_FAILURE);
+	}
+	memset(computer->code, 0, CODE_SIZE);
 }
 
 void generate_rgb_framebuffer(computer_t *computer) {
@@ -85,7 +92,7 @@ bool point_in_rect(int x, int y, rect_t rect) {
 
 void play_game(computer_t *computer) {
 	// Init the lua stuff
-	lua_init();
+	lua_init(computer);
 	lua_call_init();
 
 	// Set the state

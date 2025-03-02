@@ -20,7 +20,7 @@ else
 	endif
 endif
 
-SRC = src/main.c src/backend/backend.c src/backend/sdl2.c src/computer.c src/util/util.c src/api/api.c src/workspaces/sprite.c src/backend/input.c src/res.c src/workspaces/menu.c src/workspaces/console.c src/api/lua_api.c
+SRC = src/main.c src/backend/backend.c src/backend/sdl2.c src/computer.c src/util/util.c src/api/api.c src/workspaces/sprite.c src/backend/input.c src/res.c src/workspaces/menu.c src/workspaces/console.c src/api/lua_api.c src/workspaces/code.c
 OBJ = $(SRC:.c=.o)
 
 all: libs app

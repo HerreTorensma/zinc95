@@ -7,6 +7,7 @@
 
 #include "sprite.h"
 #include "console.h"
+#include "code.h"
 
 typedef enum workspace_type {
 	WORKSPACE_CONSOLE,
@@ -29,6 +30,7 @@ void workspace_menu_init(computer_t *computer) {
 	screen_rect = (rect_t){0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
 
 	console_init(computer);
+	code_editor_init(computer);
 	sprite_editor_init(computer);
 }
 
@@ -36,8 +38,10 @@ void workspace_menu_update(computer_t *computer) {
 	switch (active_workspace) {
 		case WORKSPACE_CONSOLE:
 			console_update(computer);
+			break;
 		
 		case WORKSPACE_CODE:
+			code_editor_update(computer);
 			break;
 
 		case WORKSPACE_SPRITE:
@@ -65,19 +69,29 @@ void workspace_menu_draw(computer_t *computer) {
 	
 	// Menu bar
 	draw_out_frame(computer, bar_rect);
+	
 	button(computer, "", (rect_t){2, 2, 16, 16});
+	
 	if (button_ex(computer, "Console", (rect_t){128 + 64*0, 2, 64, 16}, active_workspace == WORKSPACE_CONSOLE)) {
 		active_workspace = WORKSPACE_CONSOLE;
 	}
-	button(computer, "Code", (rect_t){128 + 64*1, 2, 64, 16});
+	
+	if (button_ex(computer, "Code", (rect_t){128 + 64*1, 2, 64, 16}, active_workspace == WORKSPACE_CODE)) {
+		active_workspace = WORKSPACE_CODE;
+	}
+	
 	if (button_ex(computer, "Sprite", (rect_t){128 + 64*2, 2, 64, 16}, active_workspace == WORKSPACE_SPRITE)) {
 		active_workspace = WORKSPACE_SPRITE;
 	}
+	
 	button(computer, "Map", (rect_t){128 + 64*3, 2, 64, 16});
+	
 	button(computer, "Sound", (rect_t){128 + 64*4, 2, 64, 16});
+	
 	button(computer, "Music", (rect_t){128 + 64*5, 2, 64, 16});
 
 	button(computer, "", (rect_t){SCREEN_WIDTH-16-16-2, 2, 16, 16});
+	
 	if (button(computer, "", (rect_t){SCREEN_WIDTH-16-2, 2, 16, 16})) {
 		play_game(computer);
 	}
@@ -85,8 +99,10 @@ void workspace_menu_draw(computer_t *computer) {
 	switch (active_workspace) {
 		case WORKSPACE_CONSOLE:
 			console_draw(computer);
+			break;
 		
 		case WORKSPACE_CODE:
+			code_editor_draw(computer);
 			break;
 
 		case WORKSPACE_SPRITE:

@@ -6,6 +6,7 @@
 #include <stdbool.h>
 
 #define RAM_SIZE (8 * 1024 * 1024)
+#define CODE_SIZE (8 * 1024 * 1024)
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
@@ -71,6 +72,10 @@ typedef union font_data {
 	uint8_t data[VISIBLE_CHARACTERS_SIZE * MAX_CHARACTER_WIDTH * MAX_CHARACTER_HEIGHT];
 } font_data_t;
 
+typedef struct code {
+	char buffer[CODE_SIZE];
+} code_t;
+
 // 8MB RAM (excluding what the lua code takes up)
 typedef union ram {
 	struct {
@@ -92,6 +97,7 @@ typedef struct computer {
 	rgb_color_t rgb_framebuffer[SCREEN_WIDTH * SCREEN_HEIGHT];
 	ram_t *ram;
 	computer_state_t state;
+	code_t *code;
 } computer_t;
 
 void set_global_computer(computer_t *computer);
