@@ -72,8 +72,17 @@ typedef union font_data {
 	uint8_t data[VISIBLE_CHARACTERS_SIZE * MAX_CHARACTER_WIDTH * MAX_CHARACTER_HEIGHT];
 } font_data_t;
 
+typedef struct line {
+	char *text;
+} line_t;
+
 typedef struct code {
-	char buffer[CODE_SIZE];
+	line_t *lines;
+	uint64_t line_amount;
+	
+	uint64_t cursor_line;
+	uint64_t cursor_pos;
+	uint64_t target_pos;
 } code_t;
 
 // 8MB RAM (excluding what the lua code takes up)
@@ -97,7 +106,8 @@ typedef struct computer {
 	rgb_color_t rgb_framebuffer[SCREEN_WIDTH * SCREEN_HEIGHT];
 	ram_t *ram;
 	computer_state_t state;
-	code_t *code;
+	code_t code;
+	uint64_t ticks;
 } computer_t;
 
 void set_global_computer(computer_t *computer);

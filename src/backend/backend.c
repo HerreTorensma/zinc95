@@ -29,6 +29,8 @@ void backend_tick_end(computer_t *computer) {
 	#ifdef BACKEND_SDL2
 	sdl2_tick_end();
 	#endif
+
+	computer->ticks++;
 }
 
 bool window_is_open() {

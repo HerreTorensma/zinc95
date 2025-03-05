@@ -204,9 +204,83 @@ static SDL_Scancode key_to_sdl2_scancode(key_t key) {
 		case KEY_Y: return SDL_SCANCODE_Y;
 		case KEY_Z: return SDL_SCANCODE_Z;
 
+		case KEY_0: return SDL_SCANCODE_0;
+		case KEY_1: return SDL_SCANCODE_1;
+		case KEY_2: return SDL_SCANCODE_2;
+		case KEY_3: return SDL_SCANCODE_3;
+		case KEY_4: return SDL_SCANCODE_4;
+		case KEY_5: return SDL_SCANCODE_5;
+		case KEY_6: return SDL_SCANCODE_6;
+		case KEY_7: return SDL_SCANCODE_7;
+		case KEY_8: return SDL_SCANCODE_8;
+		case KEY_9: return SDL_SCANCODE_9;
+
+		case KEY_MINUS: return SDL_SCANCODE_MINUS;
+		case KEY_EQUALS: return SDL_SCANCODE_EQUALS;
+		case KEY_LEFTBRACKET: return SDL_SCANCODE_LEFTBRACKET;
+		case KEY_RIGHTBRACKET: return SDL_SCANCODE_RIGHTBRACKET;
+		case KEY_BACKSLASH: return SDL_SCANCODE_BACKSLASH;
+		case KEY_SEMICOLON: return SDL_SCANCODE_SEMICOLON;
+		case KEY_APOSTROPHE: return SDL_SCANCODE_APOSTROPHE;
+		case KEY_GRAVE: return SDL_SCANCODE_GRAVE;
+		case KEY_COMMA: return SDL_SCANCODE_COMMA;
+		case KEY_PERIOD: return SDL_SCANCODE_PERIOD;
+		case KEY_SLASH: return SDL_SCANCODE_SLASH;
+
+		case KEY_SPACE: return SDL_SCANCODE_SPACE;
+		case KEY_TAB: return SDL_SCANCODE_TAB;
+		case KEY_RETURN: return SDL_SCANCODE_RETURN;
+		case KEY_BACKSPACE: return SDL_SCANCODE_BACKSPACE;
+		case KEY_DELETE: return SDL_SCANCODE_DELETE;
+		case KEY_INSERT: return SDL_SCANCODE_INSERT;
+		case KEY_PAGEUP: return SDL_SCANCODE_PAGEUP;
+		case KEY_PAGEDOWN: return SDL_SCANCODE_PAGEDOWN;
+		case KEY_HOME: return SDL_SCANCODE_HOME;
+		case KEY_END: return SDL_SCANCODE_END;
+		case KEY_UP: return SDL_SCANCODE_UP;
+		case KEY_DOWN: return SDL_SCANCODE_DOWN;
+		case KEY_LEFT: return SDL_SCANCODE_LEFT;
+		case KEY_RIGHT: return SDL_SCANCODE_RIGHT;
+		case KEY_CAPSLOCK: return SDL_SCANCODE_CAPSLOCK;
+
+		case KEY_LCTRL: return SDL_SCANCODE_LCTRL;
+		case KEY_LSHIFT: return SDL_SCANCODE_LSHIFT;
 		case KEY_LALT: return SDL_SCANCODE_LALT;
+		case KEY_RCTRL: return SDL_SCANCODE_RCTRL;
+		case KEY_RSHIFT: return SDL_SCANCODE_RSHIFT;
+		case KEY_RALT: return SDL_SCANCODE_RALT;
+
 		case KEY_ESC: return SDL_SCANCODE_ESCAPE;
-		
+		case KEY_F1: return SDL_SCANCODE_F1;
+		case KEY_F2: return SDL_SCANCODE_F2;
+		case KEY_F3: return SDL_SCANCODE_F3;
+		case KEY_F4: return SDL_SCANCODE_F4;
+		case KEY_F5: return SDL_SCANCODE_F5;
+		case KEY_F6: return SDL_SCANCODE_F6;
+		case KEY_F7: return SDL_SCANCODE_F7;
+		case KEY_F8: return SDL_SCANCODE_F8;
+		case KEY_F9: return SDL_SCANCODE_F9;
+		case KEY_F10: return SDL_SCANCODE_F10;
+		case KEY_F11: return SDL_SCANCODE_F11;
+		case KEY_F12: return SDL_SCANCODE_F12;
+
+		case KEY_NUM0: return SDL_SCANCODE_KP_0;
+		case KEY_NUM1: return SDL_SCANCODE_KP_1;
+		case KEY_NUM2: return SDL_SCANCODE_KP_2;
+		case KEY_NUM3: return SDL_SCANCODE_KP_3;
+		case KEY_NUM4: return SDL_SCANCODE_KP_4;
+		case KEY_NUM5: return SDL_SCANCODE_KP_5;
+		case KEY_NUM6: return SDL_SCANCODE_KP_6;
+		case KEY_NUM7: return SDL_SCANCODE_KP_7;
+		case KEY_NUM8: return SDL_SCANCODE_KP_8;
+		case KEY_NUM9: return SDL_SCANCODE_KP_9;
+		case KEY_NUMPLUS: return SDL_SCANCODE_KP_PLUS;
+		case KEY_NUMMINUS: return SDL_SCANCODE_KP_MINUS;
+		case KEY_NUMMULTIPLY: return SDL_SCANCODE_KP_MULTIPLY;
+		case KEY_NUMDIVIDE: return SDL_SCANCODE_KP_DIVIDE;
+		case KEY_NUMENTER: return SDL_SCANCODE_KP_ENTER;
+		case KEY_NUMPERIOD: return SDL_SCANCODE_KP_PERIOD;
+
 		default: return SDL_SCANCODE_UNKNOWN;
 	}
 }

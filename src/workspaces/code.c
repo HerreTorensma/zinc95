@@ -1,9 +1,12 @@
 #include "code.h"
 
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #include "../api/api.h"
 #include "../util/util.h"
+#include "../backend/input.h"
 
 static rect_t code_rect = {
 	.x = 4,
@@ -12,8 +15,8 @@ static rect_t code_rect = {
 	.h = SCREEN_HEIGHT - 20 - 6,
 };
 
-static char sample_string[] =	"local x = 0;\n"
-								"local y = 50;\n"
+static char sample_string[] =	"local x = 0\n"
+								"local y = 50\n"
 								"\n"
 								"function _init()\n"
 								"	print(\"Called the init function\")\n"
@@ -25,21 +28,378 @@ static char sample_string[] =	"local x = 0;\n"
 								"end\n"
 								"\n"
 								"function _draw()\n"
-								"	cls(2);\n"
+								"	cls(2)\n"
 								"	spr(0, x, y, 1, 1)\n"
 								"end\0";
 
+// Get the amount of lines in a string, used for loading
+static uint64_t string_get_lines_amount(const char *text) {
+	uint64_t amount = 0;
+
+	for (uint64_t i = 0; i < strlen(text); i++) {
+		if (text[i] == '\n' || text[i] == '\0') {
+			amount++;
+		}
+	}
+
+	amount++;
+
+	return amount;
+}
+
+// Append a new line, used for loading a string before editing
+static void line_append(code_t *code, const char *text, int len) {
+	code->lines[code->line_amount].text = malloc((len + 1) * sizeof(char));
+	if (code->lines[code->line_amount].text == NULL) {
+		printf("Couldn't allocate memory for new line\n");
+		exit(1);
+	}
+
+	memcpy(code->lines[code->line_amount].text, text, len);
+
+	code->lines[code->line_amount].text[len] = '\0';
+	code->line_amount++;
+}
+
+// Load a string into the code_t datastructure
+static void string_to_code(code_t *code, const char *text) {
+	char *last_line_start = text;
+	int pos_since_last_line_start = 0;
+	
+	for (uint64_t i = 0; i < strlen(text) + 1; i++) {
+		if (text[i] == '\n' || text[i] == '\0') {
+			if (last_line_start != text) {
+				last_line_start++;
+			}
+			line_append(code, last_line_start, pos_since_last_line_start);
+
+			pos_since_last_line_start = 0;
+			last_line_start = &text[i];
+			
+			continue;
+		}
+
+		pos_since_last_line_start++;
+	}
+}
+
+// Convert the code_t datastructure back to a string for saving
+static void code_to_string() {
+
+}
+
+// Split the line at the given position in 2
+// a new line will be created with anything on the current line after the given pos
+static void split_line_at(code_t *code, uint64_t line, uint64_t pos) {
+	// Realloc lines (not for now)
+	code->lines = realloc(code->lines, (code->line_amount + 1) * sizeof(line_t));
+
+	// Move the lines
+	memmove(&code->lines[line + 1], &code->lines[line], (code->line_amount - line) * sizeof(line_t));
+	code->line_amount++;
+
+	char *after_cursor = &code->lines[line].text[pos];
+	int after_cursor_len = strlen(after_cursor);
+
+	code->lines[line + 1].text = malloc((after_cursor_len + 1) * sizeof(char));
+	if (code->lines[line + 1].text == NULL) {
+		printf("Couldn't allocate memory for new line\n");
+		exit(1);
+	}
+
+	memcpy(code->lines[line + 1].text, after_cursor, after_cursor_len + 1);
+	code->lines[line + 1].text[after_cursor_len] = '\0';
+
+	code->lines[line].text[pos] = '\0';
+	code->lines[line].text = realloc(code->lines[line].text, strlen(code->lines[line].text) + 1);
+}
+
+// Merge the given line with the line above it
+static int merge_line(code_t *code, uint64_t line) {
+	int old_line_len = strlen(code->lines[line - 1].text);
+	int new_line_len = old_line_len + strlen(code->lines[line].text);
+
+	code->lines[line - 1].text = realloc(code->lines[line - 1].text, (new_line_len + 1) * sizeof(char));
+	strcat(code->lines[line - 1].text, code->lines[line].text);
+
+	free(code->lines[line].text);
+	code->lines[line].text = NULL;
+
+	memmove(&code->lines[line], &code->lines[line + 1], (code->line_amount - line - 1) * sizeof(line_t));
+	
+	code->line_amount--;
+
+	return old_line_len;
+}
+
+// Insert a char at a position
+static void insert_char_at(code_t *code, uint64_t line, uint64_t pos, char c) {
+	int len = strlen(code->lines[line].text);
+
+	// + 2, 1 for null terminator and 1 for the new character
+	code->lines[line].text = realloc(code->lines[line].text, len + 2);
+	memmove(&code->lines[line].text[pos] + 1, &code->lines[line].text[pos], strlen(&code->lines[line].text[pos]) + 1);
+
+	code->lines[line].text[pos] = c;
+}
+
+// Remove a char at a position
+static void remove_char_at(code_t *code, uint64_t line, uint64_t pos) {
+	if (pos == 0) {
+		return;
+	}
+
+	int len = strlen(code->lines[line].text);
+
+	memmove(&code->lines[line].text[pos] - 1, &code->lines[line].text[pos], strlen(&code->lines[line].text[pos]) + 1);
+	code->lines[line].text = realloc(code->lines[line].text, len);
+
+	code->cursor_pos--;
+}
+
+// Wrapper
+static inline void insert_char_at_cursor(code_t *code, char c) {
+	insert_char_at(code, code->cursor_line, code->cursor_pos, c);
+	code->cursor_pos++;
+}
+
+// Handle all the character inputs
+static void handle_char_input(computer_t *computer, code_t *code) {
+	// Letters
+	for (int i = KEY_A; i <= KEY_Z; i++) {
+		if (api_keyp(computer, i)) {
+			if (api_key(computer, KEY_LSHIFT) || api_key(computer, KEY_RSHIFT)) {
+				insert_char_at_cursor(code, 'A' + (i - KEY_A));
+			} else {
+				insert_char_at_cursor(code, 'a' + (i - KEY_A));
+			}
+		}
+	}
+
+	// Number row
+	if (api_key(computer, KEY_LSHIFT) || api_key(computer, KEY_RSHIFT)) {
+		if (api_keyp(computer, KEY_1))
+			insert_char_at_cursor(code, '!');
+
+		if (api_keyp(computer, KEY_2))
+			insert_char_at_cursor(code, '@');
+		
+		if (api_keyp(computer, KEY_3))
+			insert_char_at_cursor(code, '#');
+
+		if (api_keyp(computer, KEY_4))
+			insert_char_at_cursor(code, '$');
+
+		if (api_keyp(computer, KEY_5))
+			insert_char_at_cursor(code, '%');
+
+		if (api_keyp(computer, KEY_6))
+			insert_char_at_cursor(code, '^');
+
+		if (api_keyp(computer, KEY_7))
+			insert_char_at_cursor(code, '&');
+
+		if (api_keyp(computer, KEY_8))
+			insert_char_at_cursor(code, '*');
+
+		if (api_keyp(computer, KEY_9))
+			insert_char_at_cursor(code, '(');
+
+		if (api_keyp(computer, KEY_0))
+			insert_char_at_cursor(code, ')');
+	} else {
+		for (int i = 0; i <= 9; i++) {
+			if (api_keyp(computer, KEY_0 + i) || api_keyp(computer, KEY_NUM0 + i)) {
+				insert_char_at_cursor(code, '0' + i);
+			}
+		}
+	}
+
+	// Other characters
+	if (api_key(computer, KEY_LSHIFT) || api_key(computer, KEY_RSHIFT)) {
+		if (api_keyp(computer, KEY_MINUS))
+			insert_char_at_cursor(code, '_');
+
+		if (api_keyp(computer, KEY_EQUALS))
+			insert_char_at_cursor(code, '+');
+
+		if (api_keyp(computer, KEY_LEFTBRACKET))
+			insert_char_at_cursor(code, '{');
+
+		if (api_keyp(computer, KEY_RIGHTBRACKET))
+			insert_char_at_cursor(code, '}');
+
+		if (api_keyp(computer, KEY_BACKSLASH))
+			insert_char_at_cursor(code, '|');
+
+		if (api_keyp(computer, KEY_SEMICOLON))
+			insert_char_at_cursor(code, ':');
+
+		if (api_keyp(computer, KEY_APOSTROPHE))
+			insert_char_at_cursor(code, '\"');
+
+		if (api_keyp(computer, KEY_COMMA))
+			insert_char_at_cursor(code, '<');
+
+		if (api_keyp(computer, KEY_PERIOD))
+			insert_char_at_cursor(code, '>');
+
+		if (api_keyp(computer, KEY_SLASH))
+			insert_char_at_cursor(code, '?');
+
+		if (api_keyp(computer, KEY_GRAVE))
+			insert_char_at_cursor(code, '~');
+
+	} else {
+		if (api_keyp(computer, KEY_MINUS) || api_keyp(computer, KEY_NUMMINUS))
+			insert_char_at_cursor(code, '-');
+
+		if (api_keyp(computer, KEY_EQUALS))
+			insert_char_at_cursor(code, '=');
+
+		if (api_keyp(computer, KEY_LEFTBRACKET))
+			insert_char_at_cursor(code, '[');
+
+		if (api_keyp(computer, KEY_RIGHTBRACKET))
+			insert_char_at_cursor(code, ']');
+
+		if (api_keyp(computer, KEY_BACKSLASH))
+			insert_char_at_cursor(code, '\\');
+
+		if (api_keyp(computer, KEY_SEMICOLON))
+			insert_char_at_cursor(code, ';');
+
+		if (api_keyp(computer, KEY_APOSTROPHE))
+			insert_char_at_cursor(code, '\'');
+
+		if (api_keyp(computer, KEY_COMMA))
+			insert_char_at_cursor(code, ',');
+
+		if (api_keyp(computer, KEY_PERIOD) || api_keyp(computer, KEY_NUMPERIOD))
+			insert_char_at_cursor(code, '.');
+
+		if (api_keyp(computer, KEY_SLASH) || api_keyp(computer, KEY_NUMDIVIDE))
+			insert_char_at_cursor(code, '/');
+
+		if (api_keyp(computer, KEY_GRAVE))
+			insert_char_at_cursor(code, '`');
+
+		}
+	
+	// Some numpad stuff
+	if (api_keyp(computer, KEY_NUMMULTIPLY))
+		insert_char_at_cursor(code, '*');
+
+	if (api_keyp(computer, KEY_NUMPLUS))
+		insert_char_at_cursor(code, '+');
+}
+
 void code_editor_init(computer_t *computer) {
-	memcpy(computer->code->buffer, sample_string, sizeof(sample_string));
+	uint64_t lines_amount = string_get_lines_amount(sample_string);
+
+	computer->code.lines = malloc(lines_amount * sizeof(line_t));
+	if (computer->code.lines == NULL) {
+		printf("Couldn't allocate memory for code\n");
+		exit(1);
+	}
+
+	string_to_code(&computer->code, sample_string);
 }
 
 void code_editor_update(computer_t *computer) {
+	code_t *code = &computer->code;
+	
+	// Cursor movement
+	if (api_keyp(computer, KEY_LEFT)) {
+		if (code->cursor_pos > 0) {
+			code->cursor_pos--;
+		} else {
+			if (code->cursor_line > 0) {
+				code->cursor_line--;
+				code->cursor_pos = strlen(code->lines[code->cursor_line].text);
+			}
+		}
+	}
 
+	if (api_keyp(computer, KEY_RIGHT)) {
+		int len = strlen(code->lines[code->cursor_line].text);
+		if (code->cursor_pos < len) {
+			code->cursor_pos++;
+		} else {
+			if (code->cursor_line < code->line_amount - 1) {
+				code->cursor_line++;
+				code->cursor_pos = 0;
+			}
+		}
+	}
+
+	if (api_keyp(computer, KEY_UP)) {
+		if (code->cursor_line > 0) {
+			code->cursor_line--;
+
+			int len = strlen(code->lines[code->cursor_line].text);
+			if (code->cursor_pos > len) {
+				code->cursor_pos = len;
+			}
+		}
+	}
+
+	if (api_keyp(computer, KEY_DOWN)) {
+		if (code->cursor_line < code->line_amount - 1) {
+			code->cursor_line++;
+		}
+
+		int len = strlen(code->lines[code->cursor_line].text);
+		if (code->cursor_pos > len) {
+			code->cursor_pos = len;
+		}
+	}
+
+	// TODO: page up, page down, home, end
+
+	// Handle space
+	if (api_keyp(computer, KEY_SPACE)) {
+		insert_char_at_cursor(code, ' ');
+	}
+
+	if (api_keyp(computer, KEY_BACKSPACE)) {
+		if (code->cursor_pos == 0) {
+			if (code->cursor_line > 0) {
+				code->cursor_pos = merge_line(code, code->cursor_line);
+				code->cursor_line--;
+			}
+		} else {
+			remove_char_at(code, code->cursor_line, code->cursor_pos);
+		}
+
+	}
+	
+	// Handle return
+	if (api_keyp(computer, KEY_RETURN) || api_keyp(computer, KEY_NUMENTER)) {
+		split_line_at(code, code->cursor_line, code->cursor_pos);
+		code->cursor_line++;
+		code->cursor_pos = 0;
+	}
+
+	handle_char_input(computer, code);
 }
 
 void code_editor_draw(computer_t *computer) {
 	draw_in_frame(computer, code_rect);
 	api_rectf(computer, code_rect.x, code_rect.y, code_rect.w, code_rect.h, 15);
 
-	api_text(computer, computer->code->buffer, code_rect.x + 2, code_rect.y + 2, 0);
+	// TODO: replace with temp alloc
+	char line_number_buffer[8];
+
+	// TODO: fix font so I can refactor this hardcoded mess
+	for (uint64_t i = 0; i < computer->code.line_amount; i++) {
+		sprintf(line_number_buffer, "% 4lld", i + 1);
+		api_text(computer, line_number_buffer, code_rect.x + 2, code_rect.y + 2 + i * 10, 8);
+		api_text(computer, computer->code.lines[i].text, code_rect.x + 2 + 5 * 6, code_rect.y + 2 + i * 10, 0);
+	}
+
+	// Draw cursor
+	if (computer->ticks % 40 < 20) {
+		api_line(computer, code_rect.x + 2 + 5 * 6 + computer->code.cursor_pos * 6, code_rect.y + 2 + computer->code.cursor_line * 10, code_rect.x + 2 + 5 * 6 + computer->code.cursor_pos * 6, code_rect.y + 2 + computer->code.cursor_line * 10 + 8, 3);
+	}
 }

@@ -4,6 +4,7 @@
 
 #include "../util/util.h"
 #include "../api/api.h"
+#include "../backend/input.h"
 
 #include "sprite.h"
 #include "console.h"
@@ -18,7 +19,7 @@ typedef enum workspace_type {
 	WORKSPACE_MUSIC,
 } workspace_type_t;
 
-static workspace_type_t active_workspace = WORKSPACE_SPRITE;
+static workspace_type_t active_workspace = WORKSPACE_CODE;
 
 static rect_t bar_rect = {0};
 static rect_t screen_rect = {0};
@@ -35,6 +36,16 @@ void workspace_menu_init(computer_t *computer) {
 }
 
 void workspace_menu_update(computer_t *computer) {
+	if (api_keyp(computer, KEY_F1)) {
+		active_workspace = WORKSPACE_CONSOLE;
+	}
+	if (api_keyp(computer, KEY_F2)) {
+		active_workspace = WORKSPACE_CODE;
+	}
+	if (api_keyp(computer, KEY_F3)) {
+		active_workspace = WORKSPACE_SPRITE;
+	}
+
 	switch (active_workspace) {
 		case WORKSPACE_CONSOLE:
 			console_update(computer);
