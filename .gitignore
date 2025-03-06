@@ -3,3 +3,6 @@ backup
 zinc95
 zinc95.exe
 *.o
+lib/lua-5.4.7/src/liblua.a
+lib/lua-5.4.7/src/lua
+lib/lua-5.4.7/src/luac

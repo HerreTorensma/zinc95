@@ -175,7 +175,7 @@ void sdl2_quit() {
 	SDL_Quit();
 }
 
-static SDL_Scancode key_to_sdl2_scancode(key_t key) {
+static SDL_Scancode key_to_sdl2_scancode(zinc_key_t key) {
 	switch (key) {
 		case KEY_A: return SDL_SCANCODE_A;
 		case KEY_B: return SDL_SCANCODE_B;
@@ -305,7 +305,7 @@ void sdl2_input_update() {
 	sdl2_input.mouse_state = SDL_GetMouseState(&x, &y);
 }
 
-bool sdl2_input_key_pressed(key_t key) {
+bool sdl2_input_key_pressed(zinc_key_t key) {
 	SDL_Scancode scancode = key_to_sdl2_scancode(key);
 
 	if (sdl2_input.key_state[scancode] && !sdl2_input.prev_key_state[scancode]) {
@@ -314,7 +314,7 @@ bool sdl2_input_key_pressed(key_t key) {
 	return false;
 }
 
-bool sdl2_input_key_held(key_t key) {
+bool sdl2_input_key_held(zinc_key_t key) {
 	SDL_Scancode scancode = key_to_sdl2_scancode(key);
 
 	if (sdl2_input.key_state[scancode]) {
@@ -323,7 +323,7 @@ bool sdl2_input_key_held(key_t key) {
 	return false;
 }
 
-bool sdl2_input_key_released(key_t key) {
+bool sdl2_input_key_released(zinc_key_t key) {
 	SDL_Scancode scancode = key_to_sdl2_scancode(key);
 
 	if (!sdl2_input.key_state[scancode] && sdl2_input.prev_key_state[scancode]) {

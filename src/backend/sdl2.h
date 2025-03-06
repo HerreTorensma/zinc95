@@ -22,11 +22,11 @@ void sdl2_quit();
 
 void sdl2_input_update();
 
-bool sdl2_input_key_pressed(key_t key);
+bool sdl2_input_key_pressed(zinc_key_t key);
 
-bool sdl2_input_key_held(key_t key);
+bool sdl2_input_key_held(zinc_key_t key);
 
-bool sdl2_input_key_released(key_t key);
+bool sdl2_input_key_released(zinc_key_t key);
 
 bool sdl2_input_mouse_button_pressed(mouse_button_t button);
 

@@ -1,4 +1,4 @@
-# IMPORTANT: right now this Makefile only compiles Lua on Windows, I will fix this soon
+# IMPORTANT: this Makefile has not been tested on Linux yet!
 
 CC = gcc
 CFLAGS = -g -Wall -Wextra -Wsign-conversion -Wpedantic -Wconversion -std=c11 -Wno-unused-parameter
@@ -12,11 +12,12 @@ else
 	
 	UNAME_S := $(shell uname -s)
 	ifeq ($(UNAME_S), Linux)
-		LDFLAGS = -lSDL2 -lSDL2_mixer -lm
+		CFLAGS += -Ilib/lua-5.4.7/src
+		LDFLAGS = lib/lua-5.4.7/src/liblua.a -lSDL2 -lSDL2_mixer -lm
 	endif
 	ifeq ($(UNAME_S), Darwin)
-		CFLAGS += -Ilib/SDL2_mac/include
-		LDFLAGS = -Llib/SDL2_mac/lib -lSDL2 -lSDL2_mixer -lm
+		CFLAGS += -Ilib/SDL2_mac/include -Ilib/lua-5.4.7/src
+		LDFLAGS = lib/lua-5.4.7/src/liblua.a -Llib/SDL2_mac/lib -lSDL2 -lSDL2_mixer -lm
 	endif
 endif
 
@@ -26,7 +27,14 @@ OBJ = $(SRC:.c=.o)
 all: libs app
 
 libs:
-	cd lib/lua-5.4.7 && make all PLAT=mingw
+	cd lib/lua-5.4.7 && \
+	if [ "$(OS)" = "Windows_NT" ]; then \
+		make all PLAT=mingw; \
+	elif [ "$(shell uname -s)" = "Linux" ]; then \
+		make all PLAT=linux; \
+	elif [ "$(shell uname -s)" = "Darwin" ]; then \
+		make all PLAT=macosx; \
+	fi
 
 app: $(OBJ)
 	$(CC) -o $(EXECUTABLE) $^ $(LDFLAGS)
@@ -35,4 +43,4 @@ app: $(OBJ)
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 clean:
-	find . -type f -name "*.o" -delete && rm $(EXECUTABLE)
+	find . -type f -name "*.o" -delete && rm -f $(EXECUTABLE) && rm lib/lua-5.4.7/src/liblua.a

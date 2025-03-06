@@ -2,9 +2,9 @@
 
 #include "../computer.h"
 
-void lua_init();
-
 void lua_init(computer_t *computer);
+
+void lua_call_init();
 
 void lua_call_update();
 

@@ -2,7 +2,7 @@
 
 #include <stdbool.h>
 
-typedef enum key {
+typedef enum zinc_key {
 	KEY_UNKNOWN = 0,
 
 	KEY_A,
@@ -109,7 +109,7 @@ typedef enum key {
 	KEY_NUMDIVIDE,
 	KEY_NUMENTER,
 	KEY_NUMPERIOD,
-} key_t;
+} zinc_key_t;
 
 typedef enum mouse_button {
 	MOUSE_BUTTON_UNKNOWN = 0,
@@ -118,11 +118,11 @@ typedef enum mouse_button {
 	MOUSE_BUTTON_RIGHT = 3,
 } mouse_button_t;
 
-bool input_key_pressed(key_t key);
+bool input_key_pressed(zinc_key_t key);
 
-bool input_key_held(key_t key);
+bool input_key_held(zinc_key_t key);
 
-bool input_key_released(key_t key);
+bool input_key_released(zinc_key_t key);
 
 bool input_mouse_button_pressed(mouse_button_t button);
 
