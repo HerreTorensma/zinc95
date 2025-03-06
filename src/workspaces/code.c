@@ -311,24 +311,44 @@ void code_editor_update(computer_t *computer) {
 	
 	// Cursor movement
 	if (api_keyp(computer, KEY_LEFT)) {
-		if (code->cursor_pos > 0) {
-			code->cursor_pos--;
+		if (api_key(computer, KEY_LCTRL) || api_key(computer, KEY_RCTRL)) {
+			for (int i = code->cursor_pos - 1; i >= 0; i--) {
+				if (code->lines[code->cursor_line].text[i] == ' ' || i == 0) {
+					code->cursor_pos = i;
+					break;
+				}
+			}
 		} else {
-			if (code->cursor_line > 0) {
-				code->cursor_line--;
-				code->cursor_pos = strlen(code->lines[code->cursor_line].text);
+			if (code->cursor_pos > 0) {
+				code->cursor_pos--;
+			} else {
+				if (code->cursor_line > 0) {
+					code->cursor_line--;
+					code->cursor_pos = strlen(code->lines[code->cursor_line].text);
+				}
 			}
 		}
 	}
 
 	if (api_keyp(computer, KEY_RIGHT)) {
-		int len = strlen(code->lines[code->cursor_line].text);
-		if (code->cursor_pos < len) {
-			code->cursor_pos++;
+		if (api_key(computer, KEY_LCTRL) || api_key(computer, KEY_RCTRL)) {
+			int len = strlen(code->lines[code->cursor_line].text);
+			
+			for (int i = code->cursor_pos + 1; i < len + 1; i++) {
+				if (code->lines[code->cursor_line].text[i] == ' ' || i == len) {
+					code->cursor_pos = i;
+					break;
+				}
+			}
 		} else {
-			if (code->cursor_line < code->line_amount - 1) {
-				code->cursor_line++;
-				code->cursor_pos = 0;
+			int len = strlen(code->lines[code->cursor_line].text);
+			if (code->cursor_pos < len) {
+				code->cursor_pos++;
+			} else {
+				if (code->cursor_line < code->line_amount - 1) {
+					code->cursor_line++;
+					code->cursor_pos = 0;
+				}
 			}
 		}
 	}

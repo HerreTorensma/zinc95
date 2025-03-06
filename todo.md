@@ -44,6 +44,6 @@
 - Tidying up
 	- Everywhere static global variables are used prefix with _
 	- Fix compiler warnings
-	- Pass ram instead of computer (?)
+	- Pass ram instead of computer in api (?)
 
 ### Done
