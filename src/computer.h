@@ -13,12 +13,9 @@
 
 #define PALETTE_SIZE 256
 
-#define SPRITE_WIDTH 16
-#define SPRITE_HEIGHT 16
-
-#define SPRITE_SHEET_WIDTH 16
-#define SPRITE_SHEET_HEIGHT 8 * 16
-#define SPRITE_PAGE_HEIGHT 16
+// These are in pixels
+#define SPRITE_SHEET_WIDTH 256
+#define SPRITE_SHEET_HEIGHT 256
 
 #define VISIBLE_CHARACTERS_SIZE 96
 #define VISIBLE_CHARACTERS_START 32
@@ -48,29 +45,27 @@ typedef struct framebuffer {
 	uint8_t data[SCREEN_WIDTH * SCREEN_HEIGHT];
 } framebuffer_t;
 
-typedef struct sprite {
-	uint8_t data[SPRITE_WIDTH * SPRITE_HEIGHT];
-} sprite_t;
-
-// There are 8 of these 320x320 spritesheets
-// The last one is reserved for fonts
+// Rename every occurance of sprite_sheet to spritesheet
 typedef struct spritesheet {
-	sprite_t sprites[SPRITE_SHEET_WIDTH * SPRITE_SHEET_HEIGHT];
+	uint16_t sprite_width;
+	uint16_t sprite_height;
+	uint8_t data[SPRITE_SHEET_WIDTH * SPRITE_SHEET_HEIGHT];
 } spritesheet_t;
 
 typedef struct font_meta {
-	uint8_t max_width;
-	uint8_t height;
-	uint8_t spacing;
+	uint8_t sprite_sheet_index;
+	// Index of first character, space ( )
+	uint8_t sprite_index;
 
+	uint8_t width;
+	uint8_t height;
+	uint8_t horizontal_space;
+	uint8_t vertical_space;
+
+	// Bool
+	uint8_t monospace;
 	uint8_t widths[VISIBLE_CHARACTERS_SIZE];
 } font_meta_t;
-
-// Each character in a font is 16*16 pixels
-typedef union font_data {
-	sprite_t sprites[VISIBLE_CHARACTERS_SIZE];
-	uint8_t data[VISIBLE_CHARACTERS_SIZE * MAX_CHARACTER_WIDTH * MAX_CHARACTER_HEIGHT];
-} font_data_t;
 
 typedef struct line {
 	char *text;
@@ -90,8 +85,8 @@ typedef union ram {
 	struct {
 		framebuffer_t framebuffer;
 		palette_t palette;
-		spritesheet_t spritesheet;
-		font_data_t font_data;
+		spritesheet_t spritesheets[12];
+		font_meta_t fonts[8];
 	};
 
 	uint8_t data[RAM_SIZE];
@@ -134,3 +129,15 @@ void play_game(computer_t *computer);
 
 // Quit the currently loaded game
 void quit_game(computer_t *computer);
+
+int sprite_x_to_sprite_sheet_x(ram_t *ram, int sprite_sheet_index, int sprite_index, int x);
+
+int sprite_y_to_sprite_sheet_y(ram_t *ram, int sprite_sheet_index, int sprite_index, int y);
+
+int sprite_get_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int x, int y);
+
+void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int x, int y, uint8_t color);
+
+void draw_sprite_sheet_rect(computer_t *computer, int sprite_sheet_index, int x, int y, rect_t rect);
+
+rect_t sprite_to_spritesheet_rect(ram_t *ram, int sprite_sheet_index, int sprite_index, int w, int h);

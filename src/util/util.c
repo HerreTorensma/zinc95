@@ -99,11 +99,12 @@ bool button_ex(computer_t *computer, char text[], rect_t rect, bool appear_press
 		};
 		
 		draw_in_frame(computer, new_rect);
-		api_text(computer, text, rect.x + 3, rect.y + 3, 0);
+		// api_text(computer, text, rect.x + 3, rect.y + 3, 0);
+		api_text(computer, 0, text, rect.x + 3, rect.y + 3, 0);
 
 	} else {
 		draw_out_frame(computer, rect);
-		api_text(computer, text, rect.x + 3, rect.y + 3, 0);
+		api_text(computer, 0, text, rect.x + 3, rect.y + 3, 0);
 	}
 	
 	return return_value;

@@ -5,15 +5,17 @@
 
 #include "../computer.h"
 
+void draw_sprite_sheet_rect_scaled(computer_t *computer, int sprite_sheet_index, int x, int y, rect_t rect, int scale);
+
 // Fill the screen with specified color
 void api_cls(computer_t *computer, int color);
 
 // --- Graphics/Map
 // Draw a sprite
-void api_spr(computer_t *computer, int index, int x, int y, int width, int height);
+void api_spr(computer_t *computer, int sprite_sheet_index, int sprite_index, int x, int y, int width, int height);
 
 // Draw a scaled sprite
-void api_sspr(computer_t *computer, int index, int x, int y, int width, int height, int scale);
+void api_sspr(computer_t *computer, int sprite_sheet_index, int sprite_index, int x, int y, int width, int height, int scale);
 
 // Draw a portion of the map
 void api_map(computer_t *computer, int x, int y, int width, int height);
@@ -72,4 +74,4 @@ bool api_mouse_btnp(computer_t *computer, int button);
 bool api_mouse_btnr(computer_t *computer, int button);
 
 // --- Text
-void api_text(computer_t *computer, char text[], int x, int y, int color);
+void api_text(computer_t *computer, int font_index, char text[], int x, int y, int color);

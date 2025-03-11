@@ -15,40 +15,23 @@ void api_cls(computer_t *computer, int color) {
 	}
 }
 
-static void draw_sprite(computer_t *computer, sprite_t *sprite, int x, int y) {
-	for (int i = 0; i < SPRITE_HEIGHT; i++) {
-		for (int j = 0; j < SPRITE_WIDTH; j++) {
-			uint8_t color = sprite->data[i * SPRITE_WIDTH + j];
-			set_pixel(computer, x + j, y + i, color);
-		}
-	}
+void api_spr(computer_t *computer, int sprite_sheet_index, int sprite_index, int x, int y, int width, int height) {
+	rect_t rect = sprite_to_spritesheet_rect(computer->ram, sprite_sheet_index, sprite_index, width, height);
+	draw_sprite_sheet_rect(computer, sprite_sheet_index, x, y, rect);
 }
 
-static void draw_sprite_scaled(computer_t *computer, sprite_t *sprite, int x, int y, int scale) {
-	for (int i = 0; i < SPRITE_HEIGHT; i++) {
-		for (int j = 0; j < SPRITE_WIDTH; j++) {
-			uint8_t color = sprite->data[i * SPRITE_WIDTH + j];
+void draw_sprite_sheet_rect_scaled(computer_t *computer, int sprite_sheet_index, int x, int y, rect_t rect, int scale) {
+	for (int i = 0; i < rect.h; i++) {
+		for (int j = 0; j < rect.w; j++) {
+			uint8_t color = computer->ram->spritesheets[sprite_sheet_index].data[(rect.y + i) * SPRITE_SHEET_WIDTH + (rect.x + j)];
 			api_rectf(computer, x + (j * scale), y + (i * scale), scale, scale, color);
 		}
 	}
 }
 
-void api_spr(computer_t *computer, int index, int x, int y, int width, int height) {
-	for (int i = 0; i < height; i++) {
-		for (int j = 0; j < width; j++) {
-			int new_index = index + i * SPRITE_SHEET_WIDTH + j;
-			draw_sprite(computer, &computer->ram->spritesheet.sprites[new_index], x + j, y + i);
-		}
-	}
-}
-
-void api_sspr(computer_t *computer, int index, int x, int y, int width, int height, int scale) {
-	for (int i = 0; i < height; i++) {
-		for (int j = 0; j < width; j++) {
-			int new_index = index + i * SPRITE_SHEET_WIDTH + j;
-			draw_sprite_scaled(computer, &computer->ram->spritesheet.sprites[new_index], x + j, y + i, scale);
-		}
-	}
+void api_sspr(computer_t *computer, int sprite_sheet_index, int sprite_index, int x, int y, int width, int height, int scale) {
+	rect_t rect = sprite_to_spritesheet_rect(computer->ram, sprite_sheet_index, sprite_index, width, height);
+	draw_sprite_sheet_rect_scaled(computer, sprite_sheet_index, x, y, rect, scale);
 }
 
 // Using Bresemham's line algorithm
@@ -127,37 +110,48 @@ bool api_mouse_btnr(computer_t *computer, int button) {
 	return input_mouse_button_released(button);
 }
 
-static void draw_char(computer_t *computer, sprite_t *sprite, int x, int y, int color) {
-	for (int i = 0; i < SPRITE_HEIGHT; i++) {
-		for (int j = 0; j < SPRITE_WIDTH; j++) {
-			uint8_t pixel = sprite->data[i * SPRITE_WIDTH + j];
-			if (pixel == 0) {
-				continue;
-			}
-			pixel = color;
-			set_pixel(computer, x + j, y + i, pixel);
-		}
-	}
-}
+void api_text(computer_t *computer, int font_index, char text[], int x, int y, int color) {
+	font_meta_t *font = &computer->ram->fonts[font_index];
 
-void api_text(computer_t *computer, char text[], int x, int y, int color) {
 	int new_x = x;
 	int new_y = y;
 
 	for (int i = 0; i < strlen(text); i++) {
+
 		// Commented this out for now, might add it back later not sure yet
-		// if (text[i] == '\n') {
-		// 	new_y += 10;
-		// 	new_x = x;
-		// 	continue;
-		// }
+		if (text[i] == '\n') {
+			new_x = 0;
+			new_y += font->height + font->vertical_space;
+			continue;
+		}
 
-		// if (text[i] == '\t') {
-		// 	new_x += 4 * 6;
-		// 	continue;
-		// }
+		if (text[i] == '\t') {
+			if (font->monospace) {
+				new_x += font->width + font->horizontal_space;
+			} else {
+				new_x += font->widths[text[i] - VISIBLE_CHARACTERS_START] + font->horizontal_space;
+			}
 
-		draw_char(computer, &computer->ram->font_data.sprites[text[i] - VISIBLE_CHARACTERS_START], new_x, new_y, color);
-		new_x += 6;
+			continue;
+		}
+
+		int sprite_index = font->sprite_index + (text[i] - VISIBLE_CHARACTERS_START);
+
+		rect_t rect = sprite_to_spritesheet_rect(computer->ram, font->sprite_sheet_index, sprite_index, 1, 1);
+
+		for (int i = 0; i < rect.h; i++) {
+			for (int j = 0; j < rect.w; j++) {
+				uint8_t font_color = computer->ram->spritesheets[font->sprite_sheet_index].data[(rect.y + i) * SPRITE_SHEET_WIDTH + (rect.x + j)];
+				if (font_color != 0) {
+					set_pixel(computer, new_x + j, new_y + i, color);
+				}
+			}
+		}
+
+		if (font->monospace) {
+			new_x += font->width + font->horizontal_space;
+		} else {
+			new_x += font->widths[text[i] - VISIBLE_CHARACTERS_START] + font->horizontal_space;
+		}
 	}
 }
