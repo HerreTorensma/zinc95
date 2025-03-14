@@ -22,6 +22,8 @@
 #define MAX_CHARACTER_WIDTH 16
 #define MAX_CHARACTER_HEIGHT 16
 
+#define TAB_SIZE 4
+
 #define FPS 60
 
 typedef struct rect {

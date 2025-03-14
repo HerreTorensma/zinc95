@@ -126,9 +126,9 @@ void api_text(computer_t *computer, int font_index, char text[], int x, int y, i
 
 		if (text[i] == '\t') {
 			if (font->monospace) {
-				new_x += font->width + font->horizontal_space;
+				new_x += (font->width + font->horizontal_space) * TAB_SIZE;
 			} else {
-				new_x += font->widths[text[i] - VISIBLE_CHARACTERS_START] + font->horizontal_space;
+				new_x += (font->widths[text[' '] - VISIBLE_CHARACTERS_START] + font->horizontal_space) * TAB_SIZE;
 			}
 
 			continue;

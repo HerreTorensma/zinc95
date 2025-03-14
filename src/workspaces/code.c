@@ -15,21 +15,23 @@ static rect_t code_rect = {
 	.h = SCREEN_HEIGHT - 20 - 6,
 };
 
+static const int font_index = 1;
+
 static char sample_string[] =	"local x = 0\n"
 								"local y = 50\n"
 								"\n"
 								"function _init()\n"
-								"  print(\"Called the init function\")\n"
+								"	print(\"Called the init function\")\n"
 								"end\n"
 								"\n"
 								"function _update()\n"
-								"  x = x + 1\n"
-								"  y = y + 1\n"
+								"	x = x + 1\n"
+								"	y = y + 1\n"
 								"end\n"
 								"\n"
 								"function _draw()\n"
-								"  cls(2)\n"
-								"  spr(0, x, y, 1, 1)\n"
+								"	cls(2)\n"
+								"	spr(0, x, y, 1, 1)\n"
 								"end\0";
 
 // Get the amount of lines in a string, used for loading
@@ -83,8 +85,19 @@ static void string_to_code(code_t *code, const char *text) {
 	}
 }
 
+// Get size of code string
+static uint64_t code_get_len(code_t *code) {
+	uint64_t len = 0;
+
+	for (int i = 0; i < code->line_amount; i++) {
+		len += strlen(code->lines[i].text);
+	}
+
+	return len;
+}
+
 // Convert the code_t datastructure back to a string for saving
-static void code_to_string() {
+void code_to_string(code_t *code, char *buffer) {
 
 }
 
@@ -292,6 +305,10 @@ static void handle_char_input(computer_t *computer, code_t *code) {
 
 	if (api_keyp(computer, KEY_NUMPLUS))
 		insert_char_at_cursor(code, '+');
+
+	if (api_keyp(computer, KEY_TAB)) {
+		insert_char_at_cursor(code, '\t');
+	}
 }
 
 void code_editor_init(computer_t *computer) {
@@ -403,8 +420,33 @@ void code_editor_update(computer_t *computer) {
 	handle_char_input(computer, code);
 }
 
+static int get_real_cursor_pos(computer_t *computer) {
+	font_meta_t *font = &computer->ram->fonts[font_index];
+	int pos = 0;
+
+	for (int i = 0; i < computer->code.cursor_pos; i++) {
+		if (computer->code.lines[computer->code.cursor_line].text[i] == '\t') {
+			if (font->monospace) {
+				pos += (font->width + font->horizontal_space) * TAB_SIZE;
+			} else {
+				pos += (font->widths[computer->code.lines[computer->code.cursor_line].text[' '] - VISIBLE_CHARACTERS_START] + font->horizontal_space) * TAB_SIZE;
+			}
+
+			continue;
+		}
+
+		if (font->monospace) {
+			pos += font->width + font->horizontal_space;
+		} else {
+			pos += font->widths[computer->code.lines[computer->code.cursor_line].text[i] - VISIBLE_CHARACTERS_START] + font->horizontal_space;
+		}
+	}
+
+	return pos;
+}
+
 void code_editor_draw(computer_t *computer) {
-	font_meta_t *font = &computer->ram->fonts[1];
+	font_meta_t *font = &computer->ram->fonts[font_index];
 
 	draw_in_frame(computer, code_rect);
 	// api_rectf(computer, code_rect.x, code_rect.y, code_rect.w, code_rect.h, 15);
@@ -419,8 +461,8 @@ void code_editor_draw(computer_t *computer) {
 		// api_text(computer, 0, line_number_buffer, code_rect.x + 2, code_rect.y + 2 + i * 10, 8);
 		// api_text(computer, 0, computer->code.lines[i].text, code_rect.x + 2 + 5 * 6, code_rect.y + 2 + i * 10, 0);
 
-		api_text(computer, 1, line_number_buffer, code_rect.x + 2, code_rect.y + 2 + (i * (font->height + font->vertical_space)), 8);
-		api_text(computer, 1, computer->code.lines[i].text, code_rect.x + 2 + 5 * (font->width + font->horizontal_space), code_rect.y + 2 + (i * (font->height + font->vertical_space)), 0);
+		api_text(computer, font_index, line_number_buffer, code_rect.x + 2, code_rect.y + 2 + (i * (font->height + font->vertical_space)), 8);
+		api_text(computer, font_index, computer->code.lines[i].text, code_rect.x + 2 + 5 * (font->width + font->horizontal_space), code_rect.y + 2 + (i * (font->height + font->vertical_space)), 0);
 	}
 
 
@@ -428,7 +470,8 @@ void code_editor_draw(computer_t *computer) {
 	if (computer->ticks % 40 < 20) {
 		// api_line(computer, code_rect.x + 2 + 5 * 6 + computer->code.cursor_pos * 6, code_rect.y + 2 + computer->code.cursor_line * 10, code_rect.x + 2 + 5 * 6 + computer->code.cursor_pos * 6, code_rect.y + 2 + computer->code.cursor_line * 10 + 8, 3);
 		// int cursor_x = code_rect.x + 2 + 4 * font->width + computer->code.cursor_pos * font->width;
-		int cursor_x = code_rect.x + 2 + 5 * (font->width + font->horizontal_space) + (computer->code.cursor_pos * (font->width + font->horizontal_space));
+		// int cursor_x = code_rect.x + 2 + 5 * (font->width + font->horizontal_space) + (computer->code.cursor_pos * (font->width + font->horizontal_space));
+		int cursor_x = code_rect.x + 2 + 5 * (font->width + font->horizontal_space) + get_real_cursor_pos(computer);
 		int cursor_y = code_rect.y + 2 + computer->code.cursor_line * (font->height + font->vertical_space);
 		api_line(computer, cursor_x, cursor_y, cursor_x, cursor_y + font->height, 3);
 	}
