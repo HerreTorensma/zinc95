@@ -30,8 +30,8 @@ static char sample_string[] =	"local x = 0\n"
 								"end\n"
 								"\n"
 								"function _draw()\n"
-								"	cls(2)\n"
-								"	spr(0, x, y, 1, 1)\n"
+								"	cls(0)\n"
+								"	spr(0, 0, x, y, 1, 1)\n"
 								"end\0";
 
 // Get the amount of lines in a string, used for loading
@@ -97,8 +97,22 @@ static uint64_t code_get_len(code_t *code) {
 }
 
 // Convert the code_t datastructure back to a string for saving
+// the function assumes that passed buffer is large enough
 void code_to_string(code_t *code, char *buffer) {
+	uint64_t buffer_pos = 0;
 
+	for (int i = 0; i < code->line_amount; i++) {
+		int line_len = strlen(code->lines[i].text);
+		
+		memcpy(&buffer[buffer_pos], code->lines[i].text, (line_len + 1) * sizeof(char));
+		
+		if (i < code->line_amount - 1) {
+			buffer[buffer_pos + line_len] = '\n';
+		} else {
+			buffer[buffer_pos + line_len] = '\0';
+		}
+		buffer_pos += line_len + 1;
+	}
 }
 
 // Split the line at the given position in 2

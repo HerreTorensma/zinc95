@@ -89,6 +89,7 @@ typedef union ram {
 		palette_t palette;
 		spritesheet_t spritesheets[12];
 		font_meta_t fonts[8];
+		char code_buffer[1024 * 1024];
 	};
 
 	uint8_t data[RAM_SIZE];

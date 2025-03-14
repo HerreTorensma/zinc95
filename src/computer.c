@@ -195,6 +195,9 @@ bool point_in_rect(int x, int y, rect_t rect) {
 }
 
 void play_game(computer_t *computer) {
+	// Convert code to string
+	code_to_string(computer->code, computer->ram->code_buffer);
+
 	// Init the lua stuff
 	lua_init(computer);
 	lua_call_init();

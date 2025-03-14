@@ -47,8 +47,9 @@ void lua_init(computer_t *computer) {
 	lua_register(_lua, "cls", lua_cls);
 	lua_register(_lua, "spr", lua_spr);
 
-	if (luaL_dofile(_lua, "test.lua") != LUA_OK) {
+	// if (luaL_dofile(_lua, "test.lua") != LUA_OK) {
 	// if (luaL_dostring(_lua, computer->code->buffer) != LUA_OK) {
+	if (luaL_dostring(_lua, computer->ram->code_buffer) != LUA_OK) {
 		printf("Error loading Lua script: %s\n", lua_tostring(_lua, -1));
 		lua_pop(_lua, 1);
 	}
