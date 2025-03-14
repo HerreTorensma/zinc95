@@ -117,7 +117,6 @@ void api_text(computer_t *computer, int font_index, char text[], int x, int y, i
 	int new_y = y;
 
 	for (int i = 0; i < strlen(text); i++) {
-
 		// Commented this out for now, might add it back later not sure yet
 		if (text[i] == '\n') {
 			new_x = 0;
@@ -131,6 +130,28 @@ void api_text(computer_t *computer, int font_index, char text[], int x, int y, i
 			} else {
 				new_x += font->widths[text[i] - VISIBLE_CHARACTERS_START] + font->horizontal_space;
 			}
+
+			continue;
+		}
+
+		// Inline sprites
+		if (text[i] == '~') {
+			int sprite_index = 0;
+
+			// Read the digits after
+			int index = i + 1;
+			while (text[index] >= '0' && text[index] <= '9') {
+				sprite_index *= 10;
+				sprite_index += text[index] - '0';
+
+				index++;
+			}
+
+			// Only sprite sheet 0 now
+			api_spr(computer, 0, sprite_index, new_x, new_y, 1, 1);
+			new_x += 16 + font->horizontal_space;
+
+			i = index - 1;
 
 			continue;
 		}
