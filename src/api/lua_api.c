@@ -25,17 +25,16 @@ static void lua_cls(lua_State *lua) {
 }
 
 static void lua_spr(lua_State *lua) {
-	if (lua_gettop(lua) == 6) {
-		if (lua_isnumber(lua, 1) && lua_isnumber(lua, 2) && lua_isnumber(lua, 3) && lua_isnumber(lua, 4) && lua_isnumber(lua, 5) && lua_isnumber(lua, 6)) {
+	if (lua_gettop(lua) == 5) {
+		if (lua_isnumber(lua, 1) && lua_isnumber(lua, 2) && lua_isnumber(lua, 3) && lua_isnumber(lua, 4) && lua_isnumber(lua, 5)) {
 			computer_t *computer = get_global_computer();
-			int sprite_sheet_index = lua_tointeger(lua, 1);
-			int sprite_index = lua_tointeger(lua, 2);
-			int x = lua_tointeger(lua, 3);
-			int y = lua_tointeger(lua, 4);
-			int width = lua_tointeger(lua, 5);
-			int height = lua_tointeger(lua, 6);
+			int sprite_index = lua_tointeger(lua, 1);
+			int x = lua_tointeger(lua, 2);
+			int y = lua_tointeger(lua, 3);
+			int width = lua_tointeger(lua, 4);
+			int height = lua_tointeger(lua, 5);
 
-			api_spr(computer, sprite_sheet_index, sprite_index, x, y, width, height);
+			api_spr(computer, sprite_index, x, y, width, height);
 		}
 	}
 }

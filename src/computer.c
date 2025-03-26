@@ -28,23 +28,16 @@ void computer_init(computer_t *computer) {
 
 	computer->ram->palette = default_palette;
 
-	computer->ram->spritesheets[0].sprite_width = 16;
-	computer->ram->spritesheets[0].sprite_height = 16;
+	memcpy(computer->ram->spritesheet.data, builtin_spritesheet, SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT);
 
-	computer->ram->spritesheets[9].sprite_width = 16;
-	computer->ram->spritesheets[9].sprite_height = 16;
-	computer->ram->spritesheets[10].sprite_width = 8;
-	computer->ram->spritesheets[10].sprite_height = 8;
-
-	memcpy(computer->ram->spritesheets[9].data, system_spritesheet0, SPRITE_SHEET_WIDTH * SPRITE_SHEET_HEIGHT);
-	memcpy(computer->ram->spritesheets[10].data, system_spritesheet1, SPRITE_SHEET_WIDTH * SPRITE_SHEET_HEIGHT);
-
-	computer->ram->fonts[0] = (font_meta_t){
-		.sprite_sheet_index = 9,
+	computer->ram->fonts[0] = (font_t){
 		.sprite_index = 0,
 		.horizontal_space = 1,
 		.vertical_space = 3,
+		.width = 8,
 		.height = 10,
+		.h_sprites = 1,
+		.v_sprites = 2,
 
 		.monospace = false,
 		.widths = {
@@ -66,7 +59,7 @@ void computer_init(computer_t *computer) {
 			4, // /
 
 			5, // 0
-			3, // 1
+			5, // 1
 			5, // 2
 			5, // 3
 			5, // 4
@@ -82,7 +75,7 @@ void computer_init(computer_t *computer) {
 			5, // >
 			5, // ?
 
-			10, // @
+			8, // @
 			7, // A
 			5, // B
 			6, // C
@@ -106,7 +99,7 @@ void computer_init(computer_t *computer) {
 			5, // T
 			6, // U
 			7, // V
-			11, // W
+			5, // W
 			7, // X
 			7, // Y
 			7, // Z
@@ -114,7 +107,7 @@ void computer_init(computer_t *computer) {
 			4, // backslash fuck it
 			2, // ]
 			5, // ^
-			4, // _
+			5, // _
 
 			3, // `
 			5, // a
@@ -151,14 +144,26 @@ void computer_init(computer_t *computer) {
 		},
 	};
 
-	computer->ram->fonts[1] = (font_meta_t){
-		.sprite_sheet_index = 10,
-		.sprite_index = 0,
+	computer->ram->fonts[1] = (font_t){
+		.sprite_index = 192,
+		.horizontal_space = 1,
+		.vertical_space = 0,
+		.monospace = true,
+		.width = 6,
+		.height = 10,
+		.h_sprites = 1,
+		.v_sprites = 2,
+	};
+
+	computer->ram->fonts[2] = (font_t){
+		.sprite_index = 384,
 		.horizontal_space = 0,
 		.vertical_space = 0,
 		.monospace = true,
 		.width = 8,
 		.height = 8,
+		.h_sprites = 1,
+		.v_sprites = 1,
 	};
 }
 
@@ -212,19 +217,21 @@ void quit_game(computer_t *computer) {
 	lua_quit();
 }
 
+// TODO: reimplement this for the new sprite system, when I need it
+/*
 int sprite_x_to_sprite_sheet_x(ram_t *ram, int sprite_sheet_index, int sprite_index, int x) {
-	int sprite_width = ram->spritesheets[sprite_sheet_index].sprite_width;
+	// int sprite_width = ram->spritesheets[sprite_sheet_index].sprite_width;
 
-	int sprite_x = sprite_index % (SPRITE_SHEET_WIDTH / sprite_width);
+	int sprite_x = sprite_index % (SPRITESHEET_WIDTH / SPRITE_WIDTH);
 
-	return (sprite_x * sprite_width) + x;
+	return (sprite_x * SPRITE_WIDTH) + x;
 }
 
 int sprite_y_to_sprite_sheet_y(ram_t *ram, int sprite_sheet_index, int sprite_index, int y) {
 	int sprite_width = ram->spritesheets[sprite_sheet_index].sprite_width;
 	int sprite_height = ram->spritesheets[sprite_sheet_index].sprite_height;
 
-	int sprite_y = sprite_index / (SPRITE_SHEET_WIDTH / sprite_width);
+	int sprite_y = sprite_index / (SPRITESHEET_WIDTH / sprite_width);
 
 	return (sprite_y * sprite_height) + y;
 }
@@ -233,36 +240,39 @@ int sprite_get_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int x
 	int sprite_sheet_x = sprite_x_to_sprite_sheet_x(ram, sprite_sheet_index, sprite_index, x);
 	int sprite_sheet_y = sprite_y_to_sprite_sheet_y(ram, sprite_sheet_index, sprite_index, y);
 
-	return ram->spritesheets[sprite_sheet_index].data[sprite_sheet_y * SPRITE_SHEET_WIDTH + sprite_sheet_x];
+	return ram->spritesheets[sprite_sheet_index].data[sprite_sheet_y * SPRITESHEET_WIDTH + sprite_sheet_x];
 }
 
 void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int x, int y, uint8_t color) {
 	int sprite_sheet_x = sprite_x_to_sprite_sheet_x(ram, sprite_sheet_index, sprite_index, x);
 	int sprite_sheet_y = sprite_y_to_sprite_sheet_y(ram, sprite_sheet_index, sprite_index, y);
 
-	ram->spritesheets[sprite_sheet_index].data[sprite_sheet_y * SPRITE_SHEET_WIDTH + sprite_sheet_x] = color;
+	ram->spritesheets[sprite_sheet_index].data[sprite_sheet_y * SPRITESHEET_WIDTH + sprite_sheet_x] = color;
 }
+*/
 
-void draw_sprite_sheet_rect(computer_t *computer, int sprite_sheet_index, int x, int y, rect_t rect) {
+// void draw_sprite_sheet_rect(computer_t *computer, int sprite_sheet_index, int x, int y, rect_t rect) {
+void draw_sprite_sheet_rect(computer_t *computer, int x, int y, rect_t rect) {
 	for (int i = 0; i < rect.h; i++) {
 		for (int j = 0; j < rect.w; j++) {
-			uint8_t color = computer->ram->spritesheets[sprite_sheet_index].data[(rect.y + i) * SPRITE_SHEET_WIDTH + (rect.x + j)];
+			uint8_t color = computer->ram->spritesheet.data[(rect.y + i) * SPRITESHEET_WIDTH + (rect.x + j)];
 			set_pixel(computer, x + j, y + i, color);
 		}
 	}
 }
 
-rect_t sprite_to_spritesheet_rect(ram_t *ram, int sprite_sheet_index, int sprite_index, int w, int h) {
-	int sprite_width = ram->spritesheets[sprite_sheet_index].sprite_width;
-	int sprite_height = ram->spritesheets[sprite_sheet_index].sprite_height;
+// rect_t sprite_to_spritesheet_rect(ram_t *ram, int sprite_sheet_index, int sprite_index, int w, int h) {
+rect_t sprite_to_spritesheet_rect(ram_t *ram, int sprite_index, int w, int h) {
+	// int sprite_width = ram->spritesheets[sprite_sheet_index].sprite_width;
+	// int sprite_height = ram->spritesheets[sprite_sheet_index].sprite_height;
 	
-	int sprites_per_row = SPRITE_SHEET_WIDTH / sprite_width;
+	// int sprites_per_row = SPRITESHEET_WIDTH / SPRITE_WIDTH;
 
 	rect_t rect = {
-		.x = (sprite_index % sprites_per_row) * sprite_width,
-		.y = (sprite_index / sprites_per_row) * sprite_height,
-		.w = w * sprite_width,
-		.h = h * sprite_height,
+		.x = (sprite_index % SPRITES_PER_ROW) * SPRITE_WIDTH,
+		.y = (sprite_index / SPRITES_PER_ROW) * SPRITE_HEIGHT,
+		.w = w * SPRITE_WIDTH,
+		.h = h * SPRITE_HEIGHT,
 	};
 
 	return rect;

@@ -7,148 +7,277 @@
 #include "../backend/input.h"
 #include "../util/util.h"
 
-static rect_t sprite_sheet_rect = {0};
+#define COLOR_SQUARE_SIZE 8
+
+static rect_t spritesheet_rect = {0};
 static rect_t color_picker_rect = {0};
 static rect_t sprite_editor_rect = {0};
 
 static uint8_t selected_color = 0;
-static int selected_index = 0;
+static int selected_sprite_index_offset = 0;
 static int selected_spritesheet_index = 0;
-static rect_t spritesheet_visible_rect = {0};
 
-void sprite_editor_init(computer_t *computer) {
-	int sprite_width = computer->ram->spritesheets[selected_spritesheet_index].sprite_width;
-	int sprite_height = computer->ram->spritesheets[selected_spritesheet_index].sprite_height;
+static rect_t visible_rect = {0};
+static rect_t currently_editing_rect = {0};
 
-	sprite_sheet_rect = (rect_t){4, 152, 256, 256};
-	color_picker_rect = (rect_t){4, sprite_sheet_rect.y + sprite_sheet_rect.h + 4, 256, 64};
-	sprite_editor_rect = (rect_t){324, sprite_sheet_rect.y, 256, 256};
-
-	spritesheet_visible_rect = (rect_t){
+static void set_selected_spritesheet_index(int index) {
+	selected_spritesheet_index = index;
+	visible_rect = (rect_t){
 		.x = 0,
-		.y = 0,
-		.w = sprite_width,
-		.h = sprite_height,
+		.y = selected_spritesheet_index * SPRITESHEET_PAGE_HEIGHT,
+		.w = SPRITESHEET_PAGE_WIDTH,
+		.h = SPRITESHEET_PAGE_HEIGHT,
 	};
 }
 
-void sprite_editor_update(computer_t *computer) {
-	int sprite_width = computer->ram->spritesheets[selected_spritesheet_index].sprite_width;
-	int sprite_height = computer->ram->spritesheets[selected_spritesheet_index].sprite_height;
+void sprite_editor_init(computer_t *computer) {
+	// spritesheet_rect = (rect_t){4, 128, 256, 256};
+	// spritesheet_rect = (rect_t){200, 348, 420, 128};
+	spritesheet_rect = (rect_t){200, 348, 384, 128};
+	// color_picker_rect = (rect_t){4, spritesheet_rect.y + spritesheet_rect.h + 4, 192, 88};
+	color_picker_rect = (rect_t){4, 388, 192, 88};
 
+	// sprite_editor_rect = (rect_t){324, spritesheet_rect.y, 256, 256};
+	sprite_editor_rect = (rect_t){192, 56, 256, 256};
+	// sprite_editor_rect = (rect_t){color_picker_rect.x, spritesheet_rect.y, 256, 256};
+
+	visible_rect = (rect_t){
+		.x = 0,
+		.y = selected_spritesheet_index * SPRITESHEET_PAGE_HEIGHT,
+		.w = SPRITESHEET_PAGE_WIDTH,
+		.h = SPRITESHEET_PAGE_HEIGHT,
+	};
+
+	currently_editing_rect = (rect_t){
+		.x = 0,
+		.y = 0,
+		.w = SPRITE_WIDTH,
+		.h = SPRITE_HEIGHT,
+	};
+}
+
+static void color_to_coords(uint8_t color, int *x, int *y) {
+	if (color < 32) {
+		*x = color_picker_rect.x + (color % 16) * COLOR_SQUARE_SIZE;
+		*y = color_picker_rect.y + (color / 16) * COLOR_SQUARE_SIZE;
+	} else {
+		*x = color_picker_rect.x + ((color - 32) % 24) * COLOR_SQUARE_SIZE;
+		*y = color_picker_rect.y + 2 * COLOR_SQUARE_SIZE + ((color - 32) / 24) * COLOR_SQUARE_SIZE;
+	}
+}
+
+static uint8_t coords_to_color(int x, int y) {
+	int cell_x = (x - color_picker_rect.x) / COLOR_SQUARE_SIZE;
+	int cell_y = (y - color_picker_rect.y) / COLOR_SQUARE_SIZE;
+
+	if ((cell_y == 0 || cell_y == 1) && cell_x >= 16) {
+		return 0;
+	}
+
+	if (cell_y == 0) {
+		return cell_x;
+	} else if (cell_y == 1) {
+		return 16 + cell_x;
+	} else {
+		return 32 + ((cell_y - 2) * 24 + cell_x);
+	}
+}
+
+void sprite_editor_update(computer_t *computer) {
 	int x, y;
 	get_mouse_pos(&x, &y);
 
 	if (api_keyp(computer, KEY_MINUS)) {
-		spritesheet_visible_rect.w -= sprite_width;
-		spritesheet_visible_rect.h -= sprite_height;
+		currently_editing_rect.w -= SPRITE_WIDTH;
+		currently_editing_rect.h -= SPRITE_HEIGHT;
 		
-		if (spritesheet_visible_rect.w <= 0) {
-			spritesheet_visible_rect.w = sprite_width;
+		if (currently_editing_rect.w <= 0) {
+			currently_editing_rect.w = SPRITE_WIDTH;
 		}
-		if (spritesheet_visible_rect.h <= 0) {
-			spritesheet_visible_rect.h = sprite_height;
+		if (currently_editing_rect.h <= 0) {
+			currently_editing_rect.h = SPRITE_HEIGHT;
 		}
 	}
 	if (api_keyp(computer, KEY_EQUALS)) {
-		spritesheet_visible_rect.w += sprite_width;
-		spritesheet_visible_rect.h += sprite_height;
+		currently_editing_rect.w += SPRITE_WIDTH;
+		currently_editing_rect.h += SPRITE_HEIGHT;
 	}
 
-	if (point_in_rect(x, y, sprite_sheet_rect)) {
+	if (point_in_rect(x, y, spritesheet_rect)) {
 		if (api_mouse_btn(computer, 1)) {
-			int cell_x = (x - sprite_sheet_rect.x) / sprite_width;
-			int cell_y = (y - sprite_sheet_rect.y) / sprite_height;
+			int cell_x = (x - spritesheet_rect.x) / SPRITE_WIDTH;
+			int cell_y = (y - spritesheet_rect.y) / SPRITE_HEIGHT;
 
-			selected_index = cell_y * (SPRITE_SHEET_WIDTH / sprite_width) + cell_x;
+			selected_sprite_index_offset = cell_y * (SPRITESHEET_WIDTH / SPRITE_WIDTH) + cell_x;
 
-			spritesheet_visible_rect.x = cell_x * sprite_width;
-			spritesheet_visible_rect.y = cell_y * sprite_height;
+			currently_editing_rect.x = cell_x * SPRITE_WIDTH;
+			currently_editing_rect.y = cell_y * SPRITE_HEIGHT;
 
 			// Free movement
-			// spritesheet_visible_rect.x = x - sprite_sheet_rect.x;
-			// spritesheet_visible_rect.y = y - sprite_sheet_rect.y;
+			// currently_editing_rect.x = x - spritesheet_rect.x;
+			// currently_editing_rect.y = y - spritesheet_rect.y;
 		}
 	}
 
 	if (point_in_rect(x, y, color_picker_rect)) {
 		if (api_mouse_btn(computer, 1)) {
-			int cell_x = (x - color_picker_rect.x) / 8;
-			int cell_y = (y - color_picker_rect.y) / 8;
-
-			selected_color = cell_y * 32 + cell_x;
+			selected_color = coords_to_color(x, y);
 		}
 	}
 
 	if (point_in_rect(x, y, sprite_editor_rect)) {
 		// int cell_x = (x - sprite_editor_rect.x) / (sprite_editor_rect.w / sprite_width);
 		// int cell_y = (y - sprite_editor_rect.y) / (sprite_editor_rect.h / sprite_height);
-		int cell_x = (x - sprite_editor_rect.x) / (sprite_editor_rect.w / spritesheet_visible_rect.w);
-		int cell_y = (y - sprite_editor_rect.y) / (sprite_editor_rect.h / spritesheet_visible_rect.h);
+		int cell_x = (x - sprite_editor_rect.x) / (sprite_editor_rect.w / currently_editing_rect.w);
+		int cell_y = (y - sprite_editor_rect.y) / (sprite_editor_rect.h / currently_editing_rect.h);
 		
 		if (api_mouse_btn(computer, 1)) {
 			if (api_key(computer, KEY_LALT) || api_key(computer, KEY_RALT)) {
-				selected_color = computer->ram->spritesheets[selected_spritesheet_index].data[(spritesheet_visible_rect.y + cell_y) * SPRITE_SHEET_WIDTH + (spritesheet_visible_rect.x + cell_x)];
+				selected_color = computer->ram->spritesheet.data[(visible_rect.y + currently_editing_rect.y + cell_y) * SPRITESHEET_WIDTH + (visible_rect.x + currently_editing_rect.x + cell_x)];
 			}
 
-			computer->ram->spritesheets[selected_spritesheet_index].data[(spritesheet_visible_rect.y + cell_y) * SPRITE_SHEET_WIDTH + (spritesheet_visible_rect.x + cell_x)] = selected_color;
+			computer->ram->spritesheet.data[(visible_rect.y + currently_editing_rect.y + cell_y) * SPRITESHEET_WIDTH + (visible_rect.x + currently_editing_rect.x + cell_x)] = selected_color;
 
 		}
 
 		if (api_mouse_btn(computer, 3)) {
-			computer->ram->spritesheets[selected_spritesheet_index].data[(spritesheet_visible_rect.y + cell_y) * SPRITE_SHEET_WIDTH + (spritesheet_visible_rect.x + cell_x)] = 0;
+			computer->ram->spritesheet.data[(visible_rect.y + currently_editing_rect.y + cell_y) * SPRITESHEET_WIDTH + (visible_rect.x + currently_editing_rect.x + cell_x)] = 0;
 		}
 	}
 }
 
+static inline int get_sprite_index() {
+	return (selected_spritesheet_index * SPRITES_PER_PAGE) + selected_sprite_index_offset;
+}
+
+static bool toggle_button(computer_t *computer, char text[], rect_t rect, bool *pressed) {
+	int x, y;
+	get_mouse_pos(&x, &y);
+	
+	if (point_in_rect(x, y, rect)) {
+		if (api_mouse_btnp(computer, 1)) {
+			*pressed = !(*pressed);
+		}
+	}
+	
+	if (*pressed) {
+		rect_t new_rect = {
+			.x = rect.x + 2,
+			.y = rect.y + 2,
+			.w = rect.w - 4,
+			.h = rect.h - 4,
+		};
+		
+		draw_in_frame(computer, new_rect);
+		api_text(computer, 2, text, rect.x + 2, rect.y + 2, 2);
+
+	} else {
+		draw_out_frame(computer, rect);
+		api_text(computer, 2, text, rect.x + 2, rect.y + 2, 4);
+	}
+	
+	return *pressed;
+}
+
 void sprite_editor_draw(computer_t *computer) {
-	int sprite_width = computer->ram->spritesheets[selected_spritesheet_index].sprite_width;
-	int sprite_height = computer->ram->spritesheets[selected_spritesheet_index].sprite_height;
+	draw_in_frame(computer, spritesheet_rect);
+	draw_sprite_sheet_rect(computer, spritesheet_rect.x, spritesheet_rect.y, visible_rect);
 
-	draw_in_frame(computer, sprite_sheet_rect);
-	draw_sprite_sheet_rect(computer, selected_spritesheet_index, sprite_sheet_rect.x, sprite_sheet_rect.y, (rect_t){0, 0, SPRITE_SHEET_WIDTH, SPRITE_SHEET_HEIGHT});
+	for (int i = 0; i < 8; i++) {
+		rect_t rect = {
+			.x = spritesheet_rect.x + spritesheet_rect.w + 2,
+			.y = spritesheet_rect.y + 2 + i * 16,
+			.w = 52,
+			.h = 16,
+		};
 
-	api_rect(
-		computer,
-		sprite_sheet_rect.x + spritesheet_visible_rect.x,
-		sprite_sheet_rect.y + spritesheet_visible_rect.y,
-		spritesheet_visible_rect.w,
-		spritesheet_visible_rect.h,
-		15
-	);
-
-	draw_in_frame(computer, color_picker_rect);
-	for (int i = 0; i < PALETTE_SIZE; i++) {
-		api_rectf(computer, color_picker_rect.x + (i % 32) * 8, color_picker_rect.y + (i / 32) * 8, 8, 8, i);
+		char buffer[3];
+		sprintf(buffer, "%d", i + 1);
+		
+		if (button_ex(computer, buffer, rect, selected_spritesheet_index == i)) {
+			// selected_spritesheet_index = i;
+			set_selected_spritesheet_index(i);
+		}
 	}
 
 	api_rect(
 		computer,
-		color_picker_rect.x + (selected_color % 32) * 8 - 1,
-		color_picker_rect.y + (selected_color / 32) * 8 - 1,
-		8 + 2,
-		8 + 2,
+		spritesheet_rect.x + currently_editing_rect.x - 1,
+		spritesheet_rect.y + currently_editing_rect.y - 1,
+		currently_editing_rect.w + 2,
+		currently_editing_rect.h + 2,
 		15
 	);
 
+	draw_in_frame(computer, color_picker_rect);
+	api_rectf(computer, color_picker_rect.x, color_picker_rect.y, color_picker_rect.w, color_picker_rect.h, 0);
+
+	// Draw colors
+	for (int i = 0; i < PALETTE_SIZE - 8; i++) {
+		int color_square_x, color_square_y;
+		color_to_coords(i, &color_square_x, &color_square_y);
+		api_rectf(computer, color_square_x, color_square_y, COLOR_SQUARE_SIZE, COLOR_SQUARE_SIZE, i);
+	}
+
+	// Draw selected color square
+	int color_square_x, color_square_y;
+	color_to_coords(selected_color, &color_square_x, &color_square_y);
+	api_rect(computer, color_square_x - 1, color_square_y - 1, COLOR_SQUARE_SIZE + 2, COLOR_SQUARE_SIZE + 2, 15);
+
+	// Sprite editor
 	draw_in_frame(computer, sprite_editor_rect);
-	draw_sprite_sheet_rect_scaled(computer, selected_spritesheet_index, sprite_editor_rect.x, sprite_editor_rect.y, spritesheet_visible_rect, 256 / spritesheet_visible_rect.w);
+	rect_t idk = {
+		.x = visible_rect.x + currently_editing_rect.x,
+		.y = visible_rect.y + currently_editing_rect.y,
+		.w = currently_editing_rect.w,
+		.h = currently_editing_rect.h,
+	};
+	draw_sprite_sheet_rect_scaled(computer, sprite_editor_rect.x, sprite_editor_rect.y, idk, sprite_editor_rect.w / currently_editing_rect.w);
 
+	// Selected color
 	char buffer[32];
-	draw_in_frame(computer, (rect_t){sprite_sheet_rect.x, sprite_sheet_rect.y - 40, 16, 16});
-	api_rectf(computer, sprite_sheet_rect.x, sprite_sheet_rect.y - 40, 16, 16, selected_color);
+	// draw_in_frame(computer, (rect_t){color_picker_rect.x, color_picker_rect.y - 40, 16, 16});
+	draw_in_frame(computer, (rect_t){color_picker_rect.x, color_picker_rect.y - 20, 16, 16});
+	// api_rectf(computer, color_picker_rect.x, color_picker_rect.y - 40, 16, 16, selected_color);
+	api_rectf(computer, color_picker_rect.x, color_picker_rect.y - 20, 16, 16, selected_color);
 	sprintf(buffer, "#%03d\n", selected_color);
-	api_text(computer, 0, buffer, sprite_sheet_rect.x + 20, sprite_sheet_rect.y - 36, 0);
-
-	draw_in_frame(computer, (rect_t){sprite_sheet_rect.x, sprite_sheet_rect.y - 20, 16, 16});
-
-	// Idk what this is anymore but I might need it later
-	// api_rectf(computer, sprite_sheet_rect.x, sprite_sheet_rect.y - 16, 16, 16, selected_color);
-	// api_spr(computer, selected_index, sprite_sheet_rect.x, sprite_sheet_rect.y - 20, 1, 1);
+	api_text(computer, 0, buffer, color_picker_rect.x + 20, color_picker_rect.y - 16, 0);
 	
-	// Preview
-	// api_spr(computer, selected_spritesheet_index, selected_index, sprite_sheet_rect.x, sprite_sheet_rect.y - 20, 1, 1);
-	
-	sprintf(buffer, "#%04d\n", selected_index);
-	api_text(computer, 0, buffer, sprite_sheet_rect.x + 20, sprite_sheet_rect.y - 16, 0);
+	// Selected sprite preview
+	// draw_in_frame(computer, (rect_t){color_picker_rect.x, color_picker_rect.y - 20, 16, 16});
+	draw_in_frame(computer, (rect_t){color_picker_rect.x, color_picker_rect.y - 40, 16, 16});
+	// api_sspr(computer, get_sprite_index(), color_picker_rect.x, color_picker_rect.y - 20, 1, 1, 2);
+	api_sspr(computer, get_sprite_index(), color_picker_rect.x, color_picker_rect.y - 40, 1, 1, 2);
+	sprintf(buffer, "#%04d\n", get_sprite_index());
+	api_text(computer, 0, buffer, color_picker_rect.x + 20, color_picker_rect.y - 36, 0);
+
+	// Sprite flags and color key
+	// sprintf(buffer, "Flags", get_sprite_index());
+	// api_text(computer, 0, buffer, 2, spritesheet_rect.y - 22, 0);
+	sprite_t *selected_sprite = &computer->ram->sprites[get_sprite_index()];
+	for (int y = 0; y < 2; y++) {
+		for (int x = 0; x < SPRITE_FLAGS_SIZE / 2; x++) {
+			int i = y * 16 + x;
+
+			sprintf(buffer, "%c", i < 10 ? '0' + i : 'a' + i - 10);
+			bool set = selected_sprite->flags & (1U << i);
+
+			toggle_button(computer, buffer, (rect_t){
+					// .x = 38 + x * 12,
+					// .x = 4 + x * 12,
+					.x = spritesheet_rect.x - 2 + x * 12,
+					// .y = color_picker_rect.y - 22 + y * 10,
+					.y = spritesheet_rect.y - 26 + y * 12,
+					.w = 12,
+					.h = 12,
+				},
+				&set
+			);
+			if (set) {
+				selected_sprite->flags |= (1U << i);
+			} else {
+				selected_sprite->flags &= ~(1U << i);
+			}
+		}
+	}
 }

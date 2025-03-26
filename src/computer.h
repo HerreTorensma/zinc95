@@ -14,8 +14,17 @@
 #define PALETTE_SIZE 256
 
 // These are in pixels
-#define SPRITE_SHEET_WIDTH 256
-#define SPRITE_SHEET_HEIGHT 256
+#define SPRITESHEET_PAGE_WIDTH 384
+#define SPRITESHEET_PAGE_HEIGHT 128
+#define SPRITESHEET_WIDTH SPRITESHEET_PAGE_WIDTH
+// 8 pages of sprites
+#define SPRITESHEET_HEIGHT (SPRITESHEET_PAGE_HEIGHT * 8)
+
+#define SPRITE_WIDTH 8
+#define SPRITE_HEIGHT 8
+#define SPRITES_PER_ROW (SPRITESHEET_WIDTH / SPRITE_WIDTH)
+#define SPRITES_PER_PAGE ((SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT) / (SPRITE_WIDTH * SPRITE_HEIGHT))
+#define TOTAL_SPRITES ((SPRITESHEET_WIDTH * SPRITESHEET_HEIGHT) / (SPRITE_WIDTH * SPRITE_HEIGHT))
 
 #define VISIBLE_CHARACTERS_SIZE 96
 #define VISIBLE_CHARACTERS_START 32
@@ -47,27 +56,36 @@ typedef struct framebuffer {
 	uint8_t data[SCREEN_WIDTH * SCREEN_HEIGHT];
 } framebuffer_t;
 
+#define SPRITE_FLAGS_SIZE 32
+typedef struct sprite {
+	uint32_t flags;
+	// Need negatives so that's why it's int16_t and not uint8_t
+	// NO, the last 8 colors are not used anyway so we can use 255 as not having a key
+	uint8_t color_key;
+
+	uint64_t buffer_image;
+} sprite_t;
+
 // Rename every occurance of sprite_sheet to spritesheet
 typedef struct spritesheet {
-	uint16_t sprite_width;
-	uint16_t sprite_height;
-	uint8_t data[SPRITE_SHEET_WIDTH * SPRITE_SHEET_HEIGHT];
+	uint8_t data[SPRITESHEET_WIDTH * SPRITESHEET_HEIGHT];
 } spritesheet_t;
 
-typedef struct font_meta {
-	uint8_t sprite_sheet_index;
-	// Index of first character, space ( )
-	uint8_t sprite_index;
+typedef struct font {
+	// Index of first visible ASCII character, which is space ( )
+	uint16_t sprite_index;
 
 	uint8_t width;
 	uint8_t height;
+	uint8_t h_sprites;
+	uint8_t v_sprites;
 	uint8_t horizontal_space;
 	uint8_t vertical_space;
 
 	// Bool
 	uint8_t monospace;
 	uint8_t widths[VISIBLE_CHARACTERS_SIZE];
-} font_meta_t;
+} font_t;
 
 typedef struct line {
 	char *text;
@@ -87,8 +105,9 @@ typedef union ram {
 	struct {
 		framebuffer_t framebuffer;
 		palette_t palette;
-		spritesheet_t spritesheets[12];
-		font_meta_t fonts[8];
+		spritesheet_t spritesheet;
+		sprite_t sprites[TOTAL_SPRITES];
+		font_t fonts[8];
 		char code_buffer[1024 * 1024];
 	};
 
@@ -133,6 +152,7 @@ void play_game(computer_t *computer);
 // Quit the currently loaded game
 void quit_game(computer_t *computer);
 
+/*
 int sprite_x_to_sprite_sheet_x(ram_t *ram, int sprite_sheet_index, int sprite_index, int x);
 
 int sprite_y_to_sprite_sheet_y(ram_t *ram, int sprite_sheet_index, int sprite_index, int y);
@@ -140,7 +160,8 @@ int sprite_y_to_sprite_sheet_y(ram_t *ram, int sprite_sheet_index, int sprite_in
 int sprite_get_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int x, int y);
 
 void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int x, int y, uint8_t color);
+*/
 
-void draw_sprite_sheet_rect(computer_t *computer, int sprite_sheet_index, int x, int y, rect_t rect);
+void draw_sprite_sheet_rect(computer_t *computer, int x, int y, rect_t rect);
 
-rect_t sprite_to_spritesheet_rect(ram_t *ram, int sprite_sheet_index, int sprite_index, int w, int h);
+rect_t sprite_to_spritesheet_rect(ram_t *ram, int sprite_index, int w, int h);

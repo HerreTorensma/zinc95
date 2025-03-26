@@ -31,7 +31,7 @@ static char sample_string[] =	"local x = 0\n"
 								"\n"
 								"function _draw()\n"
 								"	cls(0)\n"
-								"	spr(0, 0, x, y, 1, 1)\n"
+								"	spr(0, x, y, 1, 1)\n"
 								"end\0";
 
 // Get the amount of lines in a string, used for loading
@@ -435,7 +435,7 @@ void code_editor_update(computer_t *computer) {
 }
 
 static int get_real_cursor_pos(computer_t *computer) {
-	font_meta_t *font = &computer->ram->fonts[font_index];
+	font_t *font = &computer->ram->fonts[font_index];
 	int pos = 0;
 
 	for (int i = 0; i < computer->code.cursor_pos; i++) {
@@ -460,7 +460,7 @@ static int get_real_cursor_pos(computer_t *computer) {
 }
 
 void code_editor_draw(computer_t *computer) {
-	font_meta_t *font = &computer->ram->fonts[font_index];
+	font_t *font = &computer->ram->fonts[font_index];
 
 	draw_in_frame(computer, code_rect);
 	// api_rectf(computer, code_rect.x, code_rect.y, code_rect.w, code_rect.h, 15);
