@@ -252,22 +252,19 @@ void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int 
 */
 
 // void draw_sprite_sheet_rect(computer_t *computer, int sprite_sheet_index, int x, int y, rect_t rect) {
-void draw_sprite_sheet_rect(computer_t *computer, int x, int y, rect_t rect) {
+void draw_sprite_sheet_rect(computer_t *computer, int x, int y, rect_t rect, uint8_t color_key) {
 	for (int i = 0; i < rect.h; i++) {
 		for (int j = 0; j < rect.w; j++) {
 			uint8_t color = computer->ram->spritesheet.data[(rect.y + i) * SPRITESHEET_WIDTH + (rect.x + j)];
-			set_pixel(computer, x + j, y + i, color);
+			if (color != color_key) {
+				set_pixel(computer, x + j, y + i, color);
+			}
 		}
 	}
 }
 
 // rect_t sprite_to_spritesheet_rect(ram_t *ram, int sprite_sheet_index, int sprite_index, int w, int h) {
 rect_t sprite_to_spritesheet_rect(ram_t *ram, int sprite_index, int w, int h) {
-	// int sprite_width = ram->spritesheets[sprite_sheet_index].sprite_width;
-	// int sprite_height = ram->spritesheets[sprite_sheet_index].sprite_height;
-	
-	// int sprites_per_row = SPRITESHEET_WIDTH / SPRITE_WIDTH;
-
 	rect_t rect = {
 		.x = (sprite_index % SPRITES_PER_ROW) * SPRITE_WIDTH,
 		.y = (sprite_index / SPRITES_PER_ROW) * SPRITE_HEIGHT,
@@ -276,4 +273,53 @@ rect_t sprite_to_spritesheet_rect(ram_t *ram, int sprite_index, int w, int h) {
 	};
 
 	return rect;
+}
+
+int get_text_width(font_t *font, char text[], int max_offset) {
+	int len = 0;
+
+	for (int i = 0; i < max_offset; i++) {
+		if (text[i] == '\t') {
+			if (font->monospace) {
+				len += (font->width + font->horizontal_space) * TAB_SIZE;
+			} else {
+				len += (font->widths[text[' '] - VISIBLE_CHARACTERS_START] + font->horizontal_space) * TAB_SIZE;
+			}
+
+			continue;
+		}
+
+		if (font->monospace) {
+			len += font->width + font->horizontal_space;
+		} else {
+			len += font->widths[text[i] - VISIBLE_CHARACTERS_START] + font->horizontal_space;
+		}
+	}
+
+	return len;
+}
+
+int x_to_text_index(font_t *font, char text[], int x) {
+	int index = x / (font->width + font->horizontal_space);
+	int len = strlen(text);
+
+	int real_index = index;
+
+	for (int i = 0; i < index && i < len; i++) {
+		if (text[i] == '\t') {
+			real_index -= TAB_SIZE - 1;
+		}
+
+		if (real_index < 0) {
+			real_index = 0;
+			break;
+		}
+	}
+	
+	
+	if (real_index >= len) {
+		real_index = len;
+	}
+
+	return real_index;
 }

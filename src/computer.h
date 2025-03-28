@@ -33,6 +33,10 @@
 
 #define TAB_SIZE 4
 
+#define COLOR_KEY_NONE 255
+#define COLOR_BLACK 0
+#define COLOR_WHITE 15
+
 #define FPS 60
 
 typedef struct rect {
@@ -162,6 +166,10 @@ int sprite_get_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int x
 void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int x, int y, uint8_t color);
 */
 
-void draw_sprite_sheet_rect(computer_t *computer, int x, int y, rect_t rect);
+void draw_sprite_sheet_rect(computer_t *computer, int x, int y, rect_t rect, uint8_t color_key);
 
 rect_t sprite_to_spritesheet_rect(ram_t *ram, int sprite_index, int w, int h);
+
+int get_text_width(font_t *font, char text[], int max_offset);
+
+int x_to_text_index(font_t *font, char text[], int x);

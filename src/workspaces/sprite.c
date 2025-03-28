@@ -6,6 +6,7 @@
 #include "../backend/backend.h"
 #include "../backend/input.h"
 #include "../util/util.h"
+#include "menu.h"
 
 #define COLOR_SQUARE_SIZE 8
 
@@ -31,15 +32,9 @@ static void set_selected_spritesheet_index(int index) {
 }
 
 void sprite_editor_init(computer_t *computer) {
-	// spritesheet_rect = (rect_t){4, 128, 256, 256};
-	// spritesheet_rect = (rect_t){200, 348, 420, 128};
 	spritesheet_rect = (rect_t){200, 348, 384, 128};
-	// color_picker_rect = (rect_t){4, spritesheet_rect.y + spritesheet_rect.h + 4, 192, 88};
 	color_picker_rect = (rect_t){4, 388, 192, 88};
-
-	// sprite_editor_rect = (rect_t){324, spritesheet_rect.y, 256, 256};
 	sprite_editor_rect = (rect_t){192, 56, 256, 256};
-	// sprite_editor_rect = (rect_t){color_picker_rect.x, spritesheet_rect.y, 256, 256};
 
 	visible_rect = (rect_t){
 		.x = 0,
@@ -181,13 +176,13 @@ static bool toggle_button(computer_t *computer, char text[], rect_t rect, bool *
 
 void sprite_editor_draw(computer_t *computer) {
 	draw_in_frame(computer, spritesheet_rect);
-	draw_sprite_sheet_rect(computer, spritesheet_rect.x, spritesheet_rect.y, visible_rect);
+	draw_sprite_sheet_rect(computer, spritesheet_rect.x, spritesheet_rect.y, visible_rect, 255);
 
 	for (int i = 0; i < 8; i++) {
 		rect_t rect = {
-			.x = spritesheet_rect.x + spritesheet_rect.w + 2,
-			.y = spritesheet_rect.y + 2 + i * 16,
-			.w = 52,
+			.x = spritesheet_rect.x + spritesheet_rect.w + 4,
+			.y = spritesheet_rect.y + i * 16,
+			.w = 48,
 			.h = 16,
 		};
 
@@ -195,7 +190,6 @@ void sprite_editor_draw(computer_t *computer) {
 		sprintf(buffer, "%d", i + 1);
 		
 		if (button_ex(computer, buffer, rect, selected_spritesheet_index == i)) {
-			// selected_spritesheet_index = i;
 			set_selected_spritesheet_index(i);
 		}
 	}
@@ -236,40 +230,28 @@ void sprite_editor_draw(computer_t *computer) {
 
 	// Selected color
 	char buffer[32];
-	// draw_in_frame(computer, (rect_t){color_picker_rect.x, color_picker_rect.y - 40, 16, 16});
 	draw_in_frame(computer, (rect_t){color_picker_rect.x, color_picker_rect.y - 20, 16, 16});
-	// api_rectf(computer, color_picker_rect.x, color_picker_rect.y - 40, 16, 16, selected_color);
 	api_rectf(computer, color_picker_rect.x, color_picker_rect.y - 20, 16, 16, selected_color);
 	sprintf(buffer, "#%03d\n", selected_color);
 	api_text(computer, 0, buffer, color_picker_rect.x + 20, color_picker_rect.y - 16, 0);
 	
 	// Selected sprite preview
-	// draw_in_frame(computer, (rect_t){color_picker_rect.x, color_picker_rect.y - 20, 16, 16});
 	draw_in_frame(computer, (rect_t){color_picker_rect.x, color_picker_rect.y - 40, 16, 16});
-	// api_sspr(computer, get_sprite_index(), color_picker_rect.x, color_picker_rect.y - 20, 1, 1, 2);
 	api_sspr(computer, get_sprite_index(), color_picker_rect.x, color_picker_rect.y - 40, 1, 1, 2);
 	sprintf(buffer, "#%04d\n", get_sprite_index());
 	api_text(computer, 0, buffer, color_picker_rect.x + 20, color_picker_rect.y - 36, 0);
 
 	// Sprite flags and color key
-	// sprintf(buffer, "Flags", get_sprite_index());
-	// api_text(computer, 0, buffer, 2, spritesheet_rect.y - 22, 0);
 	sprite_t *selected_sprite = &computer->ram->sprites[get_sprite_index()];
-	for (int y = 0; y < 2; y++) {
-		for (int x = 0; x < SPRITE_FLAGS_SIZE / 2; x++) {
-			int i = y * 16 + x;
-
+	for (int i = 0; i < SPRITE_FLAGS_SIZE; i++) {
 			sprintf(buffer, "%c", i < 10 ? '0' + i : 'a' + i - 10);
 			bool set = selected_sprite->flags & (1U << i);
 
 			toggle_button(computer, buffer, (rect_t){
-					// .x = 38 + x * 12,
-					// .x = 4 + x * 12,
-					.x = spritesheet_rect.x - 2 + x * 12,
-					// .y = color_picker_rect.y - 22 + y * 10,
-					.y = spritesheet_rect.y - 26 + y * 12,
-					.w = 12,
-					.h = 12,
+				.x = spritesheet_rect.x + i * 12,
+				.y = spritesheet_rect.y - 4 - 12,
+				.w = 12,
+				.h = 12,
 				},
 				&set
 			);
@@ -279,5 +261,16 @@ void sprite_editor_draw(computer_t *computer) {
 				selected_sprite->flags &= ~(1U << i);
 			}
 		}
+
+	if (button(computer, "", (rect_t){
+		.x = SCREEN_WIDTH - 2 - 12 - 4,
+		.y = spritesheet_rect.y - 12 - 4,
+		.w = 12,
+		.h = 12,
+		})) {
+		selected_sprite->color_key = selected_color;
 	}
+
+	api_rectf(computer, SCREEN_WIDTH - 2 - 12 - 4 + 2, spritesheet_rect.y - 12 - 4 + 2, 8, 8, selected_sprite->color_key);
+	api_text(computer, 2, "Key:", spritesheet_rect.x + spritesheet_rect.w + 4 + 2, spritesheet_rect.y - 12 - 4 + 2, 0);
 }

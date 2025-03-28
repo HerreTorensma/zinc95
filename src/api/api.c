@@ -17,7 +17,7 @@ void api_cls(computer_t *computer, int color) {
 
 void api_spr(computer_t *computer, int sprite_index, int x, int y, int width, int height) {
 	rect_t rect = sprite_to_spritesheet_rect(computer->ram, sprite_index, width, height);
-	draw_sprite_sheet_rect(computer, x, y, rect);
+	draw_sprite_sheet_rect(computer, x, y, rect, computer->ram->sprites[sprite_index].color_key);
 }
 
 void draw_sprite_sheet_rect_scaled(computer_t *computer, int x, int y, rect_t rect, int scale) {

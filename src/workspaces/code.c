@@ -117,7 +117,7 @@ void code_to_string(code_t *code, char *buffer) {
 
 // Split the line at the given position in 2
 // a new line will be created with anything on the current line after the given pos
-static void split_line_at(code_t *code, uint64_t line, uint64_t pos) {
+static void split_line_at(code_t *code, uint64_t line, uint64_t pos, int indent_level) {
 	// Realloc lines (not for now)
 	code->lines = realloc(code->lines, (code->line_amount + 1) * sizeof(line_t));
 
@@ -139,6 +139,13 @@ static void split_line_at(code_t *code, uint64_t line, uint64_t pos) {
 
 	code->lines[line].text[pos] = '\0';
 	code->lines[line].text = realloc(code->lines[line].text, strlen(code->lines[line].text) + 1);
+
+	// TODO: Make this work
+	// if (strlen(code->lines[line + 1].text) == 0) {
+	// 	for (int i = 0; i < indent_level; i++) {
+	// 		code->lines[line + 1].text[i] = '\t';
+	// 	}
+	// }
 }
 
 // Merge the given line with the line above it
@@ -325,6 +332,50 @@ static void handle_char_input(computer_t *computer, code_t *code) {
 	}
 }
 
+static void move_cursor_to_mouse(ram_t *ram, code_t *code) {
+	font_t *font = &ram->fonts[font_index];
+
+	int x, y;
+	get_mouse_pos(&x, &y);
+
+	int corrected_x = x - (code_rect.x + 5 * (font->width + font->horizontal_space));
+	int corrected_y = y - code_rect.y;
+
+	int line = corrected_y / (font->height + font->vertical_space);
+	if (line < 0) {
+		return;
+	}
+	if (line >= code->line_amount) {
+		line = code->line_amount - 1;
+	}
+
+	int pos = x_to_text_index(font, code->lines[line].text, corrected_x);
+	if (pos < 0) {
+		return;
+	}
+	int line_len = strlen(code->lines[line].text);
+	if (line_len < pos) {
+		pos = line_len;
+	}
+
+	code->cursor_line = line;
+	code->cursor_pos = pos;
+}
+
+static int get_indent_level(char text[]) {
+	int indent = 0;
+
+	for (int i = 0; i < strlen(text); i++) {
+		if (text[i] == '\t') {
+			indent++;
+		} else {
+			break;
+		}
+	}
+
+	return indent;
+}
+
 void code_editor_init(computer_t *computer) {
 	uint64_t lines_amount = string_get_lines_amount(sample_string);
 
@@ -426,37 +477,21 @@ void code_editor_update(computer_t *computer) {
 	
 	// Handle return
 	if (api_keyp(computer, KEY_RETURN) || api_keyp(computer, KEY_NUMENTER)) {
-		split_line_at(code, code->cursor_line, code->cursor_pos);
+		split_line_at(code, code->cursor_line, code->cursor_pos, get_indent_level(code->lines[code->cursor_line].text));
 		code->cursor_line++;
 		code->cursor_pos = 0;
 	}
 
 	handle_char_input(computer, code);
+
+	// Mouse
+	if (api_mouse_btnp(computer, 1)) {
+		move_cursor_to_mouse(computer->ram, &computer->code);
+	}
 }
 
 static int get_real_cursor_pos(computer_t *computer) {
-	font_t *font = &computer->ram->fonts[font_index];
-	int pos = 0;
-
-	for (int i = 0; i < computer->code.cursor_pos; i++) {
-		if (computer->code.lines[computer->code.cursor_line].text[i] == '\t') {
-			if (font->monospace) {
-				pos += (font->width + font->horizontal_space) * TAB_SIZE;
-			} else {
-				pos += (font->widths[computer->code.lines[computer->code.cursor_line].text[' '] - VISIBLE_CHARACTERS_START] + font->horizontal_space) * TAB_SIZE;
-			}
-
-			continue;
-		}
-
-		if (font->monospace) {
-			pos += font->width + font->horizontal_space;
-		} else {
-			pos += font->widths[computer->code.lines[computer->code.cursor_line].text[i] - VISIBLE_CHARACTERS_START] + font->horizontal_space;
-		}
-	}
-
-	return pos;
+	return get_text_width(&computer->ram->fonts[font_index], computer->code.lines[computer->code.cursor_line].text, computer->code.cursor_pos);
 }
 
 void code_editor_draw(computer_t *computer) {
