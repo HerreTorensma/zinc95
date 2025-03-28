@@ -28,15 +28,35 @@ static void lua_spr(lua_State *lua) {
 	if (lua_gettop(lua) == 5) {
 		if (lua_isnumber(lua, 1) && lua_isnumber(lua, 2) && lua_isnumber(lua, 3) && lua_isnumber(lua, 4) && lua_isnumber(lua, 5)) {
 			computer_t *computer = get_global_computer();
-			int sprite_index = lua_tointeger(lua, 1);
-			int x = lua_tointeger(lua, 2);
-			int y = lua_tointeger(lua, 3);
-			int width = lua_tointeger(lua, 4);
-			int height = lua_tointeger(lua, 5);
+			int sprite_index = (int)lua_tonumber(lua, 1);
+			int x = (int)lua_tonumber(lua, 2);
+			int y = (int)lua_tonumber(lua, 3);
+			int width = (int)lua_tonumber(lua, 4);
+			int height = (int)lua_tonumber(lua, 5);
 
 			api_spr(computer, sprite_index, x, y, width, height);
 		}
 	}
+}
+
+static void lua_circ(lua_State *lua) {
+	if (lua_gettop(lua) == 4) {
+		if (lua_isnumber(lua, 1) && lua_isnumber(lua, 2) && lua_isnumber(lua, 3) && lua_isnumber(lua, 4)) {
+			computer_t *computer = get_global_computer();
+			int x = (int)lua_tonumber(lua, 1);
+			int y = (int)lua_tonumber(lua, 2);
+			int radius = (int)lua_tonumber(lua, 3);
+			int color = (int)lua_tonumber(lua, 4);
+
+			api_circ(computer, x, y, radius, color);
+		}
+	}
+}
+
+static int lua_ticks(lua_State *lua) {
+	int ticks = api_ticks(get_global_computer());
+	lua_pushinteger(lua, ticks);
+	return 1;
 }
 
 void lua_init(computer_t *computer) {
@@ -45,6 +65,8 @@ void lua_init(computer_t *computer) {
 
 	lua_register(_lua, "cls", lua_cls);
 	lua_register(_lua, "spr", lua_spr);
+	lua_register(_lua, "circ", lua_circ);
+	lua_register(_lua, "ticks", lua_ticks);
 
 	// if (luaL_dofile(_lua, "test.lua") != LUA_OK) {
 	// if (luaL_dostring(_lua, computer->code->buffer) != LUA_OK) {

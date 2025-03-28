@@ -180,3 +180,48 @@ void api_text(computer_t *computer, int font_index, char text[], int x, int y, i
 		}
 	}
 }
+
+// Midpoint circle algorithm
+void api_circ(computer_t *computer, int x, int y, int radius, uint8_t color) {
+	// Initial 4 points
+	set_pixel(computer, x + radius, y, color);
+	set_pixel(computer, x - radius, y, color);
+	set_pixel(computer, x, y + radius, color);
+	set_pixel(computer, x, y - radius, color);
+
+	int x_offset = radius;
+	int y_offset = 0;
+
+	int d = 1 - radius;
+
+	while (x_offset > y_offset) {
+		y_offset++;
+		
+		if (d <= 0) {
+			d = d + 2 * y_offset + 1;
+		} else {
+			x_offset--;
+			d = d + 2 * (y_offset - x_offset) + 1;
+		}
+		
+		if (x_offset < y_offset) {
+			break;
+		}
+
+		set_pixel(computer, x + x_offset, y + y_offset, color);
+		set_pixel(computer, x - x_offset, y + y_offset, color);
+		set_pixel(computer, x + x_offset, y - y_offset, color);
+		set_pixel(computer, x - x_offset, y - y_offset, color);
+
+		if (x_offset != y_offset) {
+			set_pixel(computer, x + y_offset, y + x_offset, color);
+			set_pixel(computer, x - y_offset, y + x_offset, color);
+			set_pixel(computer, x + y_offset, y - x_offset, color);
+			set_pixel(computer, x - y_offset, y - x_offset, color);
+		}
+	}
+}
+
+int api_ticks(computer_t *computer) {
+	return computer->ticks;
+}

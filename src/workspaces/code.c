@@ -18,7 +18,7 @@ static rect_t code_rect = {
 static const int font_index = 1;
 
 static char sample_string[] =	"local x = 0\n"
-								"local y = 50\n"
+								"local y = 0\n"
 								"\n"
 								"function _init()\n"
 								"	print(\"Called the init function\")\n"
@@ -31,7 +31,22 @@ static char sample_string[] =	"local x = 0\n"
 								"\n"
 								"function _draw()\n"
 								"	cls(0)\n"
-								"	spr(0, x, y, 1, 1)\n"
+								"\n"
+								"	for i=1,240 do\n"
+								"		circ(320, 240, i, i)\n"
+								"	end\n"
+								"\n"
+								"	local radius1 = (1 + math.sin(ticks() / 10)) * 0.5 * 240\n"
+								"	local radius2 = (1 + math.cos(ticks() / 10)) * 0.5 * 240\n"
+								"	circ(320, 240, radius1, 256 - radius1)\n"
+								"	circ(320, 240, radius1 - 1, 256 - radius1)\n"
+								"	circ(320, 240, radius1 - 2, 256 - radius1)\n"
+								
+								"	circ(320, 240, radius2, 256 - radius2)\n"
+								"	circ(320, 240, radius2 - 1, 256 - radius2)\n"
+								"	circ(320, 240, radius2 - 2, 256 - radius2)\n"
+								"\n"
+								"	spr(768, x, y, 8, 8)\n"
 								"end\0";
 
 // Get the amount of lines in a string, used for loading

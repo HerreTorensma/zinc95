@@ -52,7 +52,7 @@ void api_rect(computer_t *computer, int x, int y, int w, int h, int color);
 void api_rectf(computer_t *computer, int x, int y, int w, int h, int color);
 
 // Draw an unfilled circle
-void api_circ(computer_t *computer, int x, int y, int r, bool filled, int color);
+void api_circ(computer_t *computer, int x, int y, int radius, uint8_t color);
 
 // --- Input
 // Check if a key is held
@@ -75,3 +75,6 @@ bool api_mouse_btnr(computer_t *computer, int button);
 
 // --- Text
 void api_text(computer_t *computer, int font_index, char text[], int x, int y, int color);
+
+// Get the amount of ticks since the console has been running
+int api_ticks(computer_t *computer);
