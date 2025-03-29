@@ -5,7 +5,7 @@
 #include "backend/backend.h"
 #include "util/util.h"
 #include "api/api.h"
-#include "workspaces/menu.h"
+#include "editor/menu.h"
 #include "backend/input.h"
 #include "api/lua_api.h"
 

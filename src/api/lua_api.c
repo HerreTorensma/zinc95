@@ -13,7 +13,7 @@ static void lua_cls(lua_State *lua) {
 	if (lua_gettop(lua) == 1) {
 		if (lua_isnumber(lua, 1)) {
 			computer_t *computer = get_global_computer();
-			int color = lua_tointeger(lua, 1) % PALETTE_SIZE;
+			int color = (int)lua_tonumber(lua, 1) % PALETTE_SIZE;
 
 			api_cls(computer, color);
 		} else {

@@ -6,19 +6,16 @@
 #include "../api/api.h"
 #include "../backend/input.h"
 
-// #include "console.h"
 #include "code.h"
 #include "sprite.h"
 #include "map.h"
 #include "sound.h"
 
 typedef enum workspace_type {
-	// WORKSPACE_CONSOLE,
 	WORKSPACE_CODE,
 	WORKSPACE_SPRITE,
 	WORKSPACE_MAP,
 	WORKSPACE_SOUND,
-	// WORKSPACE_MUSIC,
 } workspace_type_t;
 
 static workspace_type_t active_workspace = WORKSPACE_SPRITE;
@@ -40,9 +37,6 @@ void workspace_menu_init(computer_t *computer) {
 }
 
 void workspace_menu_update(computer_t *computer) {
-	// if (api_keyp(computer, KEY_F1)) {
-	// 	active_workspace = WORKSPACE_CONSOLE;
-	// }
 	if (api_keyp(computer, KEY_F1)) {
 		active_workspace = WORKSPACE_CODE;
 	}
@@ -55,12 +49,11 @@ void workspace_menu_update(computer_t *computer) {
 	if (api_keyp(computer, KEY_F4)) {
 		active_workspace = WORKSPACE_SOUND;
 	}
+	if (api_keyp(computer, KEY_F5)) {
+		play_game(computer);
+	}
 
 	switch (active_workspace) {
-		// case WORKSPACE_CONSOLE:
-		// 	console_update(computer);
-		// 	break;
-		
 		case WORKSPACE_CODE:
 			code_editor_update(computer);
 			break;
@@ -77,9 +70,6 @@ void workspace_menu_update(computer_t *computer) {
 			sound_editor_update(computer);
 			break;
 
-		// case WORKSPACE_MUSIC:
-		// 	break;
-
 		default:
 			break;
 	}
@@ -94,10 +84,6 @@ void workspace_menu_draw(computer_t *computer) {
 	draw_out_frame(computer, bar_rect);
 	
 	button(computer, "", (rect_t){2, 2, 16, 16});
-	
-	// if (button_ex(computer, "Console", (rect_t){128 + 64*0, 2, 64, 16}, active_workspace == WORKSPACE_CONSOLE)) {
-	// 	active_workspace = WORKSPACE_CONSOLE;
-	// }
 	
 	if (button_ex(computer, "Code", (rect_t){128 + 64*1, 2, 64, 16}, active_workspace == WORKSPACE_CODE)) {
 		active_workspace = WORKSPACE_CODE;
@@ -115,8 +101,6 @@ void workspace_menu_draw(computer_t *computer) {
 		active_workspace = WORKSPACE_SOUND;
 	}
 	
-	// button(computer, "Music", (rect_t){128 + 64*5, 2, 64, 16});
-
 	button(computer, "", (rect_t){SCREEN_WIDTH-16-16-2, 2, 16, 16});
 	api_spr(computer, 482, SCREEN_WIDTH-16-16-2, 2, 2, 2, 1);
 	
@@ -126,10 +110,6 @@ void workspace_menu_draw(computer_t *computer) {
 	api_spr(computer, 480, SCREEN_WIDTH-16-2, 2, 2, 2, 1);
 
 	switch (active_workspace) {
-		// case WORKSPACE_CONSOLE:
-		// 	console_draw(computer);
-		// 	break;
-		
 		case WORKSPACE_CODE:
 			code_editor_draw(computer);
 			break;
@@ -145,9 +125,6 @@ void workspace_menu_draw(computer_t *computer) {
 		case WORKSPACE_SOUND:
 			sound_editor_draw(computer);
 			break;
-
-		// case WORKSPACE_MUSIC:
-		// 	break;
 
 		default:
 			break;
