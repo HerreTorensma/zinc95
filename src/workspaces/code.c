@@ -6,6 +6,7 @@
 
 #include "../api/api.h"
 #include "../util/util.h"
+#include "../backend/backend.h"
 #include "../backend/input.h"
 
 static rect_t code_rect = {
@@ -33,18 +34,18 @@ static char sample_string[] =	"local x = 0\n"
 								"	cls(0)\n"
 								"\n"
 								"	for i=1,240 do\n"
-								"		circ(320, 240, i, i)\n"
+								"		circ(320, 240, i, 256-i)\n"
 								"	end\n"
 								"\n"
-								"	local radius1 = (1 + math.sin(ticks() / 10)) * 0.5 * 240\n"
-								"	local radius2 = (1 + math.cos(ticks() / 10)) * 0.5 * 240\n"
-								"	circ(320, 240, radius1, 256 - radius1)\n"
-								"	circ(320, 240, radius1 - 1, 256 - radius1)\n"
-								"	circ(320, 240, radius1 - 2, 256 - radius1)\n"
+								// "	local radius1 = (1 + math.sin(ticks() / 10)) * 0.5 * 240\n"
+								// "	local radius2 = (1 + math.cos(ticks() / 10)) * 0.5 * 240\n"
+								// "	circ(320, 240, radius1, 256 - radius1)\n"
+								// "	circ(320, 240, radius1 - 1, 256 - radius1)\n"
+								// "	circ(320, 240, radius1 - 2, 256 - radius1)\n"
 								
-								"	circ(320, 240, radius2, 256 - radius2)\n"
-								"	circ(320, 240, radius2 - 1, 256 - radius2)\n"
-								"	circ(320, 240, radius2 - 2, 256 - radius2)\n"
+								// "	circ(320, 240, radius2, 256 - radius2)\n"
+								// "	circ(320, 240, radius2 - 1, 256 - radius2)\n"
+								// "	circ(320, 240, radius2 - 2, 256 - radius2)\n"
 								"\n"
 								"	spr(768, x, y, 8, 8)\n"
 								"end\0";
@@ -65,7 +66,7 @@ static uint64_t string_get_lines_amount(const char *text) {
 }
 
 // Append a new line, used for loading a string before editing
-static void line_append(code_t *code, const char *text, int len) {
+static void line_append(code_t *code, const char *text, size_t len) {
 	code->lines[code->line_amount].text = malloc((len + 1) * sizeof(char));
 	if (code->lines[code->line_amount].text == NULL) {
 		printf("Couldn't allocate memory for new line\n");
@@ -79,9 +80,9 @@ static void line_append(code_t *code, const char *text, int len) {
 }
 
 // Load a string into the code_t datastructure
-static void string_to_code(code_t *code, const char *text) {
+static void string_to_code(code_t *code, char *text) {
 	char *last_line_start = text;
-	int pos_since_last_line_start = 0;
+	size_t pos_since_last_line_start = 0;
 	
 	for (uint64_t i = 0; i < strlen(text) + 1; i++) {
 		if (text[i] == '\n' || text[i] == '\0') {
@@ -101,8 +102,8 @@ static void string_to_code(code_t *code, const char *text) {
 }
 
 // Get size of code string
-static uint64_t code_get_len(code_t *code) {
-	uint64_t len = 0;
+static size_t code_get_len(code_t *code) {
+	size_t len = 0;
 
 	for (int i = 0; i < code->line_amount; i++) {
 		len += strlen(code->lines[i].text);
@@ -111,49 +112,30 @@ static uint64_t code_get_len(code_t *code) {
 	return len;
 }
 
-// Convert the code_t datastructure back to a string for saving
-// the function assumes that passed buffer is large enough
-void code_to_string(code_t *code, char *buffer) {
-	uint64_t buffer_pos = 0;
-
-	for (int i = 0; i < code->line_amount; i++) {
-		int line_len = strlen(code->lines[i].text);
-		
-		memcpy(&buffer[buffer_pos], code->lines[i].text, (line_len + 1) * sizeof(char));
-		
-		if (i < code->line_amount - 1) {
-			buffer[buffer_pos + line_len] = '\n';
-		} else {
-			buffer[buffer_pos + line_len] = '\0';
-		}
-		buffer_pos += line_len + 1;
-	}
-}
-
 // Split the line at the given position in 2
 // a new line will be created with anything on the current line after the given pos
-static void split_line_at(code_t *code, uint64_t line, uint64_t pos, int indent_level) {
+static void split_line_at(code_t *code, int line, int pos, int indent_level) {
 	// Realloc lines (not for now)
-	code->lines = realloc(code->lines, (code->line_amount + 1) * sizeof(line_t));
+	code->lines = realloc(code->lines, ((size_t)code->line_amount + 1ULL) * sizeof(line_t));
 
 	// Move the lines
-	memmove(&code->lines[line + 1], &code->lines[line], (code->line_amount - line) * sizeof(line_t));
+	memmove(&code->lines[line + 1], &code->lines[line], ((size_t)code->line_amount - (size_t)line) * sizeof(line_t));
 	code->line_amount++;
 
 	char *after_cursor = &code->lines[line].text[pos];
 	int after_cursor_len = strlen(after_cursor);
 
-	code->lines[line + 1].text = malloc((after_cursor_len + 1) * sizeof(char));
+	code->lines[line + 1].text = malloc(((size_t)after_cursor_len + 1ULL) * sizeof(char));
 	if (code->lines[line + 1].text == NULL) {
 		printf("Couldn't allocate memory for new line\n");
 		exit(1);
 	}
 
-	memcpy(code->lines[line + 1].text, after_cursor, after_cursor_len + 1);
+	memcpy(code->lines[line + 1].text, after_cursor, (size_t)after_cursor_len + 1ULL);
 	code->lines[line + 1].text[after_cursor_len] = '\0';
 
 	code->lines[line].text[pos] = '\0';
-	code->lines[line].text = realloc(code->lines[line].text, strlen(code->lines[line].text) + 1);
+	code->lines[line].text = realloc(code->lines[line].text, strlen(code->lines[line].text) + 1ULL);
 
 	// TODO: Make this work
 	// if (strlen(code->lines[line + 1].text) == 0) {
@@ -164,17 +146,17 @@ static void split_line_at(code_t *code, uint64_t line, uint64_t pos, int indent_
 }
 
 // Merge the given line with the line above it
-static int merge_line(code_t *code, uint64_t line) {
-	int old_line_len = strlen(code->lines[line - 1].text);
-	int new_line_len = old_line_len + strlen(code->lines[line].text);
+static int merge_line(code_t *code, int line) {
+	size_t old_line_len = strlen(code->lines[line - 1].text);
+	size_t new_line_len = old_line_len + strlen(code->lines[line].text);
 
-	code->lines[line - 1].text = realloc(code->lines[line - 1].text, (new_line_len + 1) * sizeof(char));
+	code->lines[line - 1].text = realloc(code->lines[line - 1].text, ((size_t)new_line_len + 1ULL) * sizeof(char));
 	strcat(code->lines[line - 1].text, code->lines[line].text);
 
 	free(code->lines[line].text);
 	code->lines[line].text = NULL;
 
-	memmove(&code->lines[line], &code->lines[line + 1], (code->line_amount - line - 1) * sizeof(line_t));
+	memmove(&code->lines[line], &code->lines[line + 1], ((size_t)code->line_amount - (size_t)line - 1ULL) * sizeof(line_t));
 	
 	code->line_amount--;
 
@@ -182,25 +164,25 @@ static int merge_line(code_t *code, uint64_t line) {
 }
 
 // Insert a char at a position
-static void insert_char_at(code_t *code, uint64_t line, uint64_t pos, char c) {
-	int len = strlen(code->lines[line].text);
+static void insert_char_at(code_t *code, int line, int pos, char c) {
+	size_t len = strlen(code->lines[line].text);
 
 	// + 2, 1 for null terminator and 1 for the new character
-	code->lines[line].text = realloc(code->lines[line].text, len + 2);
-	memmove(&code->lines[line].text[pos] + 1, &code->lines[line].text[pos], strlen(&code->lines[line].text[pos]) + 1);
+	code->lines[line].text = realloc(code->lines[line].text, (size_t)len + 2ULL);
+	memmove(&code->lines[line].text[pos] + 1, &code->lines[line].text[pos], strlen(&code->lines[line].text[pos]) + 1ULL);
 
 	code->lines[line].text[pos] = c;
 }
 
 // Remove a char at a position
-static void remove_char_at(code_t *code, uint64_t line, uint64_t pos) {
+static void remove_char_at(code_t *code, int line, int pos) {
 	if (pos == 0) {
 		return;
 	}
 
-	int len = strlen(code->lines[line].text);
+	size_t len = strlen(code->lines[line].text);
 
-	memmove(&code->lines[line].text[pos] - 1, &code->lines[line].text[pos], strlen(&code->lines[line].text[pos]) + 1);
+	memmove(&code->lines[line].text[pos] - 1, &code->lines[line].text[pos], strlen(&code->lines[line].text[pos]) + 1ULL);
 	code->lines[line].text = realloc(code->lines[line].text, len);
 
 	code->cursor_pos--;
@@ -380,7 +362,7 @@ static void move_cursor_to_mouse(ram_t *ram, code_t *code) {
 static int get_indent_level(char text[]) {
 	int indent = 0;
 
-	for (int i = 0; i < strlen(text); i++) {
+	for (size_t i = 0; i < strlen(text); i++) {
 		if (text[i] == '\t') {
 			indent++;
 		} else {
@@ -520,11 +502,8 @@ void code_editor_draw(computer_t *computer) {
 	char line_number_buffer[8];
 
 	// TODO: fix font so I can refactor this hardcoded mess
-	for (uint64_t i = 0; i < computer->code.line_amount; i++) {
-		sprintf(line_number_buffer, "% 4lld", i + 1);
-		// api_text(computer, 0, line_number_buffer, code_rect.x + 2, code_rect.y + 2 + i * 10, 8);
-		// api_text(computer, 0, computer->code.lines[i].text, code_rect.x + 2 + 5 * 6, code_rect.y + 2 + i * 10, 0);
-
+	for (int i = 0; i < computer->code.line_amount; i++) {
+		sprintf(line_number_buffer, "% 4d", i + 1);
 		api_text(computer, font_index, line_number_buffer, code_rect.x + 2, code_rect.y + 2 + (i * (font->height + font->vertical_space)), 8);
 		api_text(computer, font_index, computer->code.lines[i].text, code_rect.x + 2 + 5 * (font->width + font->horizontal_space), code_rect.y + 2 + (i * (font->height + font->vertical_space)), 0);
 	}
@@ -532,9 +511,6 @@ void code_editor_draw(computer_t *computer) {
 
 	// Draw cursor
 	if (computer->ticks % 40 < 20) {
-		// api_line(computer, code_rect.x + 2 + 5 * 6 + computer->code.cursor_pos * 6, code_rect.y + 2 + computer->code.cursor_line * 10, code_rect.x + 2 + 5 * 6 + computer->code.cursor_pos * 6, code_rect.y + 2 + computer->code.cursor_line * 10 + 8, 3);
-		// int cursor_x = code_rect.x + 2 + 4 * font->width + computer->code.cursor_pos * font->width;
-		// int cursor_x = code_rect.x + 2 + 5 * (font->width + font->horizontal_space) + (computer->code.cursor_pos * (font->width + font->horizontal_space));
 		int cursor_x = code_rect.x + 2 + 5 * (font->width + font->horizontal_space) + get_real_cursor_pos(computer);
 		int cursor_y = code_rect.y + 2 + computer->code.cursor_line * (font->height + font->vertical_space);
 		api_line(computer, cursor_x, cursor_y, cursor_x, cursor_y + font->height, 3);

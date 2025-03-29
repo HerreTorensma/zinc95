@@ -80,5 +80,7 @@ int main(int argc, char *argv[]) {
 		backend_tick_end(&computer);
 	}
 
+	computer_quit(&computer);
+
 	backend_quit();
 }

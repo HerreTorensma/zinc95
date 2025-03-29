@@ -167,6 +167,20 @@ void computer_init(computer_t *computer) {
 	};
 }
 
+void code_free(code_t *code) {
+	for (int i = 0; i < code->line_amount; i++) {
+		free(code->lines[i].text);
+	}
+	free(code->lines);
+}
+
+void computer_quit(computer_t *computer) {
+	// Free the code first
+	code_free(&computer->code);
+
+	free(computer->ram);
+}
+
 void generate_rgb_framebuffer(computer_t *computer) {
 	for (int y = 0; y < SCREEN_HEIGHT; y++) {
 		for (int x = 0; x < SCREEN_WIDTH; x++) {
@@ -199,9 +213,28 @@ bool point_in_rect(int x, int y, rect_t rect) {
 	return false;
 }
 
+// Convert the code_t datastructure back to a string for saving
+// the function assumes that passed buffer is large enough
+static void code_to_string(code_t *code, char *buffer) {
+	size_t buffer_pos = 0;
+
+	for (int i = 0; i < code->line_amount; i++) {
+		size_t line_len = strlen(code->lines[i].text);
+		
+		memcpy(&buffer[buffer_pos], code->lines[i].text, (line_len + 1) * sizeof(char));
+		
+		if (i < code->line_amount - 1) {
+			buffer[buffer_pos + line_len] = '\n';
+		} else {
+			buffer[buffer_pos + line_len] = '\0';
+		}
+		buffer_pos += line_len + 1;
+	}
+}
+
 void play_game(computer_t *computer) {
 	// Convert code to string
-	code_to_string(computer->code, computer->ram->code_buffer);
+	code_to_string(&computer->code, computer->ram->code_buffer);
 
 	// Init the lua stuff
 	lua_init(computer);
@@ -251,7 +284,6 @@ void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int 
 }
 */
 
-// void draw_sprite_sheet_rect(computer_t *computer, int sprite_sheet_index, int x, int y, rect_t rect) {
 void draw_sprite_sheet_rect(computer_t *computer, int x, int y, rect_t rect, uint8_t color_key) {
 	for (int i = 0; i < rect.h; i++) {
 		for (int j = 0; j < rect.w; j++) {
@@ -263,8 +295,27 @@ void draw_sprite_sheet_rect(computer_t *computer, int x, int y, rect_t rect, uin
 	}
 }
 
-// rect_t sprite_to_spritesheet_rect(ram_t *ram, int sprite_sheet_index, int sprite_index, int w, int h) {
-rect_t sprite_to_spritesheet_rect(ram_t *ram, int sprite_index, int w, int h) {
+void draw_sprite_sheet_rect_scaled(computer_t *computer, int x, int y, rect_t rect, uint8_t color_key, int scale) {
+	for (int i = 0; i < rect.h; i++) {
+		for (int j = 0; j < rect.w; j++) {
+			uint8_t color = computer->ram->spritesheet.data[(rect.y + i) * SPRITESHEET_WIDTH + (rect.x + j)];
+			// api_rectf(computer, x + (j * scale), y + (i * scale), scale, scale, color);
+			rect_t new_rect = {x + (j * scale), y + (i * scale), scale, scale};
+			draw_filled_rectangle(computer, new_rect, color);
+		}
+	}
+}
+
+void draw_filled_rectangle(computer_t *computer, rect_t rect, uint8_t color) {
+	// Using i and j to avoid conflict with the x and y parameters
+	for (int i = rect.y; i < rect.y+rect.h; i++) {
+		for (int j = rect.x; j < rect.x+rect.w; j++) {
+			set_pixel(computer, j, i, color);
+		}
+	}
+}
+
+rect_t sprite_index_to_spritesheet_rect(ram_t *ram, int sprite_index, int w, int h) {
 	rect_t rect = {
 		.x = (sprite_index % SPRITES_PER_ROW) * SPRITE_WIDTH,
 		.y = (sprite_index / SPRITES_PER_ROW) * SPRITE_HEIGHT,

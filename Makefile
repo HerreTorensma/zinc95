@@ -1,7 +1,7 @@
 # IMPORTANT: this Makefile has not been tested on Linux yet!
 
 CC = gcc
-CFLAGS = -g -Wall -Wextra -Wsign-conversion -Wpedantic -Wconversion -std=c11 -Wno-unused-parameter
+CFLAGS = -g -Wall -Wextra -Wsign-conversion -Wpedantic -std=c11 -Wno-unused-parameter
 
 ifeq ($(OS), Windows_NT)
 	CFLAGS += -Ilib/SDL2_win/include -Ilib/lua-5.4.7/src
@@ -21,7 +21,7 @@ else
 	endif
 endif
 
-SRC = src/main.c src/backend/backend.c src/backend/sdl2.c src/computer.c src/util/util.c src/api/api.c src/workspaces/sprite.c src/backend/input.c src/res.c src/workspaces/menu.c src/workspaces/console.c src/api/lua_api.c src/workspaces/code.c
+SRC = src/main.c src/backend/backend.c src/backend/sdl2.c src/computer.c src/util/util.c src/api/api.c src/workspaces/sprite.c src/backend/input.c src/res.c src/workspaces/menu.c src/api/lua_api.c src/workspaces/code.c src/workspaces/map.c src/workspaces/sound.c
 OBJ = $(SRC:.c=.o)
 
 all: libs app
@@ -44,3 +44,6 @@ app: $(OBJ)
 
 clean:
 	find . -type f -name "*.o" -delete && rm -f $(EXECUTABLE) && rm lib/lua-5.4.7/src/liblua.a
+
+clean_app:
+	find . -type f -name "*.o" -delete

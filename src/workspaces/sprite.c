@@ -194,6 +194,28 @@ void sprite_editor_draw(computer_t *computer) {
 		}
 	}
 
+	/*
+	for (int y = 0; y < 8; y++) {
+		for (int x = 0; x < 2; x++) {
+			rect_t rect = {
+				.x = spritesheet_rect.x + spritesheet_rect.w + 4 + x * 24,
+				.y = spritesheet_rect.y + y * 16,
+				.w = 24,
+				.h = 16,
+			};
+
+			int index = y * 2 + x;
+	
+			char buffer[3];
+			sprintf(buffer, "%d", index + 1);
+			
+			if (button_ex(computer, buffer, rect, selected_spritesheet_index == index)) {
+				set_selected_spritesheet_index(index);
+			}
+		}
+	}
+	*/
+
 	api_rect(
 		computer,
 		spritesheet_rect.x + currently_editing_rect.x - 1,
@@ -226,7 +248,23 @@ void sprite_editor_draw(computer_t *computer) {
 		.w = currently_editing_rect.w,
 		.h = currently_editing_rect.h,
 	};
-	draw_sprite_sheet_rect_scaled(computer, sprite_editor_rect.x, sprite_editor_rect.y, idk, sprite_editor_rect.w / currently_editing_rect.w);
+	// draw_sprite_sheet_rect_scaled(computer, sprite_editor_rect.x, sprite_editor_rect.y, idk, sprite_editor_rect.w / currently_editing_rect.w);
+	draw_sprite_sheet_rect_scaled(computer, sprite_editor_rect.x, sprite_editor_rect.y, idk, COLOR_NONE, sprite_editor_rect.w / currently_editing_rect.w);
+
+	// draw_sprite_sheet_rect_scaled()
+	// api_sspr(
+	// 	computer,
+	// 	sprite_editor_rect.x, sprite_editor_rect.y,
+		
+	// 	visible_rect.x + currently_editing_rect.x,
+	// 	visible_rect.y + currently_editing_rect.y,
+	// 	currently_editing_rect.w,
+	// 	currently_editing_rect.h,
+
+	// 	COLOR_NONE,
+
+	// 	sprite_editor_rect.w / currently_editing_rect.w
+	// );
 
 	// Selected color
 	char buffer[32];
@@ -237,7 +275,7 @@ void sprite_editor_draw(computer_t *computer) {
 	
 	// Selected sprite preview
 	draw_in_frame(computer, (rect_t){color_picker_rect.x, color_picker_rect.y - 40, 16, 16});
-	api_sspr(computer, get_sprite_index(), color_picker_rect.x, color_picker_rect.y - 40, 1, 1, 2);
+	api_spr(computer, get_sprite_index(), color_picker_rect.x, color_picker_rect.y - 40, 1, 1, 2);
 	sprintf(buffer, "#%04d\n", get_sprite_index());
 	api_text(computer, 0, buffer, color_picker_rect.x + 20, color_picker_rect.y - 36, 0);
 

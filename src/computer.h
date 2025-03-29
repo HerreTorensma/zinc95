@@ -5,7 +5,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-#define RAM_SIZE (8 * 1024 * 1024)
+#define RAM_SIZE (32 * 1024 * 1024)
 #define CODE_SIZE (8 * 1024 * 1024)
 
 #define SCREEN_WIDTH 640
@@ -18,7 +18,8 @@
 #define SPRITESHEET_PAGE_HEIGHT 128
 #define SPRITESHEET_WIDTH SPRITESHEET_PAGE_WIDTH
 // 8 pages of sprites
-#define SPRITESHEET_HEIGHT (SPRITESHEET_PAGE_HEIGHT * 8)
+#define SPRITESHEET_PAGE_AMOUNT 16
+#define SPRITESHEET_HEIGHT (SPRITESHEET_PAGE_HEIGHT * SPRITESHEET_PAGE_AMOUNT)
 
 #define SPRITE_WIDTH 8
 #define SPRITE_HEIGHT 8
@@ -33,7 +34,7 @@
 
 #define TAB_SIZE 4
 
-#define COLOR_KEY_NONE 255
+#define COLOR_NONE 255
 #define COLOR_BLACK 0
 #define COLOR_WHITE 15
 
@@ -97,11 +98,11 @@ typedef struct line {
 
 typedef struct code {
 	line_t *lines;
-	uint64_t line_amount;
+	int line_amount;
 	
-	uint64_t cursor_line;
-	uint64_t cursor_pos;
-	uint64_t target_pos;
+	int cursor_line;
+	int cursor_pos;
+	int target_pos;
 } code_t;
 
 // 8MB RAM (excluding what the lua code takes up)
@@ -138,6 +139,8 @@ computer_t *get_global_computer();
 // This function currently only allocates memory for the fantasy ram
 void computer_init(computer_t *computer);
 
+void computer_quit(computer_t *computer);
+
 // Generate a buffer of rgb_color_t using palette so it can be rendered by a backend later
 void generate_rgb_framebuffer(computer_t *computer);
 
@@ -168,7 +171,11 @@ void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int 
 
 void draw_sprite_sheet_rect(computer_t *computer, int x, int y, rect_t rect, uint8_t color_key);
 
-rect_t sprite_to_spritesheet_rect(ram_t *ram, int sprite_index, int w, int h);
+void draw_sprite_sheet_rect_scaled(computer_t *computer, int x, int y, rect_t rect, uint8_t color_key, int scale);
+
+void draw_filled_rectangle(computer_t *computer, rect_t rect, uint8_t color);
+
+rect_t sprite_index_to_spritesheet_rect(ram_t *ram, int sprite_index, int w, int h);
 
 int get_text_width(font_t *font, char text[], int max_offset);
 

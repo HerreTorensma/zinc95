@@ -5,17 +5,15 @@
 
 #include "../computer.h"
 
-void draw_sprite_sheet_rect_scaled(computer_t *computer, int x, int y, rect_t rect, int scale);
-
 // Fill the screen with specified color
 void api_cls(computer_t *computer, int color);
 
 // --- Graphics/Map
 // Draw a sprite
-void api_spr(computer_t *computer, int sprite_index, int x, int y, int width, int height);
+void api_spr(computer_t *computer, int sprite_index, int x, int y, int width, int height, int scale);
 
-// Draw a scaled sprite
-void api_sspr(computer_t *computer, int sprite_index, int x, int y, int width, int height, int scale);
+// Draw a rect from the spritesheet
+void api_sspr(computer_t *computer, int x, int y, int rx, int ry, int rw, int rh, int color_key, int scale);
 
 // Draw a portion of the map
 void api_map(computer_t *computer, int x, int y, int width, int height);
@@ -76,5 +74,6 @@ bool api_mouse_btnr(computer_t *computer, int button);
 // --- Text
 void api_text(computer_t *computer, int font_index, char text[], int x, int y, int color);
 
+// --- Utils
 // Get the amount of ticks since the console has been running
 int api_ticks(computer_t *computer);

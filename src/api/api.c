@@ -15,23 +15,39 @@ void api_cls(computer_t *computer, int color) {
 	}
 }
 
-void api_spr(computer_t *computer, int sprite_index, int x, int y, int width, int height) {
-	rect_t rect = sprite_to_spritesheet_rect(computer->ram, sprite_index, width, height);
-	draw_sprite_sheet_rect(computer, x, y, rect, computer->ram->sprites[sprite_index].color_key);
-}
+// void api_spr(computer_t *computer, int sprite_index, int x, int y, int width, int height) {
+// 	rect_t rect = sprite_index_to_spritesheet_rect(computer->ram, sprite_index, width, height);
+// 	draw_sprite_sheet_rect(computer, x, y, rect, computer->ram->sprites[sprite_index].color_key);
+// }
 
-void draw_sprite_sheet_rect_scaled(computer_t *computer, int x, int y, rect_t rect, int scale) {
-	for (int i = 0; i < rect.h; i++) {
-		for (int j = 0; j < rect.w; j++) {
-			uint8_t color = computer->ram->spritesheet.data[(rect.y + i) * SPRITESHEET_WIDTH + (rect.x + j)];
-			api_rectf(computer, x + (j * scale), y + (i * scale), scale, scale, color);
-		}
+// void api_sspr(computer_t *computer, int sprite_index, int x, int y, int width, int height, int scale) {
+// 	rect_t rect = sprite_index_to_spritesheet_rect(computer->ram, sprite_index, width, height);
+// 	draw_sprite_sheet_rect_scaled(computer, x, y, rect, computer->ram->sprites[sprite_index].color_key, scale);
+// }
+
+// void api_spr(computer_t *computer, int sprite_index, int x, int y, int width, int height) {
+// 	rect_t rect = sprite_index_to_spritesheet_rect(computer->ram, sprite_index, width, height);
+// 	draw_sprite_sheet_rect(computer, x, y, rect, computer->ram->sprites[sprite_index].color_key);
+// }
+
+void api_spr(computer_t *computer, int sprite_index, int x, int y, int width, int height, int scale) {
+	rect_t rect = sprite_index_to_spritesheet_rect(computer->ram, sprite_index, width, height);
+	
+	if (scale == 1) {
+		draw_sprite_sheet_rect(computer, x, y, rect, computer->ram->sprites[sprite_index].color_key);
+	} else {
+		draw_sprite_sheet_rect_scaled(computer, x, y, rect, computer->ram->sprites[sprite_index].color_key, scale);
 	}
 }
 
-void api_sspr(computer_t *computer, int sprite_index, int x, int y, int width, int height, int scale) {
-	rect_t rect = sprite_to_spritesheet_rect(computer->ram, sprite_index, width, height);
-	draw_sprite_sheet_rect_scaled(computer, x, y, rect, scale);
+void api_sspr(computer_t *computer, int x, int y, int rx, int ry, int rw, int rh, int color_key, int scale) {
+	rect_t rect = {rx, ry, rw, rh};
+
+	if (scale == 1) {
+		draw_sprite_sheet_rect(computer, x, y, rect, color_key);
+	} else {
+		draw_sprite_sheet_rect_scaled(computer, x, y, rect, color_key, scale);
+	}
 }
 
 // Using Bresemham's line algorithm
@@ -78,12 +94,7 @@ void api_rect(computer_t *computer, int x, int y, int w, int h, int color) {
 }
 
 void api_rectf(computer_t *computer, int x, int y, int w, int h, int color) {
-	// Using i and j to avoid conflict with the x and y parameters
-	for (int i = y; i < y+h; i++) {
-		for (int j = x; j < x+w; j++) {
-			set_pixel(computer, j, i, color);
-		}
-	}
+	draw_filled_rectangle(computer, (rect_t){x, y, w, h}, color);
 }
 
 bool api_key(computer_t *computer, int key) {
@@ -116,7 +127,7 @@ void api_text(computer_t *computer, int font_index, char text[], int x, int y, i
 	int new_x = x;
 	int new_y = y;
 
-	for (int i = 0; i < strlen(text); i++) {
+	for (size_t i = 0; i < strlen(text); i++) {
 		// Commented this out for now, might add it back later not sure yet
 		if (text[i] == '\n') {
 			new_x = 0;
@@ -139,7 +150,7 @@ void api_text(computer_t *computer, int font_index, char text[], int x, int y, i
 			int sprite_index = 0;
 
 			// Read the digits after
-			int index = i + 1;
+			size_t index = i + 1;
 			while (text[index] >= '0' && text[index] <= '9') {
 				sprite_index *= 10;
 				sprite_index += text[index] - '0';
@@ -148,7 +159,7 @@ void api_text(computer_t *computer, int font_index, char text[], int x, int y, i
 			}
 
 			// Only sprite sheet 0 now
-			api_spr(computer, sprite_index, new_x, new_y, 1, 1);
+			api_spr(computer, sprite_index, new_x, new_y, 1, 1, 1);
 			new_x += 16 + font->horizontal_space;
 
 			i = index - 1;
@@ -162,7 +173,7 @@ void api_text(computer_t *computer, int font_index, char text[], int x, int y, i
 		int y_offset = (char_index / (SPRITES_PER_ROW / font->h_sprites)) * font->v_sprites;
 		int sprite_index = font->sprite_index + x_offset + (y_offset * SPRITES_PER_ROW);
 
-		rect_t rect = sprite_to_spritesheet_rect(computer->ram, sprite_index, font->h_sprites, font->v_sprites);
+		rect_t rect = sprite_index_to_spritesheet_rect(computer->ram, sprite_index, font->h_sprites, font->v_sprites);
 
 		for (int i = 0; i < rect.h; i++) {
 			for (int j = 0; j < rect.w; j++) {

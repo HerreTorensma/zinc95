@@ -291,6 +291,7 @@ static int mouse_button_to_sdl2_button(mouse_button_t button) {
 		case MOUSE_BUTTON_LEFT: return 1;
 		case MOUSE_BUTTON_MIDDLE: return 2;
 		case MOUSE_BUTTON_RIGHT: return 3;
+		default: return 0;
 	}
 }
 
