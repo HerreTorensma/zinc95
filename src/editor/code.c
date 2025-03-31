@@ -8,6 +8,7 @@
 #include "../util/util.h"
 #include "../backend/backend.h"
 #include "../backend/input.h"
+#include "menu.h"
 
 static rect_t code_rect = {
 	.x = 4,
@@ -17,6 +18,9 @@ static rect_t code_rect = {
 };
 
 static const int font_index = 2;
+static int scroll_amount = 0;
+
+static int lines_on_screen = 0;
 
 static char sample_string[] =	"local x = 0\n"
 								"local y = 0\n"
@@ -341,7 +345,7 @@ static void move_cursor_to_mouse(ram_t *ram, code_t *code) {
 	get_mouse_pos(&x, &y);
 
 	int corrected_x = x - (code_rect.x + 5 * (font->width + font->horizontal_space));
-	int corrected_y = y - code_rect.y;
+	int corrected_y = y - code_rect.y + (scroll_amount * (font->height + font->vertical_space));
 
 	int line = corrected_y / (font->height + font->vertical_space);
 	if (line < 0) {
@@ -381,6 +385,8 @@ static int get_indent_level(char text[]) {
 void code_editor_init(computer_t *computer) {
 	// uint64_t lines_amount = string_get_lines_amount(sample_string);
 	uint64_t lines_amount = string_get_lines_amount(computer->ram->code_buffer);
+
+	lines_on_screen = workspace_rect.h / (computer->ram->fonts[font_index].height + computer->ram->fonts[font_index].horizontal_space);
 
 	computer->code.lines = malloc(lines_amount * sizeof(line_t));
 	if (computer->code.lines == NULL) {
@@ -489,8 +495,21 @@ void code_editor_update(computer_t *computer) {
 	handle_char_input(computer, code);
 
 	// Mouse
-	if (api_mouse_btnp(computer, 1)) {
+	if (api_mouse_btnp(computer, MOUSE_BUTTON_LEFT)) {
 		move_cursor_to_mouse(computer->ram, &computer->code);
+	}
+
+	// Scrolling
+	if (api_mouse_scrolled(computer, SCROLL_DOWN)) {
+		scroll_amount += 3;
+		if (scroll_amount >= code->line_amount) {
+			scroll_amount = code->line_amount - 1;
+		}
+	} else if (api_mouse_scrolled(computer, SCROLL_UP)) {
+		scroll_amount -= 3;
+		if (scroll_amount < 0) {
+			scroll_amount = 0;
+		}
 	}
 }
 
@@ -509,17 +528,20 @@ void code_editor_draw(computer_t *computer) {
 	char line_number_buffer[8];
 
 	// TODO: fix font so I can refactor this hardcoded mess
-	for (int i = 0; i < computer->code.line_amount; i++) {
-		sprintf(line_number_buffer, "% 4d", i + 1);
-		api_text(computer, font_index, line_number_buffer, code_rect.x + 2, code_rect.y + 2 + (i * (font->height + font->vertical_space)), 8);
-		api_text(computer, font_index, computer->code.lines[i].text, code_rect.x + 2 + 5 * (font->width + font->horizontal_space), code_rect.y + 2 + (i * (font->height + font->vertical_space)), 0);
-	}
+	for (int i = 0; i < lines_on_screen; i++) {
+		if (i + scroll_amount >= computer->code.line_amount) {
+			break;
+		}
 
+		sprintf(line_number_buffer, "% 4d", i + scroll_amount + 1);
+		api_text(computer, font_index, line_number_buffer, code_rect.x + 2, code_rect.y + 2 + (i * (font->height + font->vertical_space)), 8);
+		api_text(computer, font_index, computer->code.lines[i + scroll_amount].text, code_rect.x + 2 + 5 * (font->width + font->horizontal_space), code_rect.y + 2 + (i * (font->height + font->vertical_space)), 0);
+	}
 
 	// Draw cursor
 	if (computer->ticks % 40 < 20) {
 		int cursor_x = code_rect.x + 2 + 5 * (font->width + font->horizontal_space) + get_real_cursor_pos(computer);
-		int cursor_y = code_rect.y + 2 + computer->code.cursor_line * (font->height + font->vertical_space);
+		int cursor_y = code_rect.y + 2 + computer->code.cursor_line * (font->height + font->vertical_space) - scroll_amount * (font->height + font->vertical_space);
 		api_line(computer, cursor_x, cursor_y, cursor_x, cursor_y + font->height, 3);
 	}
 }

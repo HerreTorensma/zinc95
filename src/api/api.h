@@ -71,6 +71,8 @@ bool api_mouse_btnp(computer_t *computer, int button);
 // Check if a mouse button is released
 bool api_mouse_btnr(computer_t *computer, int button);
 
+bool api_mouse_scrolled(computer_t *computer, int direction);
+
 // --- Text
 void api_text(computer_t *computer, int font_index, char text[], int x, int y, int color);
 

@@ -1,6 +1,7 @@
 #include "util.h"
 #include "../api/api.h"
 #include "../backend/backend.h"
+#include "../backend/input.h"
 
 #include <stdio.h>
 
@@ -84,7 +85,7 @@ bool button_ex(computer_t *computer, char text[], rect_t rect, bool appear_press
 	bool return_value = false;
 	
 	if (point_in_rect(x, y, rect)) {
-		if (api_mouse_btn(computer, 1)) {
+		if (api_mouse_btn(computer, MOUSE_BUTTON_LEFT)) {
 			appear_pressed = true;
 			return_value = true;
 		}
@@ -122,11 +123,11 @@ bool press_button(computer_t *computer, char text[], rect_t rect) {
 	bool held = false;
 	
 	if (point_in_rect(x, y, rect)) {
-		if (api_mouse_btn(computer, 1)) {
+		if (api_mouse_btn(computer, MOUSE_BUTTON_LEFT)) {
 			held = true;
 		}
 
-		if (api_mouse_btnp(computer, 1)) {
+		if (api_mouse_btnp(computer, MOUSE_BUTTON_LEFT)) {
 			pressed = true;
 		}
 	}

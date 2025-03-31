@@ -13,6 +13,9 @@ static SDL_Renderer *renderer = NULL;
 static uint32_t pixels[SCREEN_WIDTH * SCREEN_HEIGHT] = {0};
 static SDL_Texture *screen_texture = NULL;
 
+// -1 is up, 0 is none, 1 is down
+static int scroll_state = 0;
+
 typedef struct sdl2_input {
 	uint8_t prev_key_state[512];
 	uint8_t key_state[512];
@@ -130,6 +133,8 @@ void sdl2_get_mouse_pos(int *x, int *y) {
 }
 
 void sdl2_tick_start(computer_t *computer) {
+	scroll_state = 0;
+
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		if (event.type == SDL_QUIT) {
@@ -148,6 +153,17 @@ void sdl2_tick_start(computer_t *computer) {
 				} else {
 					SDL_SetWindowFullscreen(window, 0);
 				}
+			}
+		}
+
+		// Check scrolling
+		if (event.type == SDL_MOUSEWHEEL) {
+			if (event.wheel.y > 0) {
+				scroll_state = -1;
+			} else if (event.wheel.y < 0) {
+				scroll_state = 1;
+			} else {
+				scroll_state = 0;
 			}
 		}
 	}
@@ -359,4 +375,8 @@ bool sdl2_input_mouse_button_held(mouse_button_t button) {
 		return true;
 	}
 	return false;
+}
+
+bool sdl2_input_mouse_scrolled(scroll_direction_t direction) {
+	return scroll_state == direction;
 }

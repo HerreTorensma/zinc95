@@ -118,6 +118,12 @@ typedef enum mouse_button {
 	MOUSE_BUTTON_RIGHT = 3,
 } mouse_button_t;
 
+typedef enum scroll_direction {
+	SCROLL_UP = -1,
+	SCROLL_NONE = 0,
+	SCROLL_DOWN = 1,
+} scroll_direction_t;
+
 bool input_key_pressed(zinc_key_t key);
 
 bool input_key_held(zinc_key_t key);
@@ -129,3 +135,5 @@ bool input_mouse_button_pressed(mouse_button_t button);
 bool input_mouse_button_released(mouse_button_t button);
 
 bool input_mouse_button_held(mouse_button_t button);
+
+bool input_mouse_scrolled(scroll_direction_t direction);

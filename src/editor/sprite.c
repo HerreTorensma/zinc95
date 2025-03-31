@@ -82,7 +82,7 @@ void sprite_editor_update(computer_t *computer) {
 	int x, y;
 	get_mouse_pos(&x, &y);
 
-	if (api_keyp(computer, KEY_MINUS)) {
+	if (api_keyp(computer, KEY_MINUS) || api_mouse_scrolled(computer, SCROLL_UP)) {
 		currently_editing_rect.w -= SPRITE_WIDTH;
 		currently_editing_rect.h -= SPRITE_HEIGHT;
 		
@@ -93,13 +93,13 @@ void sprite_editor_update(computer_t *computer) {
 			currently_editing_rect.h = SPRITE_HEIGHT;
 		}
 	}
-	if (api_keyp(computer, KEY_EQUALS)) {
+	if (api_keyp(computer, KEY_EQUALS) || api_mouse_scrolled(computer, SCROLL_DOWN)) {
 		currently_editing_rect.w += SPRITE_WIDTH;
 		currently_editing_rect.h += SPRITE_HEIGHT;
 	}
 
 	if (point_in_rect(x, y, spritesheet_rect)) {
-		if (api_mouse_btn(computer, 1)) {
+		if (api_mouse_btn(computer, MOUSE_BUTTON_LEFT)) {
 			int cell_x = (x - spritesheet_rect.x) / SPRITE_WIDTH;
 			int cell_y = (y - spritesheet_rect.y) / SPRITE_HEIGHT;
 
@@ -115,7 +115,7 @@ void sprite_editor_update(computer_t *computer) {
 	}
 
 	if (point_in_rect(x, y, color_picker_rect)) {
-		if (api_mouse_btn(computer, 1)) {
+		if (api_mouse_btn(computer, MOUSE_BUTTON_LEFT)) {
 			selected_color = coords_to_color(x, y);
 		}
 	}
@@ -126,7 +126,7 @@ void sprite_editor_update(computer_t *computer) {
 		int cell_x = (x - sprite_editor_rect.x) / (sprite_editor_rect.w / currently_editing_rect.w);
 		int cell_y = (y - sprite_editor_rect.y) / (sprite_editor_rect.h / currently_editing_rect.h);
 		
-		if (api_mouse_btn(computer, 1)) {
+		if (api_mouse_btn(computer, MOUSE_BUTTON_LEFT)) {
 			if (api_key(computer, KEY_LALT) || api_key(computer, KEY_RALT)) {
 				selected_color = computer->ram->spritesheet.data[(visible_rect.y + currently_editing_rect.y + cell_y) * SPRITESHEET_WIDTH + (visible_rect.x + currently_editing_rect.x + cell_x)];
 			}
@@ -135,7 +135,7 @@ void sprite_editor_update(computer_t *computer) {
 
 		}
 
-		if (api_mouse_btn(computer, 3)) {
+		if (api_mouse_btn(computer, MOUSE_BUTTON_RIGHT)) {
 			computer->ram->spritesheet.data[(visible_rect.y + currently_editing_rect.y + cell_y) * SPRITESHEET_WIDTH + (visible_rect.x + currently_editing_rect.x + cell_x)] = 0;
 		}
 	}
@@ -150,7 +150,7 @@ static bool toggle_button(computer_t *computer, char text[], rect_t rect, bool *
 	get_mouse_pos(&x, &y);
 	
 	if (point_in_rect(x, y, rect)) {
-		if (api_mouse_btnp(computer, 1)) {
+		if (api_mouse_btnp(computer, MOUSE_BUTTON_LEFT)) {
 			*pressed = !(*pressed);
 		}
 	}

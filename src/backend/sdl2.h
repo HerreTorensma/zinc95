@@ -33,3 +33,5 @@ bool sdl2_input_mouse_button_pressed(mouse_button_t button);
 bool sdl2_input_mouse_button_released(mouse_button_t button);
 
 bool sdl2_input_mouse_button_held(mouse_button_t button);
+
+bool sdl2_input_mouse_scrolled(scroll_direction_t direction);

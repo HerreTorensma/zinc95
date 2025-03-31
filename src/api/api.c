@@ -121,6 +121,10 @@ bool api_mouse_btnr(computer_t *computer, int button) {
 	return input_mouse_button_released(button);
 }
 
+bool api_mouse_scrolled(computer_t *computer, int direction) {
+	return input_mouse_scrolled(direction);
+}
+
 void api_text(computer_t *computer, int font_index, char text[], int x, int y, int color) {
 	font_t *font = &computer->ram->fonts[font_index];
 

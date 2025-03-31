@@ -36,3 +36,9 @@ bool input_mouse_button_held(mouse_button_t button) {
 	return sdl2_input_mouse_button_held(button);
 	#endif
 }
+
+bool input_mouse_scrolled(scroll_direction_t direction) {
+	#ifdef BACKEND_SDL2
+	return sdl2_input_mouse_scrolled(direction);
+	#endif
+}
