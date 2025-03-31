@@ -18,7 +18,8 @@
 #define SPRITESHEET_PAGE_HEIGHT 128
 #define SPRITESHEET_WIDTH SPRITESHEET_PAGE_WIDTH
 // 8 pages of sprites
-#define SPRITESHEET_PAGE_AMOUNT 16
+// #define SPRITESHEET_PAGE_AMOUNT 16
+#define SPRITESHEET_PAGE_AMOUNT 8
 #define SPRITESHEET_HEIGHT (SPRITESHEET_PAGE_HEIGHT * SPRITESHEET_PAGE_AMOUNT)
 
 #define SPRITE_WIDTH 8
@@ -136,6 +137,8 @@ void set_global_computer(computer_t *computer);
 
 computer_t *get_global_computer();
 
+void computer_load_assets(computer_t *computer);
+
 // This function currently only allocates memory for the fantasy ram
 void computer_init(computer_t *computer);
 
@@ -180,3 +183,7 @@ rect_t sprite_index_to_spritesheet_rect(ram_t *ram, int sprite_index, int w, int
 int get_text_width(font_t *font, char text[], int max_offset);
 
 int x_to_text_index(font_t *font, char text[], int x);
+
+void game_save(computer_t *computer, const char filename[]);
+
+void game_load(computer_t *computer, const char filename[]);

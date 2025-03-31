@@ -86,7 +86,11 @@ static void string_to_code(code_t *code, char *text) {
 	size_t pos_since_last_line_start = 0;
 	
 	for (uint64_t i = 0; i < strlen(text) + 1; i++) {
-		if (text[i] == '\n' || text[i] == '\0') {
+		if (text[i] == '\0') {
+			break;
+		}
+
+		if (text[i] == '\n') {
 			if (last_line_start != text) {
 				last_line_start++;
 			}
@@ -375,7 +379,8 @@ static int get_indent_level(char text[]) {
 }
 
 void code_editor_init(computer_t *computer) {
-	uint64_t lines_amount = string_get_lines_amount(sample_string);
+	// uint64_t lines_amount = string_get_lines_amount(sample_string);
+	uint64_t lines_amount = string_get_lines_amount(computer->ram->code_buffer);
 
 	computer->code.lines = malloc(lines_amount * sizeof(line_t));
 	if (computer->code.lines == NULL) {
@@ -383,7 +388,8 @@ void code_editor_init(computer_t *computer) {
 		exit(1);
 	}
 
-	string_to_code(&computer->code, sample_string);
+	// string_to_code(&computer->code, sample_string);
+	string_to_code(&computer->code, computer->ram->code_buffer);
 }
 
 void code_editor_update(computer_t *computer) {

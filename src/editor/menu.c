@@ -101,13 +101,15 @@ void workspace_menu_draw(computer_t *computer) {
 		active_workspace = WORKSPACE_SOUND;
 	}
 	
-	button(computer, "", (rect_t){SCREEN_WIDTH-16-16-2, 2, 16, 16});
-	api_spr(computer, 482, SCREEN_WIDTH-16-16-2, 2, 2, 2, 1);
+	if (press_button(computer, "", (rect_t){SCREEN_WIDTH-16-16-2, 2, 16, 16})) {
+		game_save(computer, "game.zinc95");
+	}
+	api_spr(computer, 5858, SCREEN_WIDTH-16-16-2, 2, 2, 2, 1);
 	
-	if (button(computer, "", (rect_t){SCREEN_WIDTH-16-2, 2, 16, 16})) {
+	if (press_button(computer, "", (rect_t){SCREEN_WIDTH-16-2, 2, 16, 16})) {
 		play_game(computer);
 	}
-	api_spr(computer, 480, SCREEN_WIDTH-16-2, 2, 2, 2, 1);
+	api_spr(computer, 5856, SCREEN_WIDTH-16-2, 2, 2, 2, 1);
 
 	switch (active_workspace) {
 		case WORKSPACE_CODE:

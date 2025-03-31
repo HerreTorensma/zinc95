@@ -113,3 +113,39 @@ bool button_ex(computer_t *computer, char text[], rect_t rect, bool appear_press
 bool button(computer_t *computer, char text[], rect_t rect) {
 	return button_ex(computer, text, rect, false);
 }
+
+bool press_button(computer_t *computer, char text[], rect_t rect) {
+	int x, y;
+	get_mouse_pos(&x, &y);
+
+	bool pressed = false;
+	bool held = false;
+	
+	if (point_in_rect(x, y, rect)) {
+		if (api_mouse_btn(computer, 1)) {
+			held = true;
+		}
+
+		if (api_mouse_btnp(computer, 1)) {
+			pressed = true;
+		}
+	}
+	
+	if (held) {
+		rect_t new_rect = {
+			.x = rect.x + 2,
+			.y = rect.y + 2,
+			.w = rect.w - 4,
+			.h = rect.h - 4,
+		};
+		
+		draw_in_frame(computer, new_rect);
+		api_text(computer, 2, text, rect.x + 2, rect.y + 2, 2);
+
+	} else {
+		draw_out_frame(computer, rect);
+		api_text(computer, 2, text, rect.x + 2, rect.y + 2, 4);
+	}
+	
+	return pressed;
+}

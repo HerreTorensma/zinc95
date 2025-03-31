@@ -17,21 +17,12 @@ computer_t *get_global_computer() {
 	return _computer;
 }
 
-void computer_init(computer_t *computer) {
-	// Allocate 8MB ram
-	computer->ram = malloc(RAM_SIZE);
-	if (computer->ram == NULL) {
-		printf("Couldn't allocate memory for fantasy RAM.\n");
-		exit(EXIT_FAILURE);
-	}
-	memset(computer->ram, 0, RAM_SIZE);
-
-	computer->ram->palette = default_palette;
-
-	memcpy(computer->ram->spritesheet.data, builtin_spritesheet, SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT);
+void computer_load_assets(computer_t *computer) {
+	// memcpy(computer->ram->spritesheet.data, builtin_spritesheet, SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT);
+	memcpy(computer->ram->spritesheet.data + ((SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT) * (SPRITESHEET_PAGE_AMOUNT - 1)), builtin_spritesheet, SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT);
 
 	computer->ram->fonts[0] = (font_t){
-		.sprite_index = 0,
+		.sprite_index = 5376,
 		.horizontal_space = 1,
 		.vertical_space = 3,
 		.width = 8,
@@ -145,7 +136,7 @@ void computer_init(computer_t *computer) {
 	};
 
 	computer->ram->fonts[1] = (font_t){
-		.sprite_index = 192,
+		.sprite_index = 5568,
 		.horizontal_space = 1,
 		.vertical_space = 0,
 		.monospace = true,
@@ -156,7 +147,7 @@ void computer_init(computer_t *computer) {
 	};
 
 	computer->ram->fonts[2] = (font_t){
-		.sprite_index = 384,
+		.sprite_index = 5760,
 		.horizontal_space = 0,
 		.vertical_space = 0,
 		.monospace = true,
@@ -165,6 +156,18 @@ void computer_init(computer_t *computer) {
 		.h_sprites = 1,
 		.v_sprites = 1,
 	};
+}
+
+void computer_init(computer_t *computer) {
+	// Allocate 8MB ram
+	computer->ram = malloc(RAM_SIZE);
+	if (computer->ram == NULL) {
+		printf("Couldn't allocate memory for fantasy RAM.\n");
+		exit(EXIT_FAILURE);
+	}
+	memset(computer->ram, 0, RAM_SIZE);
+
+	computer->ram->palette = default_palette;
 }
 
 void code_free(code_t *code) {
@@ -215,21 +218,23 @@ bool point_in_rect(int x, int y, rect_t rect) {
 
 // Convert the code_t datastructure back to a string for saving
 // the function assumes that passed buffer is large enough
-static void code_to_string(code_t *code, char *buffer) {
-	size_t buffer_pos = 0;
+static size_t code_to_string(code_t *code, char *buffer) {
+	size_t offset = 0;
 
 	for (int i = 0; i < code->line_amount; i++) {
 		size_t line_len = strlen(code->lines[i].text);
 		
-		memcpy(&buffer[buffer_pos], code->lines[i].text, (line_len + 1) * sizeof(char));
+		memcpy(buffer + offset, code->lines[i].text, (line_len + 1) * sizeof(char));
 		
 		if (i < code->line_amount - 1) {
-			buffer[buffer_pos + line_len] = '\n';
+			buffer[offset + line_len] = '\n';
 		} else {
-			buffer[buffer_pos + line_len] = '\0';
+			buffer[offset + line_len] = '\0';
 		}
-		buffer_pos += line_len + 1;
+		offset += line_len + 1;
 	}
+
+	return offset;
 }
 
 void play_game(computer_t *computer) {
@@ -373,4 +378,164 @@ int x_to_text_index(font_t *font, char text[], int x) {
 	}
 
 	return real_index;
+}
+
+#define LUA_SECTION_STRING "<<< lua >>>\n"
+#define GFX_SECTION_STRING "<<< gfx >>>\n"
+#define SPR_SECTION_STRING "<<< spr >>>\n"
+#define SECTION_END_STRING ">>> --- <<<\n"
+
+void game_save(computer_t *computer, const char filename[]) {
+	// Since we zero-initialize we don't need a \0 at the end (but I still do)
+	char *buffer = calloc(RAM_SIZE, sizeof(char));
+	size_t offset = 0;
+
+	strncpy(buffer + offset, "<<< lua >>>\n", 12);
+	offset += 12;
+
+	// Lua code
+	offset += code_to_string(&computer->code, buffer + offset);
+	// Replace \0 with \n so the string doesn't terminate
+	buffer[offset - 1] = '\n';
+
+	strncpy(buffer + offset, ">>> --- <<<\n\n", 13);
+	offset += 13;
+
+	// Spritesheet
+	strncpy(buffer + offset, "<<< gfx >>>\n", 12);
+	offset += 12;
+	for (int y = 0; y < SPRITESHEET_HEIGHT; y++) {
+		for (int x = 0; x < SPRITESHEET_WIDTH; x++) {
+			uint8_t color = computer->ram->spritesheet.data[y * SPRITESHEET_WIDTH + x];
+			// Print the color in hex
+			sprintf(buffer + offset, "%02x", color);
+			offset += 2;
+		}
+		buffer[offset] = '\n';
+		offset++;
+	}
+	strncpy(buffer + offset, ">>> --- <<<\n\n", 13);
+	offset += 13;
+	
+	// Sprite meta
+	strncpy(buffer + offset, "<<< spr >>>\n", 12);
+	offset += 12;
+
+	// TODO: rows and columns
+	for (int i = 0; i < TOTAL_SPRITES; i++) {
+		// 4 bytes of flags
+		// 1 byte of colorkey
+		sprintf(buffer + offset, "%08x", computer->ram->sprites[i].flags);
+		offset += 8;
+
+		sprintf(buffer + offset, "%02x", computer->ram->sprites[i].color_key);
+		offset += 2;
+	}
+	buffer[offset] = '\n';
+	offset++;
+	
+	strncpy(buffer + offset, ">>> --- <<<\n\n", 13);
+	offset += 13;
+	
+	// Null terminate the string
+	buffer[offset] = '\0';
+
+	// Write to file
+	FILE *file = fopen(filename, "w");
+	fprintf(file, buffer);
+	fclose(file);
+
+	free(buffer);
+}
+
+typedef enum file_section {
+	SECTION_NONE,
+	SECTION_LUA,
+	SECTION_GFX,
+	SECTION_SPR,
+} file_section_t;
+
+#define LINE_SIZE RAM_SIZE
+
+void game_load(computer_t *computer, const char filename[]) {
+	char *line = calloc(LINE_SIZE, sizeof(char));
+
+	file_section_t current_section = SECTION_NONE;
+
+	FILE *file = fopen(filename, "r");
+	if (file == NULL) {
+		printf("Unable to open file\n");
+		return;
+	}
+
+	size_t code_offset = 0;
+	size_t spritesheet_offset = 0;
+
+	// Read every line
+	while (fgets(line, LINE_SIZE * sizeof(char), file)) {
+		// Update the current section
+		// Start of section
+		if (line[0] == '<' && line[1] == '<' && line[2] == '<') {
+			if (strcmp(line, LUA_SECTION_STRING) == 0) {
+				current_section = SECTION_LUA;
+				continue;
+			} else if (strcmp(line, GFX_SECTION_STRING) == 0) {
+				current_section = SECTION_GFX;
+				continue;
+			} else if (strcmp(line, SPR_SECTION_STRING) == 0) {
+				current_section = SECTION_SPR;
+				continue;
+			}
+		}
+
+		// End of section
+		else if (line[0] == '>' && line[1] == '>' && line[2] == '>') {
+			if (strcmp(line, SECTION_END_STRING) == 0) {
+				current_section = SECTION_NONE;
+				continue;
+			}
+		}
+
+		// Actually read data
+		switch (current_section) {
+			case SECTION_NONE: {
+				// Continue to next line
+				continue;
+			}
+
+			case SECTION_LUA: {
+				// Read line into buffer
+				size_t len = strlen(line);
+				// TODO: Slightly unsafe since I'm still relying on null-termination, might rewrite
+				strncpy(computer->ram->code_buffer + code_offset, line, len);
+				code_offset += len;
+
+				computer->ram->code_buffer[code_offset] = '\0';
+
+				break;
+			}
+
+			case SECTION_GFX: {
+				// Read line into spritesheet
+				for (int i = 0; i < SPRITESHEET_WIDTH; i++) {
+					sscanf(line + (i * 2), "%02x", &computer->ram->spritesheet.data[spritesheet_offset]);
+					spritesheet_offset++;
+				}
+				break;
+			}
+
+			case SECTION_SPR: {
+				// Read line into sprites
+				for (int i = 0; i < TOTAL_SPRITES; i++) {
+					sscanf(line + (i * 10), "%08x", &computer->ram->sprites[i].flags);
+					sscanf(line + (i * 10 + 8), "%02x", &computer->ram->sprites[i].color_key);
+				}
+				break;
+			}
+		}
+	}
+
+	fclose(file);
+
+	free(line);
 }
