@@ -68,8 +68,6 @@ typedef struct sprite {
 	// Need negatives so that's why it's int16_t and not uint8_t
 	// NO, the last 8 colors are not used anyway so we can use 255 as not having a key
 	uint8_t color_key;
-
-	uint64_t buffer_image;
 } sprite_t;
 
 // Rename every occurance of sprite_sheet to spritesheet

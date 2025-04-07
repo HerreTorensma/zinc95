@@ -5,6 +5,7 @@ CFLAGS = -g -Wall -Wextra -Wsign-conversion -Wpedantic -std=c11 -Wno-unused-para
 
 ifeq ($(OS), Windows_NT)
 	CFLAGS += -Ilib/SDL2_win/include -Ilib/lua-5.4.7/src
+	# LDFLAGS = lib/lua-5.4.7/src/liblua.a -Llib/SDL2_win/lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_mixer -lm -mwindows
 	LDFLAGS = lib/lua-5.4.7/src/liblua.a -Llib/SDL2_win/lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_mixer -lm
 	EXECUTABLE = zinc95.exe
 else

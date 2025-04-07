@@ -390,16 +390,14 @@ void game_save(computer_t *computer, const char filename[]) {
 	char *buffer = calloc(RAM_SIZE, sizeof(char));
 	size_t offset = 0;
 
-	strncpy(buffer + offset, "<<< lua >>>\n", 12);
-	offset += 12;
-
 	// Lua code
 	offset += code_to_string(&computer->code, buffer + offset);
 	// Replace \0 with \n so the string doesn't terminate
 	buffer[offset - 1] = '\n';
 
-	strncpy(buffer + offset, ">>> --- <<<\n\n", 13);
-	offset += 13;
+	// Lua comment start
+	strncpy(buffer + offset, "--[[\n", 5);
+	offset += 5;
 
 	// Spritesheet
 	strncpy(buffer + offset, "<<< gfx >>>\n", 12);
@@ -434,8 +432,11 @@ void game_save(computer_t *computer, const char filename[]) {
 	buffer[offset] = '\n';
 	offset++;
 	
-	strncpy(buffer + offset, ">>> --- <<<\n\n", 13);
-	offset += 13;
+	strncpy(buffer + offset, ">>> --- <<<\n", 12);
+	offset += 12;
+
+	strncpy(buffer + offset, "--]]\n", 5);
+	offset += 5;
 	
 	// Null terminate the string
 	buffer[offset] = '\0';
@@ -460,7 +461,7 @@ typedef enum file_section {
 void game_load(computer_t *computer, const char filename[]) {
 	char *line = calloc(LINE_SIZE, sizeof(char));
 
-	file_section_t current_section = SECTION_NONE;
+	file_section_t current_section = SECTION_LUA;
 
 	FILE *file = fopen(filename, "r");
 	if (file == NULL) {
@@ -473,6 +474,10 @@ void game_load(computer_t *computer, const char filename[]) {
 
 	// Read every line
 	while (fgets(line, LINE_SIZE * sizeof(char), file)) {
+		if (strcmp(line, "--[[\n") == 0) {
+			current_section = SECTION_NONE;
+		}
+
 		// Update the current section
 		// Start of section
 		if (line[0] == '<' && line[1] == '<' && line[2] == '<') {

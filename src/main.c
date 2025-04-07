@@ -49,6 +49,8 @@ int main(int argc, char *argv[]) {
 	// Maybe make 'total' sprite sheet 768x768 or 2x6 'pages'
 	// actually that would also make a lot of stuff pretty annoying so maybe i wont do it
 
+	// I should make a red line to indicate character width for fonts instead of setting them dynamically
+
 	
 	game_load(&computer, "game.zinc95");
 	computer_load_assets(&computer);

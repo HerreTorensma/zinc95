@@ -22,6 +22,9 @@ static int scroll_amount = 0;
 
 static int lines_on_screen = 0;
 
+#define CURSOR_BLINK_SPEED 30
+static int cursor_timer = CURSOR_BLINK_SPEED;
+
 static char sample_string[] =	"local x = 0\n"
 								"local y = 0\n"
 								"\n"
@@ -382,6 +385,10 @@ static int get_indent_level(char text[]) {
 	return indent;
 }
 
+static void unblink_cursor() {
+	cursor_timer = CURSOR_BLINK_SPEED;
+}
+
 void code_editor_init(computer_t *computer) {
 	// uint64_t lines_amount = string_get_lines_amount(sample_string);
 	uint64_t lines_amount = string_get_lines_amount(computer->ram->code_buffer);
@@ -420,6 +427,8 @@ void code_editor_update(computer_t *computer) {
 				}
 			}
 		}
+
+		unblink_cursor();
 	}
 
 	if (api_keyp(computer, KEY_RIGHT)) {
@@ -443,6 +452,8 @@ void code_editor_update(computer_t *computer) {
 				}
 			}
 		}
+
+		unblink_cursor();
 	}
 
 	if (api_keyp(computer, KEY_UP)) {
@@ -454,6 +465,8 @@ void code_editor_update(computer_t *computer) {
 				code->cursor_pos = len;
 			}
 		}
+
+		unblink_cursor();
 	}
 
 	if (api_keyp(computer, KEY_DOWN)) {
@@ -465,6 +478,8 @@ void code_editor_update(computer_t *computer) {
 		if (code->cursor_pos > len) {
 			code->cursor_pos = len;
 		}
+
+		unblink_cursor();
 	}
 
 	// TODO: page up, page down, home, end
@@ -497,6 +512,7 @@ void code_editor_update(computer_t *computer) {
 	// Mouse
 	if (api_mouse_btnp(computer, MOUSE_BUTTON_LEFT)) {
 		move_cursor_to_mouse(computer->ram, &computer->code);
+		unblink_cursor();
 	}
 
 	// Scrolling
@@ -539,9 +555,16 @@ void code_editor_draw(computer_t *computer) {
 	}
 
 	// Draw cursor
-	if (computer->ticks % 40 < 20) {
+	// if (computer->ticks % 40 < 20) {
+	if (cursor_timer >= CURSOR_BLINK_SPEED / 2) {
 		int cursor_x = code_rect.x + 2 + 5 * (font->width + font->horizontal_space) + get_real_cursor_pos(computer);
 		int cursor_y = code_rect.y + 2 + computer->code.cursor_line * (font->height + font->vertical_space) - scroll_amount * (font->height + font->vertical_space);
 		api_line(computer, cursor_x, cursor_y, cursor_x, cursor_y + font->height, 3);
+	}
+	
+	// Update cursor blink
+	cursor_timer--;
+	if (cursor_timer == 0) {
+		unblink_cursor();
 	}
 }

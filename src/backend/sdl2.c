@@ -89,7 +89,7 @@ static void update_screen_texture(computer_t *computer) {
 void sdl2_init(char title[], int initial_scale) {
 	scale = initial_scale;
 
-	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
 		printf("Failed to initialize SDL2: %s\n", SDL_GetError());
 		exit(EXIT_FAILURE);
 	}

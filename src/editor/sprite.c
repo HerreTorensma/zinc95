@@ -78,6 +78,10 @@ static uint8_t coords_to_color(int x, int y) {
 	}
 }
 
+static inline int get_sprite_index() {
+	return (selected_spritesheet_index * SPRITES_PER_PAGE) + selected_sprite_index_offset;
+}
+
 void sprite_editor_update(computer_t *computer) {
 	int x, y;
 	get_mouse_pos(&x, &y);
@@ -139,10 +143,20 @@ void sprite_editor_update(computer_t *computer) {
 			computer->ram->spritesheet.data[(visible_rect.y + currently_editing_rect.y + cell_y) * SPRITESHEET_WIDTH + (visible_rect.x + currently_editing_rect.x + cell_x)] = 0;
 		}
 	}
-}
 
-static inline int get_sprite_index() {
-	return (selected_spritesheet_index * SPRITES_PER_PAGE) + selected_sprite_index_offset;
+	// Delete sprite
+	if (api_keyp(computer, KEY_DELETE)) {
+		// TODO: add visible rect stuff
+		for (int y = currently_editing_rect.y; y < currently_editing_rect.y + currently_editing_rect.h; y++) {
+			for (int x = currently_editing_rect.x; x < currently_editing_rect.x + currently_editing_rect.w; x++) {
+				computer->ram->spritesheet.data[y * SPRITESHEET_WIDTH + x] = 0;
+			}
+		}
+
+		// TODO: clear this stuff for every sprite in the selection
+		computer->ram->sprites[get_sprite_index()].color_key = 0;
+		computer->ram->sprites[get_sprite_index()].flags = 0U;
+	}
 }
 
 static bool toggle_button(computer_t *computer, char text[], rect_t rect, bool *pressed) {
