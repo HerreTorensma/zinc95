@@ -10,45 +10,45 @@
 
 #define COLOR_SQUARE_SIZE 8
 
-static rect_t spritesheet_rect = {0};
+// static rect_t spritesheet_rect = {0};
 static rect_t color_picker_rect = {0};
 static rect_t sprite_editor_rect = {0};
 
 static uint8_t selected_color = 0;
-static int selected_sprite_index_offset = 0;
-static int selected_spritesheet_index = 0;
+// static int selected_sprite_index_offset = 0;
+// static int selected_spritesheet_index = 0;
 
-static rect_t visible_rect = {0};
-static rect_t currently_editing_rect = {0};
+// static rect_t visible_rect = {0};
+// static rect_t currently_editing_rect = {0};
 
-static void set_selected_spritesheet_index(int index) {
-	selected_spritesheet_index = index;
-	visible_rect = (rect_t){
-		.x = 0,
-		.y = selected_spritesheet_index * SPRITESHEET_PAGE_HEIGHT,
-		.w = SPRITESHEET_PAGE_WIDTH,
-		.h = SPRITESHEET_PAGE_HEIGHT,
-	};
-}
+// static void set_selected_spritesheet_index(int index) {
+// 	selected_spritesheet_index = index;
+// 	visible_rect = (rect_t){
+// 		.x = 0,
+// 		.y = selected_spritesheet_index * SPRITESHEET_PAGE_HEIGHT,
+// 		.w = SPRITESHEET_PAGE_WIDTH,
+// 		.h = SPRITESHEET_PAGE_HEIGHT,
+// 	};
+// }
 
 void sprite_editor_init(computer_t *computer) {
-	spritesheet_rect = (rect_t){200, 348, 384, 128};
+	// spritesheet_rect = (rect_t){200, 348, 384, 128};
 	color_picker_rect = (rect_t){4, 388, 192, 88};
 	sprite_editor_rect = (rect_t){192, 56, 256, 256};
 
-	visible_rect = (rect_t){
-		.x = 0,
-		.y = selected_spritesheet_index * SPRITESHEET_PAGE_HEIGHT,
-		.w = SPRITESHEET_PAGE_WIDTH,
-		.h = SPRITESHEET_PAGE_HEIGHT,
-	};
+	// visible_rect = (rect_t){
+	// 	.x = 0,
+	// 	.y = selected_spritesheet_index * SPRITESHEET_PAGE_HEIGHT,
+	// 	.w = SPRITESHEET_PAGE_WIDTH,
+	// 	.h = SPRITESHEET_PAGE_HEIGHT,
+	// };
 
-	currently_editing_rect = (rect_t){
-		.x = 0,
-		.y = 0,
-		.w = SPRITE_WIDTH,
-		.h = SPRITE_HEIGHT,
-	};
+	// currently_editing_rect = (rect_t){
+	// 	.x = 0,
+	// 	.y = 0,
+	// 	.w = SPRITE_WIDTH,
+	// 	.h = SPRITE_HEIGHT,
+	// };
 }
 
 static void color_to_coords(uint8_t color, int *x, int *y) {

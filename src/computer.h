@@ -39,6 +39,9 @@
 #define COLOR_BLACK 0
 #define COLOR_WHITE 15
 
+#define MAP_LAYERS_AMOUNT 8
+#define MAP_LAYER_SIZE (80 * 60 * 16 * 16)
+
 #define FPS 60
 
 typedef struct rect {
@@ -74,6 +77,18 @@ typedef struct sprite {
 typedef struct spritesheet {
 	uint8_t data[SPRITESHEET_WIDTH * SPRITESHEET_HEIGHT];
 } spritesheet_t;
+
+typedef struct map_layer {
+	uint32_t x_offset;
+	uint32_t y_offset;
+	uint8_t tile_size_x;
+	uint8_t tile_size_y;
+	uint16_t data[MAP_LAYER_SIZE];
+} map_layer_t;
+
+typedef struct map {
+	map_layer_t layers[MAP_LAYERS_AMOUNT];
+} map_t;
 
 typedef struct font {
 	// Index of first visible ASCII character, which is space ( )
@@ -112,6 +127,7 @@ typedef union ram {
 		spritesheet_t spritesheet;
 		sprite_t sprites[TOTAL_SPRITES];
 		font_t fonts[8];
+		map_t map;
 		char code_buffer[1024 * 1024];
 	};
 

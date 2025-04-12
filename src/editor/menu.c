@@ -132,3 +132,11 @@ void workspace_menu_draw(computer_t *computer) {
 			break;
 	}
 }
+
+void sprite_selector_update(computer_t *computer) {
+
+}
+
+void sprite_selector_draw(computer_t *computer) {
+	
+}

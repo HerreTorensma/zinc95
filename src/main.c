@@ -51,6 +51,9 @@ int main(int argc, char *argv[]) {
 
 	// I should make a red line to indicate character width for fonts instead of setting them dynamically
 
+	// About the map editor
+	// you get 8 layers
+	// Per layer you can set the tile size
 	
 	game_load(&computer, "game.zinc95");
 	computer_load_assets(&computer);
