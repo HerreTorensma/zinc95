@@ -22,7 +22,7 @@ else
 	endif
 endif
 
-SRC = src/main.c src/backend/backend.c src/backend/sdl2.c src/computer.c src/util/util.c src/api/api.c src/editor/sprite.c src/backend/input.c src/res.c src/editor/menu.c src/api/lua_api.c src/editor/code.c src/editor/map.c src/editor/sound.c
+SRC = src/main.c src/backend/backend.c src/backend/sdl2.c src/computer.c src/util/util.c src/api/api.c src/editor/sprite.c src/backend/input.c src/res.c src/editor/menu.c src/api/lua_api.c src/editor/code.c src/editor/map.c src/editor/sound.c src/editor/shared.c
 OBJ = $(SRC:.c=.o)
 
 all: libs app

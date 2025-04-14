@@ -10,6 +10,7 @@
 #include "sprite.h"
 #include "map.h"
 #include "sound.h"
+#include "shared.h"
 
 typedef enum workspace_type {
 	WORKSPACE_CODE,
@@ -28,6 +29,9 @@ rect_t workspace_rect = {0, 20, SCREEN_WIDTH, SCREEN_HEIGHT - 20};
 void workspace_menu_init(computer_t *computer) {
 	bar_rect = (rect_t){0, 0, SCREEN_WIDTH, 20};
 	screen_rect = (rect_t){0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+
+	// Init the sprite selector
+	sprite_selector_init(computer);
 
 	// console_init(computer);
 	code_editor_init(computer);
@@ -131,12 +135,4 @@ void workspace_menu_draw(computer_t *computer) {
 		default:
 			break;
 	}
-}
-
-void sprite_selector_update(computer_t *computer) {
-
-}
-
-void sprite_selector_draw(computer_t *computer) {
-	
 }

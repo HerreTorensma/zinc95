@@ -174,6 +174,7 @@ void sdl2_tick_start(computer_t *computer) {
 void sdl2_render(computer_t *computer) {
 	// SDL_SetRenderDrawColor(renderer, 0, 170, 170, 255);
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	// SDL_SetRenderDrawColor(renderer, 16, 65, 0, 255);
 	SDL_RenderClear(renderer);
 
 	update_screen_texture(computer);
