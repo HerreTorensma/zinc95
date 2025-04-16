@@ -383,6 +383,7 @@ int x_to_text_index(font_t *font, char text[], int x) {
 #define LUA_SECTION_STRING "<<< lua >>>\n"
 #define GFX_SECTION_STRING "<<< gfx >>>\n"
 #define SPR_SECTION_STRING "<<< spr >>>\n"
+#define MAP_SECTION_STRING "<<< map >>>\n"
 #define SECTION_END_STRING ">>> --- <<<\n"
 
 void game_save(computer_t *computer, const char filename[]) {
@@ -432,9 +433,30 @@ void game_save(computer_t *computer, const char filename[]) {
 	buffer[offset] = '\n';
 	offset++;
 	
+	strncpy(buffer + offset, ">>> --- <<<\n\n", 13);
+	offset += 13;
+
+	// Map
+	strncpy(buffer + offset, "<<< map >>>\n", 12);
+	offset += 12;
+
+	// Map content
+	// Just loop everything and save it
+	// 16 bit integer, so 4 hex characters per tile
+	for (int y = 0; y < MAP_HEIGHT; y++) {
+		for (int x = 0; x < MAP_WIDTH; x++) {
+			sprintf(buffer + offset, "%04x", computer->ram->map.layers[0].data[y * MAP_WIDTH + x]);
+			offset += 4;
+		}
+		buffer[offset] = '\n';
+		offset++;
+	}
+
+	// End map
 	strncpy(buffer + offset, ">>> --- <<<\n", 12);
 	offset += 12;
 
+	// End lua comment
 	strncpy(buffer + offset, "--]]\n", 5);
 	offset += 5;
 	
@@ -454,6 +476,7 @@ typedef enum file_section {
 	SECTION_LUA,
 	SECTION_GFX,
 	SECTION_SPR,
+	SECTION_MAP,
 } file_section_t;
 
 #define LINE_SIZE RAM_SIZE
@@ -471,6 +494,7 @@ void game_load(computer_t *computer, const char filename[]) {
 
 	size_t code_offset = 0;
 	size_t spritesheet_offset = 0;
+	size_t map_offset = 0;
 
 	// Read every line
 	while (fgets(line, LINE_SIZE * sizeof(char), file)) {
@@ -489,6 +513,9 @@ void game_load(computer_t *computer, const char filename[]) {
 				continue;
 			} else if (strcmp(line, SPR_SECTION_STRING) == 0) {
 				current_section = SECTION_SPR;
+				continue;
+			} else if (strcmp(line, MAP_SECTION_STRING) == 0) {
+				current_section = SECTION_MAP;
 				continue;
 			}
 		}
@@ -534,6 +561,14 @@ void game_load(computer_t *computer, const char filename[]) {
 				for (int i = 0; i < TOTAL_SPRITES; i++) {
 					sscanf(line + (i * 10), "%08x", &computer->ram->sprites[i].flags);
 					sscanf(line + (i * 10 + 8), "%02x", &computer->ram->sprites[i].color_key);
+				}
+				break;
+			}
+
+			case SECTION_MAP: {
+				for (int i = 0; i < MAP_WIDTH; i++) {
+					sscanf(line + (i * 4), "%04x", &computer->ram->map.layers[0].data[map_offset]);
+					map_offset++;
 				}
 				break;
 			}
