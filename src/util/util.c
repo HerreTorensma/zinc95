@@ -36,7 +36,7 @@ void draw_out_frame(computer_t *computer, rect_t rect) {
 	// Right gray line
 	api_line(computer, x + w - 1, y + 1, x + w - 1, y + h - 1, 23);
 
-	// api_rectf(computer, x + 2, y + 2, w - 3, h - 3, 7);
+	api_rectf(computer, x + 2, y + 2, w - 3, h - 3, 7);
 }
 
 void draw_in_frame(computer_t *computer, rect_t rect) {

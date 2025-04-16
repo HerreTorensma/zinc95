@@ -1,6 +1,7 @@
 #include "shared.h"
 
 #include <stdio.h>
+#include <math.h>
 
 #include "../api/api.h"
 #include "../backend/input.h"
@@ -9,7 +10,12 @@
 
 rect_t spritesheet_rect = {0};
 rect_t visible_rect = {0};
+
+// Rect in pixels
 rect_t currently_editing_rect = {0};
+
+// Rect in sprites
+rect_t currently_editing_sprites_rect = {0};
 
 int selected_sprite_index_offset = 0;
 int selected_spritesheet_index = 0;
@@ -42,7 +48,27 @@ void sprite_selector_init(computer_t *computer) {
 	};
 }
 
-void sprite_selector_update(computer_t *computer) {
+static void update_currently_editing_sprites_rect(sprite_select_snap_mode_t snap_mode) {
+	currently_editing_sprites_rect.w = currently_editing_rect.w / SPRITE_WIDTH;
+	currently_editing_sprites_rect.h = currently_editing_rect.h / SPRITE_HEIGHT;
+
+	if (snap_mode == SNAP_MODE_ZOOM) {
+		// Update position as well
+		currently_editing_rect.x = (currently_editing_rect.x / currently_editing_rect.w) * currently_editing_rect.w;
+		currently_editing_rect.y = (currently_editing_rect.y / currently_editing_rect.h) * currently_editing_rect.h;
+
+		// Didn't quite work but might look into later
+		// currently_editing_rect.x = (int)(roundf((float)currently_editing_rect.x / (float)currently_editing_rect.w)) * currently_editing_rect.w;
+		// currently_editing_rect.y = (int)(roundf((float)currently_editing_rect.y / (float)currently_editing_rect.h)) * currently_editing_rect.h;
+
+		currently_editing_sprites_rect.x = currently_editing_rect.x / SPRITE_WIDTH;
+		currently_editing_sprites_rect.y = currently_editing_rect.y / SPRITE_HEIGHT;
+		
+		selected_sprite_index_offset = currently_editing_sprites_rect.y * (SPRITESHEET_WIDTH / SPRITE_WIDTH) + currently_editing_sprites_rect.x;
+	}
+}
+
+void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap_mode) {
 	int x, y;
 	get_mouse_pos(&x, &y);
 
@@ -65,19 +91,42 @@ void sprite_selector_update(computer_t *computer) {
 		}
 
 		if (api_mouse_btn(computer, MOUSE_BUTTON_LEFT)) {
-			int cell_x = (x - spritesheet_rect.x) / SPRITE_WIDTH;
-			int cell_y = (y - spritesheet_rect.y) / SPRITE_HEIGHT;
+			if (snap_mode == SNAP_MODE_SPRITE) {
+				int adjusted_position_x = x - spritesheet_rect.x;
+				int adjusted_position_y = y - spritesheet_rect.y;
 
-			selected_sprite_index_offset = cell_y * (SPRITESHEET_WIDTH / SPRITE_WIDTH) + cell_x;
+				currently_editing_sprites_rect.x = adjusted_position_x / SPRITE_WIDTH;
+				currently_editing_sprites_rect.y = adjusted_position_y / SPRITE_HEIGHT;
+	
+				currently_editing_rect.x = currently_editing_sprites_rect.x * SPRITE_WIDTH;
+				currently_editing_rect.y = currently_editing_sprites_rect.y * SPRITE_HEIGHT;
+				
+				selected_sprite_index_offset = currently_editing_sprites_rect.y * (SPRITESHEET_WIDTH / SPRITE_WIDTH) + currently_editing_sprites_rect.x;
+			} else if (snap_mode == SNAP_MODE_FREE) {
+				// Free movement
 
-			currently_editing_rect.x = cell_x * SPRITE_WIDTH;
-			currently_editing_rect.y = cell_y * SPRITE_HEIGHT;
+				// TODO: update currently_editing_sprites_rect
+				currently_editing_rect.x = x - spritesheet_rect.x;
+				currently_editing_rect.y = y - spritesheet_rect.y;
+			} else if (snap_mode == SNAP_MODE_ZOOM) {
+				int adjusted_position_x = x - spritesheet_rect.x;
+				int adjusted_position_y = y - spritesheet_rect.y;
 
-			// Free movement
-			// currently_editing_rect.x = x - spritesheet_rect.x;
-			// currently_editing_rect.y = y - spritesheet_rect.y;
+				int cell_x = adjusted_position_x / currently_editing_rect.w;
+				int cell_y = adjusted_position_y / currently_editing_rect.h;
+	
+				currently_editing_rect.x = cell_x * currently_editing_rect.w;
+				currently_editing_rect.y = cell_y * currently_editing_rect.h;
+				
+				currently_editing_sprites_rect.x = currently_editing_rect.x / SPRITE_WIDTH;
+				currently_editing_sprites_rect.y = currently_editing_rect.y / SPRITE_HEIGHT;
+				
+				selected_sprite_index_offset = currently_editing_sprites_rect.y * (SPRITESHEET_WIDTH / SPRITE_WIDTH) + currently_editing_sprites_rect.x;
+			}
 		}
 	}
+
+	update_currently_editing_sprites_rect(snap_mode);
 }
 
 void sprite_selector_draw(computer_t *computer) {
@@ -134,4 +183,8 @@ void sprite_selector_draw(computer_t *computer) {
 
 int get_selected_sprite_index() {
 	return (selected_spritesheet_index * SPRITES_PER_PAGE) + selected_sprite_index_offset;
+}
+
+int sprite_coords_to_index(int x, int y) {
+	return y * (SPRITESHEET_WIDTH / SPRITE_WIDTH) + x;
 }

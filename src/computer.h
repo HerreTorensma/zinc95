@@ -40,7 +40,9 @@
 #define COLOR_WHITE 15
 
 #define MAP_LAYERS_AMOUNT 8
-#define MAP_LAYER_SIZE (80 * 60 * 16 * 16)
+#define MAP_WIDTH 80 * 16
+#define MAP_HEIGHT 60 * 16
+#define MAP_LAYER_SIZE (MAP_WIDTH * MAP_HEIGHT)
 
 #define FPS 60
 
@@ -79,10 +81,10 @@ typedef struct spritesheet {
 } spritesheet_t;
 
 typedef struct map_layer {
-	uint32_t x_offset;
-	uint32_t y_offset;
-	uint8_t tile_size_x;
-	uint8_t tile_size_y;
+	// uint32_t x_offset;
+	// uint32_t y_offset;
+	// uint8_t tile_size_x;
+	// uint8_t tile_size_y;
 	uint16_t data[MAP_LAYER_SIZE];
 } map_layer_t;
 

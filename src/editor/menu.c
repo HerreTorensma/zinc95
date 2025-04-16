@@ -83,7 +83,28 @@ void workspace_menu_draw(computer_t *computer) {
 	api_cls(computer, 7);
 
 	draw_out_frame(computer, screen_rect);
-	
+
+	switch (active_workspace) {
+		case WORKSPACE_CODE:
+			code_editor_draw(computer);
+			break;
+
+		case WORKSPACE_SPRITE:
+			sprite_editor_draw(computer);
+			break;
+
+		case WORKSPACE_MAP:
+			map_editor_draw(computer);
+			break;
+
+		case WORKSPACE_SOUND:
+			sound_editor_draw(computer);
+			break;
+
+		default:
+			break;
+	}
+
 	// Menu bar
 	draw_out_frame(computer, bar_rect);
 	
@@ -114,25 +135,4 @@ void workspace_menu_draw(computer_t *computer) {
 		play_game(computer);
 	}
 	api_spr(computer, 5856, SCREEN_WIDTH-16-2, 2, 2, 2, 1);
-
-	switch (active_workspace) {
-		case WORKSPACE_CODE:
-			code_editor_draw(computer);
-			break;
-
-		case WORKSPACE_SPRITE:
-			sprite_editor_draw(computer);
-			break;
-
-		case WORKSPACE_MAP:
-			map_editor_draw(computer);
-			break;
-
-		case WORKSPACE_SOUND:
-			sound_editor_draw(computer);
-			break;
-
-		default:
-			break;
-	}
 }

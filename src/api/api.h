@@ -76,6 +76,11 @@ bool api_mouse_scrolled(computer_t *computer, int direction);
 // --- Text
 void api_text(computer_t *computer, int font_index, char text[], int x, int y, int color);
 
+// --- Map
+// Draw a portion of a map layer
+// The x, y, w, h are the rect of the drawn portion in tiles
+void api_draw_map_layer(computer_t *computer, int layer, int cell_x, int cell_y, int x, int y, int w, int h);
+
 // --- Utils
 // Get the amount of ticks since the console has been running
 int api_ticks(computer_t *computer);

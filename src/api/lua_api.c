@@ -54,6 +54,27 @@ static void lua_circ(lua_State *lua) {
 	}
 }
 
+static void lua_draw_map_layer(lua_State *lua) {
+	if (lua_gettop(lua) == 7) {
+		if (lua_isnumber(lua, 1) && lua_isnumber(lua, 2) && lua_isnumber(lua, 3) && lua_isnumber(lua, 4) && lua_isnumber(lua, 5) && lua_isnumber(lua, 6) && lua_isnumber(lua, 7)) {
+			computer_t *computer = get_global_computer();
+
+			int layer = (int)lua_tonumber(lua, 1);
+
+			int cell_x = (int)lua_tonumber(lua, 2);
+			int cell_y = (int)lua_tonumber(lua, 3);
+			
+			int x = (int)lua_tonumber(lua, 4);
+			int y = (int)lua_tonumber(lua, 5);
+			
+			int w = (int)lua_tonumber(lua, 6);
+			int h = (int)lua_tonumber(lua, 7);
+
+			api_draw_map_layer(computer, layer, cell_x, cell_y, x, y, w, h);
+		}
+	}
+}
+
 static int lua_ticks(lua_State *lua) {
 	int ticks = api_ticks(get_global_computer());
 	lua_pushinteger(lua, ticks);
@@ -68,6 +89,7 @@ void lua_init(computer_t *computer) {
 	lua_register(_lua, "spr", lua_spr);
 	lua_register(_lua, "circ", lua_circ);
 	lua_register(_lua, "ticks", lua_ticks);
+	lua_register(_lua, "draw_map_layer", lua_draw_map_layer);
 
 	// if (luaL_dofile(_lua, "test.lua") != LUA_OK) {
 	// if (luaL_dostring(_lua, computer->code->buffer) != LUA_OK) {

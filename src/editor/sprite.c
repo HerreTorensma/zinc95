@@ -50,9 +50,10 @@ static uint8_t coords_to_color(int x, int y) {
 
 void sprite_editor_update(computer_t *computer) {
 	int x, y;
+	// TODO: make this an api function instead
 	get_mouse_pos(&x, &y);
 	
-	sprite_selector_update(computer);
+	sprite_selector_update(computer, SNAP_MODE_ZOOM);
 
 	if (point_in_rect(x, y, color_picker_rect)) {
 		if (api_mouse_btn(computer, MOUSE_BUTTON_LEFT)) {
