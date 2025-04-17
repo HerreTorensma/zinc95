@@ -48,6 +48,7 @@ void sprite_selector_init(computer_t *computer) {
 	};
 }
 
+// TODO: make this a setter for currently_editing_rect
 static void update_currently_editing_sprites_rect(sprite_select_snap_mode_t snap_mode) {
 	currently_editing_sprites_rect.w = currently_editing_rect.w / SPRITE_WIDTH;
 	currently_editing_sprites_rect.h = currently_editing_rect.h / SPRITE_HEIGHT;

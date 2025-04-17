@@ -238,6 +238,13 @@ void api_circ(computer_t *computer, int x, int y, int radius, uint8_t color) {
 }
 
 void api_draw_map_layer(computer_t *computer, int layer, int cell_x, int cell_y, int x, int y, int w, int h) {
+	if (cell_x < 0) {
+		cell_x = 0;
+	}
+	if (cell_y < 0) {
+		cell_y = 0;
+	}
+
 	for (int i = cell_y; i < cell_y + h; i++) {
 		for (int j = cell_x; j < cell_x + w; j++) {
 			int sprite_index = computer->ram->map.layers[layer].data[i * MAP_WIDTH + j];
