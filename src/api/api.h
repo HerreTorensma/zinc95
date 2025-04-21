@@ -79,8 +79,21 @@ void api_text(computer_t *computer, int font_index, char text[], int x, int y, i
 // --- Map
 // Draw a portion of a map layer
 // The x, y, w, h are the rect of the drawn portion in tiles
-void api_draw_map_layer(computer_t *computer, int layer, int cell_x, int cell_y, int x, int y, int w, int h);
+void api_draw_map_layer(computer_t *computer, int layer, int x, int y, int cell_x, int cell_y, int cell_w, int cell_h);
 
 // --- Utils
 // Get the amount of ticks since the console has been running
 int api_ticks(computer_t *computer);
+
+// --- Camera stuff
+void api_camera(computer_t *computer, int x, int y);
+
+void api_reset_camera(computer_t *computer);
+
+void api_screen_to_world(computer_t *computer, int screen_x, int screen_y, int *world_x, int *world_y);
+
+void api_world_to_screen(computer_t *computer, int world_x, int world_y, int *screen_x, int *screen_y);
+
+void api_world_to_grid(computer_t *computer, int world_x, int world_y, int *grid_x, int *grid_y);
+
+void api_grid_to_world(computer_t *computer, int grid_x, int grid_y, int *world_x, int *world_y);

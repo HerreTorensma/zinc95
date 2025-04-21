@@ -9,6 +9,7 @@
 static lua_State *_lua = NULL;
 
 // The following static functions are the lua api handlers of the native api functions
+
 static void lua_cls(lua_State *lua) {
 	if (lua_gettop(lua) == 1) {
 		if (lua_isnumber(lua, 1)) {
@@ -19,8 +20,11 @@ static void lua_cls(lua_State *lua) {
 		} else {
 			luaL_error(lua, "cls() argument should be an integer");
 		}
+	} else if (lua_gettop(lua) == 0) {
+		computer_t *computer = get_global_computer();
+		api_cls(computer, 0);
 	} else {
-		luaL_error(lua, "cls() expects exactly 1 argument");
+		luaL_error(lua, "cls() expects exactly 0 or 1 arguments");
 	}
 }
 
@@ -61,16 +65,16 @@ static void lua_draw_map_layer(lua_State *lua) {
 
 			int layer = (int)lua_tonumber(lua, 1);
 
-			int cell_x = (int)lua_tonumber(lua, 2);
-			int cell_y = (int)lua_tonumber(lua, 3);
-			
-			int x = (int)lua_tonumber(lua, 4);
-			int y = (int)lua_tonumber(lua, 5);
-			
-			int w = (int)lua_tonumber(lua, 6);
-			int h = (int)lua_tonumber(lua, 7);
+			int x = (int)lua_tonumber(lua, 2);
+			int y = (int)lua_tonumber(lua, 3);
 
-			api_draw_map_layer(computer, layer, cell_x, cell_y, x, y, w, h);
+			int cell_x = (int)lua_tonumber(lua, 4);
+			int cell_y = (int)lua_tonumber(lua, 5);
+			
+			int cell_w = (int)lua_tonumber(lua, 6);
+			int cell_h = (int)lua_tonumber(lua, 7);
+
+			api_draw_map_layer(computer, layer, x, y, cell_x, cell_y, cell_w, cell_h);
 		}
 	}
 }

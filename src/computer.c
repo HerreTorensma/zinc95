@@ -202,10 +202,19 @@ bool point_in_bounds(int x, int y) {
 	return true;
 }
 
+// TODO: make get_pixel
 void set_pixel(computer_t *computer, int x, int y, int color) {
 	if (point_in_bounds(x, y)) {
 		computer->ram->framebuffer.data[y * SCREEN_WIDTH + x] = color;
 	}
+}
+
+// TODO: make spritesheet_set_pixel
+uint8_t spritesheet_get_pixel(computer_t *computer, int x, int y) {
+	if (point_in_rect(x, y, (rect_t){0, 0, SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT})) {
+		return computer->ram->spritesheet.data[y * SPRITESHEET_WIDTH + x];
+	}
+	return 0;
 }
 
 bool point_in_rect(int x, int y, rect_t rect) {
@@ -244,6 +253,9 @@ void play_game(computer_t *computer) {
 	// Init the lua stuff
 	lua_init(computer);
 	lua_call_init();
+
+	// Reset draw state
+	memset(&computer->ram->draw_state, 0, sizeof(draw_state_t));
 
 	// Set the state
 	computer->state = STATE_PLAYING;
@@ -292,7 +304,8 @@ void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int 
 void draw_sprite_sheet_rect(computer_t *computer, int x, int y, rect_t rect, uint8_t color_key) {
 	for (int i = 0; i < rect.h; i++) {
 		for (int j = 0; j < rect.w; j++) {
-			uint8_t color = computer->ram->spritesheet.data[(rect.y + i) * SPRITESHEET_WIDTH + (rect.x + j)];
+			// uint8_t color = computer->ram->spritesheet.data[(rect.y + i) * SPRITESHEET_WIDTH + (rect.x + j)];
+			uint8_t color = spritesheet_get_pixel(computer, rect.x + j, rect.y + i);
 			if (color != color_key) {
 				set_pixel(computer, x + j, y + i, color);
 			}
@@ -303,10 +316,30 @@ void draw_sprite_sheet_rect(computer_t *computer, int x, int y, rect_t rect, uin
 void draw_sprite_sheet_rect_scaled(computer_t *computer, int x, int y, rect_t rect, uint8_t color_key, int scale) {
 	for (int i = 0; i < rect.h; i++) {
 		for (int j = 0; j < rect.w; j++) {
-			uint8_t color = computer->ram->spritesheet.data[(rect.y + i) * SPRITESHEET_WIDTH + (rect.x + j)];
+			// uint8_t color = computer->ram->spritesheet.data[(rect.y + i) * SPRITESHEET_WIDTH + (rect.x + j)];
+			uint8_t color = spritesheet_get_pixel(computer, rect.x + j, rect.y + i);
 			// api_rectf(computer, x + (j * scale), y + (i * scale), scale, scale, color);
 			rect_t new_rect = {x + (j * scale), y + (i * scale), scale, scale};
 			draw_filled_rectangle(computer, new_rect, color);
+		}
+	}
+}
+
+// TODO: use this functions instead of the one above
+void draw_sprite_sheet_rect_scaled_float(computer_t *computer, rect_t dest_rect, rect_t source_rect, uint8_t color_key) {
+	for (int y = 0; y < dest_rect.h; y++) {
+		for (int x = 0; x < dest_rect.w; x++) {
+			// Calculate normalized coords
+			float u = (float)x / (float)dest_rect.w;
+			float v = (float)y / (float)dest_rect.h;
+
+			// Then convert to source coords
+			int source_x = source_rect.x + u * source_rect.w;
+			int source_y = source_rect.y + v * source_rect.h;
+
+			uint8_t color = spritesheet_get_pixel(computer, source_x, source_y);
+
+			set_pixel(computer, dest_rect.x + x, dest_rect.y + y, color);
 		}
 	}
 }
@@ -443,6 +476,7 @@ void game_save(computer_t *computer, const char filename[]) {
 	// Map content
 	// Just loop everything and save it
 	// 16 bit integer, so 4 hex characters per tile
+	// TODO: save all layers, not just 0
 	for (int y = 0; y < MAP_HEIGHT; y++) {
 		for (int x = 0; x < MAP_WIDTH; x++) {
 			sprintf(buffer + offset, "%04x", computer->ram->map.layers[0].data[y * MAP_WIDTH + x]);

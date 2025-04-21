@@ -39,7 +39,7 @@
 #define COLOR_BLACK 0
 #define COLOR_WHITE 15
 
-#define MAP_LAYERS_AMOUNT 8
+#define MAP_LAYERS_AMOUNT 4
 #define MAP_WIDTH 80 * 16
 #define MAP_HEIGHT 60 * 16
 #define MAP_LAYER_SIZE (MAP_WIDTH * MAP_HEIGHT)
@@ -121,6 +121,12 @@ typedef struct code {
 	int target_pos;
 } code_t;
 
+// Should be reset before game is played
+typedef struct draw_state {
+	int16_t cam_pos_x;
+	int16_t cam_pos_y;
+} draw_state_t;
+
 // 8MB RAM (excluding what the lua code takes up)
 typedef union ram {
 	struct {
@@ -131,6 +137,7 @@ typedef union ram {
 		font_t fonts[8];
 		map_t map;
 		char code_buffer[1024 * 1024];
+		draw_state_t draw_state;
 	};
 
 	uint8_t data[RAM_SIZE];
@@ -191,6 +198,8 @@ void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int 
 void draw_sprite_sheet_rect(computer_t *computer, int x, int y, rect_t rect, uint8_t color_key);
 
 void draw_sprite_sheet_rect_scaled(computer_t *computer, int x, int y, rect_t rect, uint8_t color_key, int scale);
+
+void draw_sprite_sheet_rect_scaled_float(computer_t *computer, rect_t dest_rect, rect_t source_rect, uint8_t color_key);
 
 void draw_filled_rectangle(computer_t *computer, rect_t rect, uint8_t color);
 

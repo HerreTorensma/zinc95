@@ -69,6 +69,7 @@ void sprite_editor_update(computer_t *computer) {
 		
 		if (api_mouse_btn(computer, MOUSE_BUTTON_LEFT)) {
 			if (api_key(computer, KEY_LALT) || api_key(computer, KEY_RALT)) {
+				// TODO: make a function for this
 				selected_color = computer->ram->spritesheet.data[(visible_rect.y + currently_editing_rect.y + cell_y) * SPRITESHEET_WIDTH + (visible_rect.x + currently_editing_rect.x + cell_x)];
 			}
 
@@ -217,4 +218,6 @@ void sprite_editor_draw(computer_t *computer) {
 
 	api_rectf(computer, SCREEN_WIDTH - 2 - 12 - 4 + 2, spritesheet_rect.y - 12 - 4 + 2, 8, 8, selected_sprite->color_key);
 	api_text(computer, 2, "Key:", spritesheet_rect.x + spritesheet_rect.w + 4 + 2, spritesheet_rect.y - 12 - 4 + 2, 0);
+
+	draw_sprite_sheet_rect_scaled_float(computer, (rect_t){0, 32, 32, 32}, (rect_t){0, 0, 64, 64}, 0);
 }

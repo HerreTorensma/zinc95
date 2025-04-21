@@ -31,6 +31,9 @@ void api_cls(computer_t *computer, int color) {
 // }
 
 void api_spr(computer_t *computer, int sprite_index, int x, int y, int width, int height, int scale) {
+	x -= computer->ram->draw_state.cam_pos_x;
+	y -= computer->ram->draw_state.cam_pos_y;
+
 	rect_t rect = sprite_index_to_spritesheet_rect(computer->ram, sprite_index, width, height);
 	
 	if (scale == 1) {
@@ -41,6 +44,9 @@ void api_spr(computer_t *computer, int sprite_index, int x, int y, int width, in
 }
 
 void api_sspr(computer_t *computer, int x, int y, int rx, int ry, int rw, int rh, int color_key, int scale) {
+	x -= computer->ram->draw_state.cam_pos_x;
+	y -= computer->ram->draw_state.cam_pos_y;
+
 	rect_t rect = {rx, ry, rw, rh};
 
 	if (scale == 1) {
@@ -52,6 +58,11 @@ void api_sspr(computer_t *computer, int x, int y, int rx, int ry, int rw, int rh
 
 // Using Bresemham's line algorithm
 void api_line(computer_t *computer, int x1, int y1, int x2, int y2, int color) {
+	x1 -= computer->ram->draw_state.cam_pos_x;
+	y1 -= computer->ram->draw_state.cam_pos_y;
+	x2 -= computer->ram->draw_state.cam_pos_x;
+	y2 -= computer->ram->draw_state.cam_pos_y;
+
 	int dx = abs(x2 - x1);
 	int dy = abs(y2 - y1);
 	int step_x = (x1 < x2) ? 1 : -1;
@@ -76,6 +87,9 @@ void api_line(computer_t *computer, int x1, int y1, int x2, int y2, int color) {
 }
 
 void api_rect(computer_t *computer, int x, int y, int w, int h, int color) {
+	x -= computer->ram->draw_state.cam_pos_x;
+	y -= computer->ram->draw_state.cam_pos_y;
+
 	for (int j = x; j < x+w; j++) {
 		set_pixel(computer, j, y, color);
 	}
@@ -94,6 +108,9 @@ void api_rect(computer_t *computer, int x, int y, int w, int h, int color) {
 }
 
 void api_rectf(computer_t *computer, int x, int y, int w, int h, int color) {
+	x -= computer->ram->draw_state.cam_pos_x;
+	y -= computer->ram->draw_state.cam_pos_y;
+
 	draw_filled_rectangle(computer, (rect_t){x, y, w, h}, color);
 }
 
@@ -126,6 +143,9 @@ bool api_mouse_scrolled(computer_t *computer, int direction) {
 }
 
 void api_text(computer_t *computer, int font_index, char text[], int x, int y, int color) {
+	x -= computer->ram->draw_state.cam_pos_x;
+	y -= computer->ram->draw_state.cam_pos_y;
+
 	font_t *font = &computer->ram->fonts[font_index];
 
 	int new_x = x;
@@ -197,7 +217,11 @@ void api_text(computer_t *computer, int font_index, char text[], int x, int y, i
 }
 
 // Midpoint circle algorithm
+// TODO: adopt for ellipses
 void api_circ(computer_t *computer, int x, int y, int radius, uint8_t color) {
+	x -= computer->ram->draw_state.cam_pos_x;
+	y -= computer->ram->draw_state.cam_pos_y;
+
 	// Initial 4 points
 	set_pixel(computer, x + radius, y, color);
 	set_pixel(computer, x - radius, y, color);
@@ -237,7 +261,10 @@ void api_circ(computer_t *computer, int x, int y, int radius, uint8_t color) {
 	}
 }
 
-void api_draw_map_layer(computer_t *computer, int layer, int cell_x, int cell_y, int x, int y, int w, int h) {
+void api_draw_map_layer(computer_t *computer, int layer, int x, int y, int cell_x, int cell_y, int cell_w, int cell_h) {
+	x -= computer->ram->draw_state.cam_pos_x;
+	y -= computer->ram->draw_state.cam_pos_y;
+
 	if (cell_x < 0) {
 		cell_x = 0;
 	}
@@ -245,8 +272,8 @@ void api_draw_map_layer(computer_t *computer, int layer, int cell_x, int cell_y,
 		cell_y = 0;
 	}
 
-	for (int i = cell_y; i < cell_y + h; i++) {
-		for (int j = cell_x; j < cell_x + w; j++) {
+	for (int i = cell_y; i < cell_y + cell_h; i++) {
+		for (int j = cell_x; j < cell_x + cell_w; j++) {
 			int sprite_index = computer->ram->map.layers[layer].data[i * MAP_WIDTH + j];
 			api_spr(computer, sprite_index, x + j * SPRITE_WIDTH, y + i * SPRITE_HEIGHT, 1, 1, 1);
 		}
@@ -255,4 +282,34 @@ void api_draw_map_layer(computer_t *computer, int layer, int cell_x, int cell_y,
 
 int api_ticks(computer_t *computer) {
 	return computer->ticks;
+}
+
+void api_camera(computer_t *computer, int x, int y) {
+	computer->ram->draw_state.cam_pos_x = x;
+	computer->ram->draw_state.cam_pos_y = y;
+}
+
+void api_reset_camera(computer_t *computer) {
+	computer->ram->draw_state.cam_pos_x = 0;
+	computer->ram->draw_state.cam_pos_y = 0;
+}
+
+void api_screen_to_world(computer_t *computer, int screen_x, int screen_y, int *world_x, int *world_y) {
+	*world_x = screen_x + computer->ram->draw_state.cam_pos_x;
+	*world_y = screen_y + computer->ram->draw_state.cam_pos_y;
+}
+
+void api_world_to_screen(computer_t *computer, int world_x, int world_y, int *screen_x, int *screen_y) {
+	*screen_x = world_x - computer->ram->draw_state.cam_pos_x;
+	*screen_y = world_y - computer->ram->draw_state.cam_pos_y;
+}
+
+void api_world_to_grid(computer_t *computer, int world_x, int world_y, int *grid_x, int *grid_y) {
+	*grid_x = world_x / SPRITE_WIDTH;
+	*grid_y = world_y / SPRITE_HEIGHT;
+}
+
+void api_grid_to_world(computer_t *computer, int grid_x, int grid_y, int *world_x, int *world_y) {
+	*world_x = grid_x * SPRITE_WIDTH;
+	*world_y = grid_y * SPRITE_HEIGHT;
 }

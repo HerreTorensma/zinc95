@@ -54,6 +54,16 @@ int main(int argc, char *argv[]) {
 	// About the map editor
 	// you get 8 layers
 	// Per layer you can set the tile size
+
+	// I should also make vector functions but just input and output 2 floats instead of a vector datastructure
+	// idk i just like x, y
+
+	// Ok I think I'm just gonna implement vectors at least for C
+
+	// Make a macro for rects like ANCHOR_RECT so I don't have to hard code positions of GUI elements
+	// or just make it a function, and also functions like rect_get_bottom, rect_set_bottom etc. and also make those API functions
+	// man I just need to refactor with a shit ton of helper functions to make my life easier
+	// Also for the refactor I need a temp allocator for strings and such
 	
 	game_load(&computer, "game.zinc95");
 	computer_load_assets(&computer);

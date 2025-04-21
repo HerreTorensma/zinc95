@@ -69,6 +69,7 @@ static void update_currently_editing_sprites_rect(sprite_select_snap_mode_t snap
 	}
 }
 
+// This whole function is kind of a mess and I should probably rewrite it at some point
 void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap_mode) {
 	int x, y;
 	get_mouse_pos(&x, &y);
