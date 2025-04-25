@@ -1,3 +1,7 @@
+/*
+Sound editor
+*/
+
 #pragma once
 
 #include "../computer.h"

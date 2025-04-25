@@ -3,22 +3,22 @@
 #include <stdio.h>
 
 #include "../api/api.h"
-#include "../backend/backend.h"
 #include "../backend/input.h"
+#include "../backend/gfx.h"
 #include "../util/util.h"
 #include "menu.h"
 #include "shared.h"
 
 #define COLOR_SQUARE_SIZE 8
 
-static rect_t color_picker_rect = {0};
-static rect_t sprite_editor_rect = {0};
+static recti_t color_picker_rect = {0};
+static recti_t sprite_editor_rect = {0};
 
 static uint8_t selected_color = 0;
 
 void sprite_editor_init(computer_t *computer) {
-	color_picker_rect = (rect_t){4, 388, 192, 88};
-	sprite_editor_rect = (rect_t){192, 56, 256, 256};
+	color_picker_rect = (recti_t){4, 388, 192, 88};
+	sprite_editor_rect = (recti_t){192, 56, 256, 256};
 }
 
 static void color_to_coords(uint8_t color, int *x, int *y) {
@@ -49,23 +49,21 @@ static uint8_t coords_to_color(int x, int y) {
 }
 
 void sprite_editor_update(computer_t *computer) {
-	int x, y;
-	// TODO: make this an api function instead
-	get_mouse_pos(&x, &y);
+	vec2i_t mouse_pos = input_mouse_pos();
 	
 	sprite_selector_update(computer, SNAP_MODE_ZOOM);
 
-	if (point_in_rect(x, y, color_picker_rect)) {
+	if (point_in_recti(mouse_pos, color_picker_rect)) {
 		if (api_mouse_btn(computer, MOUSE_BUTTON_LEFT)) {
-			selected_color = coords_to_color(x, y);
+			selected_color = coords_to_color(mouse_pos.x, mouse_pos.y);
 		}
 	}
 
-	if (point_in_rect(x, y, sprite_editor_rect)) {
+	if (point_in_recti(mouse_pos, sprite_editor_rect)) {
 		// int cell_x = (x - sprite_editor_rect.x) / (sprite_editor_rect.w / sprite_width);
 		// int cell_y = (y - sprite_editor_rect.y) / (sprite_editor_rect.h / sprite_height);
-		int cell_x = (x - sprite_editor_rect.x) / (sprite_editor_rect.w / currently_editing_rect.w);
-		int cell_y = (y - sprite_editor_rect.y) / (sprite_editor_rect.h / currently_editing_rect.h);
+		int cell_x = (mouse_pos.x - sprite_editor_rect.x) / (sprite_editor_rect.w / currently_editing_rect.w);
+		int cell_y = (mouse_pos.y - sprite_editor_rect.y) / (sprite_editor_rect.h / currently_editing_rect.h);
 		
 		if (api_mouse_btn(computer, MOUSE_BUTTON_LEFT)) {
 			if (api_key(computer, KEY_LALT) || api_key(computer, KEY_RALT)) {
@@ -97,35 +95,6 @@ void sprite_editor_update(computer_t *computer) {
 	}
 }
 
-static bool toggle_button(computer_t *computer, char text[], rect_t rect, bool *pressed) {
-	int x, y;
-	get_mouse_pos(&x, &y);
-	
-	if (point_in_rect(x, y, rect)) {
-		if (api_mouse_btnp(computer, MOUSE_BUTTON_LEFT)) {
-			*pressed = !(*pressed);
-		}
-	}
-	
-	if (*pressed) {
-		rect_t new_rect = {
-			.x = rect.x + 2,
-			.y = rect.y + 2,
-			.w = rect.w - 4,
-			.h = rect.h - 4,
-		};
-		
-		draw_in_frame(computer, new_rect);
-		api_text(computer, 2, text, rect.x + 2, rect.y + 2, 2);
-
-	} else {
-		draw_out_frame(computer, rect);
-		api_text(computer, 2, text, rect.x + 2, rect.y + 2, 4);
-	}
-	
-	return *pressed;
-}
-
 void sprite_editor_draw(computer_t *computer) {
 	// Spritesheet / sprite selector
 	sprite_selector_draw(computer);
@@ -148,14 +117,24 @@ void sprite_editor_draw(computer_t *computer) {
 
 	// Sprite editor
 	draw_in_frame(computer, sprite_editor_rect);
-	rect_t idk = {
+	recti_t sprite_editing_rect = {
 		.x = visible_rect.x + currently_editing_rect.x,
 		.y = visible_rect.y + currently_editing_rect.y,
 		.w = currently_editing_rect.w,
 		.h = currently_editing_rect.h,
 	};
+
+	int scale = sprite_editor_rect.w / currently_editing_rect.w;
+	recti_t real_editor_rect = {
+		.x = sprite_editor_rect.x,
+		.y = sprite_editor_rect.y,
+		.w = currently_editing_rect.w * scale,
+		.h = currently_editing_rect.h * scale,
+	};
 	// draw_sprite_sheet_rect_scaled(computer, sprite_editor_rect.x, sprite_editor_rect.y, idk, sprite_editor_rect.w / currently_editing_rect.w);
-	draw_sprite_sheet_rect_scaled(computer, sprite_editor_rect.x, sprite_editor_rect.y, idk, COLOR_NONE, sprite_editor_rect.w / currently_editing_rect.w);
+	// draw_sprite_sheet_rect_scaled(computer, sprite_editor_rect.x, sprite_editor_rect.y, idk, COLOR_NONE, sprite_editor_rect.w / currently_editing_rect.w);
+	gfx_draw_filled_rect(&computer->ram->framebuffer, sprite_editor_rect, 151);
+	gfx_draw_spritesheet_pro(computer->ram, sprite_editing_rect, real_editor_rect, COLOR_NONE);
 
 	// draw_sprite_sheet_rect_scaled()
 	// api_sspr(
@@ -174,40 +153,41 @@ void sprite_editor_draw(computer_t *computer) {
 
 	// Selected color
 	char buffer[32];
-	draw_in_frame(computer, (rect_t){color_picker_rect.x, color_picker_rect.y - 20, 16, 16});
+	draw_in_frame(computer, (recti_t){color_picker_rect.x, color_picker_rect.y - 20, 16, 16});
 	api_rectf(computer, color_picker_rect.x, color_picker_rect.y - 20, 16, 16, selected_color);
 	sprintf(buffer, "#%03d\n", selected_color);
 	api_text(computer, 0, buffer, color_picker_rect.x + 20, color_picker_rect.y - 16, 0);
 	
 	// Selected sprite preview
-	draw_in_frame(computer, (rect_t){color_picker_rect.x, color_picker_rect.y - 40, 16, 16});
-	api_spr(computer, get_selected_sprite_index(), color_picker_rect.x, color_picker_rect.y - 40, 1, 1, 2);
+	draw_in_frame(computer, (recti_t){color_picker_rect.x, color_picker_rect.y - 40, 16, 16});
+	// api_spr(computer, get_selected_sprite_index(), color_picker_rect.x, color_picker_rect.y - 40, 1, 1, 2);
+	api_spr(computer, get_selected_sprite_index(), color_picker_rect.x, color_picker_rect.y - 40, 1, 1);
 	sprintf(buffer, "#%04d\n", get_selected_sprite_index());
 	api_text(computer, 0, buffer, color_picker_rect.x + 20, color_picker_rect.y - 36, 0);
 
 	// Sprite flags and color key
 	sprite_t *selected_sprite = &computer->ram->sprites[get_selected_sprite_index()];
 	for (int i = 0; i < SPRITE_FLAGS_SIZE; i++) {
-			sprintf(buffer, "%c", i < 10 ? '0' + i : 'a' + i - 10);
-			bool set = selected_sprite->flags & (1U << i);
+		sprintf(buffer, "%c", i < 10 ? '0' + i : 'a' + i - 10);
+		bool set = selected_sprite->flags & (1U << i);
 
-			toggle_button(computer, buffer, (rect_t){
-				.x = spritesheet_rect.x + i * 12,
-				.y = spritesheet_rect.y - 4 - 12,
-				.w = 12,
-				.h = 12,
-				},
-				&set
-			);
-			if (set) {
-				selected_sprite->flags |= (1U << i);
-			} else {
-				selected_sprite->flags &= ~(1U << i);
-			}
+		toggle_button(computer, buffer, (recti_t){
+			.x = spritesheet_rect.x + i * 12,
+			.y = spritesheet_rect.y - 4 - 12,
+			.w = 12,
+			.h = 12,
+			},
+			&set
+		);
+		if (set) {
+			selected_sprite->flags |= (1U << i);
+		} else {
+			selected_sprite->flags &= ~(1U << i);
 		}
+	}
 
 	// Color key
-	if (button(computer, "", (rect_t){
+	if (button(computer, "", (recti_t){
 		.x = SCREEN_WIDTH - 2 - 12 - 4,
 		.y = spritesheet_rect.y - 12 - 4,
 		.w = 12,
@@ -219,5 +199,5 @@ void sprite_editor_draw(computer_t *computer) {
 	api_rectf(computer, SCREEN_WIDTH - 2 - 12 - 4 + 2, spritesheet_rect.y - 12 - 4 + 2, 8, 8, selected_sprite->color_key);
 	api_text(computer, 2, "Key:", spritesheet_rect.x + spritesheet_rect.w + 4 + 2, spritesheet_rect.y - 12 - 4 + 2, 0);
 
-	draw_sprite_sheet_rect_scaled_float(computer, (rect_t){0, 32, 32, 32}, (rect_t){0, 0, 64, 64}, 0);
+	// draw_sprite_sheet_rect_scaled_float(computer, (recti_t){0, 32, 32, 32}, (recti_t){0, 0, 64, 64}, 0);
 }

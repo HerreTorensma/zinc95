@@ -1,7 +1,7 @@
 #include "res.h"
 
 // TODO: make this a #define so it's evaluated at compile time
-const palette_t default_palette = (palette_t){
+const palette_t builtin_palette = (palette_t){
 	.colors = {
 			{0, 0, 0},
 			{0, 0, 170},

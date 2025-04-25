@@ -1,13 +1,14 @@
 #include "map.h"
-#include "menu.h"
 
+#include <stdio.h>
+
+#include "menu.h"
 #include "../api/api.h"
 #include "../backend/input.h"
-#include "../backend/backend.h"
 #include "../util/util.h"
 #include "shared.h"
 
-static rect_t map_rect = {0};
+static recti_t map_rect = {0};
 
 static int cam_x = 0;
 static int cam_y = 0;
@@ -50,13 +51,12 @@ void map_editor_init(computer_t *computer) {
 void map_editor_update(computer_t *computer) {
 	sprite_selector_update(computer, SNAP_MODE_ZOOM);
 
-	int x, y;
-	get_mouse_pos(&x, &y);
+	vec2i_t mouse_pos = input_mouse_pos();
 
-	int cell_x = ((x + cam_x) / currently_editing_rect.w) * currently_editing_sprites_rect.w;
-	int cell_y = ((y + cam_y) / currently_editing_rect.h) * currently_editing_sprites_rect.h;
+	int cell_x = ((mouse_pos.x + cam_x) / currently_editing_rect.w) * currently_editing_sprites_rect.w;
+	int cell_y = ((mouse_pos.y + cam_y) / currently_editing_rect.h) * currently_editing_sprites_rect.h;
 
-	if (point_in_rect(x, y, map_rect)) {
+	if (point_in_recti(mouse_pos, map_rect)) {
 		if (api_mouse_btn(computer, MOUSE_BUTTON_LEFT)) {
 			for (int i = 0; i < currently_editing_sprites_rect.h; i++) {
 				for (int j = 0; j < currently_editing_sprites_rect.w; j++) {
@@ -111,29 +111,29 @@ void map_editor_draw(computer_t *computer) {
 	}
 
 	// Draw rect where mouse is
-	int x, y;
-	get_mouse_pos(&x, &y);
+	vec2i_t mouse_pos = input_mouse_pos();
 
-	if (point_in_rect(x, y, map_rect)) {
-		int rect_x = ((x + cam_x) / currently_editing_rect.w) * currently_editing_rect.w - cam_x;
-		int rect_y = ((y + cam_y) / currently_editing_rect.h) * currently_editing_rect.h - cam_y;
+
+	if (point_in_recti(mouse_pos, map_rect)) {
+		int rect_x = ((mouse_pos.x + cam_x) / currently_editing_rect.w) * currently_editing_rect.w - cam_x;
+		int rect_y = ((mouse_pos.y + cam_y) / currently_editing_rect.h) * currently_editing_rect.h - cam_y;
 
 		api_rect(computer, rect_x - 1, rect_y - 1, currently_editing_rect.w + 2, currently_editing_rect.h + 2, COLOR_WHITE);
 	}
 
 	draw_grid(computer);
 
-	draw_out_frame(computer, (rect_t){0, 344, 640, 136});
+	draw_out_frame(computer, (recti_t){0, 344, 640, 136});
 	sprite_selector_draw(computer);
 
-	button(computer, "Entities", (rect_t){2, SCREEN_HEIGHT - 5 * 16 - 2, 48, 16});
+	button(computer, "Entities", (recti_t){2, SCREEN_HEIGHT - 5 * 16 - 2, 48, 16});
 
 	// Layer buttons
 	for (int i = 0; i < MAP_LAYERS_AMOUNT; i++) {
 		char buffer[2];
 		sprintf(buffer, "%d", i);
 
-		rect_t rect = {
+		recti_t rect = {
 			.x = 2,
 			.y = SCREEN_HEIGHT - 4 * 16 - 2 + i * 16,
 			.w = 48,

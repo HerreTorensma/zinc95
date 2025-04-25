@@ -1,6 +1,12 @@
+/*
+Input
+*/
+
 #pragma once
 
 #include <stdbool.h>
+
+#include "math2d.h"
 
 typedef enum zinc_key {
 	KEY_UNKNOWN = 0,
@@ -137,3 +143,5 @@ bool input_mouse_button_released(mouse_button_t button);
 bool input_mouse_button_held(mouse_button_t button);
 
 bool input_mouse_scrolled(scroll_direction_t direction);
+
+vec2i_t input_mouse_pos();

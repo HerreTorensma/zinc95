@@ -1,3 +1,7 @@
+/*
+API
+*/
+
 #pragma once
 
 #include <inttypes.h>
@@ -10,10 +14,11 @@ void api_cls(computer_t *computer, int color);
 
 // --- Graphics/Map
 // Draw a sprite
-void api_spr(computer_t *computer, int sprite_index, int x, int y, int width, int height, int scale);
+// void api_spr(computer_t *computer, int sprite_index, int x, int y, int width, int height, int scale);
+void api_spr(computer_t *computer, int sprite_index, int x, int y, int width, int height);
 
 // Draw a rect from the spritesheet
-void api_sspr(computer_t *computer, int x, int y, int rx, int ry, int rw, int rh, int color_key, int scale);
+// void api_sspr(computer_t *computer, int x, int y, int rx, int ry, int rw, int rh, int color_key, int scale);
 
 // Draw a portion of the map
 void api_map(computer_t *computer, int x, int y, int width, int height);
@@ -86,14 +91,14 @@ void api_draw_map_layer(computer_t *computer, int layer, int x, int y, int cell_
 int api_ticks(computer_t *computer);
 
 // --- Camera stuff
-void api_camera(computer_t *computer, int x, int y);
+// void api_camera(computer_t *computer, int x, int y);
 
-void api_reset_camera(computer_t *computer);
+// void api_reset_camera(computer_t *computer);
 
-void api_screen_to_world(computer_t *computer, int screen_x, int screen_y, int *world_x, int *world_y);
+// void api_screen_to_world(computer_t *computer, int screen_x, int screen_y, int *world_x, int *world_y);
 
-void api_world_to_screen(computer_t *computer, int world_x, int world_y, int *screen_x, int *screen_y);
+// void api_world_to_screen(computer_t *computer, int world_x, int world_y, int *screen_x, int *screen_y);
 
-void api_world_to_grid(computer_t *computer, int world_x, int world_y, int *grid_x, int *grid_y);
+// void api_world_to_grid(computer_t *computer, int world_x, int world_y, int *grid_x, int *grid_y);
 
-void api_grid_to_world(computer_t *computer, int grid_x, int grid_y, int *world_x, int *world_y);
+// void api_grid_to_world(computer_t *computer, int grid_x, int grid_y, int *world_x, int *world_y);

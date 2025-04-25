@@ -1,8 +1,12 @@
+/*
+Main
+*/
+
 #include <stdio.h>
 #include <string.h>
 
 #include "computer.h"
-#include "backend/backend.h"
+#include "backend/window.h"
 #include "util/util.h"
 #include "api/api.h"
 #include "editor/menu.h"
@@ -15,7 +19,7 @@ int main(int argc, char *argv[]) {
 
 	set_global_computer(&computer);
 
-	backend_init("zinc95", 2);
+	window_init("zinc95", 2);
 
 	// Spritesheet page: 352x128 pixels (416x128 maybe)
 	// or 44x16 = 704 sprites per pages
@@ -64,14 +68,16 @@ int main(int argc, char *argv[]) {
 	// or just make it a function, and also functions like rect_get_bottom, rect_set_bottom etc. and also make those API functions
 	// man I just need to refactor with a shit ton of helper functions to make my life easier
 	// Also for the refactor I need a temp allocator for strings and such
+
+	// maybe i should just get and store the mouse position at the beginning of every frame/tick so it won't call SDL everytime you do input_get_mouse_pos()
 	
 	game_load(&computer, "game.zinc95");
-	computer_load_assets(&computer);
+	computer_load_resouces(&computer);
 	
 	workspace_menu_init(&computer);
 	
 	while (window_is_open()) {
-		backend_tick_start(&computer);
+		window_tick_start(&computer);
 
 		switch (computer.state) {
 			case STATE_EDITING:
@@ -94,12 +100,12 @@ int main(int argc, char *argv[]) {
 				break;
 		}
 
-		backend_render(&computer);
+		window_render(&computer);
 
-		backend_tick_end(&computer);
+		window_tick_end(&computer);
 	}
 
 	computer_quit(&computer);
 
-	backend_quit();
+	window_quit();
 }

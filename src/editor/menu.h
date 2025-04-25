@@ -1,8 +1,13 @@
+/*
+Menu editor
+*/
+
 #pragma once
 
 #include "../computer.h"
+#include "../backend/math2d.h"
 
-extern rect_t workspace_rect;
+extern recti_t workspace_rect;
 
 void workspace_menu_init(computer_t *computer);
 

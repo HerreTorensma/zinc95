@@ -5,24 +5,24 @@
 
 #include "../api/api.h"
 #include "../backend/input.h"
-#include "../backend/backend.h"
+#include "../backend/gfx.h"
 #include "../util/util.h"
 
-rect_t spritesheet_rect = {0};
-rect_t visible_rect = {0};
+recti_t spritesheet_rect = {0};
+recti_t visible_rect = {0};
 
 // Rect in pixels
-rect_t currently_editing_rect = {0};
+recti_t currently_editing_rect = {0};
 
 // Rect in sprites
-rect_t currently_editing_sprites_rect = {0};
+recti_t currently_editing_sprites_rect = {0};
 
 int selected_sprite_index_offset = 0;
 int selected_spritesheet_index = 0;
 
 static void set_selected_spritesheet_index(int index) {
 	selected_spritesheet_index = index;
-	visible_rect = (rect_t){
+	visible_rect = (recti_t){
 		.x = 0,
 		.y = selected_spritesheet_index * SPRITESHEET_PAGE_HEIGHT,
 		.w = SPRITESHEET_PAGE_WIDTH,
@@ -31,16 +31,16 @@ static void set_selected_spritesheet_index(int index) {
 }
 
 void sprite_selector_init(computer_t *computer) {
-	spritesheet_rect = (rect_t){200, 348, 384, 128};
+	spritesheet_rect = (recti_t){200, 348, 384, 128};
 
-	visible_rect = (rect_t){
+	visible_rect = (recti_t){
 		.x = 0,
 		.y = selected_spritesheet_index * SPRITESHEET_PAGE_HEIGHT,
 		.w = SPRITESHEET_PAGE_WIDTH,
 		.h = SPRITESHEET_PAGE_HEIGHT,
 	};
 	
-	currently_editing_rect = (rect_t){
+	currently_editing_rect = (recti_t){
 		.x = 0,
 		.y = 0,
 		.w = SPRITE_WIDTH,
@@ -71,10 +71,9 @@ static void update_currently_editing_sprites_rect(sprite_select_snap_mode_t snap
 
 // This whole function is kind of a mess and I should probably rewrite it at some point
 void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap_mode) {
-	int x, y;
-	get_mouse_pos(&x, &y);
+	vec2i_t mouse_pos = input_mouse_pos();
 
-	if (point_in_rect(x, y, spritesheet_rect)) {
+	if (point_in_recti(mouse_pos, spritesheet_rect)) {
 		if (api_keyp(computer, KEY_MINUS) || api_mouse_scrolled(computer, SCROLL_UP)) {
 			currently_editing_rect.w -= SPRITE_WIDTH;
 			currently_editing_rect.h -= SPRITE_HEIGHT;
@@ -94,8 +93,8 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 
 		if (api_mouse_btn(computer, MOUSE_BUTTON_LEFT)) {
 			if (snap_mode == SNAP_MODE_SPRITE) {
-				int adjusted_position_x = x - spritesheet_rect.x;
-				int adjusted_position_y = y - spritesheet_rect.y;
+				int adjusted_position_x = mouse_pos.x - spritesheet_rect.x;
+				int adjusted_position_y = mouse_pos.y - spritesheet_rect.y;
 
 				currently_editing_sprites_rect.x = adjusted_position_x / SPRITE_WIDTH;
 				currently_editing_sprites_rect.y = adjusted_position_y / SPRITE_HEIGHT;
@@ -108,11 +107,11 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 				// Free movement
 
 				// TODO: update currently_editing_sprites_rect
-				currently_editing_rect.x = x - spritesheet_rect.x;
-				currently_editing_rect.y = y - spritesheet_rect.y;
+				currently_editing_rect.x = mouse_pos.x - spritesheet_rect.x;
+				currently_editing_rect.y = mouse_pos.y - spritesheet_rect.y;
 			} else if (snap_mode == SNAP_MODE_ZOOM) {
-				int adjusted_position_x = x - spritesheet_rect.x;
-				int adjusted_position_y = y - spritesheet_rect.y;
+				int adjusted_position_x = mouse_pos.x - spritesheet_rect.x;
+				int adjusted_position_y = mouse_pos.y - spritesheet_rect.y;
 
 				int cell_x = adjusted_position_x / currently_editing_rect.w;
 				int cell_y = adjusted_position_y / currently_editing_rect.h;
@@ -133,10 +132,11 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 
 void sprite_selector_draw(computer_t *computer) {
 	draw_in_frame(computer, spritesheet_rect);
-	draw_sprite_sheet_rect(computer, spritesheet_rect.x, spritesheet_rect.y, visible_rect, 255);
+	// draw_sprite_sheet_rect(computer, spritesheet_rect.x, spritesheet_rect.y, visible_rect, 255);
+	gfx_draw_spritesheet_rect(computer->ram, spritesheet_rect.pos, visible_rect, COLOR_NONE);
 
 	for (int i = 0; i < 8; i++) {
-		rect_t rect = {
+		recti_t rect = {
 			.x = spritesheet_rect.x + spritesheet_rect.w + 4,
 			.y = spritesheet_rect.y + i * 16,
 			.w = 48,

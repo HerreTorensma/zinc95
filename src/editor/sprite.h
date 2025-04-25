@@ -1,3 +1,7 @@
+/*
+Sprite editor
+*/
+
 #pragma once
 
 #include "../computer.h"

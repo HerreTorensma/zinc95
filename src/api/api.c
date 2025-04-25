@@ -6,13 +6,19 @@
 #include <string.h>
 
 #include "../backend/input.h"
+#include "../backend/gfx.h"
+#include "../util/util.h"
+
+// TODO: remove api calls anywhere else in the code
+// idk I want it to exist in a bubble I guess
 
 void api_cls(computer_t *computer, int color) {
-	for (int y = 0; y < SCREEN_HEIGHT; y++) {
-		for (int x = 0; x < SCREEN_WIDTH; x++) {
-			computer->ram->framebuffer.data[y * SCREEN_WIDTH + x] = color;
-		}
-	}
+	// for (int y = 0; y < SCREEN_HEIGHT; y++) {
+	// 	for (int x = 0; x < SCREEN_WIDTH; x++) {
+	// 		computer->ram->framebuffer.data[y * SCREEN_WIDTH + x] = color;
+	// 	}
+	// }
+	gfx_clear(&computer->ram->framebuffer, color);
 }
 
 // void api_spr(computer_t *computer, int sprite_index, int x, int y, int width, int height) {
@@ -30,88 +36,95 @@ void api_cls(computer_t *computer, int color) {
 // 	draw_sprite_sheet_rect(computer, x, y, rect, computer->ram->sprites[sprite_index].color_key);
 // }
 
-void api_spr(computer_t *computer, int sprite_index, int x, int y, int width, int height, int scale) {
-	x -= computer->ram->draw_state.cam_pos_x;
-	y -= computer->ram->draw_state.cam_pos_y;
+// void api_spr(computer_t *computer, int sprite_index, int x, int y, int width, int height, int scale) {
+void api_spr(computer_t *computer, int sprite_index, int x, int y, int width, int height) {
+	// x -= computer->ram->draw_state.cam_pos_x;
+	// y -= computer->ram->draw_state.cam_pos_y;
 
-	rect_t rect = sprite_index_to_spritesheet_rect(computer->ram, sprite_index, width, height);
+	// recti_t rect = sprite_index_to_spritesheet_rect(computer->ram, sprite_index, width, height);
 	
-	if (scale == 1) {
-		draw_sprite_sheet_rect(computer, x, y, rect, computer->ram->sprites[sprite_index].color_key);
-	} else {
-		draw_sprite_sheet_rect_scaled(computer, x, y, rect, computer->ram->sprites[sprite_index].color_key, scale);
-	}
+	// if (scale == 1) {
+	// 	draw_sprite_sheet_rect(computer, x, y, rect, computer->ram->sprites[sprite_index].color_key);
+	// } else {
+	// 	draw_sprite_sheet_rect_scaled(computer, x, y, rect, computer->ram->sprites[sprite_index].color_key, scale);
+	// }
+
+	gfx_draw_sprites(computer->ram, sprite_index, (vec2i_t){x, y}, width, height);
 }
 
-void api_sspr(computer_t *computer, int x, int y, int rx, int ry, int rw, int rh, int color_key, int scale) {
-	x -= computer->ram->draw_state.cam_pos_x;
-	y -= computer->ram->draw_state.cam_pos_y;
+// void api_sspr(computer_t *computer, int x, int y, int rx, int ry, int rw, int rh, int color_key, int scale) {
+// 	x -= computer->ram->draw_state.cam_pos_x;
+// 	y -= computer->ram->draw_state.cam_pos_y;
 
-	rect_t rect = {rx, ry, rw, rh};
+// 	recti_t rect = {rx, ry, rw, rh};
 
-	if (scale == 1) {
-		draw_sprite_sheet_rect(computer, x, y, rect, color_key);
-	} else {
-		draw_sprite_sheet_rect_scaled(computer, x, y, rect, color_key, scale);
-	}
-}
+// 	if (scale == 1) {
+// 		draw_sprite_sheet_rect(computer, x, y, rect, color_key);
+// 	} else {
+// 		draw_sprite_sheet_rect_scaled(computer, x, y, rect, color_key, scale);
+// 	}
+// }
 
 // Using Bresemham's line algorithm
 void api_line(computer_t *computer, int x1, int y1, int x2, int y2, int color) {
-	x1 -= computer->ram->draw_state.cam_pos_x;
-	y1 -= computer->ram->draw_state.cam_pos_y;
-	x2 -= computer->ram->draw_state.cam_pos_x;
-	y2 -= computer->ram->draw_state.cam_pos_y;
+	// x1 -= computer->ram->draw_state.cam_pos_x;
+	// y1 -= computer->ram->draw_state.cam_pos_y;
+	// x2 -= computer->ram->draw_state.cam_pos_x;
+	// y2 -= computer->ram->draw_state.cam_pos_y;
 
-	int dx = abs(x2 - x1);
-	int dy = abs(y2 - y1);
-	int step_x = (x1 < x2) ? 1 : -1;
-	int step_y = (y1 < y2) ? 1 : -1;
-	int error = dx - dy;
+	// int dx = abs(x2 - x1);
+	// int dy = abs(y2 - y1);
+	// int step_x = (x1 < x2) ? 1 : -1;
+	// int step_y = (y1 < y2) ? 1 : -1;
+	// int error = dx - dy;
 
-	while (true) {
-		set_pixel(computer, x1, y1, color);
+	// while (true) {
+	// 	gfx_set_pixel(computer, x1, y1, color);
 		
-		if (x1 == x2 && y1 == y2) break;
+	// 	if (x1 == x2 && y1 == y2) break;
 
-		int e2 = 2 * error;
-		if (e2 > -dy) {
-			error -= dy;
-			x1 += step_x;
-		}
-		if (e2 < dx) {
-			error += dx;
-			y1 += step_y;
-		}
-	}
+	// 	int e2 = 2 * error;
+	// 	if (e2 > -dy) {
+	// 		error -= dy;
+	// 		x1 += step_x;
+	// 	}
+	// 	if (e2 < dx) {
+	// 		error += dx;
+	// 		y1 += step_y;
+	// 	}
+	// }
+
+	gfx_draw_line(&computer->ram->framebuffer, (vec2i_t){x1, y1}, (vec2i_t){x2, y2}, color);
 }
 
 void api_rect(computer_t *computer, int x, int y, int w, int h, int color) {
-	x -= computer->ram->draw_state.cam_pos_x;
-	y -= computer->ram->draw_state.cam_pos_y;
+	// x -= computer->ram->draw_state.cam_pos_x;
+	// y -= computer->ram->draw_state.cam_pos_y;
 
-	for (int j = x; j < x+w; j++) {
-		set_pixel(computer, j, y, color);
-	}
+	// for (int j = x; j < x+w; j++) {
+	// 	gfx_set_pixel(computer, j, y, color);
+	// }
 
-	for (int j = x; j < x+w; j++) {
-		set_pixel(computer, j, y+h-1, color);
-	}
+	// for (int j = x; j < x+w; j++) {
+	// 	gfx_set_pixel(computer, j, y+h-1, color);
+	// }
 
-	for (int i = y; i < y+h; i++) {
-		set_pixel(computer, x, i, color);
-	}
+	// for (int i = y; i < y+h; i++) {
+	// 	gfx_set_pixel(computer, x, i, color);
+	// }
 
-	for (int i = y; i < y+h; i++) {
-		set_pixel(computer, x+w - 1, i, color);
-	}
+	// for (int i = y; i < y+h; i++) {
+	// 	gfx_set_pixel(computer, x+w - 1, i, color);
+	// }
+
+	gfx_draw_rect(&computer->ram->framebuffer, (recti_t){x, y, w, h}, color);
 }
 
 void api_rectf(computer_t *computer, int x, int y, int w, int h, int color) {
-	x -= computer->ram->draw_state.cam_pos_x;
-	y -= computer->ram->draw_state.cam_pos_y;
+	// x -= computer->ram->draw_state.cam_pos_x;
+	// y -= computer->ram->draw_state.cam_pos_y;
 
-	draw_filled_rectangle(computer, (rect_t){x, y, w, h}, color);
+	gfx_draw_filled_rect(&computer->ram->framebuffer, (recti_t){x, y, w, h}, color);
 }
 
 bool api_key(computer_t *computer, int key) {
@@ -183,7 +196,8 @@ void api_text(computer_t *computer, int font_index, char text[], int x, int y, i
 			}
 
 			// Only sprite sheet 0 now
-			api_spr(computer, sprite_index, new_x, new_y, 1, 1, 1);
+			// api_spr(computer, sprite_index, new_x, new_y, 1, 1, 1);
+			api_spr(computer, sprite_index, new_x, new_y, 1, 1);
 			new_x += 16 + font->horizontal_space;
 
 			i = index - 1;
@@ -197,13 +211,14 @@ void api_text(computer_t *computer, int font_index, char text[], int x, int y, i
 		int y_offset = (char_index / (SPRITES_PER_ROW / font->h_sprites)) * font->v_sprites;
 		int sprite_index = font->sprite_index + x_offset + (y_offset * SPRITES_PER_ROW);
 
-		rect_t rect = sprite_index_to_spritesheet_rect(computer->ram, sprite_index, font->h_sprites, font->v_sprites);
+		recti_t rect = sprite_index_to_spritesheet_rect(sprite_index, font->h_sprites, font->v_sprites);
 
 		for (int i = 0; i < rect.h; i++) {
 			for (int j = 0; j < rect.w; j++) {
-				uint8_t font_color = computer->ram->spritesheet.data[(rect.y + i) * SPRITESHEET_WIDTH + (rect.x + j)];
+				// uint8_t font_color = computer->ram->spritesheet.data[(rect.y + i) * SPRITESHEET_WIDTH + (rect.x + j)];
+				color_t font_color = gfx_spritesheet_get_pixel(&computer->ram->spritesheet, (vec2i_t){rect.x + j, rect.y + i});
 				if (font_color == 15) {
-					set_pixel(computer, new_x + j, new_y + i, color);
+					gfx_set_pixel(&computer->ram->framebuffer, new_x + j, new_y + i, color);
 				}
 			}
 		}
@@ -219,46 +234,48 @@ void api_text(computer_t *computer, int font_index, char text[], int x, int y, i
 // Midpoint circle algorithm
 // TODO: adopt for ellipses
 void api_circ(computer_t *computer, int x, int y, int radius, uint8_t color) {
-	x -= computer->ram->draw_state.cam_pos_x;
-	y -= computer->ram->draw_state.cam_pos_y;
+	// x -= computer->ram->draw_state.cam_pos_x;
+	// y -= computer->ram->draw_state.cam_pos_y;
 
-	// Initial 4 points
-	set_pixel(computer, x + radius, y, color);
-	set_pixel(computer, x - radius, y, color);
-	set_pixel(computer, x, y + radius, color);
-	set_pixel(computer, x, y - radius, color);
+	// // Initial 4 points
+	// gfx_set_pixel(computer, x + radius, y, color);
+	// gfx_set_pixel(computer, x - radius, y, color);
+	// gfx_set_pixel(computer, x, y + radius, color);
+	// gfx_set_pixel(computer, x, y - radius, color);
 
-	int x_offset = radius;
-	int y_offset = 0;
+	// int x_offset = radius;
+	// int y_offset = 0;
 
-	int d = 1 - radius;
+	// int d = 1 - radius;
 
-	while (x_offset > y_offset) {
-		y_offset++;
+	// while (x_offset > y_offset) {
+	// 	y_offset++;
 		
-		if (d <= 0) {
-			d = d + 2 * y_offset + 1;
-		} else {
-			x_offset--;
-			d = d + 2 * (y_offset - x_offset) + 1;
-		}
+	// 	if (d <= 0) {
+	// 		d = d + 2 * y_offset + 1;
+	// 	} else {
+	// 		x_offset--;
+	// 		d = d + 2 * (y_offset - x_offset) + 1;
+	// 	}
 		
-		if (x_offset < y_offset) {
-			break;
-		}
+	// 	if (x_offset < y_offset) {
+	// 		break;
+	// 	}
 
-		set_pixel(computer, x + x_offset, y + y_offset, color);
-		set_pixel(computer, x - x_offset, y + y_offset, color);
-		set_pixel(computer, x + x_offset, y - y_offset, color);
-		set_pixel(computer, x - x_offset, y - y_offset, color);
+	// 	gfx_set_pixel(computer, x + x_offset, y + y_offset, color);
+	// 	gfx_set_pixel(computer, x - x_offset, y + y_offset, color);
+	// 	gfx_set_pixel(computer, x + x_offset, y - y_offset, color);
+	// 	gfx_set_pixel(computer, x - x_offset, y - y_offset, color);
 
-		if (x_offset != y_offset) {
-			set_pixel(computer, x + y_offset, y + x_offset, color);
-			set_pixel(computer, x - y_offset, y + x_offset, color);
-			set_pixel(computer, x + y_offset, y - x_offset, color);
-			set_pixel(computer, x - y_offset, y - x_offset, color);
-		}
-	}
+	// 	if (x_offset != y_offset) {
+	// 		gfx_set_pixel(computer, x + y_offset, y + x_offset, color);
+	// 		gfx_set_pixel(computer, x - y_offset, y + x_offset, color);
+	// 		gfx_set_pixel(computer, x + y_offset, y - x_offset, color);
+	// 		gfx_set_pixel(computer, x - y_offset, y - x_offset, color);
+	// 	}
+	// }
+
+	gfx_draw_circle(&computer->ram->framebuffer, (vec2i_t){x, y}, radius, color);
 }
 
 void api_draw_map_layer(computer_t *computer, int layer, int x, int y, int cell_x, int cell_y, int cell_w, int cell_h) {
@@ -275,7 +292,8 @@ void api_draw_map_layer(computer_t *computer, int layer, int x, int y, int cell_
 	for (int i = cell_y; i < cell_y + cell_h; i++) {
 		for (int j = cell_x; j < cell_x + cell_w; j++) {
 			int sprite_index = computer->ram->map.layers[layer].data[i * MAP_WIDTH + j];
-			api_spr(computer, sprite_index, x + j * SPRITE_WIDTH, y + i * SPRITE_HEIGHT, 1, 1, 1);
+			// api_spr(computer, sprite_index, x + j * SPRITE_WIDTH, y + i * SPRITE_HEIGHT, 1, 1, 1);
+			api_spr(computer, sprite_index, x + j * SPRITE_WIDTH, y + i * SPRITE_HEIGHT, 1, 1);
 		}
 	}
 }
@@ -284,32 +302,32 @@ int api_ticks(computer_t *computer) {
 	return computer->ticks;
 }
 
-void api_camera(computer_t *computer, int x, int y) {
-	computer->ram->draw_state.cam_pos_x = x;
-	computer->ram->draw_state.cam_pos_y = y;
-}
+// void api_camera(computer_t *computer, int x, int y) {
+// 	computer->ram->draw_state.cam_pos_x = x;
+// 	computer->ram->draw_state.cam_pos_y = y;
+// }
 
-void api_reset_camera(computer_t *computer) {
-	computer->ram->draw_state.cam_pos_x = 0;
-	computer->ram->draw_state.cam_pos_y = 0;
-}
+// void api_reset_camera(computer_t *computer) {
+// 	computer->ram->draw_state.cam_pos_x = 0;
+// 	computer->ram->draw_state.cam_pos_y = 0;
+// }
 
-void api_screen_to_world(computer_t *computer, int screen_x, int screen_y, int *world_x, int *world_y) {
-	*world_x = screen_x + computer->ram->draw_state.cam_pos_x;
-	*world_y = screen_y + computer->ram->draw_state.cam_pos_y;
-}
+// void api_screen_to_world(computer_t *computer, int screen_x, int screen_y, int *world_x, int *world_y) {
+// 	*world_x = screen_x + computer->ram->draw_state.cam_pos_x;
+// 	*world_y = screen_y + computer->ram->draw_state.cam_pos_y;
+// }
 
-void api_world_to_screen(computer_t *computer, int world_x, int world_y, int *screen_x, int *screen_y) {
-	*screen_x = world_x - computer->ram->draw_state.cam_pos_x;
-	*screen_y = world_y - computer->ram->draw_state.cam_pos_y;
-}
+// void api_world_to_screen(computer_t *computer, int world_x, int world_y, int *screen_x, int *screen_y) {
+// 	*screen_x = world_x - computer->ram->draw_state.cam_pos_x;
+// 	*screen_y = world_y - computer->ram->draw_state.cam_pos_y;
+// }
 
-void api_world_to_grid(computer_t *computer, int world_x, int world_y, int *grid_x, int *grid_y) {
-	*grid_x = world_x / SPRITE_WIDTH;
-	*grid_y = world_y / SPRITE_HEIGHT;
-}
+// void api_world_to_grid(computer_t *computer, int world_x, int world_y, int *grid_x, int *grid_y) {
+// 	*grid_x = world_x / SPRITE_WIDTH;
+// 	*grid_y = world_y / SPRITE_HEIGHT;
+// }
 
-void api_grid_to_world(computer_t *computer, int grid_x, int grid_y, int *world_x, int *world_y) {
-	*world_x = grid_x * SPRITE_WIDTH;
-	*world_y = grid_y * SPRITE_HEIGHT;
-}
+// void api_grid_to_world(computer_t *computer, int grid_x, int grid_y, int *world_x, int *world_y) {
+// 	*world_x = grid_x * SPRITE_WIDTH;
+// 	*world_y = grid_y * SPRITE_HEIGHT;
+// }

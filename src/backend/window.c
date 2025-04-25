@@ -1,31 +1,32 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "backend.h"
+#include "window.h"
 #include "sdl2.h"
+#include "gfx.h"
 #include "../computer.h"
 
-void backend_init(char title[], int initial_scale) {
+void window_init(char title[], int initial_scale) {
 	#ifdef BACKEND_SDL2
 	sdl2_init(title, initial_scale);
 	#endif
 }
 
-void backend_tick_start(computer_t *computer) {
+void window_tick_start(computer_t *computer) {
 	#ifdef BACKEND_SDL2
 	sdl2_tick_start(computer);
 	#endif
 }
 
-void backend_render(computer_t *computer) {
-	generate_rgb_framebuffer(computer);
+void window_render(computer_t *computer) {
+	gfx_generate_rgb_framebuffer(computer);
 
 	#ifdef BACKEND_SDL2
 	sdl2_render(computer);
 	#endif
 }
 
-void backend_tick_end(computer_t *computer) {
+void window_tick_end(computer_t *computer) {
 	#ifdef BACKEND_SDL2
 	sdl2_tick_end();
 	#endif
@@ -39,13 +40,7 @@ bool window_is_open() {
 	#endif
 }
 
-void get_mouse_pos(int *x, int *y) {
-	#ifdef BACKEND_SDL2
-	sdl2_get_mouse_pos(x, y);
-	#endif
-}
-
-void backend_quit() {
+void window_quit() {
 	#ifdef BACKEND_SDL2
 	sdl2_quit();
 	#endif

@@ -17,7 +17,7 @@ computer_t *get_global_computer() {
 	return _computer;
 }
 
-void computer_load_assets(computer_t *computer) {
+void computer_load_resouces(computer_t *computer) {
 	// memcpy(computer->ram->spritesheet.data, builtin_spritesheet, SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT);
 	memcpy(computer->ram->spritesheet.data + ((SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT) * (SPRITESHEET_PAGE_AMOUNT - 1)), builtin_spritesheet, SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT);
 
@@ -167,7 +167,7 @@ void computer_init(computer_t *computer) {
 	}
 	memset(computer->ram, 0, RAM_SIZE);
 
-	computer->ram->palette = default_palette;
+	computer->ram->palette = builtin_palette;
 }
 
 void code_free(code_t *code) {
@@ -184,46 +184,30 @@ void computer_quit(computer_t *computer) {
 	free(computer->ram);
 }
 
-void generate_rgb_framebuffer(computer_t *computer) {
-	for (int y = 0; y < SCREEN_HEIGHT; y++) {
-		for (int x = 0; x < SCREEN_WIDTH; x++) {
-			uint8_t pixel = computer->ram->framebuffer.data[y * SCREEN_WIDTH + x];
-			computer->rgb_framebuffer[y * SCREEN_WIDTH + x] = computer->ram->palette.colors[pixel];
-		}
-	}
-}
+// void generate_rgb_framebuffer(computer_t *computer) {
+// 	for (int y = 0; y < SCREEN_HEIGHT; y++) {
+// 		for (int x = 0; x < SCREEN_WIDTH; x++) {
+// 			uint8_t pixel = computer->ram->framebuffer.data[y * SCREEN_WIDTH + x];
+// 			computer->rgb_framebuffer[y * SCREEN_WIDTH + x] = computer->ram->palette.colors[pixel];
+// 		}
+// 	}
+// }
 
-bool point_in_bounds(int x, int y) {
-	if (x < 0) return false;
-	if (x >= SCREEN_WIDTH) return false;
-	if (y < 0) return false;
-	if (y >= SCREEN_HEIGHT) return false;
+// bool point_in_screen(int x, int y) {
+// 	if (x < 0) return false;
+// 	if (x >= SCREEN_WIDTH) return false;
+// 	if (y < 0) return false;
+// 	if (y >= SCREEN_HEIGHT) return false;
 
-	return true;
-}
+// 	return true;
+// }
 
-// TODO: make get_pixel
-void set_pixel(computer_t *computer, int x, int y, int color) {
-	if (point_in_bounds(x, y)) {
-		computer->ram->framebuffer.data[y * SCREEN_WIDTH + x] = color;
-	}
-}
-
-// TODO: make spritesheet_set_pixel
-uint8_t spritesheet_get_pixel(computer_t *computer, int x, int y) {
-	if (point_in_rect(x, y, (rect_t){0, 0, SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT})) {
-		return computer->ram->spritesheet.data[y * SPRITESHEET_WIDTH + x];
-	}
-	return 0;
-}
-
-bool point_in_rect(int x, int y, rect_t rect) {
-	if (x >= rect.x && x < rect.x + rect.w && y >= rect.y && y < rect.y + rect.h) {
-		return true;
-	}
-
-	return false;
-}
+// // TODO: make get_pixel
+// void gfx_set_pixel(framebuffer_t *framebuffer, int x, int y, int color) {
+// 	if (point_in_screen(x, y)) {
+// 		framebuffer->data[y * SCREEN_WIDTH + x] = color;
+// 	}
+// }
 
 // Convert the code_t datastructure back to a string for saving
 // the function assumes that passed buffer is large enough
@@ -301,69 +285,6 @@ void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int 
 }
 */
 
-void draw_sprite_sheet_rect(computer_t *computer, int x, int y, rect_t rect, uint8_t color_key) {
-	for (int i = 0; i < rect.h; i++) {
-		for (int j = 0; j < rect.w; j++) {
-			// uint8_t color = computer->ram->spritesheet.data[(rect.y + i) * SPRITESHEET_WIDTH + (rect.x + j)];
-			uint8_t color = spritesheet_get_pixel(computer, rect.x + j, rect.y + i);
-			if (color != color_key) {
-				set_pixel(computer, x + j, y + i, color);
-			}
-		}
-	}
-}
-
-void draw_sprite_sheet_rect_scaled(computer_t *computer, int x, int y, rect_t rect, uint8_t color_key, int scale) {
-	for (int i = 0; i < rect.h; i++) {
-		for (int j = 0; j < rect.w; j++) {
-			// uint8_t color = computer->ram->spritesheet.data[(rect.y + i) * SPRITESHEET_WIDTH + (rect.x + j)];
-			uint8_t color = spritesheet_get_pixel(computer, rect.x + j, rect.y + i);
-			// api_rectf(computer, x + (j * scale), y + (i * scale), scale, scale, color);
-			rect_t new_rect = {x + (j * scale), y + (i * scale), scale, scale};
-			draw_filled_rectangle(computer, new_rect, color);
-		}
-	}
-}
-
-// TODO: use this functions instead of the one above
-void draw_sprite_sheet_rect_scaled_float(computer_t *computer, rect_t dest_rect, rect_t source_rect, uint8_t color_key) {
-	for (int y = 0; y < dest_rect.h; y++) {
-		for (int x = 0; x < dest_rect.w; x++) {
-			// Calculate normalized coords
-			float u = (float)x / (float)dest_rect.w;
-			float v = (float)y / (float)dest_rect.h;
-
-			// Then convert to source coords
-			int source_x = source_rect.x + u * source_rect.w;
-			int source_y = source_rect.y + v * source_rect.h;
-
-			uint8_t color = spritesheet_get_pixel(computer, source_x, source_y);
-
-			set_pixel(computer, dest_rect.x + x, dest_rect.y + y, color);
-		}
-	}
-}
-
-void draw_filled_rectangle(computer_t *computer, rect_t rect, uint8_t color) {
-	// Using i and j to avoid conflict with the x and y parameters
-	for (int i = rect.y; i < rect.y+rect.h; i++) {
-		for (int j = rect.x; j < rect.x+rect.w; j++) {
-			set_pixel(computer, j, i, color);
-		}
-	}
-}
-
-rect_t sprite_index_to_spritesheet_rect(ram_t *ram, int sprite_index, int w, int h) {
-	rect_t rect = {
-		.x = (sprite_index % SPRITES_PER_ROW) * SPRITE_WIDTH,
-		.y = (sprite_index / SPRITES_PER_ROW) * SPRITE_HEIGHT,
-		.w = w * SPRITE_WIDTH,
-		.h = h * SPRITE_HEIGHT,
-	};
-
-	return rect;
-}
-
 int get_text_width(font_t *font, char text[], int max_offset) {
 	int len = 0;
 
@@ -421,6 +342,8 @@ int x_to_text_index(font_t *font, char text[], int x) {
 
 void game_save(computer_t *computer, const char filename[]) {
 	// Since we zero-initialize we don't need a \0 at the end (but I still do)
+	// TODO: make buffer a size guaranteed to fit the future contents of the file
+	// This is definitely gonna cause a crash for a future user if the program gets that far
 	char *buffer = calloc(RAM_SIZE, sizeof(char));
 	size_t offset = 0;
 

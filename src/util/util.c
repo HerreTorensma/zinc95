@@ -1,11 +1,12 @@
 #include "util.h"
 #include "../api/api.h"
-#include "../backend/backend.h"
 #include "../backend/input.h"
 
 #include <stdio.h>
 
-void draw_out_frame(computer_t *computer, rect_t rect) {
+// TODO: make versions of these such that the rect is both in and out if that makes sense
+// just make it nicer to use bc now it's pretty bad
+void draw_out_frame(computer_t *computer, recti_t rect) {
 	int x = rect.x;
 	int y = rect.y;
 	int w = rect.w;
@@ -39,7 +40,7 @@ void draw_out_frame(computer_t *computer, rect_t rect) {
 	api_rectf(computer, x + 2, y + 2, w - 3, h - 3, 7);
 }
 
-void draw_in_frame(computer_t *computer, rect_t rect) {
+void draw_in_frame(computer_t *computer, recti_t rect) {
 	int x = rect.x;
 	int y = rect.y;
 	int w = rect.w;
@@ -78,13 +79,15 @@ void draw_in_frame(computer_t *computer, rect_t rect) {
 	// api_rectf(computer, x + 2, y + 2, w - 3, h - 3, 15);
 }
 
-bool button_ex(computer_t *computer, char text[], rect_t rect, bool appear_pressed) {
-	int x, y;
-	get_mouse_pos(&x, &y);
+// TODO: rename appear_pressed to already_pressed
+bool button_ex(computer_t *computer, char text[], recti_t rect, bool appear_pressed) {
+	// int x, y;
+	// get_mouse_pos(&x, &y);
+	vec2i_t mouse_pos = input_mouse_pos();
 
 	bool return_value = false;
 	
-	if (point_in_rect(x, y, rect)) {
+	if (point_in_recti(mouse_pos, rect)) {
 		if (api_mouse_btn(computer, MOUSE_BUTTON_LEFT)) {
 			appear_pressed = true;
 			return_value = true;
@@ -92,7 +95,7 @@ bool button_ex(computer_t *computer, char text[], rect_t rect, bool appear_press
 	}
 	
 	if (appear_pressed) {
-		rect_t new_rect = {
+		recti_t new_rect = {
 			.x = rect.x + 2,
 			.y = rect.y + 2,
 			.w = rect.w - 4,
@@ -111,18 +114,20 @@ bool button_ex(computer_t *computer, char text[], rect_t rect, bool appear_press
 	return return_value;
 }
 
-bool button(computer_t *computer, char text[], rect_t rect) {
+bool button(computer_t *computer, char text[], recti_t rect) {
 	return button_ex(computer, text, rect, false);
 }
 
-bool press_button(computer_t *computer, char text[], rect_t rect) {
-	int x, y;
-	get_mouse_pos(&x, &y);
+// TODO: investigate why this function exists because apparantly I forgot
+bool press_button(computer_t *computer, char text[], recti_t rect) {
+	// int x, y;
+	// get_mouse_pos(&x, &y);
+	vec2i_t mouse_pos = input_mouse_pos();
 
 	bool pressed = false;
 	bool held = false;
 	
-	if (point_in_rect(x, y, rect)) {
+	if (point_in_recti(mouse_pos, rect)) {
 		if (api_mouse_btn(computer, MOUSE_BUTTON_LEFT)) {
 			held = true;
 		}
@@ -133,7 +138,7 @@ bool press_button(computer_t *computer, char text[], rect_t rect) {
 	}
 	
 	if (held) {
-		rect_t new_rect = {
+		recti_t new_rect = {
 			.x = rect.x + 2,
 			.y = rect.y + 2,
 			.w = rect.w - 4,
@@ -149,4 +154,33 @@ bool press_button(computer_t *computer, char text[], rect_t rect) {
 	}
 	
 	return pressed;
+}
+
+// TODO: move to GUI
+bool toggle_button(computer_t *computer, char text[], recti_t rect, bool *pressed) {
+	vec2i_t mouse_pos = input_mouse_pos();
+	
+	if (point_in_recti(mouse_pos, rect)) {
+		if (api_mouse_btnp(computer, MOUSE_BUTTON_LEFT)) {
+			*pressed = !(*pressed);
+		}
+	}
+	
+	if (*pressed) {
+		recti_t new_rect = {
+			.x = rect.x + 2,
+			.y = rect.y + 2,
+			.w = rect.w - 4,
+			.h = rect.h - 4,
+		};
+		
+		draw_in_frame(computer, new_rect);
+		api_text(computer, 2, text, rect.x + 2, rect.y + 2, 2);
+
+	} else {
+		draw_out_frame(computer, rect);
+		api_text(computer, 2, text, rect.x + 2, rect.y + 2, 4);
+	}
+	
+	return *pressed;
 }

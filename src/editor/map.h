@@ -1,3 +1,7 @@
+/*
+Map editor
+*/
+
 #pragma once
 
 #include "../computer.h"

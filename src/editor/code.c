@@ -6,11 +6,10 @@
 
 #include "../api/api.h"
 #include "../util/util.h"
-#include "../backend/backend.h"
 #include "../backend/input.h"
 #include "menu.h"
 
-static rect_t code_rect = {
+static recti_t code_rect = {
 	.x = 4,
 	.y = 22,
 	.w = SCREEN_WIDTH - 8,
@@ -344,11 +343,12 @@ static void handle_char_input(computer_t *computer, code_t *code) {
 static void move_cursor_to_mouse(ram_t *ram, code_t *code) {
 	font_t *font = &ram->fonts[font_index];
 
-	int x, y;
-	get_mouse_pos(&x, &y);
+	// int x, y;
+	// get_mouse_pos(&x, &y);
+	vec2i_t mouse_pos = input_mouse_pos();
 
-	int corrected_x = x - (code_rect.x + 5 * (font->width + font->horizontal_space));
-	int corrected_y = y - code_rect.y + (scroll_amount * (font->height + font->vertical_space));
+	int corrected_x = mouse_pos.x - (code_rect.x + 5 * (font->width + font->horizontal_space));
+	int corrected_y = mouse_pos.y - code_rect.y + (scroll_amount * (font->height + font->vertical_space));
 
 	int line = corrected_y / (font->height + font->vertical_space);
 	if (line < 0) {

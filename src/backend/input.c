@@ -42,3 +42,13 @@ bool input_mouse_scrolled(scroll_direction_t direction) {
 	return sdl2_input_mouse_scrolled(direction);
 	#endif
 }
+
+vec2i_t input_mouse_pos() {
+	#ifdef BACKEND_SDL2
+
+	int x, y;
+	sdl2_get_mouse_pos(&x, &y);
+	return (vec2i_t){x, y};
+
+	#endif
+}

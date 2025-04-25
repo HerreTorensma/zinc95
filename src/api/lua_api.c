@@ -39,7 +39,8 @@ static void lua_spr(lua_State *lua) {
 			int height = (int)lua_tonumber(lua, 5);
 
 			// TODO: add support for scale
-			api_spr(computer, sprite_index, x, y, width, height, 1);
+			// api_spr(computer, sprite_index, x, y, width, height, 1);
+			api_spr(computer, sprite_index, x, y, width, height);
 		}
 	}
 }

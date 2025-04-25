@@ -1,3 +1,7 @@
+/*
+Lua API
+*/
+
 #pragma once
 
 #include "../computer.h"

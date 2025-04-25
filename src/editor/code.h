@@ -1,3 +1,7 @@
+/*
+Code editor
+*/
+
 #pragma once
 
 #include "../computer.h"
