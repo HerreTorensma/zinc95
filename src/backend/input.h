@@ -8,6 +8,8 @@ Input
 
 #include "math2d.h"
 
+// TODO: manually number these (maybe)
+// Also write them to RAM
 typedef enum zinc_key {
 	KEY_UNKNOWN = 0,
 
@@ -124,24 +126,26 @@ typedef enum mouse_button {
 	MOUSE_BUTTON_RIGHT = 3,
 } mouse_button_t;
 
-typedef enum scroll_direction {
+typedef enum scroll_dir {
 	SCROLL_UP = -1,
 	SCROLL_NONE = 0,
 	SCROLL_DOWN = 1,
-} scroll_direction_t;
+} scroll_dir_t;
 
+// TODO: rename this to make it more clear they're checks
+// like check_keyp or something
 bool input_key_pressed(zinc_key_t key);
 
 bool input_key_held(zinc_key_t key);
 
 bool input_key_released(zinc_key_t key);
 
-bool input_mouse_button_pressed(mouse_button_t button);
+bool input_mouse_button_pressed(mouse_button_t gui_button);
 
-bool input_mouse_button_released(mouse_button_t button);
+bool input_mouse_button_released(mouse_button_t gui_button);
 
-bool input_mouse_button_held(mouse_button_t button);
+bool input_mouse_button_held(mouse_button_t gui_button);
 
-bool input_mouse_scrolled(scroll_direction_t direction);
+bool input_mouse_scrolled(scroll_dir_t direction);
 
-vec2i_t input_mouse_pos();
+vec2i_t input_get_mouse_pos();

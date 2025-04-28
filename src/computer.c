@@ -21,6 +21,9 @@ void computer_load_resouces(computer_t *computer) {
 	// memcpy(computer->ram->spritesheet.data, builtin_spritesheet, SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT);
 	memcpy(computer->ram->spritesheet.data + ((SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT) * (SPRITESHEET_PAGE_AMOUNT - 1)), builtin_spritesheet, SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT);
 
+	// TODO: load the widths based on the lines drawn in the sprites
+	// the monospace bool can also go
+	// And the vertical_space is kinda stupid since there is already height
 	computer->ram->fonts[0] = (font_t){
 		.sprite_index = 5376,
 		.horizontal_space = 1,
@@ -239,7 +242,7 @@ void play_game(computer_t *computer) {
 	lua_call_init();
 
 	// Reset draw state
-	memset(&computer->ram->draw_state, 0, sizeof(draw_state_t));
+	// memset(&computer->ram->draw_state, 0, sizeof(draw_state_t));
 
 	// Set the state
 	computer->state = STATE_PLAYING;
@@ -284,55 +287,6 @@ void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int 
 	ram->spritesheets[sprite_sheet_index].data[sprite_sheet_y * SPRITESHEET_WIDTH + sprite_sheet_x] = color;
 }
 */
-
-int get_text_width(font_t *font, char text[], int max_offset) {
-	int len = 0;
-
-	for (int i = 0; i < max_offset; i++) {
-		if (text[i] == '\t') {
-			if (font->monospace) {
-				len += (font->width + font->horizontal_space) * TAB_SIZE;
-			} else {
-				len += (font->widths[text[' '] - VISIBLE_CHARACTERS_START] + font->horizontal_space) * TAB_SIZE;
-			}
-
-			continue;
-		}
-
-		if (font->monospace) {
-			len += font->width + font->horizontal_space;
-		} else {
-			len += font->widths[text[i] - VISIBLE_CHARACTERS_START] + font->horizontal_space;
-		}
-	}
-
-	return len;
-}
-
-int x_to_text_index(font_t *font, char text[], int x) {
-	int index = x / (font->width + font->horizontal_space);
-	int len = strlen(text);
-
-	int real_index = index;
-
-	for (int i = 0; i < index && i < len; i++) {
-		if (text[i] == '\t') {
-			real_index -= TAB_SIZE - 1;
-		}
-
-		if (real_index < 0) {
-			real_index = 0;
-			break;
-		}
-	}
-	
-	
-	if (real_index >= len) {
-		real_index = len;
-	}
-
-	return real_index;
-}
 
 #define LUA_SECTION_STRING "<<< lua >>>\n"
 #define GFX_SECTION_STRING "<<< gfx >>>\n"

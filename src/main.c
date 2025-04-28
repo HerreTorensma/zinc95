@@ -7,7 +7,6 @@ Main
 
 #include "computer.h"
 #include "backend/window.h"
-#include "util/util.h"
 #include "api/api.h"
 #include "editor/menu.h"
 #include "backend/input.h"
@@ -70,6 +69,9 @@ int main(int argc, char *argv[]) {
 	// Also for the refactor I need a temp allocator for strings and such
 
 	// maybe i should just get and store the mouse position at the beginning of every frame/tick so it won't call SDL everytime you do input_get_mouse_pos()
+
+	// I want to add debugging stuff like a stack of print statements that are drawn while the game is playing
+	// maybe implement breakpoints in the editor if possible but thats gonna be hard
 	
 	game_load(&computer, "game.zinc95");
 	computer_load_resouces(&computer);

@@ -7,7 +7,7 @@ bool point_in_recti(vec2i_t point, recti_t rect) {
 	return false;
 }
 
-recti_t rect_anchor(anchor_type_t anchor_type, recti_t origin, recti_t rect) {
+recti_t rect_anchor(anchor_type_t anchor_type, recti_t origin, recti_t rect, int margin_x, int margin_y) {
 	recti_t new_rect = {
 
 	};

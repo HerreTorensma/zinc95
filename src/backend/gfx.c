@@ -1,59 +1,5 @@
 #include "gfx.h"
 
-/*
-void draw_sprite_sheet_rect(computer_t *computer, int x, int y, rect_t rect, uint8_t color_key) {
-	for (int i = 0; i < rect.h; i++) {
-		for (int j = 0; j < rect.w; j++) {
-			// uint8_t color = computer->ram->spritesheet.data[(rect.y + i) * SPRITESHEET_WIDTH + (rect.x + j)];
-			uint8_t color = spritesheet_get_pixel(computer, rect.x + j, rect.y + i);
-			if (color != color_key) {
-				gfx_set_pixel(computer, x + j, y + i, color);
-			}
-		}
-	}
-}
-
-void draw_sprite_sheet_rect_scaled(computer_t *computer, int x, int y, rect_t rect, uint8_t color_key, int scale) {
-	for (int i = 0; i < rect.h; i++) {
-		for (int j = 0; j < rect.w; j++) {
-			// uint8_t color = computer->ram->spritesheet.data[(rect.y + i) * SPRITESHEET_WIDTH + (rect.x + j)];
-			uint8_t color = spritesheet_get_pixel(computer, rect.x + j, rect.y + i);
-			// api_rectf(computer, x + (j * scale), y + (i * scale), scale, scale, color);
-			rect_t new_rect = {x + (j * scale), y + (i * scale), scale, scale};
-			draw_filled_rectangle(computer, new_rect, color);
-		}
-	}
-}
-
-// TODO: use this functions instead of the one above
-void draw_sprite_sheet_rect_scaled_float(computer_t *computer, rect_t dest_rect, rect_t source_rect, uint8_t color_key) {
-	for (int y = 0; y < dest_rect.h; y++) {
-		for (int x = 0; x < dest_rect.w; x++) {
-			// Calculate normalized coords
-			float u = (float)x / (float)dest_rect.w;
-			float v = (float)y / (float)dest_rect.h;
-
-			// Then convert to source coords
-			int source_x = source_rect.x + u * source_rect.w;
-			int source_y = source_rect.y + v * source_rect.h;
-
-			uint8_t color = spritesheet_get_pixel(computer, source_x, source_y);
-
-			gfx_set_pixel(computer, dest_rect.x + x, dest_rect.y + y, color);
-		}
-	}
-}
-
-void draw_filled_rectangle(computer_t *computer, rect_t rect, uint8_t color) {
-	// Using i and j to avoid conflict with the x and y parameters
-	for (int i = rect.y; i < rect.y+rect.h; i++) {
-		for (int j = rect.x; j < rect.x+rect.w; j++) {
-			gfx_set_pixel(computer, j, i, color);
-		}
-	}
-}
-*/
-
 #include <stdlib.h>
 
 static bool point_in_screen(int x, int y) {

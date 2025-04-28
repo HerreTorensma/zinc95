@@ -6,7 +6,7 @@
 #include "../api/api.h"
 #include "../backend/input.h"
 #include "../backend/gfx.h"
-#include "../util/util.h"
+#include "../backend/gui.h"
 
 recti_t spritesheet_rect = {0};
 recti_t visible_rect = {0};
@@ -71,7 +71,7 @@ static void update_currently_editing_sprites_rect(sprite_select_snap_mode_t snap
 
 // This whole function is kind of a mess and I should probably rewrite it at some point
 void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap_mode) {
-	vec2i_t mouse_pos = input_mouse_pos();
+	vec2i_t mouse_pos = input_get_mouse_pos();
 
 	if (point_in_recti(mouse_pos, spritesheet_rect)) {
 		if (api_keyp(computer, KEY_MINUS) || api_mouse_scrolled(computer, SCROLL_UP)) {
@@ -131,7 +131,7 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 }
 
 void sprite_selector_draw(computer_t *computer) {
-	draw_in_frame(computer, spritesheet_rect);
+	gui_inset_frame(computer, spritesheet_rect);
 	// draw_sprite_sheet_rect(computer, spritesheet_rect.x, spritesheet_rect.y, visible_rect, 255);
 	gfx_draw_spritesheet_rect(computer->ram, spritesheet_rect.pos, visible_rect, COLOR_NONE);
 
@@ -146,7 +146,7 @@ void sprite_selector_draw(computer_t *computer) {
 		char buffer[3];
 		sprintf(buffer, "%d", i + 1);
 		
-		if (button_ex(computer, buffer, rect, selected_spritesheet_index == i)) {
+		if (gui_button_ex(computer, buffer, rect, selected_spritesheet_index == i)) {
 			set_selected_spritesheet_index(i);
 		}
 	}
@@ -166,7 +166,7 @@ void sprite_selector_draw(computer_t *computer) {
 			char buffer[3];
 			sprintf(buffer, "%d", index + 1);
 			
-			if (button_ex(computer, buffer, rect, selected_spritesheet_index == index)) {
+			if (gui_button_ex(computer, buffer, rect, selected_spritesheet_index == index)) {
 				set_selected_spritesheet_index(index);
 			}
 		}

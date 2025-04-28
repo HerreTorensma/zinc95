@@ -24,11 +24,11 @@ void api_spr(computer_t *computer, int sprite_index, int x, int y, int width, in
 void api_map(computer_t *computer, int x, int y, int width, int height);
 
 // --- Input
-// Check button is held
-void api_btn(computer_t *computer, int button);
+// Check gui_button is held
+void api_btn(computer_t *computer, int gui_button);
 
-// Check button pressed
-void api_btnp(computer_t *computer, int button);
+// Check gui_button pressed
+void api_btnp(computer_t *computer, int gui_button);
 
 // Saves mouse coordinates in x and y
 void api_mouse(computer_t *computer, int *x, int *y);
@@ -67,14 +67,14 @@ bool api_keyp(computer_t *computer, int key);
 // Check if a key is released
 bool api_keyr(computer_t *computer, int key);
 
-// Check if a mouse button is held
-bool api_mouse_btn(computer_t *computer, int button);
+// Check if a mouse gui_button is held
+bool api_mouse_btn(computer_t *computer, int gui_button);
 
-// Check if a mouse button is pressed
-bool api_mouse_btnp(computer_t *computer, int button);
+// Check if a mouse gui_button is pressed
+bool api_mouse_btnp(computer_t *computer, int gui_button);
 
-// Check if a mouse button is released
-bool api_mouse_btnr(computer_t *computer, int button);
+// Check if a mouse gui_button is released
+bool api_mouse_btnr(computer_t *computer, int gui_button);
 
 bool api_mouse_scrolled(computer_t *computer, int direction);
 

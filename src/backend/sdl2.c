@@ -304,8 +304,8 @@ static SDL_Scancode key_to_sdl2_scancode(zinc_key_t key) {
 	}
 }
 
-static int mouse_button_to_sdl2_button(mouse_button_t button) {
-	switch (button) {
+static int mouse_button_to_sdl2_button(mouse_button_t gui_button) {
+	switch (gui_button) {
 		case MOUSE_BUTTON_LEFT: return 1;
 		case MOUSE_BUTTON_MIDDLE: return 2;
 		case MOUSE_BUTTON_RIGHT: return 3;
@@ -352,8 +352,8 @@ bool sdl2_input_key_released(zinc_key_t key) {
 	return false;
 }
 
-bool sdl2_input_mouse_button_pressed(mouse_button_t button) {
-	int sdl2_button = mouse_button_to_sdl2_button(button);
+bool sdl2_input_mouse_button_pressed(mouse_button_t gui_button) {
+	int sdl2_button = mouse_button_to_sdl2_button(gui_button);
 
 	if (sdl2_input.mouse_state & SDL_BUTTON(sdl2_button) && !(sdl2_input.prev_mouse_state & SDL_BUTTON(sdl2_button))) {
 		return true;
@@ -361,8 +361,8 @@ bool sdl2_input_mouse_button_pressed(mouse_button_t button) {
 	return false;
 }
 
-bool sdl2_input_mouse_button_released(mouse_button_t button) {
-	int sdl2_button = mouse_button_to_sdl2_button(button);
+bool sdl2_input_mouse_button_released(mouse_button_t gui_button) {
+	int sdl2_button = mouse_button_to_sdl2_button(gui_button);
 
 	if (!(sdl2_input.mouse_state & SDL_BUTTON(sdl2_button)) && sdl2_input.prev_mouse_state & SDL_BUTTON(sdl2_button)) {
 		return true;
@@ -370,8 +370,8 @@ bool sdl2_input_mouse_button_released(mouse_button_t button) {
 	return false;
 }
 
-bool sdl2_input_mouse_button_held(mouse_button_t button) {
-	int sdl2_button = mouse_button_to_sdl2_button(button);
+bool sdl2_input_mouse_button_held(mouse_button_t gui_button) {
+	int sdl2_button = mouse_button_to_sdl2_button(gui_button);
 
 	if (sdl2_input.mouse_state & SDL_BUTTON(sdl2_button)) {
 		return true;
@@ -379,6 +379,6 @@ bool sdl2_input_mouse_button_held(mouse_button_t button) {
 	return false;
 }
 
-bool sdl2_input_mouse_scrolled(scroll_direction_t direction) {
+bool sdl2_input_mouse_scrolled(scroll_dir_t direction) {
 	return scroll_state == direction;
 }

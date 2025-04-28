@@ -2,7 +2,6 @@
 
 #include <stdio.h>
 
-#include "../util/util.h"
 #include "../api/api.h"
 #include "../backend/input.h"
 
@@ -82,7 +81,7 @@ void workspace_menu_update(computer_t *computer) {
 void workspace_menu_draw(computer_t *computer) {
 	api_cls(computer, 7);
 
-	draw_out_frame(computer, screen_rect);
+	gui_outset_frame(computer, screen_rect);
 
 	switch (active_workspace) {
 		case WORKSPACE_CODE:
@@ -106,33 +105,33 @@ void workspace_menu_draw(computer_t *computer) {
 	}
 
 	// Menu bar
-	draw_out_frame(computer, bar_rect);
+	gui_outset_frame(computer, bar_rect);
 	
-	button(computer, "", (recti_t){2, 2, 16, 16});
+	gui_button(computer, "", (recti_t){2, 2, 16, 16});
 	
-	if (button_ex(computer, "Code", (recti_t){128 + 64*1, 2, 64, 16}, active_workspace == WORKSPACE_CODE)) {
+	if (gui_button_ex(computer, "Code", (recti_t){128 + 64*1, 2, 64, 16}, active_workspace == WORKSPACE_CODE)) {
 		active_workspace = WORKSPACE_CODE;
 	}
 	
-	if (button_ex(computer, "Sprite", (recti_t){128 + 64*2, 2, 64, 16}, active_workspace == WORKSPACE_SPRITE)) {
+	if (gui_button_ex(computer, "Sprite", (recti_t){128 + 64*2, 2, 64, 16}, active_workspace == WORKSPACE_SPRITE)) {
 		active_workspace = WORKSPACE_SPRITE;
 	}
 	
-	if (button_ex(computer, "Map", (recti_t){128 + 64*3, 2, 64, 16}, active_workspace == WORKSPACE_MAP)) {
+	if (gui_button_ex(computer, "Map", (recti_t){128 + 64*3, 2, 64, 16}, active_workspace == WORKSPACE_MAP)) {
 		active_workspace = WORKSPACE_MAP;
 	}
 	
-	if (button_ex(computer, "Sound", (recti_t){128 + 64*4, 2, 64, 16}, active_workspace == WORKSPACE_SOUND)) {
+	if (gui_button_ex(computer, "Sound", (recti_t){128 + 64*4, 2, 64, 16}, active_workspace == WORKSPACE_SOUND)) {
 		active_workspace = WORKSPACE_SOUND;
 	}
 	
-	if (press_button(computer, "", (recti_t){SCREEN_WIDTH-16-16-2, 2, 16, 16})) {
+	if (gui_press_button(computer, "", (recti_t){SCREEN_WIDTH-16-16-2, 2, 16, 16})) {
 		game_save(computer, "game.zinc95");
 	}
 	// api_spr(computer, 5858, SCREEN_WIDTH-16-16-2, 2, 2, 2, 1);
 	api_spr(computer, 5858, SCREEN_WIDTH-16-16-2, 2, 2, 2);
 	
-	if (press_button(computer, "", (recti_t){SCREEN_WIDTH-16-2, 2, 16, 16})) {
+	if (gui_press_button(computer, "", (recti_t){SCREEN_WIDTH-16-2, 2, 16, 16})) {
 		play_game(computer);
 	}
 	// api_spr(computer, 5856, SCREEN_WIDTH-16-2, 2, 2, 2, 1);

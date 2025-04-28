@@ -37,6 +37,7 @@ typedef struct vec2i {
 } vec2i_t;
 
 // TODO: rename to rect_t and rectf_t
+// or rename to irect_t and vec2i_t to ivec2_t
 typedef union recti {
 	struct {
 		vec2i_t pos;
@@ -50,10 +51,11 @@ typedef union recti {
 		int h;
 	};
 
-	int data[4];
+	// int data[4];
 } recti_t;
 
-#define RECTI(x, y, w, h) ((recti_t){.x = (x), .y = (y), .w = (w), .h = (h)});
+// #define RECTI(x, y, w, h) ((recti_t){.x = (x), .y = (y), .w = (w), .h = (h)});
+#define RECTI(_x, _y, _w, _h) ((recti_t){.x = _x, .y = _y, .w = _w, .h = _h});
 
 /*
 typedef union rect {
@@ -89,4 +91,4 @@ typedef enum anchor_type {
 	ANCHOR_TYPE_RIGHT,
 } anchor_type_t;
 
-recti_t rect_anchor(anchor_type_t anchor_type, recti_t origin, recti_t rect);
+recti_t rect_anchor(anchor_type_t anchor_type, recti_t origin, recti_t rect, int margin_x, int margin_y);

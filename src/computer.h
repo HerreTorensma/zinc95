@@ -11,6 +11,8 @@ Memory layout, global constants
 #include <inttypes.h>
 #include <stdbool.h>
 
+// TODO: rename some stuff so it's all consistent, dont mix AMOUNT, MAX, TOTAL etc.
+
 #define RAM_SIZE (32 * 1024 * 1024)
 #define CODE_SIZE (8 * 1024 * 1024)
 
@@ -20,6 +22,7 @@ Memory layout, global constants
 #define PALETTE_SIZE 256
 
 // These are in pixels
+// TODO: put them in terms of sprite width and height
 #define SPRITESHEET_PAGE_WIDTH 384
 #define SPRITESHEET_PAGE_HEIGHT 128
 #define SPRITESHEET_WIDTH SPRITESHEET_PAGE_WIDTH
@@ -35,10 +38,11 @@ Memory layout, global constants
 #define TOTAL_SPRITES ((SPRITESHEET_WIDTH * SPRITESHEET_HEIGHT) / (SPRITE_WIDTH * SPRITE_HEIGHT))
 
 #define VISIBLE_CHARACTERS_SIZE 96
-#define VISIBLE_CHARACTERS_START 32
+#define VISIBLE_CHARACTERS_START ' '
 #define MAX_CHARACTER_WIDTH 16
 #define MAX_CHARACTER_HEIGHT 16
 
+// TODO: should be a static global variable in code.c to be configured later
 #define TAB_SIZE 4
 
 #define COLOR_NONE 255
@@ -126,10 +130,16 @@ typedef struct code {
 } code_t;
 
 // Should be reset before game is played
-typedef struct draw_state {
-	int16_t cam_pos_x;
-	int16_t cam_pos_y;
-} draw_state_t;
+// typedef struct draw_state {
+// 	int16_t cam_pos_x;
+// 	int16_t cam_pos_y;
+// } draw_state_t;
+
+// Colors used by GUI
+typedef struct gui_colors {
+	// Since the borders of the screen are not in the framebuffer it can just be an rgb color
+	rgb_color_t screen_background_color;
+} gui_colors_t;
 
 // 8MB RAM (excluding what the lua code takes up)
 typedef union ram {
@@ -141,7 +151,7 @@ typedef union ram {
 		font_t fonts[8];
 		map_t map;
 		char code_buffer[1024 * 1024];
-		draw_state_t draw_state;
+		// draw_state_t draw_state;
 	};
 
 	uint8_t data[RAM_SIZE];
@@ -186,10 +196,6 @@ int sprite_get_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int x
 
 void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int x, int y, uint8_t color);
 */
-
-int get_text_width(font_t *font, char text[], int max_offset);
-
-int x_to_text_index(font_t *font, char text[], int x);
 
 void game_save(computer_t *computer, const char filename[]);
 

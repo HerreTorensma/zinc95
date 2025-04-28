@@ -5,7 +5,7 @@
 #include "menu.h"
 #include "../api/api.h"
 #include "../backend/input.h"
-#include "../util/util.h"
+#include "../backend/gui.h"
 #include "shared.h"
 
 static recti_t map_rect = {0};
@@ -51,7 +51,7 @@ void map_editor_init(computer_t *computer) {
 void map_editor_update(computer_t *computer) {
 	sprite_selector_update(computer, SNAP_MODE_ZOOM);
 
-	vec2i_t mouse_pos = input_mouse_pos();
+	vec2i_t mouse_pos = input_get_mouse_pos();
 
 	int cell_x = ((mouse_pos.x + cam_x) / currently_editing_rect.w) * currently_editing_sprites_rect.w;
 	int cell_y = ((mouse_pos.y + cam_y) / currently_editing_rect.h) * currently_editing_sprites_rect.h;
@@ -111,8 +111,7 @@ void map_editor_draw(computer_t *computer) {
 	}
 
 	// Draw rect where mouse is
-	vec2i_t mouse_pos = input_mouse_pos();
-
+	vec2i_t mouse_pos = input_get_mouse_pos();
 
 	if (point_in_recti(mouse_pos, map_rect)) {
 		int rect_x = ((mouse_pos.x + cam_x) / currently_editing_rect.w) * currently_editing_rect.w - cam_x;
@@ -123,10 +122,10 @@ void map_editor_draw(computer_t *computer) {
 
 	draw_grid(computer);
 
-	draw_out_frame(computer, (recti_t){0, 344, 640, 136});
+	gui_outset_frame(computer, (recti_t){0, 344, 640, 136});
 	sprite_selector_draw(computer);
 
-	button(computer, "Entities", (recti_t){2, SCREEN_HEIGHT - 5 * 16 - 2, 48, 16});
+	gui_button(computer, "Entities", (recti_t){2, SCREEN_HEIGHT - 5 * 16 - 2, 48, 16});
 
 	// Layer buttons
 	for (int i = 0; i < MAP_LAYERS_AMOUNT; i++) {
@@ -140,7 +139,7 @@ void map_editor_draw(computer_t *computer) {
 			.h = 16
 		};
 
-		if (button_ex(computer, buffer, rect, selected_layer == i)) {
+		if (gui_button_ex(computer, buffer, rect, selected_layer == i)) {
 			selected_layer = i;
 		}
 	}

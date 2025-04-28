@@ -5,8 +5,8 @@
 #include <stdio.h>
 
 #include "../api/api.h"
-#include "../util/util.h"
 #include "../backend/input.h"
+#include "../backend/gui.h"
 #include "menu.h"
 
 static recti_t code_rect = {
@@ -345,7 +345,7 @@ static void move_cursor_to_mouse(ram_t *ram, code_t *code) {
 
 	// int x, y;
 	// get_mouse_pos(&x, &y);
-	vec2i_t mouse_pos = input_mouse_pos();
+	vec2i_t mouse_pos = input_get_mouse_pos();
 
 	int corrected_x = mouse_pos.x - (code_rect.x + 5 * (font->width + font->horizontal_space));
 	int corrected_y = mouse_pos.y - code_rect.y + (scroll_amount * (font->height + font->vertical_space));
@@ -358,7 +358,7 @@ static void move_cursor_to_mouse(ram_t *ram, code_t *code) {
 		line = code->line_amount - 1;
 	}
 
-	int pos = x_to_text_index(font, code->lines[line].text, corrected_x);
+	int pos = gui_x_to_text_index(font, code->lines[line].text, corrected_x);
 	if (pos < 0) {
 		return;
 	}
@@ -530,13 +530,13 @@ void code_editor_update(computer_t *computer) {
 }
 
 static int get_real_cursor_pos(computer_t *computer) {
-	return get_text_width(&computer->ram->fonts[font_index], computer->code.lines[computer->code.cursor_line].text, computer->code.cursor_pos);
+	return gui_get_text_width(&computer->ram->fonts[font_index], computer->code.lines[computer->code.cursor_line].text, computer->code.cursor_pos);
 }
 
 void code_editor_draw(computer_t *computer) {
 	font_t *font = &computer->ram->fonts[font_index];
 
-	draw_in_frame(computer, code_rect);
+	gui_inset_frame(computer, code_rect);
 	// api_rectf(computer, code_rect.x, code_rect.y, code_rect.w, code_rect.h, 15);
 	api_rectf(computer, code_rect.x, code_rect.y, code_rect.w, code_rect.h, 15);
 

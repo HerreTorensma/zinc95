@@ -7,7 +7,7 @@
 
 #include "../backend/input.h"
 #include "../backend/gfx.h"
-#include "../util/util.h"
+#include "../backend/gui.h"
 
 // TODO: remove api calls anywhere else in the code
 // idk I want it to exist in a bubble I guess
@@ -139,16 +139,16 @@ bool api_keyr(computer_t *computer, int key) {
 	return input_key_released(key);
 }
 
-bool api_mouse_btn(computer_t *computer, int button) {
-	return input_mouse_button_held(button);
+bool api_mouse_btn(computer_t *computer, int gui_button) {
+	return input_mouse_button_held(gui_button);
 }
 
-bool api_mouse_btnp(computer_t *computer, int button) {
-	return input_mouse_button_pressed(button);
+bool api_mouse_btnp(computer_t *computer, int gui_button) {
+	return input_mouse_button_pressed(gui_button);
 }
 
-bool api_mouse_btnr(computer_t *computer, int button) {
-	return input_mouse_button_released(button);
+bool api_mouse_btnr(computer_t *computer, int gui_button) {
+	return input_mouse_button_released(gui_button);
 }
 
 bool api_mouse_scrolled(computer_t *computer, int direction) {
@@ -156,79 +156,81 @@ bool api_mouse_scrolled(computer_t *computer, int direction) {
 }
 
 void api_text(computer_t *computer, int font_index, char text[], int x, int y, int color) {
-	x -= computer->ram->draw_state.cam_pos_x;
-	y -= computer->ram->draw_state.cam_pos_y;
+	gui_draw_text(computer, font_index, text, (vec2i_t){x, y}, color);
 
-	font_t *font = &computer->ram->fonts[font_index];
+	// // x -= computer->ram->draw_state.cam_pos_x;
+	// // y -= computer->ram->draw_state.cam_pos_y;
 
-	int new_x = x;
-	int new_y = y;
+	// font_t *font = &computer->ram->fonts[font_index];
 
-	for (size_t i = 0; i < strlen(text); i++) {
-		// Commented this out for now, might add it back later not sure yet
-		if (text[i] == '\n') {
-			new_x = 0;
-			new_y += font->height + font->vertical_space;
-			continue;
-		}
+	// int new_x = x;
+	// int new_y = y;
 
-		if (text[i] == '\t') {
-			if (font->monospace) {
-				new_x += (font->width + font->horizontal_space) * TAB_SIZE;
-			} else {
-				new_x += (font->widths[text[' '] - VISIBLE_CHARACTERS_START] + font->horizontal_space) * TAB_SIZE;
-			}
+	// for (size_t i = 0; i < strlen(text); i++) {
+	// 	// Commented this out for now, might add it back later not sure yet
+	// 	if (text[i] == '\n') {
+	// 		new_x = 0;
+	// 		new_y += font->height + font->vertical_space;
+	// 		continue;
+	// 	}
 
-			continue;
-		}
+	// 	if (text[i] == '\t') {
+	// 		if (font->monospace) {
+	// 			new_x += (font->width + font->horizontal_space) * TAB_SIZE;
+	// 		} else {
+	// 			new_x += (font->widths[text[' '] - VISIBLE_CHARACTERS_START] + font->horizontal_space) * TAB_SIZE;
+	// 		}
 
-		// Inline sprites
-		if (text[i] == '~') {
-			int sprite_index = 0;
+	// 		continue;
+	// 	}
 
-			// Read the digits after
-			size_t index = i + 1;
-			while (text[index] >= '0' && text[index] <= '9') {
-				sprite_index *= 10;
-				sprite_index += text[index] - '0';
+	// 	// Inline sprites
+	// 	if (text[i] == '~') {
+	// 		int sprite_index = 0;
 
-				index++;
-			}
+	// 		// Read the digits after
+	// 		size_t index = i + 1;
+	// 		while (text[index] >= '0' && text[index] <= '9') {
+	// 			sprite_index *= 10;
+	// 			sprite_index += text[index] - '0';
 
-			// Only sprite sheet 0 now
-			// api_spr(computer, sprite_index, new_x, new_y, 1, 1, 1);
-			api_spr(computer, sprite_index, new_x, new_y, 1, 1);
-			new_x += 16 + font->horizontal_space;
+	// 			index++;
+	// 		}
 
-			i = index - 1;
+	// 		// Only sprite sheet 0 now
+	// 		// api_spr(computer, sprite_index, new_x, new_y, 1, 1, 1);
+	// 		api_spr(computer, sprite_index, new_x, new_y, 1, 1);
+	// 		new_x += 16 + font->horizontal_space;
 
-			continue;
-		}
+	// 		i = index - 1;
 
-		// Get the correct sprite index keeping in mind some fonts could have multiple sprites per character (not tested for more than 1 horizontal sprite)
-		int char_index = text[i] - VISIBLE_CHARACTERS_START;
-		int x_offset = (char_index % (SPRITES_PER_ROW / font->h_sprites)) * font->h_sprites;
-		int y_offset = (char_index / (SPRITES_PER_ROW / font->h_sprites)) * font->v_sprites;
-		int sprite_index = font->sprite_index + x_offset + (y_offset * SPRITES_PER_ROW);
+	// 		continue;
+	// 	}
 
-		recti_t rect = sprite_index_to_spritesheet_rect(sprite_index, font->h_sprites, font->v_sprites);
+	// 	// Get the correct sprite index keeping in mind some fonts could have multiple sprites per character (not tested for more than 1 horizontal sprite)
+	// 	int char_index = text[i] - VISIBLE_CHARACTERS_START;
+	// 	int x_offset = (char_index % (SPRITES_PER_ROW / font->h_sprites)) * font->h_sprites;
+	// 	int y_offset = (char_index / (SPRITES_PER_ROW / font->h_sprites)) * font->v_sprites;
+	// 	int sprite_index = font->sprite_index + x_offset + (y_offset * SPRITES_PER_ROW);
 
-		for (int i = 0; i < rect.h; i++) {
-			for (int j = 0; j < rect.w; j++) {
-				// uint8_t font_color = computer->ram->spritesheet.data[(rect.y + i) * SPRITESHEET_WIDTH + (rect.x + j)];
-				color_t font_color = gfx_spritesheet_get_pixel(&computer->ram->spritesheet, (vec2i_t){rect.x + j, rect.y + i});
-				if (font_color == 15) {
-					gfx_set_pixel(&computer->ram->framebuffer, new_x + j, new_y + i, color);
-				}
-			}
-		}
+	// 	recti_t rect = sprite_index_to_spritesheet_rect(sprite_index, font->h_sprites, font->v_sprites);
 
-		if (font->monospace) {
-			new_x += font->width + font->horizontal_space;
-		} else {
-			new_x += font->widths[text[i] - VISIBLE_CHARACTERS_START] + font->horizontal_space;
-		}
-	}
+	// 	for (int i = 0; i < rect.h; i++) {
+	// 		for (int j = 0; j < rect.w; j++) {
+	// 			// uint8_t font_color = computer->ram->spritesheet.data[(rect.y + i) * SPRITESHEET_WIDTH + (rect.x + j)];
+	// 			color_t font_color = gfx_spritesheet_get_pixel(&computer->ram->spritesheet, (vec2i_t){rect.x + j, rect.y + i});
+	// 			if (font_color == 15) {
+	// 				gfx_set_pixel(&computer->ram->framebuffer, new_x + j, new_y + i, color);
+	// 			}
+	// 		}
+	// 	}
+
+	// 	if (font->monospace) {
+	// 		new_x += font->width + font->horizontal_space;
+	// 	} else {
+	// 		new_x += font->widths[text[i] - VISIBLE_CHARACTERS_START] + font->horizontal_space;
+	// 	}
+	// }
 }
 
 // Midpoint circle algorithm
@@ -279,8 +281,8 @@ void api_circ(computer_t *computer, int x, int y, int radius, uint8_t color) {
 }
 
 void api_draw_map_layer(computer_t *computer, int layer, int x, int y, int cell_x, int cell_y, int cell_w, int cell_h) {
-	x -= computer->ram->draw_state.cam_pos_x;
-	y -= computer->ram->draw_state.cam_pos_y;
+	// x -= computer->ram->draw_state.cam_pos_x;
+	// y -= computer->ram->draw_state.cam_pos_y;
 
 	if (cell_x < 0) {
 		cell_x = 0;

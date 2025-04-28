@@ -32,10 +32,10 @@ bool sdl2_input_key_held(zinc_key_t key);
 
 bool sdl2_input_key_released(zinc_key_t key);
 
-bool sdl2_input_mouse_button_pressed(mouse_button_t button);
+bool sdl2_input_mouse_button_pressed(mouse_button_t gui_button);
 
-bool sdl2_input_mouse_button_released(mouse_button_t button);
+bool sdl2_input_mouse_button_released(mouse_button_t gui_button);
 
-bool sdl2_input_mouse_button_held(mouse_button_t button);
+bool sdl2_input_mouse_button_held(mouse_button_t gui_button);
 
-bool sdl2_input_mouse_scrolled(scroll_direction_t direction);
+bool sdl2_input_mouse_scrolled(scroll_dir_t direction);
