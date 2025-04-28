@@ -16,6 +16,8 @@ static SDL_Texture *screen_texture = NULL;
 // -1 is up, 0 is none, 1 is down
 static int scroll_state = 0;
 
+static int frame_start_ticks = 0;
+
 typedef struct sdl2_input {
 	uint8_t prev_key_state[512];
 	uint8_t key_state[512];
@@ -133,6 +135,8 @@ void sdl2_get_mouse_pos(int *x, int *y) {
 }
 
 void sdl2_tick_start(computer_t *computer) {
+	frame_start_ticks = SDL_GetTicks();
+
 	scroll_state = 0;
 
 	SDL_Event event;
@@ -186,7 +190,12 @@ void sdl2_render(computer_t *computer) {
 }
 
 void sdl2_tick_end() {
-	SDL_Delay(1000/FPS);
+	// Ensure the target FPS
+	int frame_ticks = SDL_GetTicks() - frame_start_ticks;
+
+	if (FRAME_DELAY > frame_ticks) {
+		SDL_Delay(FRAME_DELAY - frame_ticks);
+	}
 }
 
 void sdl2_quit() {

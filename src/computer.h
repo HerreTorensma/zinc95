@@ -54,6 +54,7 @@ Memory layout, global constants
 #define MAP_LAYER_SIZE (MAP_WIDTH * MAP_HEIGHT)
 
 #define FPS 60
+#define FRAME_DELAY 1000/FPS
 
 // typedef struct rect {
 // 	int x;
