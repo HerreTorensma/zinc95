@@ -156,7 +156,7 @@ bool api_mouse_scrolled(computer_t *computer, int direction) {
 }
 
 void api_text(computer_t *computer, int font_index, char text[], int x, int y, int color) {
-	gui_draw_text(computer, font_index, text, (vec2i_t){x, y}, color);
+	gui_draw_text(computer->ram, font_index, text, (vec2i_t){x, y}, color);
 
 	// // x -= computer->ram->draw_state.cam_pos_x;
 	// // y -= computer->ram->draw_state.cam_pos_y;

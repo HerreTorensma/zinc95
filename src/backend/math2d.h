@@ -36,6 +36,8 @@ typedef struct vec2i {
 	int y;
 } vec2i_t;
 
+#define VEC2I(_x, _y) ((vec2i_t){.x = _x, .y = _y})
+
 // TODO: rename to rect_t and rectf_t
 // or rename to irect_t and vec2i_t to ivec2_t
 typedef union recti {
@@ -55,7 +57,7 @@ typedef union recti {
 } recti_t;
 
 // #define RECTI(x, y, w, h) ((recti_t){.x = (x), .y = (y), .w = (w), .h = (h)});
-#define RECTI(_x, _y, _w, _h) ((recti_t){.x = _x, .y = _y, .w = _w, .h = _h});
+#define RECTI(_x, _y, _w, _h) ((recti_t){.x = _x, .y = _y, .w = _w, .h = _h})
 
 /*
 typedef union rect {

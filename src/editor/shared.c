@@ -131,7 +131,7 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 }
 
 void sprite_selector_draw(computer_t *computer) {
-	gui_inset_frame(computer, spritesheet_rect);
+	gui_inset_frame(computer->ram, spritesheet_rect);
 	// draw_sprite_sheet_rect(computer, spritesheet_rect.x, spritesheet_rect.y, visible_rect, 255);
 	gfx_draw_spritesheet_rect(computer->ram, spritesheet_rect.pos, visible_rect, COLOR_NONE);
 
@@ -146,7 +146,7 @@ void sprite_selector_draw(computer_t *computer) {
 		char buffer[3];
 		sprintf(buffer, "%d", i + 1);
 		
-		if (gui_button_ex(computer, buffer, rect, selected_spritesheet_index == i)) {
+		if (gui_button_ex(computer->ram, buffer, rect, selected_spritesheet_index == i)) {
 			set_selected_spritesheet_index(i);
 		}
 	}

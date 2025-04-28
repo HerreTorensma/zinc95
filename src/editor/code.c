@@ -200,9 +200,78 @@ static void remove_char_at(code_t *code, int line, int pos) {
 }
 
 // Wrapper
-static inline void insert_char_at_cursor(code_t *code, char c) {
+static void insert_char_at_cursor(code_t *code, char c) {
 	insert_char_at(code, code->cursor_line, code->cursor_pos, c);
 	code->cursor_pos++;
+}
+
+static void move_cursor_to_mouse(ram_t *ram, code_t *code) {
+	font_t *font = &ram->fonts[font_index];
+
+	// int x, y;
+	// get_mouse_pos(&x, &y);
+	vec2i_t mouse_pos = input_get_mouse_pos();
+
+	int corrected_x = mouse_pos.x - (code_rect.x + 5 * (font->width + font->horizontal_space));
+	int corrected_y = mouse_pos.y - code_rect.y + (scroll_amount * (font->height + font->vertical_space));
+
+	int line = corrected_y / (font->height + font->vertical_space);
+	if (line < 0) {
+		return;
+	}
+	if (line >= code->line_amount) {
+		line = code->line_amount - 1;
+	}
+
+	int pos = gui_x_to_text_index(font, code->lines[line].text, corrected_x);
+	if (pos < 0) {
+		return;
+	}
+	int line_len = strlen(code->lines[line].text);
+	if (line_len < pos) {
+		pos = line_len;
+	}
+
+	code->cursor_line = line;
+	code->cursor_pos = pos;
+}
+
+static int get_indent_level(char text[]) {
+	int indent = 0;
+
+	for (size_t i = 0; i < strlen(text); i++) {
+		if (text[i] == '\t') {
+			indent++;
+		} else {
+			break;
+		}
+	}
+
+	return indent;
+}
+
+static void unblink_cursor() {
+	cursor_timer = CURSOR_BLINK_SPEED;
+}
+
+static int get_real_cursor_pos(computer_t *computer) {
+	return gui_get_text_width(&computer->ram->fonts[font_index], computer->code.lines[computer->code.cursor_line].text, computer->code.cursor_pos);
+}
+
+void code_editor_init(computer_t *computer) {
+	// uint64_t lines_amount = string_get_lines_amount(sample_string);
+	uint64_t lines_amount = string_get_lines_amount(computer->ram->code_buffer);
+
+	lines_on_screen = workspace_rect.h / (computer->ram->fonts[font_index].height + computer->ram->fonts[font_index].horizontal_space);
+
+	computer->code.lines = malloc(lines_amount * sizeof(line_t));
+	if (computer->code.lines == NULL) {
+		printf("Couldn't allocate memory for code\n");
+		exit(1);
+	}
+
+	// string_to_code(&computer->code, sample_string);
+	string_to_code(&computer->code, computer->ram->code_buffer);
 }
 
 // Handle all the character inputs
@@ -340,71 +409,6 @@ static void handle_char_input(computer_t *computer, code_t *code) {
 	}
 }
 
-static void move_cursor_to_mouse(ram_t *ram, code_t *code) {
-	font_t *font = &ram->fonts[font_index];
-
-	// int x, y;
-	// get_mouse_pos(&x, &y);
-	vec2i_t mouse_pos = input_get_mouse_pos();
-
-	int corrected_x = mouse_pos.x - (code_rect.x + 5 * (font->width + font->horizontal_space));
-	int corrected_y = mouse_pos.y - code_rect.y + (scroll_amount * (font->height + font->vertical_space));
-
-	int line = corrected_y / (font->height + font->vertical_space);
-	if (line < 0) {
-		return;
-	}
-	if (line >= code->line_amount) {
-		line = code->line_amount - 1;
-	}
-
-	int pos = gui_x_to_text_index(font, code->lines[line].text, corrected_x);
-	if (pos < 0) {
-		return;
-	}
-	int line_len = strlen(code->lines[line].text);
-	if (line_len < pos) {
-		pos = line_len;
-	}
-
-	code->cursor_line = line;
-	code->cursor_pos = pos;
-}
-
-static int get_indent_level(char text[]) {
-	int indent = 0;
-
-	for (size_t i = 0; i < strlen(text); i++) {
-		if (text[i] == '\t') {
-			indent++;
-		} else {
-			break;
-		}
-	}
-
-	return indent;
-}
-
-static void unblink_cursor() {
-	cursor_timer = CURSOR_BLINK_SPEED;
-}
-
-void code_editor_init(computer_t *computer) {
-	// uint64_t lines_amount = string_get_lines_amount(sample_string);
-	uint64_t lines_amount = string_get_lines_amount(computer->ram->code_buffer);
-
-	lines_on_screen = workspace_rect.h / (computer->ram->fonts[font_index].height + computer->ram->fonts[font_index].horizontal_space);
-
-	computer->code.lines = malloc(lines_amount * sizeof(line_t));
-	if (computer->code.lines == NULL) {
-		printf("Couldn't allocate memory for code\n");
-		exit(1);
-	}
-
-	// string_to_code(&computer->code, sample_string);
-	string_to_code(&computer->code, computer->ram->code_buffer);
-}
-
 void code_editor_update(computer_t *computer) {
 	code_t *code = &computer->code;
 	
@@ -529,14 +533,10 @@ void code_editor_update(computer_t *computer) {
 	}
 }
 
-static int get_real_cursor_pos(computer_t *computer) {
-	return gui_get_text_width(&computer->ram->fonts[font_index], computer->code.lines[computer->code.cursor_line].text, computer->code.cursor_pos);
-}
-
 void code_editor_draw(computer_t *computer) {
 	font_t *font = &computer->ram->fonts[font_index];
 
-	gui_inset_frame(computer, code_rect);
+	gui_inset_frame(computer->ram, code_rect);
 	// api_rectf(computer, code_rect.x, code_rect.y, code_rect.w, code_rect.h, 15);
 	api_rectf(computer, code_rect.x, code_rect.y, code_rect.w, code_rect.h, 15);
 

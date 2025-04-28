@@ -122,10 +122,10 @@ void map_editor_draw(computer_t *computer) {
 
 	draw_grid(computer);
 
-	gui_outset_frame(computer, (recti_t){0, 344, 640, 136});
+	gui_outset_frame(computer->ram, (recti_t){0, 344, 640, 136});
 	sprite_selector_draw(computer);
 
-	gui_button(computer, "Entities", (recti_t){2, SCREEN_HEIGHT - 5 * 16 - 2, 48, 16});
+	gui_button(computer->ram, "Entities", (recti_t){2, SCREEN_HEIGHT - 5 * 16 - 2, 48, 16});
 
 	// Layer buttons
 	for (int i = 0; i < MAP_LAYERS_AMOUNT; i++) {
@@ -139,7 +139,7 @@ void map_editor_draw(computer_t *computer) {
 			.h = 16
 		};
 
-		if (gui_button_ex(computer, buffer, rect, selected_layer == i)) {
+		if (gui_button_ex(computer->ram, buffer, rect, selected_layer == i)) {
 			selected_layer = i;
 		}
 	}

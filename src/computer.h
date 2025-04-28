@@ -38,7 +38,6 @@ Memory layout, global constants
 #define TOTAL_SPRITES ((SPRITESHEET_WIDTH * SPRITESHEET_HEIGHT) / (SPRITE_WIDTH * SPRITE_HEIGHT))
 
 #define VISIBLE_CHARACTERS_SIZE 96
-#define VISIBLE_CHARACTERS_START ' '
 #define MAX_CHARACTER_WIDTH 16
 #define MAX_CHARACTER_HEIGHT 16
 
@@ -138,7 +137,20 @@ typedef struct code {
 // Colors used by GUI
 typedef struct gui_colors {
 	// Since the borders of the screen are not in the framebuffer it can just be an rgb color
-	rgb_color_t screen_background_color;
+	rgb_color_t screen_background;
+
+	color_t text;
+	color_t inset_frame_background;
+	color_t outset_frame_background;
+
+	// From dark to bright
+	color_t frame_edge_darker;
+	color_t frame_edge_dark;
+	color_t frame_edge_neutral;
+	color_t frame_edge_light;
+
+	color_t toggle_button_set_text;
+	color_t toggle_button_unset_text;
 } gui_colors_t;
 
 // 8MB RAM (excluding what the lua code takes up)
@@ -152,6 +164,7 @@ typedef union ram {
 		map_t map;
 		char code_buffer[1024 * 1024];
 		// draw_state_t draw_state;
+		gui_colors_t gui_colors;
 	};
 
 	uint8_t data[RAM_SIZE];

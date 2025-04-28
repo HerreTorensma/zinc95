@@ -1,6 +1,7 @@
 # IMPORTANT: this Makefile has not been tested on Linux yet!
 
 CC = gcc
+# CFLAGS = -g -Wall -Wextra -Wsign-conversion -Wpedantic -std=c11 -Wno-unused-parameter -Werror=incompatible-pointer-types
 CFLAGS = -g -Wall -Wextra -Wsign-conversion -Wpedantic -std=c11 -Wno-unused-parameter
 
 ifeq ($(OS), Windows_NT)

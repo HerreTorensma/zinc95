@@ -101,7 +101,7 @@ void sprite_editor_draw(computer_t *computer) {
 	sprite_selector_draw(computer);
 
 	// Color picker frame
-	gui_inset_frame(computer, color_picker_rect);
+	gui_inset_frame(computer->ram, color_picker_rect);
 	api_rectf(computer, color_picker_rect.x, color_picker_rect.y, color_picker_rect.w, color_picker_rect.h, 0);
 
 	// Draw colors
@@ -117,7 +117,7 @@ void sprite_editor_draw(computer_t *computer) {
 	api_rect(computer, color_square_x - 1, color_square_y - 1, COLOR_SQUARE_SIZE + 2, COLOR_SQUARE_SIZE + 2, 15);
 
 	// Sprite editor
-	gui_inset_frame(computer, sprite_editor_rect);
+	gui_inset_frame(computer->ram, sprite_editor_rect);
 	recti_t sprite_editing_rect = {
 		.x = visible_rect.x + currently_editing_rect.x,
 		.y = visible_rect.y + currently_editing_rect.y,
@@ -154,13 +154,13 @@ void sprite_editor_draw(computer_t *computer) {
 
 	// Selected color
 	char buffer[32];
-	gui_inset_frame(computer, (recti_t){color_picker_rect.x, color_picker_rect.y - 20, 16, 16});
+	gui_inset_frame(computer->ram, (recti_t){color_picker_rect.x, color_picker_rect.y - 20, 16, 16});
 	api_rectf(computer, color_picker_rect.x, color_picker_rect.y - 20, 16, 16, selected_color);
 	sprintf(buffer, "#%03d\n", selected_color);
 	api_text(computer, 0, buffer, color_picker_rect.x + 20, color_picker_rect.y - 16, 0);
 	
 	// Selected sprite preview
-	gui_inset_frame(computer, (recti_t){color_picker_rect.x, color_picker_rect.y - 40, 16, 16});
+	gui_inset_frame(computer->ram, (recti_t){color_picker_rect.x, color_picker_rect.y - 40, 16, 16});
 	// api_spr(computer, get_selected_sprite_index(), color_picker_rect.x, color_picker_rect.y - 40, 1, 1, 2);
 	api_spr(computer, get_selected_sprite_index(), color_picker_rect.x, color_picker_rect.y - 40, 1, 1);
 	sprintf(buffer, "#%04d\n", get_selected_sprite_index());
@@ -169,16 +169,33 @@ void sprite_editor_draw(computer_t *computer) {
 	// Sprite flags and color key
 	sprite_t *selected_sprite = &computer->ram->sprites[get_selected_sprite_index()];
 	for (int i = 0; i < SPRITE_FLAGS_SIZE; i++) {
-		sprintf(buffer, "%c", i < 10 ? '0' + i : 'a' + i - 10);
-		bool set = selected_sprite->flags & (1U << i);
+		// sprintf(buffer, "%c", i < 10 ? '0' + i : 'a' + i - 10);
+		// bool set = selected_sprite->flags & (1U << i);
 
-		gui_toggle_button(computer, buffer, (recti_t){
+		// gui_toggle_button(computer, buffer, (recti_t){
+		// 	.x = spritesheet_rect.x + i * 12,
+		// 	.y = spritesheet_rect.y - 4 - 12,
+		// 	.w = 12,
+		// 	.h = 12,
+		// 	},
+		// 	&set
+		// );
+		// if (set) {
+		// 	selected_sprite->flags |= (1U << i);
+		// } else {
+		// 	selected_sprite->flags &= ~(1U << i);
+		// }
+
+		sprintf(buffer, "%c", i < 10 ? '0' + i : 'a' + i - 10);
+		
+		bool set = selected_sprite->flags & (1U << i);
+		set = gui_toggle_button(computer->ram, buffer, (recti_t){
 			.x = spritesheet_rect.x + i * 12,
 			.y = spritesheet_rect.y - 4 - 12,
 			.w = 12,
 			.h = 12,
 			},
-			&set
+			set
 		);
 		if (set) {
 			selected_sprite->flags |= (1U << i);
@@ -188,7 +205,7 @@ void sprite_editor_draw(computer_t *computer) {
 	}
 
 	// Color key
-	if (gui_button(computer, "", (recti_t){
+	if (gui_button(computer->ram, "", (recti_t){
 		.x = SCREEN_WIDTH - 2 - 12 - 4,
 		.y = spritesheet_rect.y - 12 - 4,
 		.w = 12,

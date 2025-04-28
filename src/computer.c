@@ -21,6 +21,35 @@ void computer_load_resouces(computer_t *computer) {
 	// memcpy(computer->ram->spritesheet.data, builtin_spritesheet, SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT);
 	memcpy(computer->ram->spritesheet.data + ((SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT) * (SPRITESHEET_PAGE_AMOUNT - 1)), builtin_spritesheet, SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT);
 
+	// computer->ram->gui_colors = (gui_colors_t){
+	// 	.text = 0,
+	// 	.screen_background = (rgb_color_t){77, 0, 0},
+
+	// 	.inset_frame_background = 7,
+	// 	.outset_frame_background = 7,
+		
+	// 	.frame_edge_darker = 0,
+	// 	.frame_edge_dark = 23,
+	// 	.frame_edge_neutral = 7,
+	// 	.frame_edge_light = 15,
+	// };
+
+	computer->ram->gui_colors = (gui_colors_t){
+		.text = 0,
+		.screen_background = (rgb_color_t){77, 0, 0},
+
+		.inset_frame_background = 7,
+		.outset_frame_background = 7,
+		
+		.frame_edge_darker = 0,
+		.frame_edge_dark = 23,
+		.frame_edge_neutral = 7,
+		.frame_edge_light = 15,
+
+		.toggle_button_set_text = 2,
+		.toggle_button_unset_text = 0,
+	};
+
 	// TODO: load the widths based on the lines drawn in the sprites
 	// the monospace bool can also go
 	// And the vertical_space is kinda stupid since there is already height
