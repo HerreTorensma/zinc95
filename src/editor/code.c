@@ -9,7 +9,7 @@
 #include "../backend/gui.h"
 #include "menu.h"
 
-static recti_t code_rect = {
+static rect_t code_rect = {
 	.x = 4,
 	.y = 22,
 	.w = SCREEN_WIDTH - 8,
@@ -210,7 +210,7 @@ static void move_cursor_to_mouse(ram_t *ram, code_t *code) {
 
 	// int x, y;
 	// get_mouse_pos(&x, &y);
-	vec2i_t mouse_pos = input_get_mouse_pos();
+	point_t mouse_pos = input_get_mouse_pos();
 
 	int corrected_x = mouse_pos.x - (code_rect.x + 5 * (font->width + font->horizontal_space));
 	int corrected_y = mouse_pos.y - code_rect.y + (scroll_amount * (font->height + font->vertical_space));
@@ -520,12 +520,12 @@ void code_editor_update(computer_t *computer) {
 	}
 
 	// Scrolling
-	if (api_mouse_scrolled(computer, SCROLL_DOWN)) {
+	if (api_mouse_scrolled(computer, SCROLL_DIR_DOWN)) {
 		scroll_amount += 3;
 		if (scroll_amount >= code->line_amount) {
 			scroll_amount = code->line_amount - 1;
 		}
-	} else if (api_mouse_scrolled(computer, SCROLL_UP)) {
+	} else if (api_mouse_scrolled(computer, SCROLL_DIR_UP)) {
 		scroll_amount -= 3;
 		if (scroll_amount < 0) {
 			scroll_amount = 0;

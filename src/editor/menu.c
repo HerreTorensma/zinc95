@@ -20,14 +20,14 @@ typedef enum workspace_type {
 
 static workspace_type_t active_workspace = WORKSPACE_SPRITE;
 
-static recti_t bar_rect = {0};
-static recti_t screen_rect = {0};
+static rect_t bar_rect = {0};
+static rect_t screen_rect = {0};
 
-recti_t workspace_rect = {0, 20, SCREEN_WIDTH, SCREEN_HEIGHT - 20};
+rect_t workspace_rect = {0, 20, SCREEN_WIDTH, SCREEN_HEIGHT - 20};
 
 void workspace_menu_init(computer_t *computer) {
-	bar_rect = (recti_t){0, 0, SCREEN_WIDTH, 20};
-	screen_rect = (recti_t){0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+	bar_rect = (rect_t){0, 0, SCREEN_WIDTH, 20};
+	screen_rect = (rect_t){0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
 
 	// Init the sprite selector
 	sprite_selector_init(computer);
@@ -107,31 +107,31 @@ void workspace_menu_draw(computer_t *computer) {
 	// Menu bar
 	gui_outset_frame(computer->ram, bar_rect);
 	
-	gui_button(computer->ram, "", (recti_t){2, 2, 16, 16});
+	gui_button(computer->ram, "", (rect_t){2, 2, 16, 16});
 	
-	if (gui_button_ex(computer->ram, "Code", (recti_t){128 + 64*1, 2, 64, 16}, active_workspace == WORKSPACE_CODE)) {
+	if (gui_button_ex(computer->ram, "Code", (rect_t){128 + 64*1, 2, 64, 16}, active_workspace == WORKSPACE_CODE)) {
 		active_workspace = WORKSPACE_CODE;
 	}
 	
-	if (gui_button_ex(computer->ram, "Sprite", (recti_t){128 + 64*2, 2, 64, 16}, active_workspace == WORKSPACE_SPRITE)) {
+	if (gui_button_ex(computer->ram, "Sprite", (rect_t){128 + 64*2, 2, 64, 16}, active_workspace == WORKSPACE_SPRITE)) {
 		active_workspace = WORKSPACE_SPRITE;
 	}
 	
-	if (gui_button_ex(computer->ram, "Map", (recti_t){128 + 64*3, 2, 64, 16}, active_workspace == WORKSPACE_MAP)) {
+	if (gui_button_ex(computer->ram, "Map", (rect_t){128 + 64*3, 2, 64, 16}, active_workspace == WORKSPACE_MAP)) {
 		active_workspace = WORKSPACE_MAP;
 	}
 	
-	if (gui_button_ex(computer->ram, "Sound", (recti_t){128 + 64*4, 2, 64, 16}, active_workspace == WORKSPACE_SOUND)) {
+	if (gui_button_ex(computer->ram, "Sound", (rect_t){128 + 64*4, 2, 64, 16}, active_workspace == WORKSPACE_SOUND)) {
 		active_workspace = WORKSPACE_SOUND;
 	}
 	
-	if (gui_press_button(computer->ram, "", (recti_t){SCREEN_WIDTH-16-16-2, 2, 16, 16})) {
+	if (gui_press_button(computer->ram, "", (rect_t){SCREEN_WIDTH-16-16-2, 2, 16, 16})) {
 		game_save(computer, "game.zinc95");
 	}
 	// api_spr(computer, 5858, SCREEN_WIDTH-16-16-2, 2, 2, 2, 1);
 	api_spr(computer, 5858, SCREEN_WIDTH-16-16-2, 2, 2, 2);
 	
-	if (gui_press_button(computer->ram, "", (recti_t){SCREEN_WIDTH-16-2, 2, 16, 16})) {
+	if (gui_press_button(computer->ram, "", (rect_t){SCREEN_WIDTH-16-2, 2, 16, 16})) {
 		play_game(computer);
 	}
 	// api_spr(computer, 5856, SCREEN_WIDTH-16-2, 2, 2, 2, 1);

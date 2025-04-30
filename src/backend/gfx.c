@@ -31,7 +31,7 @@ color_t gfx_get_pixel(framebuffer_t *fb, int x, int y) {
 	if (point_in_screen(x, y)) {
 		return fb->data[y * SCREEN_WIDTH + x];
 	}
-	return 0;
+	return COLOR_NONE;
 }
 
 void gfx_clear(framebuffer_t *fb, color_t color) {
@@ -44,7 +44,7 @@ void gfx_clear(framebuffer_t *fb, color_t color) {
 
 // TODO: make these geometry functions take any uint8_t array and a vec2i of size
 // so they can be used both for the framebuffer and the spritesheet
-void gfx_draw_rect(framebuffer_t *fb, recti_t rect, color_t color) {
+void gfx_draw_rect(framebuffer_t *fb, rect_t rect, color_t color) {
 	for (int j = rect.x; j < rect.x+rect.w; j++) {
 		gfx_set_pixel(fb, j, rect.y, color);
 	}
@@ -62,7 +62,7 @@ void gfx_draw_rect(framebuffer_t *fb, recti_t rect, color_t color) {
 	}
 }
 
-void gfx_draw_filled_rect(framebuffer_t *fb, recti_t rect, color_t color) {
+void gfx_draw_filled_rect(framebuffer_t *fb, rect_t rect, color_t color) {
 	for (int i = rect.y; i < rect.y+rect.h; i++) {
 		for (int j = rect.x; j < rect.x+rect.w; j++) {
 			gfx_set_pixel(fb, j, i, color);
@@ -70,7 +70,8 @@ void gfx_draw_filled_rect(framebuffer_t *fb, recti_t rect, color_t color) {
 	}
 }
 
-void gfx_draw_line(framebuffer_t *fb, vec2i_t start, vec2i_t end, color_t color) {
+// Using Bresemham's line algorithm
+void gfx_draw_line(framebuffer_t *fb, point_t start, point_t end, color_t color) {
 	int x1 = start.x;
 	int y1 = start.y;
 	int x2 = end.x;
@@ -99,7 +100,9 @@ void gfx_draw_line(framebuffer_t *fb, vec2i_t start, vec2i_t end, color_t color)
 	}
 }
 
-void gfx_draw_circle(framebuffer_t *fb, vec2i_t pos, int radius, color_t color) {
+// Midpoint circle algorithm
+// TODO: adopt for ellipses
+void gfx_draw_circle(framebuffer_t *fb, point_t pos, int radius, color_t color) {
 	int x = pos.x;
 	int y = pos.y;
 	
@@ -142,21 +145,23 @@ void gfx_draw_circle(framebuffer_t *fb, vec2i_t pos, int radius, color_t color) 
 	}
 }
 
-color_t gfx_spritesheet_get_pixel(spritesheet_t *spritesheet, vec2i_t point) {
-	if (point_in_recti(point, (recti_t){0, 0, SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT})) {
+color_t gfx_spritesheet_get_pixel(spritesheet_t *spritesheet, point_t point) {
+	// TODO: clip the wanted rect instead of this check ???
+	if (point_in_rect(point, RECT(0, 0, SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT))) {
 		return spritesheet->data[point.y * SPRITESHEET_WIDTH + point.x];
 	}
-	return 0;
+	// TODO: should this be 0 or COLOR_NONE ???
+	return COLOR_NONE;
 }
 
-void gfx_spritesheet_set_pixel(spritesheet_t *spritesheet, vec2i_t point, color_t color) {
-	if (point_in_recti(point, (recti_t){0, 0, SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT})) {
+void gfx_spritesheet_set_pixel(spritesheet_t *spritesheet, point_t point, color_t color) {
+	if (point_in_rect(point, RECT(0, 0, SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT))) {
 		spritesheet->data[point.y * SPRITESHEET_WIDTH + point.x] = color;
 	}
 }
 
-recti_t sprite_index_to_spritesheet_rect(int sprite_index, int w, int h) {
-	recti_t rect = {
+rect_t sprite_index_to_spritesheet_rect(int sprite_index, int w, int h) {
+	rect_t rect = {
 		.x = (sprite_index % SPRITES_PER_ROW) * SPRITE_WIDTH,
 		.y = (sprite_index / SPRITES_PER_ROW) * SPRITE_HEIGHT,
 		.w = w * SPRITE_WIDTH,
@@ -166,10 +171,10 @@ recti_t sprite_index_to_spritesheet_rect(int sprite_index, int w, int h) {
 	return rect;
 }
 
-void gfx_draw_spritesheet_rect(ram_t *ram, vec2i_t pos, recti_t rect, color_t color_key) {
+void gfx_draw_spritesheet_rect(ram_t *ram, point_t pos, rect_t rect, color_t color_key) {
 	for (int i = 0; i < rect.h; i++) {
 		for (int j = 0; j < rect.w; j++) {
-			uint8_t color = gfx_spritesheet_get_pixel(&ram->spritesheet, (vec2i_t){rect.x + j, rect.y + i});
+			uint8_t color = gfx_spritesheet_get_pixel(&ram->spritesheet, (point_t){rect.x + j, rect.y + i});
 			if (color != color_key) {
 				gfx_set_pixel(&ram->framebuffer, pos.x + j, pos.y + i, color);
 			}
@@ -177,7 +182,7 @@ void gfx_draw_spritesheet_rect(ram_t *ram, vec2i_t pos, recti_t rect, color_t co
 	}
 }
 
-void gfx_draw_spritesheet_pro(ram_t *ram, recti_t source_rect, recti_t dest_rect, color_t color_key) {
+void gfx_draw_spritesheet_pro(ram_t *ram, rect_t source_rect, rect_t dest_rect, color_t color_key) {
 	for (int y = 0; y < dest_rect.h; y++) {
 		for (int x = 0; x < dest_rect.w; x++) {
 			// Calculate normalized coords
@@ -188,7 +193,7 @@ void gfx_draw_spritesheet_pro(ram_t *ram, recti_t source_rect, recti_t dest_rect
 			int source_x = source_rect.x + u * source_rect.w;
 			int source_y = source_rect.y + v * source_rect.h;
 
-			uint8_t color = gfx_spritesheet_get_pixel(&ram->spritesheet, (vec2i_t){source_x, source_y});
+			uint8_t color = gfx_spritesheet_get_pixel(&ram->spritesheet, (point_t){source_x, source_y});
 			
 			if (color != color_key) {
 				gfx_set_pixel(&ram->framebuffer, dest_rect.x + x, dest_rect.y + y, color);
@@ -198,16 +203,27 @@ void gfx_draw_spritesheet_pro(ram_t *ram, recti_t source_rect, recti_t dest_rect
 }
 
 // TODO: implement flip_x, flip_y
-void gfx_draw_sprites(ram_t *ram, int index, vec2i_t pos, int width, int height) {
-	recti_t rect = sprite_index_to_spritesheet_rect(index, width, height);
+void gfx_draw_sprites(ram_t *ram, int index, point_t pos, int width, int height) {
+	rect_t rect = sprite_index_to_spritesheet_rect(index, width, height);
 	
 	gfx_draw_spritesheet_rect(ram, pos, rect, ram->sprites[index].color_key);
 }
 
-void gfx_draw_sprites_page(ram_t *ram, int page_index, int relative_index, vec2i_t pos, int width, int height) {
+void gfx_draw_sprites_page(ram_t *ram, int page_index, int relative_index, point_t pos, int width, int height) {
 	int absolute_index = page_index * SPRITES_PER_PAGE + relative_index;
 
-	recti_t rect = sprite_index_to_spritesheet_rect(absolute_index, width, height);
+	rect_t rect = sprite_index_to_spritesheet_rect(absolute_index, width, height);
 
 	gfx_draw_spritesheet_rect(ram, pos, rect, ram->sprites[absolute_index].color_key);
+}
+
+void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section) {
+	section = rect_clip(RECT(0, 0, MAP_WIDTH, MAP_HEIGHT), section);
+
+	for (int i = section.y; i < section.y + section.h; i++) {
+		for (int j = section.x; j < section.x + section.w; j++) {
+			int sprite_index = ram->map.layers[layer_index].data[i * MAP_WIDTH + j];
+			gfx_draw_sprites(ram, sprite_index, POINT(pos.x + j * SPRITE_WIDTH, pos.y + i * SPRITE_HEIGHT), 1, 1);
+		}
+	}
 }

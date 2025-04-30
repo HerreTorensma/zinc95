@@ -56,13 +56,6 @@ Memory layout, global constants
 #define FPS 60
 #define FRAME_DELAY 1000/FPS
 
-// typedef struct rect {
-// 	int x;
-// 	int y;
-// 	int w;
-// 	int h;
-// } rect_t;
-
 typedef uint8_t color_t;
 
 typedef struct rgb_color {
@@ -82,8 +75,8 @@ typedef struct framebuffer {
 #define SPRITE_FLAGS_SIZE 32
 typedef struct sprite {
 	uint32_t flags;
-	// Need negatives so that's why it's int16_t and not uint8_t
-	// NO, the last 8 colors are not used anyway so we can use 255 as not having a key
+	// The last 8 colors are not used anyway so we can use 255 as the value for the sprite not having a color key
+	// So we don't need a larger integer
 	color_t color_key;
 } sprite_t;
 
@@ -166,6 +159,7 @@ typedef union ram {
 		char code_buffer[1024 * 1024];
 		// draw_state_t draw_state;
 		gui_colors_t gui_colors;
+		uint64_t ticks;
 	};
 
 	uint8_t data[RAM_SIZE];
@@ -181,7 +175,6 @@ typedef struct computer {
 	ram_t *ram;
 	computer_state_t state;
 	code_t code;
-	uint64_t ticks;
 } computer_t;
 
 void set_global_computer(computer_t *computer);

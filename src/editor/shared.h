@@ -7,10 +7,10 @@ Shared components among editors
 #include "../computer.h"
 #include "../backend/math2d.h"
 
-extern recti_t spritesheet_rect;
-extern recti_t visible_rect;
-extern recti_t currently_editing_rect;
-extern recti_t currently_editing_sprites_rect;
+extern rect_t spritesheet_rect;
+extern rect_t visible_rect;
+extern rect_t currently_editing_rect;
+extern rect_t currently_editing_sprites_rect;
 
 extern int selected_sprite_index_offset;
 extern int selected_spritesheet_index;

@@ -31,7 +31,7 @@ void window_tick_end(computer_t *computer) {
 	sdl2_tick_end();
 	#endif
 
-	computer->ticks++;
+	computer->ram->ticks++;
 }
 
 bool window_is_open() {

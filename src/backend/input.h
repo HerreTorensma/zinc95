@@ -127,9 +127,9 @@ typedef enum mouse_button {
 } mouse_button_t;
 
 typedef enum scroll_dir {
-	SCROLL_UP = -1,
-	SCROLL_NONE = 0,
-	SCROLL_DOWN = 1,
+	SCROLL_DIR_UP = -1,
+	SCROLL_DIR_NONE = 0,
+	SCROLL_DIR_DOWN = 1,
 } scroll_dir_t;
 
 // TODO: rename this to make it more clear they're checks
@@ -140,12 +140,12 @@ bool input_key_held(zinc_key_t key);
 
 bool input_key_released(zinc_key_t key);
 
-bool input_mouse_button_pressed(mouse_button_t gui_button);
+bool input_mouse_button_pressed(mouse_button_t button);
 
-bool input_mouse_button_released(mouse_button_t gui_button);
+bool input_mouse_button_released(mouse_button_t button);
 
-bool input_mouse_button_held(mouse_button_t gui_button);
+bool input_mouse_button_held(mouse_button_t button);
 
 bool input_mouse_scrolled(scroll_dir_t direction);
 
-vec2i_t input_get_mouse_pos();
+point_t input_get_mouse_pos();

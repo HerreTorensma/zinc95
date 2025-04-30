@@ -8,7 +8,7 @@
 #include "../backend/gui.h"
 #include "shared.h"
 
-static recti_t map_rect = {0};
+static rect_t map_rect = {0};
 
 static int cam_x = 0;
 static int cam_y = 0;
@@ -51,12 +51,12 @@ void map_editor_init(computer_t *computer) {
 void map_editor_update(computer_t *computer) {
 	sprite_selector_update(computer, SNAP_MODE_ZOOM);
 
-	vec2i_t mouse_pos = input_get_mouse_pos();
+	point_t mouse_pos = input_get_mouse_pos();
 
 	int cell_x = ((mouse_pos.x + cam_x) / currently_editing_rect.w) * currently_editing_sprites_rect.w;
 	int cell_y = ((mouse_pos.y + cam_y) / currently_editing_rect.h) * currently_editing_sprites_rect.h;
 
-	if (point_in_recti(mouse_pos, map_rect)) {
+	if (point_in_rect(mouse_pos, map_rect)) {
 		if (api_mouse_btn(computer, MOUSE_BUTTON_LEFT)) {
 			for (int i = 0; i < currently_editing_sprites_rect.h; i++) {
 				for (int j = 0; j < currently_editing_sprites_rect.w; j++) {
@@ -89,10 +89,10 @@ void map_editor_update(computer_t *computer) {
 		cam_y += move_speed;
 	}
 
-	if (api_mouse_scrolled(computer, SCROLL_DOWN)) {
+	if (api_mouse_scrolled(computer, SCROLL_DIR_DOWN)) {
 		zoom *= 2.0f;
 	}
-	if (api_mouse_scrolled(computer, SCROLL_UP)) {
+	if (api_mouse_scrolled(computer, SCROLL_DIR_UP)) {
 		zoom *= 0.5f;
 	}
 }
@@ -111,9 +111,9 @@ void map_editor_draw(computer_t *computer) {
 	}
 
 	// Draw rect where mouse is
-	vec2i_t mouse_pos = input_get_mouse_pos();
+	point_t mouse_pos = input_get_mouse_pos();
 
-	if (point_in_recti(mouse_pos, map_rect)) {
+	if (point_in_rect(mouse_pos, map_rect)) {
 		int rect_x = ((mouse_pos.x + cam_x) / currently_editing_rect.w) * currently_editing_rect.w - cam_x;
 		int rect_y = ((mouse_pos.y + cam_y) / currently_editing_rect.h) * currently_editing_rect.h - cam_y;
 
@@ -122,17 +122,17 @@ void map_editor_draw(computer_t *computer) {
 
 	draw_grid(computer);
 
-	gui_outset_frame(computer->ram, (recti_t){0, 344, 640, 136});
+	gui_outset_frame(computer->ram, (rect_t){0, 344, 640, 136});
 	sprite_selector_draw(computer);
 
-	gui_button(computer->ram, "Entities", (recti_t){2, SCREEN_HEIGHT - 5 * 16 - 2, 48, 16});
+	gui_button(computer->ram, "Entities", (rect_t){2, SCREEN_HEIGHT - 5 * 16 - 2, 48, 16});
 
 	// Layer buttons
 	for (int i = 0; i < MAP_LAYERS_AMOUNT; i++) {
 		char buffer[2];
 		sprintf(buffer, "%d", i);
 
-		recti_t rect = {
+		rect_t rect = {
 			.x = 2,
 			.y = SCREEN_HEIGHT - 4 * 16 - 2 + i * 16,
 			.w = 48,

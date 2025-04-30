@@ -6,7 +6,7 @@
 #include "gfx.h"
 
 // TODO: for each font set a color_key and divider color so you can have funky fonts idk
-void gui_draw_text(ram_t *ram, int font_index, char text[], vec2i_t pos, int color) {
+void gui_draw_text(ram_t *ram, int font_index, char text[], point_t pos, int color) {
 	font_t *font = &ram->fonts[font_index];
 
 	int new_x = pos.x;
@@ -43,7 +43,7 @@ void gui_draw_text(ram_t *ram, int font_index, char text[], vec2i_t pos, int col
 				index++;
 			}
 
-			gfx_draw_sprites(ram, sprite_index, VEC2I(new_x, new_y), font->h_sprites, font->v_sprites);
+			gfx_draw_sprites(ram, sprite_index, POINT(new_x, new_y), font->h_sprites, font->v_sprites);
 			new_x += 16 + font->horizontal_space;
 
 			i = index - 1;
@@ -57,12 +57,12 @@ void gui_draw_text(ram_t *ram, int font_index, char text[], vec2i_t pos, int col
 		int y_offset = (char_index / (SPRITES_PER_ROW / font->h_sprites)) * font->v_sprites;
 		int sprite_index = font->sprite_index + x_offset + (y_offset * SPRITES_PER_ROW);
 
-		recti_t rect = sprite_index_to_spritesheet_rect(sprite_index, font->h_sprites, font->v_sprites);
+		rect_t rect = sprite_index_to_spritesheet_rect(sprite_index, font->h_sprites, font->v_sprites);
 
 		for (int i = 0; i < rect.h; i++) {
 			for (int j = 0; j < rect.w; j++) {
 				// uint8_t font_color = computer->ram->spritesheet.data[(rect.y + i) * SPRITESHEET_WIDTH + (rect.x + j)];
-				color_t font_color = gfx_spritesheet_get_pixel(&ram->spritesheet, (vec2i_t){rect.x + j, rect.y + i});
+				color_t font_color = gfx_spritesheet_get_pixel(&ram->spritesheet, (point_t){rect.x + j, rect.y + i});
 				if (font_color == 15) {
 					gfx_set_pixel(&ram->framebuffer, new_x + j, new_y + i, color);
 				}
@@ -79,7 +79,7 @@ void gui_draw_text(ram_t *ram, int font_index, char text[], vec2i_t pos, int col
 
 // TODO: make versions of these such that the rect is both in and out if that makes sense
 // just make it nicer to use bc now it's pretty bad
-void gui_outset_frame(ram_t *ram, recti_t rect) {
+void gui_outset_frame(ram_t *ram, rect_t rect) {
 	int x = rect.x;
 	int y = rect.y;
 	int w = rect.w;
@@ -91,30 +91,30 @@ void gui_outset_frame(ram_t *ram, recti_t rect) {
 	h--;
 
 	// Top gray line
-	gfx_draw_line(&ram->framebuffer, VEC2I(x, y), VEC2I(x + w - 1, y), ram->gui_colors.frame_edge_neutral);
+	gfx_draw_line(&ram->framebuffer, POINT(x, y), POINT(x + w - 1, y), ram->gui_colors.frame_edge_neutral);
 	// Left gray line
-	gfx_draw_line(&ram->framebuffer, VEC2I(x, y), VEC2I(x, y + h - 1), ram->gui_colors.frame_edge_neutral);
+	gfx_draw_line(&ram->framebuffer, POINT(x, y), POINT(x, y + h - 1), ram->gui_colors.frame_edge_neutral);
 
 	// Top white line
-	gfx_draw_line(&ram->framebuffer, VEC2I(x + 1, y + 1), VEC2I(x + w - 1, y + 1), ram->gui_colors.frame_edge_light);
+	gfx_draw_line(&ram->framebuffer, POINT(x + 1, y + 1), POINT(x + w - 1, y + 1), ram->gui_colors.frame_edge_light);
 	// Left white line
-	gfx_draw_line(&ram->framebuffer, VEC2I(x + 1, y + 1), VEC2I(x + 1, y + h - 1), ram->gui_colors.frame_edge_light);
+	gfx_draw_line(&ram->framebuffer, POINT(x + 1, y + 1), POINT(x + 1, y + h - 1), ram->gui_colors.frame_edge_light);
 
 	// Bottom black line
-	gfx_draw_line(&ram->framebuffer, VEC2I(x, y + h), VEC2I(x + w, y + h), ram->gui_colors.frame_edge_darker);
+	gfx_draw_line(&ram->framebuffer, POINT(x, y + h), POINT(x + w, y + h), ram->gui_colors.frame_edge_darker);
 	// Right black line
-	gfx_draw_line(&ram->framebuffer, VEC2I(x + w, y), VEC2I(x + w, y + h), ram->gui_colors.frame_edge_darker);
+	gfx_draw_line(&ram->framebuffer, POINT(x + w, y), POINT(x + w, y + h), ram->gui_colors.frame_edge_darker);
 
 	// Bottom gray line
-	gfx_draw_line(&ram->framebuffer, VEC2I(x + 1, y + h - 1), VEC2I(x + w - 1, y + h - 1), ram->gui_colors.frame_edge_dark);
+	gfx_draw_line(&ram->framebuffer, POINT(x + 1, y + h - 1), POINT(x + w - 1, y + h - 1), ram->gui_colors.frame_edge_dark);
 	// Right gray line
-	gfx_draw_line(&ram->framebuffer, VEC2I(x + w - 1, y + 1), VEC2I(x + w - 1, y + h - 1), ram->gui_colors.frame_edge_dark);
+	gfx_draw_line(&ram->framebuffer, POINT(x + w - 1, y + 1), POINT(x + w - 1, y + h - 1), ram->gui_colors.frame_edge_dark);
 
 	// Background
-	gfx_draw_filled_rect(&ram->framebuffer, RECTI(x + 2, y + 2, w - 3, h - 3), ram->gui_colors.outset_frame_background);
+	gfx_draw_filled_rect(&ram->framebuffer, RECT(x + 2, y + 2, w - 3, h - 3), ram->gui_colors.outset_frame_background);
 }
 
-void gui_inset_frame(ram_t *ram, recti_t rect) {
+void gui_inset_frame(ram_t *ram, rect_t rect) {
 	int x = rect.x;
 	int y = rect.y;
 	int w = rect.w;
@@ -131,35 +131,35 @@ void gui_inset_frame(ram_t *ram, recti_t rect) {
 	h--;
 
 	// Top gray line
-	gfx_draw_line(&ram->framebuffer, VEC2I(x, y), VEC2I(x + w - 1, y), ram->gui_colors.frame_edge_dark);
+	gfx_draw_line(&ram->framebuffer, POINT(x, y), POINT(x + w - 1, y), ram->gui_colors.frame_edge_dark);
 	// Left gray line
-	gfx_draw_line(&ram->framebuffer, VEC2I(x, y), VEC2I(x, y + h - 1), ram->gui_colors.frame_edge_dark);
+	gfx_draw_line(&ram->framebuffer, POINT(x, y), POINT(x, y + h - 1), ram->gui_colors.frame_edge_dark);
 
 	// Top black line
-	gfx_draw_line(&ram->framebuffer, VEC2I(x + 1, y + 1), VEC2I(x + w - 1, y + 1), ram->gui_colors.frame_edge_darker);
+	gfx_draw_line(&ram->framebuffer, POINT(x + 1, y + 1), POINT(x + w - 1, y + 1), ram->gui_colors.frame_edge_darker);
 	// Left black line
-	gfx_draw_line(&ram->framebuffer, VEC2I(x + 1, y + 1), VEC2I(x + 1, y + h - 1), ram->gui_colors.frame_edge_darker);
+	gfx_draw_line(&ram->framebuffer, POINT(x + 1, y + 1), POINT(x + 1, y + h - 1), ram->gui_colors.frame_edge_darker);
 
 	// Bottom white line
-	gfx_draw_line(&ram->framebuffer, VEC2I(x, y + h), VEC2I(x + w, y + h), ram->gui_colors.frame_edge_light);
+	gfx_draw_line(&ram->framebuffer, POINT(x, y + h), POINT(x + w, y + h), ram->gui_colors.frame_edge_light);
 	// Right white line
-	gfx_draw_line(&ram->framebuffer, VEC2I(x + w, y), VEC2I(x + w, y + h), ram->gui_colors.frame_edge_light);
+	gfx_draw_line(&ram->framebuffer, POINT(x + w, y), POINT(x + w, y + h), ram->gui_colors.frame_edge_light);
 
 	// Bottom gray line
-	gfx_draw_line(&ram->framebuffer, VEC2I(x + 1, y + h - 1), VEC2I(x + w - 1, y + h - 1), ram->gui_colors.frame_edge_neutral);
+	gfx_draw_line(&ram->framebuffer, POINT(x + 1, y + h - 1), POINT(x + w - 1, y + h - 1), ram->gui_colors.frame_edge_neutral);
 	// Right gray line
-	gfx_draw_line(&ram->framebuffer, VEC2I(x + w - 1, y + 1), VEC2I(x + w - 1, y + h - 1), ram->gui_colors.frame_edge_neutral);
+	gfx_draw_line(&ram->framebuffer, POINT(x + w - 1, y + 1), POINT(x + w - 1, y + h - 1), ram->gui_colors.frame_edge_neutral);
 
 	// Background
-	gfx_draw_filled_rect(&ram->framebuffer, RECTI(x + 2, y + 2, w - 3, h - 3), ram->gui_colors.inset_frame_background);
+	gfx_draw_filled_rect(&ram->framebuffer, RECT(x + 2, y + 2, w - 3, h - 3), ram->gui_colors.inset_frame_background);
 }
 
-bool gui_button_ex(ram_t *ram, char text[], recti_t rect, bool already_pressed) {
-	vec2i_t mouse_pos = input_get_mouse_pos();
+bool gui_button_ex(ram_t *ram, char text[], rect_t rect, bool already_pressed) {
+	point_t mouse_pos = input_get_mouse_pos();
 
 	bool return_value = false;
 	
-	if (point_in_recti(mouse_pos, rect)) {
+	if (point_in_rect(mouse_pos, rect)) {
 		if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
 			already_pressed = true;
 			return_value = true;
@@ -167,7 +167,7 @@ bool gui_button_ex(ram_t *ram, char text[], recti_t rect, bool already_pressed) 
 	}
 	
 	if (already_pressed) {
-		recti_t new_rect = {
+		rect_t new_rect = {
 			.x = rect.x + 2,
 			.y = rect.y + 2,
 			.w = rect.w - 4,
@@ -175,30 +175,30 @@ bool gui_button_ex(ram_t *ram, char text[], recti_t rect, bool already_pressed) 
 		};
 		
 		gui_inset_frame(ram, new_rect);
-		gui_draw_text(ram, 0, text, VEC2I(rect.x + 3, rect.y + 3), ram->gui_colors.text);
+		gui_draw_text(ram, 0, text, POINT(rect.x + 3, rect.y + 3), ram->gui_colors.text);
 
 	} else {
 		gui_outset_frame(ram, rect);
-		gui_draw_text(ram, 0, text, VEC2I(rect.x + 3, rect.y + 3), ram->gui_colors.text);
+		gui_draw_text(ram, 0, text, POINT(rect.x + 3, rect.y + 3), ram->gui_colors.text);
 	}
 	
 	return return_value;
 }
 
-bool gui_button(ram_t *ram, char text[], recti_t rect) {
+bool gui_button(ram_t *ram, char text[], rect_t rect) {
 	return gui_button_ex(ram, text, rect, false);
 }
 
 // TODO: investigate why this function exists because apparantly I forgot
 // aha it only returns true once when clicked, instead of as long as the mouse button is held
 // I should probably refactor this a little bit
-bool gui_press_button(ram_t *ram, char text[], recti_t rect) {
-	vec2i_t mouse_pos = input_get_mouse_pos();
+bool gui_press_button(ram_t *ram, char text[], rect_t rect) {
+	point_t mouse_pos = input_get_mouse_pos();
 
 	bool pressed = false;
 	bool held = false;
 	
-	if (point_in_recti(mouse_pos, rect)) {
+	if (point_in_rect(mouse_pos, rect)) {
 		if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
 			held = true;
 		}
@@ -209,7 +209,7 @@ bool gui_press_button(ram_t *ram, char text[], recti_t rect) {
 	}
 	
 	if (held) {
-		recti_t new_rect = {
+		rect_t new_rect = {
 			.x = rect.x + 2,
 			.y = rect.y + 2,
 			.w = rect.w - 4,
@@ -217,26 +217,26 @@ bool gui_press_button(ram_t *ram, char text[], recti_t rect) {
 		};
 		
 		gui_inset_frame(ram, new_rect);
-		gui_draw_text(ram, 0, text, VEC2I(rect.x + 3, rect.y + 3), ram->gui_colors.text);
+		gui_draw_text(ram, 0, text, POINT(rect.x + 3, rect.y + 3), ram->gui_colors.text);
 	} else {
 		gui_outset_frame(ram, rect);
-		gui_draw_text(ram, 0, text, VEC2I(rect.x + 3, rect.y + 3), ram->gui_colors.text);
+		gui_draw_text(ram, 0, text, POINT(rect.x + 3, rect.y + 3), ram->gui_colors.text);
 	}
 	
 	return pressed;
 }
 
-bool gui_toggle_button(ram_t *ram, char text[], recti_t rect, bool set) {
-	vec2i_t mouse_pos = input_get_mouse_pos();
+bool gui_toggle_button(ram_t *ram, char text[], rect_t rect, bool set) {
+	point_t mouse_pos = input_get_mouse_pos();
 	
-	if (point_in_recti(mouse_pos, rect)) {
+	if (point_in_rect(mouse_pos, rect)) {
 		if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
 			set = !set;
 		}
 	}
 	
 	if (set) {
-		recti_t new_rect = {
+		rect_t new_rect = {
 			.x = rect.x + 2,
 			.y = rect.y + 2,
 			.w = rect.w - 4,
@@ -244,10 +244,10 @@ bool gui_toggle_button(ram_t *ram, char text[], recti_t rect, bool set) {
 		};
 		
 		gui_inset_frame(ram, new_rect);
-		gui_draw_text(ram, 2, text, VEC2I(rect.x + 2, rect.y + 2), ram->gui_colors.toggle_button_set_text);
+		gui_draw_text(ram, 2, text, POINT(rect.x + 2, rect.y + 2), ram->gui_colors.toggle_button_set_text);
 	} else {
 		gui_outset_frame(ram, rect);
-		gui_draw_text(ram, 2, text, VEC2I(rect.x + 2, rect.y + 2), ram->gui_colors.toggle_button_unset_text);
+		gui_draw_text(ram, 2, text, POINT(rect.x + 2, rect.y + 2), ram->gui_colors.toggle_button_unset_text);
 	}
 	
 	return set;

@@ -16,34 +16,36 @@ color_t gfx_get_pixel(framebuffer_t *fb, int x, int y);
 
 void gfx_clear(framebuffer_t *fb, color_t color);
 
-void gfx_draw_rect(framebuffer_t *fb, recti_t rect, color_t color);
+void gfx_draw_rect(framebuffer_t *fb, rect_t rect, color_t color);
 
-void gfx_draw_filled_rect(framebuffer_t *fb, recti_t rect, color_t color);
+void gfx_draw_filled_rect(framebuffer_t *fb, rect_t rect, color_t color);
 
-void gfx_draw_line(framebuffer_t *fb, vec2i_t start, vec2i_t end, color_t color);
+void gfx_draw_line(framebuffer_t *fb, point_t start, point_t end, color_t color);
 
-void gfx_draw_circle(framebuffer_t *fb, vec2i_t pos, int radius, color_t color);
+void gfx_draw_circle(framebuffer_t *fb, point_t pos, int radius, color_t color);
 
-color_t gfx_spritesheet_get_pixel(spritesheet_t *spritesheet, vec2i_t point);
+color_t gfx_spritesheet_get_pixel(spritesheet_t *spritesheet, point_t point);
 
-void gfx_spritesheet_set_pixel(spritesheet_t *spritesheet, vec2i_t point, color_t color);
+void gfx_spritesheet_set_pixel(spritesheet_t *spritesheet, point_t point, color_t color);
 
 // TODO: put gfx prefix
-recti_t sprite_index_to_spritesheet_rect(int sprite_index, int w, int h);
+rect_t sprite_index_to_spritesheet_rect(int sprite_index, int w, int h);
 
 // 4 ways to draw sprites
 // Draw portion of spritesheet at position
-void gfx_draw_spritesheet_rect(ram_t *ram, vec2i_t pos, recti_t rect, color_t color_key);
+void gfx_draw_spritesheet_rect(ram_t *ram, point_t pos, rect_t rect, color_t color_key);
 
 // Draw portion of spritesheet and stretch it to the destination rect
-void gfx_draw_spritesheet_pro(ram_t *ram, recti_t source_rect, recti_t dest_rect, color_t color_key);
+void gfx_draw_spritesheet_pro(ram_t *ram, rect_t source_rect, rect_t dest_rect, color_t color_key);
 
 // Draw a number of sprites by index
-void gfx_draw_sprites(ram_t *ram, int index, vec2i_t pos, int width, int height);
+void gfx_draw_sprites(ram_t *ram, int index, point_t pos, int width, int height);
 
 // Draw a number of sprites by page index and sprite index
-void gfx_draw_sprites_page(ram_t *ram, int page_index, int relative_index, vec2i_t pos, int width, int height);
+void gfx_draw_sprites_page(ram_t *ram, int page_index, int relative_index, point_t pos, int width, int height);
 
 // Draw sprite, but only in the specified color
 // TODO: add to source file and fill in
 void gfx_draw_sprite_mask(ram_t *ram, int index, color_t color_key, color_t drawn_color);
+
+void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section);

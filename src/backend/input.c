@@ -19,21 +19,21 @@ bool input_key_released(zinc_key_t key) {
 	#endif
 }
 
-bool input_mouse_button_pressed(mouse_button_t gui_button) {
+bool input_mouse_button_pressed(mouse_button_t button) {
 	#ifdef BACKEND_SDL2
-	return sdl2_input_mouse_button_pressed(gui_button);
+	return sdl2_input_mouse_button_pressed(button);
 	#endif
 }
 
-bool input_mouse_button_released(mouse_button_t gui_button) {
+bool input_mouse_button_released(mouse_button_t button) {
 	#ifdef BACKEND_SDL2
-	return sdl2_input_mouse_button_released(gui_button);
+	return sdl2_input_mouse_button_released(button);
 	#endif
 }
 
-bool input_mouse_button_held(mouse_button_t gui_button) {
+bool input_mouse_button_held(mouse_button_t button) {
 	#ifdef BACKEND_SDL2
-	return sdl2_input_mouse_button_held(gui_button);
+	return sdl2_input_mouse_button_held(button);
 	#endif
 }
 
@@ -43,12 +43,12 @@ bool input_mouse_scrolled(scroll_dir_t direction) {
 	#endif
 }
 
-vec2i_t input_get_mouse_pos() {
+point_t input_get_mouse_pos() {
 	#ifdef BACKEND_SDL2
 
 	int x, y;
 	sdl2_get_mouse_pos(&x, &y);
-	return (vec2i_t){x, y};
+	return (point_t){x, y};
 
 	#endif
 }

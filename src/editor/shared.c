@@ -8,21 +8,21 @@
 #include "../backend/gfx.h"
 #include "../backend/gui.h"
 
-recti_t spritesheet_rect = {0};
-recti_t visible_rect = {0};
+rect_t spritesheet_rect = {0};
+rect_t visible_rect = {0};
 
 // Rect in pixels
-recti_t currently_editing_rect = {0};
+rect_t currently_editing_rect = {0};
 
 // Rect in sprites
-recti_t currently_editing_sprites_rect = {0};
+rect_t currently_editing_sprites_rect = {0};
 
 int selected_sprite_index_offset = 0;
 int selected_spritesheet_index = 0;
 
 static void set_selected_spritesheet_index(int index) {
 	selected_spritesheet_index = index;
-	visible_rect = (recti_t){
+	visible_rect = (rect_t){
 		.x = 0,
 		.y = selected_spritesheet_index * SPRITESHEET_PAGE_HEIGHT,
 		.w = SPRITESHEET_PAGE_WIDTH,
@@ -31,16 +31,16 @@ static void set_selected_spritesheet_index(int index) {
 }
 
 void sprite_selector_init(computer_t *computer) {
-	spritesheet_rect = (recti_t){200, 348, 384, 128};
+	spritesheet_rect = (rect_t){200, 348, 384, 128};
 
-	visible_rect = (recti_t){
+	visible_rect = (rect_t){
 		.x = 0,
 		.y = selected_spritesheet_index * SPRITESHEET_PAGE_HEIGHT,
 		.w = SPRITESHEET_PAGE_WIDTH,
 		.h = SPRITESHEET_PAGE_HEIGHT,
 	};
 	
-	currently_editing_rect = (recti_t){
+	currently_editing_rect = (rect_t){
 		.x = 0,
 		.y = 0,
 		.w = SPRITE_WIDTH,
@@ -71,10 +71,10 @@ static void update_currently_editing_sprites_rect(sprite_select_snap_mode_t snap
 
 // This whole function is kind of a mess and I should probably rewrite it at some point
 void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap_mode) {
-	vec2i_t mouse_pos = input_get_mouse_pos();
+	point_t mouse_pos = input_get_mouse_pos();
 
-	if (point_in_recti(mouse_pos, spritesheet_rect)) {
-		if (api_keyp(computer, KEY_MINUS) || api_mouse_scrolled(computer, SCROLL_UP)) {
+	if (point_in_rect(mouse_pos, spritesheet_rect)) {
+		if (api_keyp(computer, KEY_MINUS) || api_mouse_scrolled(computer, SCROLL_DIR_UP)) {
 			currently_editing_rect.w -= SPRITE_WIDTH;
 			currently_editing_rect.h -= SPRITE_HEIGHT;
 			
@@ -86,7 +86,7 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 			}
 		}
 
-		if (api_keyp(computer, KEY_EQUALS) || api_mouse_scrolled(computer, SCROLL_DOWN)) {
+		if (api_keyp(computer, KEY_EQUALS) || api_mouse_scrolled(computer, SCROLL_DIR_DOWN)) {
 			currently_editing_rect.w += SPRITE_WIDTH;
 			currently_editing_rect.h += SPRITE_HEIGHT;
 		}
@@ -136,7 +136,7 @@ void sprite_selector_draw(computer_t *computer) {
 	gfx_draw_spritesheet_rect(computer->ram, spritesheet_rect.pos, visible_rect, COLOR_NONE);
 
 	for (int i = 0; i < 8; i++) {
-		recti_t rect = {
+		rect_t rect = {
 			.x = spritesheet_rect.x + spritesheet_rect.w + 4,
 			.y = spritesheet_rect.y + i * 16,
 			.w = 48,
