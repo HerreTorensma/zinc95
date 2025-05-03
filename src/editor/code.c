@@ -9,12 +9,13 @@
 #include "../backend/gui.h"
 #include "menu.h"
 
-static rect_t code_rect = {
-	.x = 4,
-	.y = 22,
-	.w = SCREEN_WIDTH - 8,
-	.h = SCREEN_HEIGHT - 20 - 6,
-};
+// static rect_t code_rect = {
+// 	.x = 4,
+// 	.y = 22,
+// 	.w = SCREEN_WIDTH - 8,
+// 	.h = SCREEN_HEIGHT - 20 - 6,
+// };
+static rect_t code_rect = {0};
 
 static const int font_index = 2;
 static int scroll_amount = 0;
@@ -259,6 +260,13 @@ static int get_real_cursor_pos(computer_t *computer) {
 }
 
 void code_editor_init(computer_t *computer) {
+	code_rect = (rect_t){
+		.x = workspace_rect.x + 4,
+		.y = workspace_rect.y + 4,
+		.w = workspace_rect.w - 8,
+		.h = workspace_rect.h - 8,
+	};
+
 	// uint64_t lines_amount = string_get_lines_amount(sample_string);
 	uint64_t lines_amount = string_get_lines_amount(computer->ram->code_buffer);
 

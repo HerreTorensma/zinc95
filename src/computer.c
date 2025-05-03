@@ -21,6 +21,7 @@ void computer_load_resouces(computer_t *computer) {
 	// memcpy(computer->ram->spritesheet.data, builtin_spritesheet, SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT);
 	memcpy(computer->ram->spritesheet.data + ((SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT) * (SPRITESHEET_PAGE_AMOUNT - 1)), builtin_spritesheet, SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT);
 
+	// /*
 	computer->ram->gui_colors = (gui_colors_t){
 		.text = 0,
 		.screen_background = (rgb_color_t){77, 0, 0},
@@ -36,6 +37,8 @@ void computer_load_resouces(computer_t *computer) {
 		.toggle_button_set_text = 2,
 		.toggle_button_unset_text = 0,
 	};
+	// */
+	
 	// Dark mode
 	/*
 	computer->ram->gui_colors = (gui_colors_t){
@@ -50,8 +53,8 @@ void computer_load_resouces(computer_t *computer) {
 		.frame_edge_neutral = 20,
 		.frame_edge_light = 23,
 
-		.toggle_button_set_text = 2,
-		.toggle_button_unset_text = 0,
+		.toggle_button_set_text = 48,
+		.toggle_button_unset_text = 15,
 	};
 	*/
 

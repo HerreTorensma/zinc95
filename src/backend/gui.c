@@ -301,3 +301,24 @@ int gui_x_to_text_index(font_t *font, char text[], int x) {
 
 	return real_index;
 }
+
+// TODO: finish and use this function
+void gui_init_font(ram_t *ram, int index, int start_sprite_index, int horizontal_space, int height, int h_sprites, int v_sprites) {
+	ram->fonts[index] = (font_t){
+		.sprite_index = start_sprite_index,
+		.horizontal_space = horizontal_space,
+		.height = height,
+		.h_sprites = h_sprites,
+		.v_sprites = v_sprites,
+	};
+
+	// Fill in widths based on drawn lines in spritesheet
+
+}
+
+rect_t gui_rect_to_outset_frame_rect(rect_t rect) {
+	rect.x -= GUI_BORDER_WIDTH;
+	rect.y -= GUI_BORDER_WIDTH;
+	rect.w += GUI_BORDER_WIDTH * 2;
+	rect.h += GUI_BORDER_WIDTH * 2;
+}

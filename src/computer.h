@@ -156,6 +156,7 @@ typedef union ram {
 		sprite_t sprites[TOTAL_SPRITES];
 		font_t fonts[8];
 		map_t map;
+		// TODO: make code_buffer part of computer, not RAM
 		char code_buffer[1024 * 1024];
 		// draw_state_t draw_state;
 		gui_colors_t gui_colors;
