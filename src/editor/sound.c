@@ -85,17 +85,17 @@ void sound_editor_init(computer_t *computer) {
 
 	if (SDL_OpenAudio(&wav_spec, NULL) < 0) {
 		printf("SDL_OpenAudio failed! SDL_Error: %s\n", SDL_GetError());
-		return 1;
+		// return 1;
 	}
 
 	// SDL_PauseAudio(0);
 }
 
 void sound_editor_update(computer_t *computer) {
-	if (api_keyp(computer, KEY_F6)) {
+	if (input_key_pressed(KEY_F6)) {
 		SDL_PauseAudio(0);
 	}
-	if (api_keyr(computer, KEY_F6)) {
+	if (input_key_pressed(KEY_F6)) {
 		SDL_PauseAudio(1);
 	}
 }

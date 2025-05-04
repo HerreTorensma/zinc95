@@ -13,7 +13,33 @@
 static rect_t color_picker_rect = {0};
 static rect_t sprite_editor_rect = {0};
 
+// All GUI element rects and positions in one place
+typedef struct layout {
+	rect_t color_picker_rect;
+	rect_t sprite_editor_rect;
+
+	rect_t selected_color_rect;
+	rect_t selected_color_label_rect;
+
+	rect_t selected_sprite_rect;
+	rect_t selected_sprite_label_rect;
+
+	rect_t color_key_button_rect;
+	rect_t color_key_label_rect;
+
+	point_t sprite_flags_start_pos;
+
+	rect_t spritesheet_rect;
+	point_t spritesheet_pages_start_pos;
+} layout_t;
+
+static layout_t layout = {0};
+
 static uint8_t selected_color = 0;
+
+void init_layout() {
+
+}
 
 void sprite_editor_init(computer_t *computer) {
 	// color_picker_rect = RECT(4, 388, 192, 88);
@@ -140,6 +166,7 @@ void sprite_editor_draw(computer_t *computer) {
 	gfx_draw_spritesheet_pro(computer->ram, sprite_editing_rect, real_editor_rect, COLOR_NONE);
 
 	// Selected color
+	rect_t selected_color_rect = rect_put_above(color_picker_rect, RECT(0, 0, 16, 16), 0);
 	char buffer[32];
 	gui_inset_frame(computer->ram, RECT(color_picker_rect.x, color_picker_rect.y - 20, 16, 16));
 	gfx_draw_filled_rect(fb, RECT(color_picker_rect.x, color_picker_rect.y - 20, 16, 16), selected_color);
@@ -147,6 +174,7 @@ void sprite_editor_draw(computer_t *computer) {
 	gui_draw_text(computer->ram, 0, buffer, POINT(color_picker_rect.x + 20, color_picker_rect.y - 16), computer->ram->gui_colors.text);
 	
 	// Selected sprite preview
+	rect_t selected_sprite_rect = rect_put_above(selected_color_rect, RECT(0, 0, 16, 16), 0);
 	gui_inset_frame(computer->ram, RECT(color_picker_rect.x, color_picker_rect.y - 40, 16, 16));
 	gfx_draw_sprites(computer->ram, get_selected_sprite_index(), POINT(color_picker_rect.x, color_picker_rect.y - 40), 1, 1);
 	sprintf(buffer, "#%04d\n", get_selected_sprite_index());
