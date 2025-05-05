@@ -8,22 +8,26 @@
 #include "../backend/gfx.h"
 #include "shared.h"
 
-static rect_t gui_rect = {0};
-static rect_t map_rect = {0};
-
 static point_t cam_pos = {0};
 static int move_speed = 8;
-
-// enum {
-// 	ZOOM_QUARTER,
-// 	ZOOM_HALF,
-
-// }
 
 // Doesn't do anything yet
 static float zoom = 1.0f;
 
 static int selected_layer = 0;
+
+typedef struct layout {
+	rect_t map_rect;
+	point_t layer_buttons_start_pos;
+
+	// Will remove after I've got skins implemented
+	rect_t gui_rect;
+
+	rect_t spritesheet_rect;
+	point_t spritesheet_pages_start_pos;
+} layout_t;
+
+static layout_t layout = {0};
 
 // TODO: i need some kind of function to translate world coords to screen coords and grid coords or whatever
 // Instead or hardcoding it
@@ -44,29 +48,26 @@ static void draw_grid(framebuffer_t *fb) {
 }
 
 void map_editor_init(computer_t *computer) {
-	// map_rect = workspace_rect;
-	// map_rect.h -= 136;
+	layout = (layout_t) {
+		.map_rect = RECT(0, 20, 640, 324),
+		.gui_rect = RECT(0, 344, 640, 136),
 
-	gui_rect = rect_anchor_bottom(workspace_rect, RECT(0, 0, SCREEN_WIDTH, 136), 0);
-
-	// map_rect = rect_put_above(gui_rect, RECT(0, 0, SCREEN_WIDTH, ));
-
-	// gui_rect = RECT(0, SCREEN_HEIGHT - 136, SCREEN_WIDTH, 136);
-	// gui_rect = rect_put_below
-
-	map_rect = workspace_rect;
-	map_rect.h -= gui_rect.h;
+		.layer_buttons_start_pos = POINT(2, 346),
+		
+		.spritesheet_rect = RECT(200, 348, 384, 128),
+		.spritesheet_pages_start_pos = POINT(588, 348),
+	};
 }
 
 void map_editor_update(computer_t *computer) {
-	sprite_selector_update(computer, SNAP_MODE_ZOOM);
+	sprite_selector_update(computer, SNAP_MODE_ZOOM, layout.spritesheet_rect);
 
 	point_t mouse_pos = input_get_mouse_pos();
 
 	int cell_x = ((mouse_pos.x + cam_pos.x) / currently_editing_rect.w) * currently_editing_sprites_rect.w;
 	int cell_y = ((mouse_pos.y + cam_pos.y) / currently_editing_rect.h) * currently_editing_sprites_rect.h;
 
-	if (point_in_rect(mouse_pos, map_rect)) {
+	if (point_in_rect(mouse_pos, layout.map_rect)) {
 		if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
 			for (int i = 0; i < currently_editing_sprites_rect.h; i++) {
 				for (int j = 0; j < currently_editing_sprites_rect.w; j++) {
@@ -110,7 +111,7 @@ void map_editor_update(computer_t *computer) {
 void map_editor_draw(computer_t *computer) {
 	framebuffer_t *fb = &computer->ram->framebuffer;
 
-	gfx_draw_filled_rect(fb, map_rect, 0);
+	gfx_draw_filled_rect(fb, layout.map_rect, 0);
 
 	// Draw only the visible portion so we're not drawing the entire map
 	// yeah
@@ -125,7 +126,7 @@ void map_editor_draw(computer_t *computer) {
 	// Draw rect where mouse is
 	point_t mouse_pos = input_get_mouse_pos();
 
-	if (point_in_rect(mouse_pos, map_rect)) {
+	if (point_in_rect(mouse_pos, layout.map_rect)) {
 		point_t rect_pos = {
 			.x = ((mouse_pos.x + cam_pos.x) / currently_editing_rect.w) * currently_editing_rect.w - cam_pos.x,
 			.y =  ((mouse_pos.y + cam_pos.y) / currently_editing_rect.h) * currently_editing_rect.h - cam_pos.y,
@@ -136,10 +137,10 @@ void map_editor_draw(computer_t *computer) {
 
 	draw_grid(fb);
 
-	gui_outset_frame(computer->ram, gui_rect);
-	sprite_selector_draw(computer);
+	gui_outset_frame(computer->ram, layout.gui_rect);
+	sprite_selector_draw(computer, layout.spritesheet_rect, layout.spritesheet_pages_start_pos);
 
-	gui_button(computer->ram, "Entities", RECT(GUI_BORDER_WIDTH, SCREEN_HEIGHT - 5 * 16 - 2, 48, 16));
+	gui_button(computer->ram, "Entities", RECT(layout.layer_buttons_start_pos.x, layout.layer_buttons_start_pos.y, 48, 16));
 
 	// Layer buttons
 	for (int i = 0; i < MAP_LAYERS_AMOUNT; i++) {
@@ -147,12 +148,11 @@ void map_editor_draw(computer_t *computer) {
 		sprintf(buffer, "%d", i);
 
 		rect_t rect = {
-			.x = 2,
-			.y = SCREEN_HEIGHT - 4 * 16 - 2 + i * 16,
+			.x = layout.layer_buttons_start_pos.x,
+			.y = layout.layer_buttons_start_pos.y + (i + 1) * 16,
 			.w = 48,
 			.h = 16
 		};
-		// rect_t rect = rect_anchor_bottom(gui_rect, RECT(0, 0, 48, 16), 2);
 
 		if (gui_button_ex(computer->ram, buffer, rect, selected_layer == i)) {
 			selected_layer = i;

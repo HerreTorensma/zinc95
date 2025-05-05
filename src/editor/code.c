@@ -9,14 +9,6 @@
 #include "../backend/gui.h"
 #include "menu.h"
 
-// static rect_t code_rect = {
-// 	.x = 4,
-// 	.y = 22,
-// 	.w = SCREEN_WIDTH - 8,
-// 	.h = SCREEN_HEIGHT - 20 - 6,
-// };
-static rect_t code_rect = {0};
-
 static const int font_index = 2;
 static int scroll_amount = 0;
 
@@ -25,38 +17,11 @@ static int lines_on_screen = 0;
 #define CURSOR_BLINK_SPEED 30
 static int cursor_timer = CURSOR_BLINK_SPEED;
 
-static char sample_string[] =	"local x = 0\n"
-								"local y = 0\n"
-								"\n"
-								"function _init()\n"
-								"	print(\"Called the init function\")\n"
-								"end\n"
-								"\n"
-								"function _update()\n"
-								"	x = x + 1\n"
-								"	y = y + 1\n"
-								"end\n"
-								"\n"
-								"function _draw()\n"
-								"	local color = (1 + math.sin(ticks() / 500)) * 0.5 * 256\n"
-								"	cls(color)\n"
-								"\n"
-								"	for i=1,240 do\n"
-								"		circ(320, 240, i, 256-i)\n"
-								"	end\n"
-								// "\n"
-								// "	local radius1 = (1 + math.sin(ticks() / 10)) * 0.5 * 240\n"
-								// "	local radius2 = (1 + math.cos(ticks() / 10)) * 0.5 * 240\n"
-								// "	circ(320, 240, radius1, 256 - radius1)\n"
-								// "	circ(320, 240, radius1 - 1, 256 - radius1)\n"
-								// "	circ(320, 240, radius1 - 2, 256 - radius1)\n"
-								
-								// "	circ(320, 240, radius2, 256 - radius2)\n"
-								// "	circ(320, 240, radius2 - 1, 256 - radius2)\n"
-								// "	circ(320, 240, radius2 - 2, 256 - radius2)\n"
-								"\n"
-								"	spr(768, x, y, 8, 8)\n"
-								"end\0";
+typedef struct layout {
+	rect_t code_rect;
+} layout_t;
+
+static layout_t layout = {0};
 
 // Get the amount of lines in a string, used for loading
 static uint64_t string_get_lines_amount(const char *text) {
@@ -213,8 +178,8 @@ static void move_cursor_to_mouse(ram_t *ram, code_t *code) {
 	// get_mouse_pos(&x, &y);
 	point_t mouse_pos = input_get_mouse_pos();
 
-	int corrected_x = mouse_pos.x - (code_rect.x + 5 * (font->width + font->horizontal_space));
-	int corrected_y = mouse_pos.y - code_rect.y + (scroll_amount * (font->height + font->vertical_space));
+	int corrected_x = mouse_pos.x - (layout.code_rect.x + 5 * (font->width + font->horizontal_space));
+	int corrected_y = mouse_pos.y - layout.code_rect.y + (scroll_amount * (font->height + font->vertical_space));
 
 	int line = corrected_y / (font->height + font->vertical_space);
 	if (line < 0) {
@@ -260,17 +225,14 @@ static int get_real_cursor_pos(computer_t *computer) {
 }
 
 void code_editor_init(computer_t *computer) {
-	code_rect = (rect_t){
-		.x = workspace_rect.x + 4,
-		.y = workspace_rect.y + 4,
-		.w = workspace_rect.w - 8,
-		.h = workspace_rect.h - 8,
+	layout = (layout_t){
+		.code_rect = RECT(68, 24, 568, 452),
 	};
 
-	// uint64_t lines_amount = string_get_lines_amount(sample_string);
 	uint64_t lines_amount = string_get_lines_amount(computer->ram->code_buffer);
 
-	lines_on_screen = workspace_rect.h / (computer->ram->fonts[font_index].height + computer->ram->fonts[font_index].horizontal_space);
+	// TODO: Changed workspace_rect.h to layout.code_rect.h without knowing the implications, might wanna check that later
+	lines_on_screen = layout.code_rect.h / (computer->ram->fonts[font_index].height + computer->ram->fonts[font_index].horizontal_space);
 
 	computer->code.lines = malloc(lines_amount * sizeof(line_t));
 	if (computer->code.lines == NULL) {
@@ -424,7 +386,7 @@ void code_editor_update(computer_t *computer) {
 	if (api_keyp(computer, KEY_LEFT)) {
 		if (api_key(computer, KEY_LCTRL) || api_key(computer, KEY_RCTRL)) {
 			for (int i = code->cursor_pos - 1; i >= 0; i--) {
-				if (code->lines[code->cursor_line].text[i] == ' ' || i == 0) {
+				if (code->lines[code->cursor_line].text[i] == ' ' || code->lines[code->cursor_line].text[i] == '.' || i == 0) {
 					code->cursor_pos = i;
 					break;
 				}
@@ -448,7 +410,7 @@ void code_editor_update(computer_t *computer) {
 			int len = strlen(code->lines[code->cursor_line].text);
 			
 			for (int i = code->cursor_pos + 1; i < len + 1; i++) {
-				if (code->lines[code->cursor_line].text[i] == ' ' || i == len) {
+				if (code->lines[code->cursor_line].text[i] == ' ' || code->lines[code->cursor_line].text[i] == '.' || i == len) {
 					code->cursor_pos = i;
 					break;
 				}
@@ -544,9 +506,9 @@ void code_editor_update(computer_t *computer) {
 void code_editor_draw(computer_t *computer) {
 	font_t *font = &computer->ram->fonts[font_index];
 
-	gui_inset_frame(computer->ram, code_rect);
+	gui_inset_frame(computer->ram, layout.code_rect);
 	// api_rectf(computer, code_rect.x, code_rect.y, code_rect.w, code_rect.h, 15);
-	api_rectf(computer, code_rect.x, code_rect.y, code_rect.w, code_rect.h, 15);
+	api_rectf(computer, layout.code_rect.x, layout.code_rect.y, layout.code_rect.w, layout.code_rect.h, 15);
 
 	// TODO: replace with temp alloc
 	char line_number_buffer[8];
@@ -558,15 +520,15 @@ void code_editor_draw(computer_t *computer) {
 		}
 
 		sprintf(line_number_buffer, "% 4d", i + scroll_amount + 1);
-		api_text(computer, font_index, line_number_buffer, code_rect.x + 2, code_rect.y + 2 + (i * (font->height + font->vertical_space)), 8);
-		api_text(computer, font_index, computer->code.lines[i + scroll_amount].text, code_rect.x + 2 + 5 * (font->width + font->horizontal_space), code_rect.y + 2 + (i * (font->height + font->vertical_space)), 0);
+		api_text(computer, font_index, line_number_buffer, layout.code_rect.x + 2, layout.code_rect.y + 2 + (i * (font->height + font->vertical_space)), 8);
+		api_text(computer, font_index, computer->code.lines[i + scroll_amount].text, layout.code_rect.x + 2 + 5 * (font->width + font->horizontal_space), layout.code_rect.y + 2 + (i * (font->height + font->vertical_space)), 0);
 	}
 
 	// Draw cursor
 	// if (computer->ticks % 40 < 20) {
 	if (cursor_timer >= CURSOR_BLINK_SPEED / 2) {
-		int cursor_x = code_rect.x + 2 + 5 * (font->width + font->horizontal_space) + get_real_cursor_pos(computer);
-		int cursor_y = code_rect.y + 2 + computer->code.cursor_line * (font->height + font->vertical_space) - scroll_amount * (font->height + font->vertical_space);
+		int cursor_x = layout.code_rect.x + 2 + 5 * (font->width + font->horizontal_space) + get_real_cursor_pos(computer);
+		int cursor_y = layout.code_rect.y + 2 + computer->code.cursor_line * (font->height + font->vertical_space) - scroll_amount * (font->height + font->vertical_space);
 		api_line(computer, cursor_x, cursor_y, cursor_x, cursor_y + font->height, 3);
 	}
 	

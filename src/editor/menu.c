@@ -2,7 +2,6 @@
 
 #include <stdio.h>
 
-// #include "../api/api.h"
 #include "../backend/input.h"
 #include "../backend/gui.h"
 #include "../backend/gfx.h"
@@ -16,11 +15,6 @@
 #define SAVE_ICON_INDEX 5858
 #define PLAY_ICON_INDEX 5856
 
-#define MENU_BUTTONS_OFFSET 192
-// #define MENU_BUTTONS_OFFSET GUI_BORDER_WIDTH
-#define BUTTON_WIDTH GUI_STANDARD_BUTTON_SIZE * 4
-#define BUTTON_HEIGHT GUI_STANDARD_BUTTON_SIZE
-
 typedef enum workspace_type {
 	WORKSPACE_CODE,
 	WORKSPACE_SPRITE,
@@ -30,18 +24,30 @@ typedef enum workspace_type {
 
 static workspace_type_t active_workspace = WORKSPACE_SPRITE;
 
-static rect_t bar_rect = {0};
-static rect_t screen_rect = {0};
+typedef struct layout {
+	point_t code_editor_button_pos;
+	point_t sprite_editor_button_pos;
+	point_t map_editor_button_pos;
+	point_t sound_editor_button_pos;
 
-// rect_t workspace_rect = {0, 20, SCREEN_WIDTH, SCREEN_HEIGHT - 20};
-rect_t workspace_rect = {0};
+	point_t save_button_pos;
+	point_t play_button_pos;
+} layout_t;
+
+static layout_t layout = {0};
 
 void workspace_menu_init(computer_t *computer) {
-	bar_rect = (rect_t){0, 0, SCREEN_WIDTH, 20};
-	// screen_rect = (rect_t){0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
-	workspace_rect = rect_put_below(bar_rect, RECT(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT - bar_rect.h), 0);
+	layout = (layout_t) {
+		.code_editor_button_pos = POINT(192, 2),
+		.sprite_editor_button_pos = POINT(256, 2),
+		.map_editor_button_pos = POINT(320, 2),
+		.sound_editor_button_pos = POINT(384, 2),
 
-	// Init the sprite selector
+		.save_button_pos = POINT(606, 2),
+		.play_button_pos = POINT(622, 2),
+	};
+
+	// Init the sprite selector (shared between sprite and map editor)
 	sprite_selector_init(computer);
 
 	// console_init(computer);
@@ -93,7 +99,7 @@ void workspace_menu_update(computer_t *computer) {
 void workspace_menu_draw(computer_t *computer) {
 	gfx_clear(&computer->ram->framebuffer, 7);
 
-	gui_outset_frame(computer->ram, workspace_rect);
+	// gui_outset_frame(computer->ram, workspace_rect);
 
 	switch (active_workspace) {
 		case WORKSPACE_CODE:
@@ -117,34 +123,35 @@ void workspace_menu_draw(computer_t *computer) {
 	}
 
 	// Menu bar
-	gui_outset_frame(computer->ram, bar_rect);
+	// gui_outset_frame(computer->ram, bar_rect);
+	gui_outset_frame(computer->ram, RECT(0, 0, SCREEN_WIDTH, 20));
 	
 	// gui_button(computer->ram, "", (rect_t){2, 2, 16, 16});
 	
-	if (gui_button_ex(computer->ram, "Code", (rect_t){MENU_BUTTONS_OFFSET + BUTTON_WIDTH*0, GUI_BORDER_WIDTH, BUTTON_WIDTH, BUTTON_HEIGHT}, active_workspace == WORKSPACE_CODE)) {
+	if (gui_button_ex(computer->ram, "Code", RECT(layout.code_editor_button_pos.x, layout.code_editor_button_pos.y, 64, 16), active_workspace == WORKSPACE_CODE)) {
 		active_workspace = WORKSPACE_CODE;
 	}
 	
-	if (gui_button_ex(computer->ram, "Sprite", (rect_t){MENU_BUTTONS_OFFSET + BUTTON_WIDTH*1, GUI_BORDER_WIDTH, BUTTON_WIDTH, BUTTON_HEIGHT}, active_workspace == WORKSPACE_SPRITE)) {
+	if (gui_button_ex(computer->ram, "Sprite", RECT(layout.sprite_editor_button_pos.x, layout.sprite_editor_button_pos.y, 64, 16), active_workspace == WORKSPACE_SPRITE)) {
 		active_workspace = WORKSPACE_SPRITE;
 	}
 	
-	if (gui_button_ex(computer->ram, "Map", (rect_t){MENU_BUTTONS_OFFSET + BUTTON_WIDTH*2, GUI_BORDER_WIDTH, BUTTON_WIDTH, BUTTON_HEIGHT}, active_workspace == WORKSPACE_MAP)) {
+	if (gui_button_ex(computer->ram, "Map", RECT(layout.map_editor_button_pos.x, layout.map_editor_button_pos.y, 64, 16), active_workspace == WORKSPACE_MAP)) {
 		active_workspace = WORKSPACE_MAP;
 	}
 	
-	if (gui_button_ex(computer->ram, "Sound", (rect_t){MENU_BUTTONS_OFFSET + BUTTON_WIDTH*3, GUI_BORDER_WIDTH, BUTTON_WIDTH, BUTTON_HEIGHT}, active_workspace == WORKSPACE_SOUND)) {
+	if (gui_button_ex(computer->ram, "Sound", RECT(layout.sound_editor_button_pos.x, layout.sound_editor_button_pos.y, 64, 16), active_workspace == WORKSPACE_SOUND)) {
 		active_workspace = WORKSPACE_SOUND;
 	}
 	
-	if (gui_press_button(computer->ram, "", (rect_t){SCREEN_WIDTH-16-16-2, 2, 16, 16})) {
+	if (gui_press_button(computer->ram, "", RECT(layout.save_button_pos.x, layout.save_button_pos.y, 16, 16))) {
 		game_save(computer, "game.zinc95");
 	}
 	// api_spr(computer, 5858, SCREEN_WIDTH-16-16-2, 2, 2, 2, 1);
 	// api_spr(computer, 5858, SCREEN_WIDTH-16-16-2, 2, 2, 2);
 	gfx_draw_sprites(computer->ram, SAVE_ICON_INDEX, POINT(SCREEN_WIDTH-16-16-2, 2), 2, 2);
 	
-	if (gui_press_button(computer->ram, "", (rect_t){SCREEN_WIDTH-16-2, 2, 16, 16})) {
+	if (gui_press_button(computer->ram, "", RECT(layout.play_button_pos.x, layout.play_button_pos.y, 16, 16))) {
 		play_game(computer);
 	}
 	// api_spr(computer, 5856, SCREEN_WIDTH-16-2, 2, 2, 2, 1);

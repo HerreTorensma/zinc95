@@ -23,9 +23,9 @@ typedef enum sprite_select_snap_mode {
 
 void sprite_selector_init(computer_t *computer);
 
-void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap_mode);
+void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap_mode, rect_t spritesheet_rect);
 
-void sprite_selector_draw(computer_t *computer);
+void sprite_selector_draw(computer_t *computer, rect_t spritesheet_rect, point_t page_buttons_pos);
 
 int get_selected_sprite_index();
 

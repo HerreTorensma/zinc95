@@ -8,7 +8,6 @@
 #include "../backend/gfx.h"
 #include "../backend/gui.h"
 
-rect_t spritesheet_rect = {0};
 rect_t visible_rect = {0};
 
 // Rect in pixels
@@ -31,7 +30,7 @@ static void set_selected_spritesheet_index(int index) {
 }
 
 void sprite_selector_init(computer_t *computer) {
-	spritesheet_rect = (rect_t){200, 348, 384, 128};
+	// spritesheet_rect = (rect_t){200, 348, 384, 128};
 
 	visible_rect = (rect_t){
 		.x = 0,
@@ -70,7 +69,7 @@ static void update_currently_editing_sprites_rect(sprite_select_snap_mode_t snap
 }
 
 // This whole function is kind of a mess and I should probably rewrite it at some point
-void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap_mode) {
+void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap_mode, rect_t spritesheet_rect) {
 	point_t mouse_pos = input_get_mouse_pos();
 
 	if (point_in_rect(mouse_pos, spritesheet_rect)) {
@@ -130,15 +129,14 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 	update_currently_editing_sprites_rect(snap_mode);
 }
 
-void sprite_selector_draw(computer_t *computer) {
+void sprite_selector_draw(computer_t *computer, rect_t spritesheet_rect, point_t page_buttons_pos) {
 	gui_inset_frame(computer->ram, spritesheet_rect);
-	// draw_sprite_sheet_rect(computer, spritesheet_rect.x, spritesheet_rect.y, visible_rect, 255);
 	gfx_draw_spritesheet_rect(computer->ram, spritesheet_rect.pos, visible_rect, COLOR_NONE);
 
 	for (int i = 0; i < 8; i++) {
 		rect_t rect = {
-			.x = spritesheet_rect.x + spritesheet_rect.w + 4,
-			.y = spritesheet_rect.y + i * 16,
+			.x = page_buttons_pos.x,
+			.y = page_buttons_pos.y + i * 16,
 			.w = 48,
 			.h = 16,
 		};

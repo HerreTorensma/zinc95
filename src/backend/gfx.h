@@ -7,6 +7,19 @@ Graphics
 #include "../computer.h"
 #include "math2d.h"
 
+// TODO: use this in gfx draw functions instead of framebuffer_t,
+// so it can later also be used for drawing on the spritesheet
+// also for drawing shapes on the spritesheet, I need a second sprite sheet that exists on computer that is overlayed so that you can preview
+// what you draw
+// or just draw it to the framebuffer actually what am I talking about
+typedef struct surface {
+	color_t *data;
+	int width;
+	int height;
+} surface_t;
+
+#define SURF(_data, _width, _height) ((surface_t){.data = _data, .width = _width, .height = _height})
+
 // Generate a buffer of rgb_color_t using palette so it can be rendered by a backend later
 void gfx_generate_rgb_framebuffer(computer_t *computer);
 
