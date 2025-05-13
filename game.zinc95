@@ -1,7 +1,8 @@
+-- Main
 player = {
 	x = 320,
 	y = 240,
-	size = 1
+	size = 1,
 }
 
 local particles = {}
@@ -22,7 +23,7 @@ local function new_particle()
 		radius = math.random(1, 5),
 		-- color = 173,
 		color = 15,
-		lifetime = 120
+		lifetime = 120,
 	}
 
 	table.insert(particles, p)
@@ -34,7 +35,7 @@ local function new_fish()
 		y = math.random(0, 480),
 		s = 400,
 		sw = 2,
-		sh = 2
+		sh = 2,
 	}
 
 	table.insert(fishes, f)

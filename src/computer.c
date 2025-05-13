@@ -210,51 +210,21 @@ void computer_init(computer_t *computer) {
 	computer->ram->palette = builtin_palette;
 }
 
-void code_free(file_t *code) {
-	for (int i = 0; i < code->line_amount; i++) {
-		free(code->lines[i].text);
-	}
-	free(code->lines);
-}
-
 void computer_quit(computer_t *computer) {
 	// Free the code first
-	code_free(&computer->file);
+	file_free(&computer->file);
+
+	// free(computer->code_buffer);
 
 	free(computer->ram);
 }
 
-// void generate_rgb_framebuffer(computer_t *computer) {
-// 	for (int y = 0; y < SCREEN_HEIGHT; y++) {
-// 		for (int x = 0; x < SCREEN_WIDTH; x++) {
-// 			uint8_t pixel = computer->ram->framebuffer.data[y * SCREEN_WIDTH + x];
-// 			computer->rgb_framebuffer[y * SCREEN_WIDTH + x] = computer->ram->palette.colors[pixel];
-// 		}
-// 	}
-// }
-
-// bool point_in_screen(int x, int y) {
-// 	if (x < 0) return false;
-// 	if (x >= SCREEN_WIDTH) return false;
-// 	if (y < 0) return false;
-// 	if (y >= SCREEN_HEIGHT) return false;
-
-// 	return true;
-// }
-
-// // TODO: make get_pixel
-// void gfx_set_pixel(framebuffer_t *framebuffer, int x, int y, int color) {
-// 	if (point_in_screen(x, y)) {
-// 		framebuffer->data[y * SCREEN_WIDTH + x] = color;
-// 	}
-// }
-
 // Forward declaration so I don't have cyclic dependencies
-size_t code_to_string(file_t *code, char *buffer);
+size_t file_to_string(file_t *code, char *buffer);
 
 void play_game(computer_t *computer) {
 	// Convert code to string
-	code_to_string(&computer->file, computer->code_buffer);
+	file_to_string(&computer->file, computer->code_buffer);
 
 	// Init the lua stuff
 	lua_init(computer);
@@ -321,7 +291,7 @@ void game_save(computer_t *computer, const char filename[]) {
 	size_t offset = 0;
 
 	// Lua code
-	offset += code_to_string(&computer->file, buffer + offset);
+	offset += file_to_string(&computer->file, buffer + offset);
 	// Replace \0 with \n so the string doesn't terminate
 	buffer[offset - 1] = '\n';
 
@@ -468,10 +438,11 @@ void game_load(computer_t *computer, const char filename[]) {
 			case SECTION_LUA: {
 				// Read line into buffer
 				size_t len = strlen(line);
+
 				// TODO: Slightly unsafe since I'm still relying on null-termination, might rewrite
 				strncpy(computer->code_buffer + code_offset, line, len);
+				
 				code_offset += len;
-
 				computer->code_buffer[code_offset] = '\0';
 
 				break;

@@ -11,7 +11,7 @@ Memory layout, global constants
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include "string.h"
+#include "backend/text_file.h"
 
 // TODO: rename some stuff so it's all consistent, dont mix AMOUNT, MAX, TOTAL etc.
 
@@ -111,23 +111,6 @@ typedef struct font {
 	uint8_t widths[VISIBLE_CHARACTERS_SIZE];
 } font_t;
 
-typedef struct line {
-	char *text;
-	// string_t text;
-} line_t;
-
-// Datastructure to represent a text file in the text editor
-// though they get compiled into one string
-// It's just for organizational purposes 
-typedef struct file {
-	line_t *lines;
-	int line_amount;
-	
-	int cursor_line;
-	int cursor_pos;
-	int target_pos;
-} file_t;
-
 typedef struct file_collection {
 	file_t file[32];
 } file_collection_t;
@@ -200,7 +183,10 @@ typedef struct computer {
 	// probably wrap it in a struct too
 	file_t file;
 
-	char code_buffer[1024 * 1024];
+	// TODO: Currenly stack allocated 1MB,
+	// later when I have the file collection system I will make this dynamically allocated
+	// I tried that currently but I'll have to revamp it again to why bother
+	char code_buffer[1024 * 1024 * sizeof(char)];
 } computer_t;
 
 void set_global_computer(computer_t *computer);

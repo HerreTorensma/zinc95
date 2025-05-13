@@ -4,18 +4,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "../api/api.h"
+#include "../backend/gfx.h"
 #include "../backend/input.h"
 #include "../backend/gui.h"
 #include "../backend/text_file.h"
 #include "menu.h"
 
+// TODO: These 3 should be configurable thus stored in RAM
+#define CURSOR_BLINK_SPEED 30
 static const int font_index = 2;
 static int scroll_amount = 0;
 
 static int lines_on_screen = 0;
 
-#define CURSOR_BLINK_SPEED 30
 static int cursor_timer = CURSOR_BLINK_SPEED;
 
 typedef struct layout {
@@ -27,8 +28,6 @@ static layout_t layout = {0};
 static void move_cursor_to_mouse(ram_t *ram, file_t *code) {
 	font_t *font = &ram->fonts[font_index];
 
-	// int x, y;
-	// get_mouse_pos(&x, &y);
 	point_t mouse_pos = input_get_mouse_pos();
 
 	int corrected_x = mouse_pos.x - (layout.code_rect.x + 5 * (font->width + font->horizontal_space));
@@ -67,275 +66,222 @@ void code_editor_init(computer_t *computer) {
 	layout = (layout_t){
 		.code_rect = RECT(68, 24, 568, 452),
 	};
-
-	uint64_t lines_amount = string_get_lines_amount(computer->code_buffer);
-
 	// TODO: Changed workspace_rect.h to layout.code_rect.h without knowing the implications, might wanna check that later
 	lines_on_screen = layout.code_rect.h / (computer->ram->fonts[font_index].height + computer->ram->fonts[font_index].horizontal_space);
 
-	computer->file.lines = malloc(lines_amount * sizeof(line_t));
-	if (computer->file.lines == NULL) {
-		printf("Couldn't allocate memory for code\n");
-		exit(1);
-	}
-
-	// string_to_code(&computer->code, sample_string);
-	string_to_code(&computer->file, computer->code_buffer);
+	file_load(&computer->file, computer->code_buffer);
 }
 
 // Handle all the character inputs
 static void handle_char_input(computer_t *computer, file_t *code) {
 	// Letters
 	for (int i = KEY_A; i <= KEY_Z; i++) {
-		if (api_keyp(computer, i)) {
-			if (api_key(computer, KEY_LSHIFT) || api_key(computer, KEY_RSHIFT)) {
-				insert_char_at_cursor(code, 'A' + (i - KEY_A));
+		if (input_key_pressed(i)) {
+			if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
+				file_insert_char_at_cursor(code, 'A' + (i - KEY_A));
 			} else {
-				insert_char_at_cursor(code, 'a' + (i - KEY_A));
+				file_insert_char_at_cursor(code, 'a' + (i - KEY_A));
 			}
 		}
 	}
 
 	// Number row
-	if (api_key(computer, KEY_LSHIFT) || api_key(computer, KEY_RSHIFT)) {
-		if (api_keyp(computer, KEY_1))
-			insert_char_at_cursor(code, '!');
+	if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
+		if (input_key_pressed(KEY_1))
+			file_insert_char_at_cursor(code, '!');
 
-		if (api_keyp(computer, KEY_2))
-			insert_char_at_cursor(code, '@');
+		if (input_key_pressed(KEY_2))
+			file_insert_char_at_cursor(code, '@');
 		
-		if (api_keyp(computer, KEY_3))
-			insert_char_at_cursor(code, '#');
+		if (input_key_pressed(KEY_3))
+			file_insert_char_at_cursor(code, '#');
 
-		if (api_keyp(computer, KEY_4))
-			insert_char_at_cursor(code, '$');
+		if (input_key_pressed(KEY_4))
+			file_insert_char_at_cursor(code, '$');
 
-		if (api_keyp(computer, KEY_5))
-			insert_char_at_cursor(code, '%');
+		if (input_key_pressed(KEY_5))
+			file_insert_char_at_cursor(code, '%');
 
-		if (api_keyp(computer, KEY_6))
-			insert_char_at_cursor(code, '^');
+		if (input_key_pressed(KEY_6))
+			file_insert_char_at_cursor(code, '^');
 
-		if (api_keyp(computer, KEY_7))
-			insert_char_at_cursor(code, '&');
+		if (input_key_pressed(KEY_7))
+			file_insert_char_at_cursor(code, '&');
 
-		if (api_keyp(computer, KEY_8))
-			insert_char_at_cursor(code, '*');
+		if (input_key_pressed(KEY_8))
+			file_insert_char_at_cursor(code, '*');
 
-		if (api_keyp(computer, KEY_9))
-			insert_char_at_cursor(code, '(');
+		if (input_key_pressed(KEY_9))
+			file_insert_char_at_cursor(code, '(');
 
-		if (api_keyp(computer, KEY_0))
-			insert_char_at_cursor(code, ')');
+		if (input_key_pressed(KEY_0))
+			file_insert_char_at_cursor(code, ')');
 	} else {
 		for (int i = 0; i <= 9; i++) {
-			if (api_keyp(computer, KEY_0 + i) || api_keyp(computer, KEY_NUM0 + i)) {
-				insert_char_at_cursor(code, '0' + i);
+			if (input_key_pressed(KEY_0 + i) || input_key_pressed(KEY_NUM0 + i)) {
+				file_insert_char_at_cursor(code, '0' + i);
 			}
 		}
 	}
 
 	// Other characters
-	if (api_key(computer, KEY_LSHIFT) || api_key(computer, KEY_RSHIFT)) {
-		if (api_keyp(computer, KEY_MINUS))
-			insert_char_at_cursor(code, '_');
+	if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
+		if (input_key_pressed(KEY_MINUS))
+			file_insert_char_at_cursor(code, '_');
 
-		if (api_keyp(computer, KEY_EQUALS))
-			insert_char_at_cursor(code, '+');
+		if (input_key_pressed(KEY_EQUALS))
+			file_insert_char_at_cursor(code, '+');
 
-		if (api_keyp(computer, KEY_LEFTBRACKET))
-			insert_char_at_cursor(code, '{');
+		if (input_key_pressed(KEY_LEFTBRACKET))
+			file_insert_char_at_cursor(code, '{');
 
-		if (api_keyp(computer, KEY_RIGHTBRACKET))
-			insert_char_at_cursor(code, '}');
+		if (input_key_pressed(KEY_RIGHTBRACKET))
+			file_insert_char_at_cursor(code, '}');
 
-		if (api_keyp(computer, KEY_BACKSLASH))
-			insert_char_at_cursor(code, '|');
+		if (input_key_pressed(KEY_BACKSLASH))
+			file_insert_char_at_cursor(code, '|');
 
-		if (api_keyp(computer, KEY_SEMICOLON))
-			insert_char_at_cursor(code, ':');
+		if (input_key_pressed(KEY_SEMICOLON))
+			file_insert_char_at_cursor(code, ':');
 
-		if (api_keyp(computer, KEY_APOSTROPHE))
-			insert_char_at_cursor(code, '\"');
+		if (input_key_pressed(KEY_APOSTROPHE))
+			file_insert_char_at_cursor(code, '\"');
 
-		if (api_keyp(computer, KEY_COMMA))
-			insert_char_at_cursor(code, '<');
+		if (input_key_pressed(KEY_COMMA))
+			file_insert_char_at_cursor(code, '<');
 
-		if (api_keyp(computer, KEY_PERIOD))
-			insert_char_at_cursor(code, '>');
+		if (input_key_pressed(KEY_PERIOD))
+			file_insert_char_at_cursor(code, '>');
 
-		if (api_keyp(computer, KEY_SLASH))
-			insert_char_at_cursor(code, '?');
+		if (input_key_pressed(KEY_SLASH))
+			file_insert_char_at_cursor(code, '?');
 
-		if (api_keyp(computer, KEY_GRAVE))
-			insert_char_at_cursor(code, '~');
+		if (input_key_pressed(KEY_GRAVE))
+			file_insert_char_at_cursor(code, '~');
 
 	} else {
-		if (api_keyp(computer, KEY_MINUS) || api_keyp(computer, KEY_NUMMINUS))
-			insert_char_at_cursor(code, '-');
+		if (input_key_pressed(KEY_MINUS) || input_key_pressed(KEY_NUMMINUS))
+			file_insert_char_at_cursor(code, '-');
 
-		if (api_keyp(computer, KEY_EQUALS))
-			insert_char_at_cursor(code, '=');
+		if (input_key_pressed(KEY_EQUALS))
+			file_insert_char_at_cursor(code, '=');
 
-		if (api_keyp(computer, KEY_LEFTBRACKET))
-			insert_char_at_cursor(code, '[');
+		if (input_key_pressed(KEY_LEFTBRACKET))
+			file_insert_char_at_cursor(code, '[');
 
-		if (api_keyp(computer, KEY_RIGHTBRACKET))
-			insert_char_at_cursor(code, ']');
+		if (input_key_pressed(KEY_RIGHTBRACKET))
+			file_insert_char_at_cursor(code, ']');
 
-		if (api_keyp(computer, KEY_BACKSLASH))
-			insert_char_at_cursor(code, '\\');
+		if (input_key_pressed(KEY_BACKSLASH))
+			file_insert_char_at_cursor(code, '\\');
 
-		if (api_keyp(computer, KEY_SEMICOLON))
-			insert_char_at_cursor(code, ';');
+		if (input_key_pressed(KEY_SEMICOLON))
+			file_insert_char_at_cursor(code, ';');
 
-		if (api_keyp(computer, KEY_APOSTROPHE))
-			insert_char_at_cursor(code, '\'');
+		if (input_key_pressed(KEY_APOSTROPHE))
+			file_insert_char_at_cursor(code, '\'');
 
-		if (api_keyp(computer, KEY_COMMA))
-			insert_char_at_cursor(code, ',');
+		if (input_key_pressed(KEY_COMMA))
+			file_insert_char_at_cursor(code, ',');
 
-		if (api_keyp(computer, KEY_PERIOD) || api_keyp(computer, KEY_NUMPERIOD))
-			insert_char_at_cursor(code, '.');
+		if (input_key_pressed(KEY_PERIOD) || input_key_pressed(KEY_NUMPERIOD))
+			file_insert_char_at_cursor(code, '.');
 
-		if (api_keyp(computer, KEY_SLASH) || api_keyp(computer, KEY_NUMDIVIDE))
-			insert_char_at_cursor(code, '/');
+		if (input_key_pressed(KEY_SLASH) || input_key_pressed(KEY_NUMDIVIDE))
+			file_insert_char_at_cursor(code, '/');
 
-		if (api_keyp(computer, KEY_GRAVE))
-			insert_char_at_cursor(code, '`');
+		if (input_key_pressed(KEY_GRAVE))
+			file_insert_char_at_cursor(code, '`');
 
 		}
 	
 	// Some numpad stuff
-	if (api_keyp(computer, KEY_NUMMULTIPLY))
-		insert_char_at_cursor(code, '*');
+	if (input_key_pressed(KEY_NUMMULTIPLY))
+		file_insert_char_at_cursor(code, '*');
 
-	if (api_keyp(computer, KEY_NUMPLUS))
-		insert_char_at_cursor(code, '+');
+	if (input_key_pressed(KEY_NUMPLUS))
+		file_insert_char_at_cursor(code, '+');
 
-	if (api_keyp(computer, KEY_TAB)) {
-		insert_char_at_cursor(code, '\t');
+	if (input_key_pressed(KEY_TAB)) {
+		file_insert_char_at_cursor(code, '\t');
 	}
 }
 
 void code_editor_update(computer_t *computer) {
-	file_t *code = &computer->file;
+	file_t *file = &computer->file;
 	
 	// Cursor movement
-	if (api_keyp(computer, KEY_LEFT)) {
-		if (api_key(computer, KEY_LCTRL) || api_key(computer, KEY_RCTRL)) {
-			for (int i = code->cursor_pos - 1; i >= 0; i--) {
-				if (code->lines[code->cursor_line].text[i] == ' ' || code->lines[code->cursor_line].text[i] == '.' || i == 0) {
-					code->cursor_pos = i;
-					break;
-				}
-			}
+	if (input_key_pressed(KEY_LEFT)) {
+		if (input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL)) {
+			file_move_cursor_to_prev_word(file);
 		} else {
-			if (code->cursor_pos > 0) {
-				code->cursor_pos--;
-			} else {
-				if (code->cursor_line > 0) {
-					code->cursor_line--;
-					code->cursor_pos = strlen(code->lines[code->cursor_line].text);
-				}
-			}
+			file_move_cursor_left(file);
 		}
 
 		unblink_cursor();
 	}
 
 	// TODO: move this to backend
-	if (api_keyp(computer, KEY_RIGHT)) {
-		if (api_key(computer, KEY_LCTRL) || api_key(computer, KEY_RCTRL)) {
-			int len = strlen(code->lines[code->cursor_line].text);
-			
-			for (int i = code->cursor_pos + 1; i < len + 1; i++) {
-				if (code->lines[code->cursor_line].text[i] == ' ' || code->lines[code->cursor_line].text[i] == '.' || i == len) {
-					code->cursor_pos = i;
-					break;
-				}
-			}
+	if (input_key_pressed(KEY_RIGHT)) {
+		if (input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL)) {
+			file_move_cursor_to_next_word(file);
 		} else {
-			int len = strlen(code->lines[code->cursor_line].text);
-			if (code->cursor_pos < len) {
-				code->cursor_pos++;
-			} else {
-				if (code->cursor_line < code->line_amount - 1) {
-					code->cursor_line++;
-					code->cursor_pos = 0;
-				}
-			}
+			file_move_cursor_right(file);
 		}
 
 		unblink_cursor();
 	}
 
-	if (api_keyp(computer, KEY_UP)) {
-		if (code->cursor_line > 0) {
-			code->cursor_line--;
-
-			int len = strlen(code->lines[code->cursor_line].text);
-			if (code->cursor_pos > len) {
-				code->cursor_pos = len;
-			}
-		}
-
+	if (input_key_pressed(KEY_UP)) {
+		file_move_cursor_up(file);
 		unblink_cursor();
 	}
 
-	if (api_keyp(computer, KEY_DOWN)) {
-		if (code->cursor_line < code->line_amount - 1) {
-			code->cursor_line++;
-		}
-
-		int len = strlen(code->lines[code->cursor_line].text);
-		if (code->cursor_pos > len) {
-			code->cursor_pos = len;
-		}
-
+	if (input_key_pressed(KEY_DOWN)) {
+		file_move_cursor_down(file);
 		unblink_cursor();
 	}
 
 	// TODO: page up, page down, home, end
 
 	// Handle space
-	if (api_keyp(computer, KEY_SPACE)) {
-		insert_char_at_cursor(code, ' ');
+	if (input_key_pressed(KEY_SPACE)) {
+		file_insert_char_at_cursor(file, ' ');
 	}
 
-	if (api_keyp(computer, KEY_BACKSPACE)) {
-		if (code->cursor_pos == 0) {
-			if (code->cursor_line > 0) {
-				code->cursor_pos = merge_line(code, code->cursor_line);
-				code->cursor_line--;
-			}
+	if (input_key_pressed(KEY_BACKSPACE)) {
+		if (file->cursor_pos > 0) {
+			file_remove_char_at(file, file->cursor_line, file->cursor_pos);
 		} else {
-			remove_char_at(code, code->cursor_line, code->cursor_pos);
+			if (file->cursor_line > 0) {
+				file->cursor_pos = file_merge_line(file, file->cursor_line);
+				file->cursor_line--;
+			}
 		}
 	}
 	
 	// Handle return
-	if (api_keyp(computer, KEY_RETURN) || api_keyp(computer, KEY_NUMENTER)) {
-		split_line_at(code, code->cursor_line, code->cursor_pos, get_indent_level(code->lines[code->cursor_line].text));
-		code->cursor_line++;
-		code->cursor_pos = 0;
+	if (input_key_pressed(KEY_RETURN) || input_key_pressed(KEY_NUMENTER)) {
+		file_split_line_at(file, file->cursor_line, file->cursor_pos, string_get_indent_level(file->lines[file->cursor_line].text));
+		file->cursor_line++;
+		file->cursor_pos = 0;
 	}
 
-	handle_char_input(computer, code);
+	handle_char_input(computer, file);
 
 	// Mouse
-	if (api_mouse_btnp(computer, MOUSE_BUTTON_LEFT)) {
-		move_cursor_to_mouse(computer->ram, &computer->file);
+	if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
+		move_cursor_to_mouse(computer->ram, file);
 		unblink_cursor();
 	}
 
 	// Scrolling
-	if (api_mouse_scrolled(computer, SCROLL_DIR_DOWN)) {
+	if (input_mouse_scrolled(SCROLL_DIR_DOWN)) {
 		scroll_amount += 3;
-		if (scroll_amount >= code->line_amount) {
-			scroll_amount = code->line_amount - 1;
+		if (scroll_amount >= file->line_amount) {
+			scroll_amount = file->line_amount - 1;
 		}
-	} else if (api_mouse_scrolled(computer, SCROLL_DIR_UP)) {
+	} else if (input_mouse_scrolled(SCROLL_DIR_UP)) {
 		scroll_amount -= 3;
 		if (scroll_amount < 0) {
 			scroll_amount = 0;
@@ -345,12 +291,12 @@ void code_editor_update(computer_t *computer) {
 
 void code_editor_draw(computer_t *computer) {
 	font_t *font = &computer->ram->fonts[font_index];
+	framebuffer_t *fb = &computer->ram->framebuffer;
 
 	gui_inset_frame(computer->ram, layout.code_rect);
-	// api_rectf(computer, code_rect.x, code_rect.y, code_rect.w, code_rect.h, 15);
-	api_rectf(computer, layout.code_rect.x, layout.code_rect.y, layout.code_rect.w, layout.code_rect.h, 15);
+	gfx_draw_filled_rect(fb, layout.code_rect, COLOR_WHITE);
 
-	// TODO: replace with temp alloc
+	// TODO: replace with temp alloc (maybe)
 	char line_number_buffer[8];
 
 	// TODO: fix font so I can refactor this hardcoded mess
@@ -361,18 +307,20 @@ void code_editor_draw(computer_t *computer) {
 
 		// Commented out: version with leading zeroes
 		// sprintf(line_number_buffer, "%04d", i + scroll_amount + 1);
-		
 		sprintf(line_number_buffer, "% 4d", i + scroll_amount + 1);
-		api_text(computer, font_index, line_number_buffer, layout.code_rect.x + 2, layout.code_rect.y + 2 + (i * (font->height + font->vertical_space)), 8);
-		api_text(computer, font_index, computer->file.lines[i + scroll_amount].text, layout.code_rect.x + 2 + 5 * (font->width + font->horizontal_space), layout.code_rect.y + 2 + (i * (font->height + font->vertical_space)), 0);
+
+		// Line number
+		gui_draw_text(computer->ram, font_index, line_number_buffer, POINT(layout.code_rect.x + 2, layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), 8);
+		
+		// Line itself
+		gui_draw_text(computer->ram, font_index, computer->file.lines[i + scroll_amount].text, POINT(layout.code_rect.x + 2 + 5 * (font->width + font->horizontal_space), layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), COLOR_BLACK);
 	}
 
 	// Draw cursor
-	// if (computer->ticks % 40 < 20) {
 	if (cursor_timer >= CURSOR_BLINK_SPEED / 2) {
 		int cursor_x = layout.code_rect.x + 2 + 5 * (font->width + font->horizontal_space) + get_real_cursor_pos(computer);
 		int cursor_y = layout.code_rect.y + 2 + computer->file.cursor_line * (font->height + font->vertical_space) - scroll_amount * (font->height + font->vertical_space);
-		api_line(computer, cursor_x, cursor_y, cursor_x, cursor_y + font->height, 3);
+		gfx_draw_line(fb, POINT(cursor_x, cursor_y), POINT(cursor_x, cursor_y + font->height), 3);
 	}
 	
 	// Update cursor blink

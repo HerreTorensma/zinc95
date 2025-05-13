@@ -1,5 +1,8 @@
 /*
 Code editor
+
+this header/source file should only be responsible for user input and drawing the editor,
+the rest should be handled in backend/text_file
 */
 
 #pragma once

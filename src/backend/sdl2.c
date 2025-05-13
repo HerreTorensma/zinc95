@@ -176,7 +176,6 @@ void sdl2_tick_start(computer_t *computer) {
 }
 
 void sdl2_render(computer_t *computer) {
-	// TODO: use value stored in memory
 	// SDL_SetRenderDrawColor(renderer, 0, 170, 170, 255);
 	SDL_SetRenderDrawColor(renderer, computer->ram->gui_colors.screen_background.r, computer->ram->gui_colors.screen_background.g, computer->ram->gui_colors.screen_background.b, 255);
 	// SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
