@@ -98,7 +98,7 @@ void lua_init(computer_t *computer) {
 
 	// if (luaL_dofile(_lua, "test.lua") != LUA_OK) {
 	// if (luaL_dostring(_lua, computer->code->buffer) != LUA_OK) {
-	if (luaL_dostring(_lua, computer->ram->code_buffer) != LUA_OK) {
+	if (luaL_dostring(_lua, computer->code_buffer) != LUA_OK) {
 		printf("Error loading Lua script: %s\n", lua_tostring(_lua, -1));
 		lua_pop(_lua, 1);
 	}

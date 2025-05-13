@@ -11,6 +11,8 @@ Memory layout, global constants
 #include <inttypes.h>
 #include <stdbool.h>
 
+#include "string.h"
+
 // TODO: rename some stuff so it's all consistent, dont mix AMOUNT, MAX, TOTAL etc.
 
 #define RAM_SIZE (32 * 1024 * 1024)
@@ -111,16 +113,24 @@ typedef struct font {
 
 typedef struct line {
 	char *text;
+	// string_t text;
 } line_t;
 
-typedef struct code {
+// Datastructure to represent a text file in the text editor
+// though they get compiled into one string
+// It's just for organizational purposes 
+typedef struct file {
 	line_t *lines;
 	int line_amount;
 	
 	int cursor_line;
 	int cursor_pos;
 	int target_pos;
-} code_t;
+} file_t;
+
+typedef struct file_collection {
+	file_t file[32];
+} file_collection_t;
 
 // Should be reset before game is played
 // typedef struct draw_state {
@@ -147,6 +157,17 @@ typedef struct gui_colors {
 	color_t toggle_button_unset_text;
 } gui_colors_t;
 
+typedef struct code_editor_config {
+	uint8_t font_index;
+
+	color_t background;
+	color_t keyword;
+	color_t string;
+	color_t api_function;
+	color_t operator;
+	color_t other;
+} code_editor_config_t;
+
 // 8MB RAM (excluding what the lua code takes up)
 typedef union ram {
 	struct {
@@ -156,11 +177,10 @@ typedef union ram {
 		sprite_t sprites[TOTAL_SPRITES];
 		font_t fonts[8];
 		map_t map;
-		// TODO: make code_buffer part of computer, not RAM
-		char code_buffer[1024 * 1024];
 		// draw_state_t draw_state;
 		gui_colors_t gui_colors;
 		uint64_t ticks;
+		code_editor_config_t code_editor_config;
 	};
 
 	uint8_t data[RAM_SIZE];
@@ -172,10 +192,15 @@ typedef enum computer_state {
 } computer_state_t;
 
 typedef struct computer {
-	rgb_color_t rgb_framebuffer[SCREEN_WIDTH * SCREEN_HEIGHT];
 	ram_t *ram;
+	rgb_color_t rgb_framebuffer[SCREEN_WIDTH * SCREEN_HEIGHT];
 	computer_state_t state;
-	code_t code;
+
+	// TODO: make this an array, so I can have multiple "virtual files"
+	// probably wrap it in a struct too
+	file_t file;
+
+	char code_buffer[1024 * 1024];
 } computer_t;
 
 void set_global_computer(computer_t *computer);

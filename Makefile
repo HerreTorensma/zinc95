@@ -25,7 +25,7 @@ endif
 
 # SRC = src/main.c src/backend/window.c src/backend/sdl2.c src/computer.c src/util/util.c src/api/api.c src/editor/sprite.c src/backend/input.c src/res.c src/editor/menu.c src/api/lua_api.c src/editor/code.c src/editor/map.c src/editor/sound.c src/editor/shared.c
 SRC = src/main.c src/computer.c src/res.c \
-src/backend/window.c src/backend/sdl2.c src/backend/input.c src/backend/math2d.c src/backend/gfx.c src/backend/gui.c \
+src/backend/window.c src/backend/sdl2.c src/backend/input.c src/backend/math2d.c src/backend/gfx.c src/backend/gui.c src/backend/text_file.c \
 src/editor/menu.c  src/editor/code.c src/editor/sprite.c src/editor/map.c \
 src/editor/sound.c src/editor/shared.c \
 src/api/api.c src/api/lua_api.c

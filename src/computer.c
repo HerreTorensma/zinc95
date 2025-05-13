@@ -210,7 +210,7 @@ void computer_init(computer_t *computer) {
 	computer->ram->palette = builtin_palette;
 }
 
-void code_free(code_t *code) {
+void code_free(file_t *code) {
 	for (int i = 0; i < code->line_amount; i++) {
 		free(code->lines[i].text);
 	}
@@ -219,7 +219,7 @@ void code_free(code_t *code) {
 
 void computer_quit(computer_t *computer) {
 	// Free the code first
-	code_free(&computer->code);
+	code_free(&computer->file);
 
 	free(computer->ram);
 }
@@ -249,30 +249,12 @@ void computer_quit(computer_t *computer) {
 // 	}
 // }
 
-// Convert the code_t datastructure back to a string for saving
-// the function assumes that passed buffer is large enough
-static size_t code_to_string(code_t *code, char *buffer) {
-	size_t offset = 0;
-
-	for (int i = 0; i < code->line_amount; i++) {
-		size_t line_len = strlen(code->lines[i].text);
-		
-		memcpy(buffer + offset, code->lines[i].text, (line_len + 1) * sizeof(char));
-		
-		if (i < code->line_amount - 1) {
-			buffer[offset + line_len] = '\n';
-		} else {
-			buffer[offset + line_len] = '\0';
-		}
-		offset += line_len + 1;
-	}
-
-	return offset;
-}
+// Forward declaration so I don't have cyclic dependencies
+size_t code_to_string(file_t *code, char *buffer);
 
 void play_game(computer_t *computer) {
 	// Convert code to string
-	code_to_string(&computer->code, computer->ram->code_buffer);
+	code_to_string(&computer->file, computer->code_buffer);
 
 	// Init the lua stuff
 	lua_init(computer);
@@ -339,7 +321,7 @@ void game_save(computer_t *computer, const char filename[]) {
 	size_t offset = 0;
 
 	// Lua code
-	offset += code_to_string(&computer->code, buffer + offset);
+	offset += code_to_string(&computer->file, buffer + offset);
 	// Replace \0 with \n so the string doesn't terminate
 	buffer[offset - 1] = '\n';
 
@@ -487,10 +469,10 @@ void game_load(computer_t *computer, const char filename[]) {
 				// Read line into buffer
 				size_t len = strlen(line);
 				// TODO: Slightly unsafe since I'm still relying on null-termination, might rewrite
-				strncpy(computer->ram->code_buffer + code_offset, line, len);
+				strncpy(computer->code_buffer + code_offset, line, len);
 				code_offset += len;
 
-				computer->ram->code_buffer[code_offset] = '\0';
+				computer->code_buffer[code_offset] = '\0';
 
 				break;
 			}
