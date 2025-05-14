@@ -6,7 +6,7 @@
 #include "gfx.h"
 
 // TODO: for each font set a color_key and divider color so you can have funky fonts idk
-void gui_draw_text(ram_t *ram, int font_index, char text[], point_t pos, int color) {
+void gui_draw_text(ram_t *ram, int font_index, const char text[], point_t pos, int color) {
 	font_t *font = &ram->fonts[font_index];
 
 	int new_x = pos.x;
@@ -321,4 +321,6 @@ rect_t gui_rect_to_outset_frame_rect(rect_t rect) {
 	rect.y -= GUI_BORDER_WIDTH;
 	rect.w += GUI_BORDER_WIDTH * 2;
 	rect.h += GUI_BORDER_WIDTH * 2;
+
+	return rect;
 }

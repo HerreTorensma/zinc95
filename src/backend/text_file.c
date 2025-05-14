@@ -40,7 +40,7 @@ size_t string_get_lines_amount(const char *text) {
 	return amount;
 }
 
-int string_get_indent_level(char text[]) {
+int string_get_indent_level(const char text[]) {
 	int indent = 0;
 
 	for (size_t i = 0; i < strlen(text); i++) {
@@ -130,7 +130,7 @@ size_t file_get_string_len(file_t *file) {
 size_t file_to_string(file_t *file, char *buffer) {
 	size_t offset = 0;
 
-	for (int i = 0; i < file->line_amount; i++) {
+	for (size_t i = 0; i < file->line_amount; i++) {
 		size_t line_len = strlen(file->lines[i].text);
 		
 		memcpy(buffer + offset, file->lines[i].text, (line_len + 1) * sizeof(char));
@@ -221,7 +221,7 @@ void file_remove_char_at(file_t *file, int line, int pos) {
 }
 
 void file_free(file_t *file) {
-	for (int i = 0; i < file->line_amount; i++) {
+	for (size_t i = 0; i < file->line_amount; i++) {
 		free(file->lines[i].text);
 	}
 	free(file->lines);
@@ -281,7 +281,7 @@ void file_move_cursor_right(file_t *file) {
 void file_move_cursor_to_next_word(file_t *file) {
 	int len = strlen(file->lines[file->cursor_line].text);
 			
-	for (int i = file->cursor_pos + 1; i < len + 1; i++) {
+	for (size_t i = file->cursor_pos + 1; i < len + 1; i++) {
 		if (file->lines[file->cursor_line].text[i] == ' ' || file->lines[file->cursor_line].text[i] == '.' || i == len) {
 			file->cursor_pos = i;
 			break;
@@ -290,7 +290,7 @@ void file_move_cursor_to_next_word(file_t *file) {
 }
 
 void file_move_cursor_to_prev_word(file_t *file) {
-	for (int i = file->cursor_pos - 1; i >= 0; i--) {
+	for (size_t i = file->cursor_pos - 1; i >= 0; i--) {
 		if (file->lines[file->cursor_line].text[i] == ' ' || file->lines[file->cursor_line].text[i] == '.' || i == 0) {
 			file->cursor_pos = i;
 			break;

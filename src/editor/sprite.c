@@ -33,49 +33,49 @@ typedef struct layout {
 	point_t spritesheet_pages_start_pos;
 } layout_t;
 
-static layout_t layout = {0};
+static const layout_t _layout = {
+	.color_picker_rect = {{4, 388, 192, 88}},
+	.sprite_editor_rect = {{192, 56, 256, 256}},
 
-static uint8_t selected_color = 0;
+	.selected_color_rect = {{4, 368, 16, 16}},
+	.selected_color_label_pos = {24, 371},
+
+	.selected_sprite_rect = {{4, 348, 16, 16}},
+	.selected_sprite_label_pos = {24, 351},
+
+	// .color_key_button_rect = RECT(622, 332, 12, 12),
+	.color_key_button_pos = {588, 332},
+	.color_key_rect = {{590, 334, 8, 8}},
+
+	.sprite_flags_start_pos = {200, 332},
+
+	.spritesheet_rect = {{200, 348, 384, 128}},
+	.spritesheet_pages_start_pos = {588, 348},
+};
+
+static uint8_t _selected_color = 0;
 
 void sprite_editor_init(computer_t *computer) {
-	layout = (layout_t) {
-		.color_picker_rect = RECT(4, 388, 192, 88),
-		.sprite_editor_rect = RECT(192, 56, 256, 256),
 
-		.selected_color_rect = RECT(4, 368, 16, 16),
-		.selected_color_label_pos = POINT(24, 371),
-
-		.selected_sprite_rect = RECT(4, 348, 16, 16),
-		.selected_sprite_label_pos = POINT(24, 351),
-
-		// .color_key_button_rect = RECT(622, 332, 12, 12),
-		.color_key_button_pos = POINT(588, 332),
-		.color_key_rect = RECT(590, 334, 8, 8),
-
-		.sprite_flags_start_pos = POINT(200, 332),
-
-		.spritesheet_rect = RECT(200, 348, 384, 128),
-		.spritesheet_pages_start_pos = POINT(588, 348),
-	};
 }
 
 static point_t color_index_to_pos(uint8_t color) {
 	point_t pos = {0};
 
 	if (color < 32) {
-		pos.x = layout.color_picker_rect.x + (color % 16) * COLOR_SQUARE_SIZE;
-		pos.y = layout.color_picker_rect.y + (color / 16) * COLOR_SQUARE_SIZE;
+		pos.x = _layout.color_picker_rect.x + (color % 16) * COLOR_SQUARE_SIZE;
+		pos.y = _layout.color_picker_rect.y + (color / 16) * COLOR_SQUARE_SIZE;
 	} else {
-		pos.x = layout.color_picker_rect.x + ((color - 32) % 24) * COLOR_SQUARE_SIZE;
-		pos.y = layout.color_picker_rect.y + 2 * COLOR_SQUARE_SIZE + ((color - 32) / 24) * COLOR_SQUARE_SIZE;
+		pos.x = _layout.color_picker_rect.x + ((color - 32) % 24) * COLOR_SQUARE_SIZE;
+		pos.y = _layout.color_picker_rect.y + 2 * COLOR_SQUARE_SIZE + ((color - 32) / 24) * COLOR_SQUARE_SIZE;
 	}
 
 	return pos;
 }
 
 static uint8_t pos_to_color_index(point_t pos) {
-	int cell_x = (pos.x - layout.color_picker_rect.x) / COLOR_SQUARE_SIZE;
-	int cell_y = (pos.y - layout.color_picker_rect.y) / COLOR_SQUARE_SIZE;
+	int cell_x = (pos.x - _layout.color_picker_rect.x) / COLOR_SQUARE_SIZE;
+	int cell_y = (pos.y - _layout.color_picker_rect.y) / COLOR_SQUARE_SIZE;
 
 	if ((cell_y == 0 || cell_y == 1) && cell_x >= 16) {
 		return 0;
@@ -93,25 +93,25 @@ static uint8_t pos_to_color_index(point_t pos) {
 void sprite_editor_update(computer_t *computer) {
 	point_t mouse_pos = input_get_mouse_pos();
 	
-	sprite_selector_update(computer, SNAP_MODE_ZOOM, layout.spritesheet_rect);
+	sprite_selector_update(computer, SNAP_MODE_ZOOM, _layout.spritesheet_rect);
 
-	if (point_in_rect(mouse_pos, layout.color_picker_rect)) {
+	if (point_in_rect(mouse_pos, _layout.color_picker_rect)) {
 		if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
-			selected_color = pos_to_color_index(mouse_pos);
+			_selected_color = pos_to_color_index(mouse_pos);
 		}
 	}
 
-	if (point_in_rect(mouse_pos, layout.sprite_editor_rect)) {
-		int cell_x = (mouse_pos.x - layout.sprite_editor_rect.x) / (layout.sprite_editor_rect.w / currently_editing_rect.w);
-		int cell_y = (mouse_pos.y - layout.sprite_editor_rect.y) / (layout.sprite_editor_rect.h / currently_editing_rect.h);
+	if (point_in_rect(mouse_pos, _layout.sprite_editor_rect)) {
+		int cell_x = (mouse_pos.x - _layout.sprite_editor_rect.x) / (_layout.sprite_editor_rect.w / currently_editing_rect.w);
+		int cell_y = (mouse_pos.y - _layout.sprite_editor_rect.y) / (_layout.sprite_editor_rect.h / currently_editing_rect.h);
 		
 		if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
 			if (input_key_held(KEY_LALT) || input_key_held(KEY_RALT)) {
 				// TODO: make a function for this
-				selected_color = computer->ram->spritesheet.data[(visible_rect.y + currently_editing_rect.y + cell_y) * SPRITESHEET_WIDTH + (visible_rect.x + currently_editing_rect.x + cell_x)];
+				_selected_color = computer->ram->spritesheet.data[(visible_rect.y + currently_editing_rect.y + cell_y) * SPRITESHEET_WIDTH + (visible_rect.x + currently_editing_rect.x + cell_x)];
 			}
 
-			computer->ram->spritesheet.data[(visible_rect.y + currently_editing_rect.y + cell_y) * SPRITESHEET_WIDTH + (visible_rect.x + currently_editing_rect.x + cell_x)] = selected_color;
+			computer->ram->spritesheet.data[(visible_rect.y + currently_editing_rect.y + cell_y) * SPRITESHEET_WIDTH + (visible_rect.x + currently_editing_rect.x + cell_x)] = _selected_color;
 
 		}
 
@@ -139,11 +139,11 @@ void sprite_editor_draw(computer_t *computer) {
 	framebuffer_t *fb = &computer->ram->framebuffer;
 
 	// Spritesheet / sprite selector
-	sprite_selector_draw(computer, layout.spritesheet_rect, layout.spritesheet_pages_start_pos);
+	sprite_selector_draw(computer, _layout.spritesheet_rect, _layout.spritesheet_pages_start_pos);
 
 	// Color picker frame
-	gui_inset_frame(computer->ram, layout.color_picker_rect);
-	gfx_draw_filled_rect(fb, layout.color_picker_rect, 0);
+	gui_inset_frame(computer->ram, _layout.color_picker_rect);
+	gfx_draw_filled_rect(fb, _layout.color_picker_rect, 0);
 
 	// Draw colors
 	for (int i = 0; i < PALETTE_SIZE - 8; i++) {
@@ -152,11 +152,11 @@ void sprite_editor_draw(computer_t *computer) {
 	}
 
 	// Draw selected color square
-	point_t selected_color_cell_pos = color_index_to_pos(selected_color);
+	point_t selected_color_cell_pos = color_index_to_pos(_selected_color);
 	gfx_draw_rect(fb, RECT(selected_color_cell_pos.x - 1, selected_color_cell_pos.y - 1, COLOR_SQUARE_SIZE + 2, COLOR_SQUARE_SIZE + 2), 15);
 
 	// Sprite editor
-	gui_inset_frame(computer->ram, layout.sprite_editor_rect);
+	gui_inset_frame(computer->ram, _layout.sprite_editor_rect);
 	rect_t sprite_editing_rect = {
 		.x = visible_rect.x + currently_editing_rect.x,
 		.y = visible_rect.y + currently_editing_rect.y,
@@ -164,28 +164,28 @@ void sprite_editor_draw(computer_t *computer) {
 		.h = currently_editing_rect.h,
 	};
 
-	int scale = layout.sprite_editor_rect.w / currently_editing_rect.w;
+	int scale = _layout.sprite_editor_rect.w / currently_editing_rect.w;
 	rect_t real_editor_rect = {
-		.x = layout.sprite_editor_rect.x,
-		.y = layout.sprite_editor_rect.y,
+		.x = _layout.sprite_editor_rect.x,
+		.y = _layout.sprite_editor_rect.y,
 		.w = currently_editing_rect.w * scale,
 		.h = currently_editing_rect.h * scale,
 	};
-	gfx_draw_filled_rect(fb, layout.sprite_editor_rect, 151);
+	gfx_draw_filled_rect(fb, _layout.sprite_editor_rect, 151);
 	gfx_draw_spritesheet_pro(computer->ram, sprite_editing_rect, real_editor_rect, COLOR_NONE);
 
 	// Selected color
 	char buffer[32];
-	gui_inset_frame(computer->ram, layout.selected_color_rect);
-	gfx_draw_filled_rect(fb, layout.selected_color_rect, selected_color);
-	sprintf(buffer, "#%03d\n", selected_color);
-	gui_draw_text(computer->ram, 0, buffer, layout.selected_color_label_pos, computer->ram->gui_colors.text);
+	gui_inset_frame(computer->ram, _layout.selected_color_rect);
+	gfx_draw_filled_rect(fb, _layout.selected_color_rect, _selected_color);
+	sprintf(buffer, "#%03d\n", _selected_color);
+	gui_draw_text(computer->ram, 0, buffer, _layout.selected_color_label_pos, computer->ram->gui_colors.text);
 	
 	// Selected sprite preview
-	gui_inset_frame(computer->ram, layout.selected_sprite_rect);
-	gfx_draw_spritesheet_pro(computer->ram, currently_editing_rect, layout.selected_sprite_rect, COLOR_NONE);
+	gui_inset_frame(computer->ram, _layout.selected_sprite_rect);
+	gfx_draw_spritesheet_pro(computer->ram, currently_editing_rect, _layout.selected_sprite_rect, COLOR_NONE);
 	sprintf(buffer, "#%04d\n", get_selected_sprite_index());
-	gui_draw_text(computer->ram, 0, buffer, layout.selected_sprite_label_pos, computer->ram->gui_colors.text);
+	gui_draw_text(computer->ram, 0, buffer, _layout.selected_sprite_label_pos, computer->ram->gui_colors.text);
 
 	// Sprite flags and color key
 	sprite_t *selected_sprite = &computer->ram->sprites[get_selected_sprite_index()];
@@ -193,7 +193,7 @@ void sprite_editor_draw(computer_t *computer) {
 		sprintf(buffer, "%c", i < 10 ? '0' + i : 'a' + i - 10);
 		
 		bool set = selected_sprite->flags & (1U << i);
-		set = gui_toggle_button(computer->ram, buffer, RECT(layout.sprite_flags_start_pos.x + i * 12, layout.sprite_flags_start_pos.y, 12, 12), set);
+		set = gui_toggle_button(computer->ram, buffer, RECT(_layout.sprite_flags_start_pos.x + i * 12, _layout.sprite_flags_start_pos.y, 12, 12), set);
 
 		// TODO: update for every selected sprite, not just top left
 		if (set) {
@@ -204,10 +204,10 @@ void sprite_editor_draw(computer_t *computer) {
 	}
 
 	// Color key
-	if (gui_button(computer->ram, "", RECT(layout.color_key_button_pos.x, layout.color_key_button_pos.y, 12, 12))) {
-		selected_sprite->color_key = selected_color;
+	if (gui_button(computer->ram, "", RECT(_layout.color_key_button_pos.x, _layout.color_key_button_pos.y, 12, 12))) {
+		selected_sprite->color_key = _selected_color;
 	}
 
-	gfx_draw_filled_rect(fb, layout.color_key_rect, selected_sprite->color_key);
+	gfx_draw_filled_rect(fb, _layout.color_key_rect, selected_sprite->color_key);
 	// gui_draw_text(computer->ram, 2, "Key:", POINT(spritesheet_rect.x + spritesheet_rect.w + 4 + 2, spritesheet_rect.y - 12 - 4 + 2), computer->ram->gui_colors.text);
 }

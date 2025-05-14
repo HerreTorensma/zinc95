@@ -46,18 +46,12 @@ typedef struct file {
 size_t string_get_lines_amount(const char *text);
 
 // Get the indent level of the given string
-int string_get_indent_level(char text[]);
+int string_get_indent_level(const char text[]);
 
 // Initializes the given file with the given buffer
 // Takes care of all allocation, so you can use this function at any time
 // without worrying about memory leaks (at least that is the idea)
 void file_load(file_t *file, const char *buffer);
-
-// Add a new line to the data structure, used for loading a string before editing
-// void file_add_line(file_t *file, const char *text, size_t len);
-
-// Load a string into the file_t datastructure
-// void string_to_file(file_t *file, const char *buffer);
 
 // Gets the size of the string the data structure represents
 // Adds +1 for the null terminator

@@ -11,29 +11,31 @@
 #include "menu.h"
 
 // TODO: These 3 should be configurable thus stored in RAM
-#define CURSOR_BLINK_SPEED 30
-static const int font_index = 2;
-static int scroll_amount = 0;
+static const int _cursor_blink_speed = 30;
+static const int _font_index = 2;
+static const int _scroll_speed = 3;
 
-static int lines_on_screen = 0;
-
-static int cursor_timer = CURSOR_BLINK_SPEED;
+static int _scroll_amount = 0;
+static int _lines_on_screen = 0;
+static int _cursor_timer = _cursor_blink_speed;
 
 typedef struct layout {
 	rect_t code_rect;
 } layout_t;
 
-static layout_t layout = {0};
+static const layout_t _layout = {
+	.code_rect = {{68, 24, 568, 452}},
+};
 
 static void move_cursor_to_mouse(ram_t *ram, file_t *code) {
-	font_t *font = &ram->fonts[font_index];
+	font_t *font = &ram->fonts[_font_index];
 
 	point_t mouse_pos = input_get_mouse_pos();
 
-	int corrected_x = mouse_pos.x - (layout.code_rect.x + 5 * (font->width + font->horizontal_space));
-	int corrected_y = mouse_pos.y - layout.code_rect.y + (scroll_amount * (font->height + font->vertical_space));
+	int corrected_x = mouse_pos.x - (_layout.code_rect.x + 5 * (font->width + font->horizontal_space));
+	int corrected_y = mouse_pos.y - _layout.code_rect.y + (_scroll_amount * (font->height + font->vertical_space));
 
-	int line = corrected_y / (font->height + font->vertical_space);
+	size_t line = corrected_y / (font->height + font->vertical_space);
 	if (line < 0) {
 		return;
 	}
@@ -55,19 +57,16 @@ static void move_cursor_to_mouse(ram_t *ram, file_t *code) {
 }
 
 static void unblink_cursor() {
-	cursor_timer = CURSOR_BLINK_SPEED;
+	_cursor_timer = _cursor_blink_speed;
 }
 
 static int get_real_cursor_pos(computer_t *computer) {
-	return gui_get_text_width(&computer->ram->fonts[font_index], computer->file.lines[computer->file.cursor_line].text, computer->file.cursor_pos);
+	return gui_get_text_width(&computer->ram->fonts[_font_index], computer->file.lines[computer->file.cursor_line].text, computer->file.cursor_pos);
 }
 
 void code_editor_init(computer_t *computer) {
-	layout = (layout_t){
-		.code_rect = RECT(68, 24, 568, 452),
-	};
 	// TODO: Changed workspace_rect.h to layout.code_rect.h without knowing the implications, might wanna check that later
-	lines_on_screen = layout.code_rect.h / (computer->ram->fonts[font_index].height + computer->ram->fonts[font_index].horizontal_space);
+	_lines_on_screen = _layout.code_rect.h / (computer->ram->fonts[_font_index].height + computer->ram->fonts[_font_index].horizontal_space);
 
 	file_load(&computer->file, computer->code_buffer);
 }
@@ -277,55 +276,55 @@ void code_editor_update(computer_t *computer) {
 
 	// Scrolling
 	if (input_mouse_scrolled(SCROLL_DIR_DOWN)) {
-		scroll_amount += 3;
-		if (scroll_amount >= file->line_amount) {
-			scroll_amount = file->line_amount - 1;
+		_scroll_amount += _scroll_speed;
+		if (_scroll_amount >= file->line_amount) {
+			_scroll_amount = file->line_amount - 1;
 		}
 	} else if (input_mouse_scrolled(SCROLL_DIR_UP)) {
-		scroll_amount -= 3;
-		if (scroll_amount < 0) {
-			scroll_amount = 0;
+		_scroll_amount -= _scroll_speed;
+		if (_scroll_amount < 0) {
+			_scroll_amount = 0;
 		}
 	}
 }
 
 void code_editor_draw(computer_t *computer) {
-	font_t *font = &computer->ram->fonts[font_index];
+	font_t *font = &computer->ram->fonts[_font_index];
 	framebuffer_t *fb = &computer->ram->framebuffer;
 
-	gui_inset_frame(computer->ram, layout.code_rect);
-	gfx_draw_filled_rect(fb, layout.code_rect, COLOR_WHITE);
+	gui_inset_frame(computer->ram, _layout.code_rect);
+	gfx_draw_filled_rect(fb, _layout.code_rect, COLOR_WHITE);
 
 	// TODO: replace with temp alloc (maybe)
 	char line_number_buffer[8];
 
 	// TODO: fix font so I can refactor this hardcoded mess
-	for (int i = 0; i < lines_on_screen; i++) {
-		if (i + scroll_amount >= computer->file.line_amount) {
+	for (int i = 0; i < _lines_on_screen; i++) {
+		if (i + _scroll_amount >= computer->file.line_amount) {
 			break;
 		}
 
 		// Commented out: version with leading zeroes
-		// sprintf(line_number_buffer, "%04d", i + scroll_amount + 1);
-		sprintf(line_number_buffer, "% 4d", i + scroll_amount + 1);
+		// sprintf(line_number_buffer, "%04d", i + _scroll_amount + 1);
+		sprintf(line_number_buffer, "% 4d", i + _scroll_amount + 1);
 
 		// Line number
-		gui_draw_text(computer->ram, font_index, line_number_buffer, POINT(layout.code_rect.x + 2, layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), 8);
+		gui_draw_text(computer->ram, _font_index, line_number_buffer, POINT(_layout.code_rect.x + 2, _layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), 8);
 		
 		// Line itself
-		gui_draw_text(computer->ram, font_index, computer->file.lines[i + scroll_amount].text, POINT(layout.code_rect.x + 2 + 5 * (font->width + font->horizontal_space), layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), COLOR_BLACK);
+		gui_draw_text(computer->ram, _font_index, computer->file.lines[i + _scroll_amount].text, POINT(_layout.code_rect.x + 2 + 5 * (font->width + font->horizontal_space), _layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), COLOR_BLACK);
 	}
 
 	// Draw cursor
-	if (cursor_timer >= CURSOR_BLINK_SPEED / 2) {
-		int cursor_x = layout.code_rect.x + 2 + 5 * (font->width + font->horizontal_space) + get_real_cursor_pos(computer);
-		int cursor_y = layout.code_rect.y + 2 + computer->file.cursor_line * (font->height + font->vertical_space) - scroll_amount * (font->height + font->vertical_space);
+	if (_cursor_timer >= _cursor_blink_speed / 2) {
+		int cursor_x = _layout.code_rect.x + 2 + 5 * (font->width + font->horizontal_space) + get_real_cursor_pos(computer);
+		int cursor_y = _layout.code_rect.y + 2 + computer->file.cursor_line * (font->height + font->vertical_space) - _scroll_amount * (font->height + font->vertical_space);
 		gfx_draw_line(fb, POINT(cursor_x, cursor_y), POINT(cursor_x, cursor_y + font->height), 3);
 	}
 	
 	// Update cursor blink
-	cursor_timer--;
-	if (cursor_timer == 0) {
+	_cursor_timer--;
+	if (_cursor_timer == 0) {
 		unblink_cursor();
 	}
 }

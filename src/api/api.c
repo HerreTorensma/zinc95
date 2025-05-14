@@ -9,7 +9,7 @@
 #include "../backend/gfx.h"
 #include "../backend/gui.h"
 
-extern const api_meta_t api_metas[API_FUNC_COUNT] = {
+const api_meta_t api_metas[API_FUNC_COUNT] = {
 	[API_FUNC_CLS] = {
 		.name = "cls",
 		.signature = "cls(color=0)",
@@ -65,8 +65,7 @@ void api_meta_print() {
 
 
 
-// TODO: remove api calls anywhere else in the code
-// idk I want it to exist in a bubble I guess
+// TODO: all api functions should have a ram_t *ram argument instead of computer, since only the ram is meant to be modified by the api anyway
 
 
 

@@ -13,7 +13,7 @@ GUI-related stuff like text drawing, buttons etc.
 #define GUI_SMALL_BUTTON_SIZE 12
 #define GUI_BORDER_WIDTH 2
 
-void gui_draw_text(ram_t *ram, int font_index, char text[], point_t pos, int color);
+void gui_draw_text(ram_t *ram, int font_index, const char text[], point_t pos, int color);
 
 // Draw inside the specified area
 void gui_outset_frame(ram_t *ram, rect_t rect);

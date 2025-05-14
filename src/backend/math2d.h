@@ -17,15 +17,15 @@ typedef struct point {
 
 typedef union rect {
 	struct {
-		point_t pos;
-		point_t size;
-	};
-
-	struct {
 		int x;
 		int y;
 		int w;
 		int h;
+	};
+
+	struct {
+		point_t pos;
+		point_t size;
 	};
 } rect_t;
 
