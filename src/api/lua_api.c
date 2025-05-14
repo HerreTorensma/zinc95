@@ -9,26 +9,28 @@
 static lua_State *_lua = NULL;
 
 // The following static functions are the lua api handlers of the native api functions
-
-static void lua_cls(lua_State *lua) {
+// The return value is the number of return values that are pushed to the lua stack
+static int lua_cls(lua_State *lua) {
 	if (lua_gettop(lua) == 1) {
 		if (lua_isnumber(lua, 1)) {
 			computer_t *computer = get_global_computer();
 			int color = (int)lua_tonumber(lua, 1) % PALETTE_SIZE;
 
-			api_cls(computer, color);
+			api_cls(computer->ram, color);
 		} else {
 			luaL_error(lua, "cls() argument should be an integer");
 		}
 	} else if (lua_gettop(lua) == 0) {
 		computer_t *computer = get_global_computer();
-		api_cls(computer, 0);
+		api_cls(computer->ram, 0);
 	} else {
 		luaL_error(lua, "cls() expects exactly 0 or 1 arguments");
 	}
+
+	return 0;
 }
 
-static void lua_spr(lua_State *lua) {
+static int lua_spr(lua_State *lua) {
 	if (lua_gettop(lua) == 5) {
 		if (lua_isnumber(lua, 1) && lua_isnumber(lua, 2) && lua_isnumber(lua, 3) && lua_isnumber(lua, 4) && lua_isnumber(lua, 5)) {
 			computer_t *computer = get_global_computer();
@@ -40,12 +42,14 @@ static void lua_spr(lua_State *lua) {
 
 			// TODO: add support for scale
 			// api_spr(computer, sprite_index, x, y, width, height, 1);
-			api_spr(computer, sprite_index, x, y, width, height);
+			api_spr(computer->ram, sprite_index, x, y, width, height);
 		}
 	}
+
+	return 0;
 }
 
-static void lua_circ(lua_State *lua) {
+static int lua_circ(lua_State *lua) {
 	if (lua_gettop(lua) == 4) {
 		if (lua_isnumber(lua, 1) && lua_isnumber(lua, 2) && lua_isnumber(lua, 3) && lua_isnumber(lua, 4)) {
 			computer_t *computer = get_global_computer();
@@ -54,12 +58,14 @@ static void lua_circ(lua_State *lua) {
 			int radius = (int)lua_tonumber(lua, 3);
 			int color = (int)lua_tonumber(lua, 4);
 
-			api_circ(computer, x, y, radius, color);
+			api_circ(computer->ram, x, y, radius, color);
 		}
 	}
+
+	return 0;
 }
 
-static void lua_map(lua_State *lua) {
+static int lua_map(lua_State *lua) {
 	if (lua_gettop(lua) == 7) {
 		if (lua_isnumber(lua, 1) && lua_isnumber(lua, 2) && lua_isnumber(lua, 3) && lua_isnumber(lua, 4) && lua_isnumber(lua, 5) && lua_isnumber(lua, 6) && lua_isnumber(lua, 7)) {
 			computer_t *computer = get_global_computer();
@@ -75,14 +81,18 @@ static void lua_map(lua_State *lua) {
 			int cell_w = (int)lua_tonumber(lua, 6);
 			int cell_h = (int)lua_tonumber(lua, 7);
 
-			api_map(computer, layer, x, y, cell_x, cell_y, cell_w, cell_h);
+			api_map(computer->ram, layer, x, y, cell_x, cell_y, cell_w, cell_h);
 		}
 	}
+
+	return 0;
 }
 
 static int lua_ticks(lua_State *lua) {
-	int ticks = api_ticks(get_global_computer());
+	computer_t *computer = get_global_computer();
+	int ticks = api_ticks(computer->ram);
 	lua_pushinteger(lua, ticks);
+	
 	return 1;
 }
 

@@ -2,7 +2,7 @@
 
 CC = gcc
 # CFLAGS = -g -Wall -Wextra -Wsign-conversion -Wpedantic -std=c11 -Wno-unused-parameter -Werror=incompatible-pointer-types
-CFLAGS = -g -Wall -Wextra -Wsign-conversion -Wpedantic -std=c11 -Wno-unused-parameter
+CFLAGS = -g -Wall -Wextra -Wsign-conversion -Wpedantic -std=c11 -Wno-unused-parameter -Werror=incompatible-pointer-types
 
 ifeq ($(OS), Windows_NT)
 	CFLAGS += -Ilib/SDL2_win/include -Ilib/lua-5.4.7/src

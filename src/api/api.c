@@ -69,76 +69,76 @@ void api_meta_print() {
 
 
 
-void api_cls(computer_t *computer, int color) {
-	gfx_clear(&computer->ram->framebuffer, color);
+void api_cls(ram_t *ram, int color) {
+	gfx_clear(&ram->framebuffer, color);
 }
 
-void api_rect(computer_t *computer, int x, int y, int w, int h, int color) {
-	gfx_draw_rect(&computer->ram->framebuffer, RECT(x, y, w, h), color);
+void api_rect(ram_t *ram, int x, int y, int w, int h, int color) {
+	gfx_draw_rect(&ram->framebuffer, RECT(x, y, w, h), color);
 }
 
-void api_rectf(computer_t *computer, int x, int y, int w, int h, int color) {
-	gfx_draw_filled_rect(&computer->ram->framebuffer, RECT(x, y, w, h), color);
+void api_rectf(ram_t *ram, int x, int y, int w, int h, int color) {
+	gfx_draw_filled_rect(&ram->framebuffer, RECT(x, y, w, h), color);
 }
 
-void api_line(computer_t *computer, int x1, int y1, int x2, int y2, int color) {
-	gfx_draw_line(&computer->ram->framebuffer, POINT(x1, y1), POINT(x2, y2), color);
+void api_line(ram_t *ram, int x1, int y1, int x2, int y2, int color) {
+	gfx_draw_line(&ram->framebuffer, POINT(x1, y1), POINT(x2, y2), color);
 }
 
-void api_circ(computer_t *computer, int x, int y, int radius, int color) {
-	gfx_draw_circle(&computer->ram->framebuffer, POINT(x, y), radius, color);
+void api_circ(ram_t *ram, int x, int y, int radius, int color) {
+	gfx_draw_circle(&ram->framebuffer, POINT(x, y), radius, color);
 }
 
-void api_spr(computer_t *computer, int idx, int x, int y, int width, int height) {
-	gfx_draw_sprites(computer->ram, idx, POINT(x, y), width, height);
+void api_spr(ram_t *ram, int idx, int x, int y, int width, int height) {
+	gfx_draw_sprites(ram, idx, POINT(x, y), width, height);
 }
 
-void api_sspr(computer_t *computer, int dst_x, int dst_y, int dst_w, int dst_h, int src_x, int src_y, int src_w, int src_h, int color_key){
-	gfx_draw_spritesheet_pro(computer->ram, RECT(src_x, src_y, src_w, src_h), RECT(dst_x, dst_y, dst_w, dst_h), color_key);
+void api_sspr(ram_t *ram, int dst_x, int dst_y, int dst_w, int dst_h, int src_x, int src_y, int src_w, int src_h, int color_key){
+	gfx_draw_spritesheet_pro(ram, RECT(src_x, src_y, src_w, src_h), RECT(dst_x, dst_y, dst_w, dst_h), color_key);
 }
 
-void api_map(computer_t *computer, int layer, int x, int y, int cell_x, int cell_y, int cell_w, int cell_h) {
-	gfx_draw_map(computer->ram, layer, POINT(x, y), RECT(cell_x, cell_y, cell_w, cell_h));
+void api_map(ram_t *ram, int layer, int x, int y, int cell_x, int cell_y, int cell_w, int cell_h) {
+	gfx_draw_map(ram, layer, POINT(x, y), RECT(cell_x, cell_y, cell_w, cell_h));
 }
 
 
 
-bool api_key(computer_t *computer, int key) {
+bool api_key(ram_t *ram, int key) {
 	return input_key_held(key);
 }
 
-bool api_keyp(computer_t *computer, int key) {
+bool api_keyp(ram_t *ram, int key) {
 	return input_key_pressed(key);
 }
 
-bool api_keyr(computer_t *computer, int key) {
+bool api_keyr(ram_t *ram, int key) {
 	return input_key_released(key);
 }
 
-bool api_mouse_btn(computer_t *computer, int button) {
+bool api_mouse_btn(ram_t *ram, int button) {
 	return input_mouse_button_held(button);
 }
 
-bool api_mouse_btnp(computer_t *computer, int button) {
+bool api_mouse_btnp(ram_t *ram, int button) {
 	return input_mouse_button_pressed(button);
 }
 
-bool api_mouse_btnr(computer_t *computer, int button) {
+bool api_mouse_btnr(ram_t *ram, int button) {
 	return input_mouse_button_released(button);
 }
 
-bool api_mouse_scrolled(computer_t *computer, int direction) {
+bool api_mouse_scrolled(ram_t *ram, int direction) {
 	return input_mouse_scrolled(direction);
 }
 
 
 
-void api_text(computer_t *computer, int font_index, char text[], int x, int y, int color) {
-	gui_draw_text(computer->ram, font_index, text, POINT(x, y), color);
+void api_text(ram_t *ram, int font_index, char text[], int x, int y, int color) {
+	gui_draw_text(ram, font_index, text, POINT(x, y), color);
 }
 
 
 
-int api_ticks(computer_t *computer) {
-	return computer->ram->ticks;
+int api_ticks(ram_t *ram) {
+	return ram->ticks;
 }
