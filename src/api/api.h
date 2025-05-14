@@ -9,6 +9,44 @@ API
 
 #include "../computer.h"
 
+// Here I keep info about each API function in one location,
+// so I can use the name for registering lua functions and also syntax highlighting,
+// And I can use the rest for generating documentation or possibly builtin documentation
+// This also ensures I don't mix them up
+
+// extern const api_metas[API_FUNC_COUNT];
+
+typedef enum api_func {
+	API_FUNC_CLS,
+	API_FUNC_RECT,
+	API_FUNC_RECTF,
+	API_FUNC_LINE,
+	API_FUNC_CIRC,
+	API_FUNC_SPR,
+
+	API_FUNC_MAP,
+
+	API_FUNC_TICKS,
+
+	API_FUNC_COUNT,
+} api_func_t;
+
+typedef struct api_meta {
+	char *name;
+	char *signature;
+	char *desc;
+
+	// Not used yet
+	// Actually not sure if it's a good idea to define here but we'll see
+	int accepted_args_amount;
+	char *error;
+} api_meta_t;
+
+// I feel it's fine to be extremely global since it's immutable and compile-time evaluated
+extern const api_meta_t api_metas[API_FUNC_COUNT];
+
+void api_meta_print();
+
 
 
 // --- Math ---
@@ -37,14 +75,14 @@ void api_line(computer_t *computer, int x1, int y1, int x2, int y2, int color);
 void api_circ(computer_t *computer, int x, int y, int radius, int color);
 
 // Draw a sprite
-void api_spr(computer_t *computer, int sprite_index, int x, int y, int width, int height);
+void api_spr(computer_t *computer, int idx, int x, int y, int width, int height);
 
 // Draw a rect from the spritesheet
 void api_sspr(computer_t *computer, int dst_x, int dst_y, int dst_w, int dst_h, int src_x, int src_y, int src_w, int src_h, int color_key);
 
 // Draw a portion of a map layer
 // The x, y, w, h are the rect of the drawn portion in tiles
-void api_draw_map_layer(computer_t *computer, int layer, int x, int y, int cell_x, int cell_y, int cell_w, int cell_h);
+void api_map(computer_t *computer, int layer, int x, int y, int cell_x, int cell_y, int cell_w, int cell_h);
 
 
 

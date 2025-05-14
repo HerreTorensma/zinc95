@@ -179,9 +179,10 @@ typedef struct computer {
 	rgb_color_t rgb_framebuffer[SCREEN_WIDTH * SCREEN_HEIGHT];
 	computer_state_t state;
 
-	// TODO: make this an array, so I can have multiple "virtual files"
-	// probably wrap it in a struct too
 	file_t file;
+
+	// TODO: use this
+	// file_collection_t file_collection;
 
 	// TODO: Currenly stack allocated 1MB,
 	// later when I have the file collection system I will make this dynamically allocated

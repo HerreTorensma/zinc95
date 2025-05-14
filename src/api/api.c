@@ -9,6 +9,62 @@
 #include "../backend/gfx.h"
 #include "../backend/gui.h"
 
+extern const api_meta_t api_metas[API_FUNC_COUNT] = {
+	[API_FUNC_CLS] = {
+		.name = "cls",
+		.signature = "cls(color=0)",
+		.desc = "Clear the screen",
+	},
+	[API_FUNC_RECT] = {
+		.name = "rect",
+		.signature = "rect(x, y, w, h, color)",
+		.desc = "Draw an unfilled rectangle",
+	},
+	[API_FUNC_RECTF] = {
+		.name = "rectf",
+		.signature = "rectf(x, y, w, h, color)",
+		.desc = "Draw a filled rectangle",
+	},
+	[API_FUNC_LINE] = {
+		.name = "line",
+		.signature = "line(x1, y1, x2, y2, color)",
+		.desc = "Draw a line from (x1, y1) to (x2, y2)",
+	},
+	[API_FUNC_CIRC] = {
+		.name = "circ",
+		.signature = "circ(x, y, radius, color)",
+		.desc = "Draw an unfilled circle",
+	},
+	[API_FUNC_SPR] = {
+		.name = "spr",
+		.signature = "spr(idx, x, y, [width], [height])",
+		.desc = "Draw a sprite by global index",
+	},
+
+	[API_FUNC_MAP] = {
+		.name = "map",
+		.signature = "map(layer, x, y, cell_x, cell_y, cell_w, cell_h)",
+		.desc = "Draw a portion of the given map layer",
+	},
+
+	[API_FUNC_TICKS] = {
+		.name = "ticks",
+		.signature = "ticks()",
+		.desc = "Get the amount of ticks the program has been running",
+	},
+};
+
+void api_meta_print() {
+	for (int i = 0; i < API_FUNC_COUNT; i++) {
+		printf("### %s\n", api_metas[i].name);
+		printf("`%s`\n", api_metas[i].signature);
+		printf("%s\n", api_metas[i].desc);
+		printf("\n");
+	}
+}
+
+
+
 // TODO: remove api calls anywhere else in the code
 // idk I want it to exist in a bubble I guess
 
@@ -34,15 +90,15 @@ void api_circ(computer_t *computer, int x, int y, int radius, int color) {
 	gfx_draw_circle(&computer->ram->framebuffer, POINT(x, y), radius, color);
 }
 
-void api_spr(computer_t *computer, int sprite_index, int x, int y, int width, int height) {
-	gfx_draw_sprites(computer->ram, sprite_index, POINT(x, y), width, height);
+void api_spr(computer_t *computer, int idx, int x, int y, int width, int height) {
+	gfx_draw_sprites(computer->ram, idx, POINT(x, y), width, height);
 }
 
 void api_sspr(computer_t *computer, int dst_x, int dst_y, int dst_w, int dst_h, int src_x, int src_y, int src_w, int src_h, int color_key){
 	gfx_draw_spritesheet_pro(computer->ram, RECT(src_x, src_y, src_w, src_h), RECT(dst_x, dst_y, dst_w, dst_h), color_key);
 }
 
-void api_draw_map_layer(computer_t *computer, int layer, int x, int y, int cell_x, int cell_y, int cell_w, int cell_h) {
+void api_map(computer_t *computer, int layer, int x, int y, int cell_x, int cell_y, int cell_w, int cell_h) {
 	gfx_draw_map(computer->ram, layer, POINT(x, y), RECT(cell_x, cell_y, cell_w, cell_h));
 }
 

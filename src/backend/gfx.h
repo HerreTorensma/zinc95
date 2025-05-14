@@ -46,6 +46,7 @@ color_t gfx_spritesheet_get_pixel(spritesheet_t *spritesheet, point_t point);
 void gfx_spritesheet_set_pixel(spritesheet_t *spritesheet, point_t point, color_t color);
 
 // TODO: put gfx prefix
+// But I'm not sure if this should be in this file
 rect_t sprite_index_to_spritesheet_rect(int sprite_index, int w, int h);
 
 // 4 ways to draw sprites

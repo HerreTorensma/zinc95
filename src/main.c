@@ -18,6 +18,8 @@ int main(int argc, char *argv[]) {
 
 	set_global_computer(&computer);
 
+	api_meta_print();
+
 	window_init("zinc95", 2);
 
 	// Spritesheet page: 352x128 pixels (416x128 maybe)
