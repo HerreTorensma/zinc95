@@ -73,7 +73,7 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 	point_t mouse_pos = input_get_mouse_pos();
 
 	if (point_in_rect(mouse_pos, spritesheet_rect)) {
-		if (api_keyp(computer, KEY_MINUS) || api_mouse_scrolled(computer, SCROLL_DIR_UP)) {
+		if (input_key_pressed(KEY_MINUS) || input_mouse_scrolled(SCROLL_DIR_UP)) {
 			currently_editing_rect.w -= SPRITE_WIDTH;
 			currently_editing_rect.h -= SPRITE_HEIGHT;
 			
@@ -85,12 +85,12 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 			}
 		}
 
-		if (api_keyp(computer, KEY_EQUALS) || api_mouse_scrolled(computer, SCROLL_DIR_DOWN)) {
+		if (input_key_pressed(KEY_EQUALS) || input_mouse_scrolled(SCROLL_DIR_DOWN)) {
 			currently_editing_rect.w += SPRITE_WIDTH;
 			currently_editing_rect.h += SPRITE_HEIGHT;
 		}
 
-		if (api_mouse_btn(computer, MOUSE_BUTTON_LEFT)) {
+		if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
 			if (snap_mode == SNAP_MODE_SPRITE) {
 				int adjusted_position_x = mouse_pos.x - spritesheet_rect.x;
 				int adjusted_position_y = mouse_pos.y - spritesheet_rect.y;
@@ -171,14 +171,7 @@ void sprite_selector_draw(computer_t *computer, rect_t spritesheet_rect, point_t
 	}
 	*/
 
-	api_rect(
-		computer,
-		spritesheet_rect.x + currently_editing_rect.x - 1,
-		spritesheet_rect.y + currently_editing_rect.y - 1,
-		currently_editing_rect.w + 2,
-		currently_editing_rect.h + 2,
-		15
-	);
+	gfx_draw_rect(&computer->ram->framebuffer, RECT(spritesheet_rect.x + currently_editing_rect.x - 1, spritesheet_rect.y + currently_editing_rect.y - 1, currently_editing_rect.w + 2, currently_editing_rect.h + 2), 15);
 }
 
 int get_selected_sprite_index() {

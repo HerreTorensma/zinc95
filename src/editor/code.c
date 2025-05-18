@@ -43,11 +43,12 @@ static void move_cursor_to_mouse(ram_t *ram, file_t *code) {
 		line = code->line_amount - 1;
 	}
 
-	int pos = gui_x_to_text_index(font, code->lines[line].text, corrected_x);
+ 	// int pos = gui_x_to_text_index(font, code->lines[line].text, corrected_x);
+	int pos = gui_x_to_string_index(font, code->lines[line].string, corrected_x);
 	if (pos < 0) {
 		return;
 	}
-	int line_len = strlen(code->lines[line].text);
+	int line_len = code->lines[line].string.len;
 	if (line_len < pos) {
 		pos = line_len;
 	}
@@ -61,7 +62,11 @@ static void unblink_cursor() {
 }
 
 static int get_real_cursor_pos(computer_t *computer) {
-	return gui_get_text_width(&computer->ram->fonts[_font_index], computer->file.lines[computer->file.cursor_line].text, computer->file.cursor_pos);
+	// if (computer->file.cursor_line == 0) {
+	// 	return 0;
+	// }
+
+	return gui_get_string_width(&computer->ram->fonts[_font_index], computer->file.lines[computer->file.cursor_line].string, computer->file.cursor_pos);
 }
 
 void code_editor_init(computer_t *computer) {
@@ -208,7 +213,7 @@ static void handle_char_input(computer_t *computer, file_t *code) {
 
 void code_editor_update(computer_t *computer) {
 	file_t *file = &computer->file;
-	
+
 	// Cursor movement
 	if (input_key_pressed(KEY_LEFT)) {
 		if (input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL)) {
@@ -249,19 +254,21 @@ void code_editor_update(computer_t *computer) {
 	}
 
 	if (input_key_pressed(KEY_BACKSPACE)) {
-		if (file->cursor_pos > 0) {
-			file_remove_char_at(file, file->cursor_line, file->cursor_pos);
-		} else {
-			if (file->cursor_line > 0) {
-				file->cursor_pos = file_merge_line(file, file->cursor_line);
-				file->cursor_line--;
-			}
-		}
+		// if (file->cursor_pos > 0) {
+		// 	file_remove_char_at(file, file->cursor_line, file->cursor_pos);
+		// } else {
+		// 	if (file->cursor_line > 0) {
+		// 		file->cursor_pos = file_merge_line_up(file, file->cursor_line);
+		// 		file->cursor_line--;
+		// 	}
+		// }
+		file_remove_char_at_cursor(file);
 	}
 	
 	// Handle return
 	if (input_key_pressed(KEY_RETURN) || input_key_pressed(KEY_NUMENTER)) {
-		file_split_line_at(file, file->cursor_line, file->cursor_pos, string_get_indent_level(file->lines[file->cursor_line].text));
+		// file_split_line_down(file, file->cursor_line, file->cursor_pos, string_get_indent_level(file->lines[file->cursor_line].text));
+		file_split_line_down(file, file->cursor_line, file->cursor_pos, 0);
 		file->cursor_line++;
 		file->cursor_pos = 0;
 	}
@@ -312,7 +319,8 @@ void code_editor_draw(computer_t *computer) {
 		gui_draw_text(computer->ram, _font_index, line_number_buffer, POINT(_layout.code_rect.x + 2, _layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), 8);
 		
 		// Line itself
-		gui_draw_text(computer->ram, _font_index, computer->file.lines[i + _scroll_amount].text, POINT(_layout.code_rect.x + 2 + 5 * (font->width + font->horizontal_space), _layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), COLOR_BLACK);
+		// gui_draw_text(computer->ram, _font_index, computer->file.lines[i + _scroll_amount].text, POINT(_layout.code_rect.x + 2 + 5 * (font->width + font->horizontal_space), _layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), COLOR_BLACK);
+		gui_draw_string(computer->ram, _font_index, computer->file.lines[i + _scroll_amount].string, POINT(_layout.code_rect.x + 2 + 5 * (font->width + font->horizontal_space), _layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), COLOR_BLACK);
 	}
 
 	// Draw cursor

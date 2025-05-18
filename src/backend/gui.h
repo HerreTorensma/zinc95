@@ -13,6 +13,8 @@ GUI-related stuff like text drawing, buttons etc.
 #define GUI_SMALL_BUTTON_SIZE 12
 #define GUI_BORDER_WIDTH 2
 
+void gui_draw_string(ram_t *ram, int font_index, string_t string, point_t pos, int color);
+
 void gui_draw_text(ram_t *ram, int font_index, const char text[], point_t pos, int color);
 
 // Draw inside the specified area
@@ -29,9 +31,12 @@ bool gui_press_button(ram_t *ram, char text[], rect_t rect);
 
 bool gui_toggle_button(ram_t *ram, char text[], rect_t rect, bool set);
 
+int gui_get_string_width(font_t *font, string_t string, int max_offset);
+
 int gui_get_text_width(font_t *font, char text[], int max_offset);
 
-int gui_x_to_text_index(font_t *font, char text[], int x);
+// int gui_x_to_text_index(font_t *font, char text[], int x);
+int gui_x_to_string_index(font_t *font, string_t string, int x);
 
 void gui_init_font(ram_t *ram, int index, int start_sprite_index, int horizontal_space, int height, int h_sprites, int v_sprites);
 

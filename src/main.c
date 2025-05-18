@@ -7,10 +7,11 @@ Main
 
 #include "computer.h"
 #include "backend/window.h"
-#include "api/api.h"
 #include "editor/menu.h"
 #include "backend/input.h"
 #include "api/lua_api.h"
+
+#define SDL_MAIN_HANDLED
 
 int main(int argc, char *argv[]) {
 	computer_t computer = {0};
@@ -89,7 +90,7 @@ int main(int argc, char *argv[]) {
 				break;
 			case STATE_PLAYING:
 				lua_call_update();
-				if (api_keyp(&computer, KEY_ESC)) {
+				if (input_key_pressed(KEY_ESC)) {
 					quit_game(&computer);
 				}
 				break;

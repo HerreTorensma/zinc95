@@ -20,9 +20,8 @@ typedef struct surface {
 
 #define SURF(_data, _width, _height) ((surface_t){.data = _data, .width = _width, .height = _height})
 
-// Funny macro with no arguments, just returns the framebuffer surface
-// Assumes that there is a pointer to a computer in the current scope 
-#define FB_SURF ((surface_t){.data = &computer->ram->framebuffer, .width = SCREEN_WIDTH, .height = SCREEN_HEIGHT})
+// Macro for the framebuffer surface, so you don't have to manually input the SCREEN_WIDTH and SCREEN_HEIGHT every time
+#define FB_SURF (_data) ((surface_t){.data = _data, .width = SCREEN_WIDTH, .height = SCREEN_HEIGHT})
 
 // Generate a buffer of rgb_color_t using palette so it can be rendered by a backend later
 void gfx_generate_rgb_framebuffer(computer_t *computer);

@@ -22,7 +22,7 @@ typedef enum workspace_type {
 	WORKSPACE_SOUND,
 } workspace_type_t;
 
-static workspace_type_t active_workspace = WORKSPACE_SPRITE;
+static workspace_type_t active_workspace = WORKSPACE_CODE;
 
 typedef struct layout {
 	point_t code_editor_button_pos;
@@ -48,7 +48,6 @@ void workspace_menu_init(computer_t *computer) {
 	// Init the sprite selector (shared between sprite and map editor)
 	sprite_selector_init(computer);
 
-	// console_init(computer);
 	code_editor_init(computer);
 	sprite_editor_init(computer);
 	map_editor_init(computer);

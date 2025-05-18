@@ -6,39 +6,39 @@
 #include "gfx.h"
 
 // TODO: for each font set a color_key and divider color so you can have funky fonts idk
-void gui_draw_text(ram_t *ram, int font_index, const char text[], point_t pos, int color) {
+void gui_draw_string(ram_t *ram, int font_index, string_t string, point_t pos, int color) {
 	font_t *font = &ram->fonts[font_index];
 
 	int new_x = pos.x;
 	int new_y = pos.y;
 
-	for (size_t i = 0; i < strlen(text); i++) {
+	for (size_t i = 0; i < string.len; i++) {
 		// Commented this out for now, might add it back later not sure yet
-		if (text[i] == '\n') {
-			new_x = 0;
+		if (string.data[i] == '\n') {
+			new_x = pos.x;
 			new_y += font->height + font->vertical_space;
 			continue;
 		}
 
-		if (text[i] == '\t') {
+		if (string.data[i] == '\t') {
 			if (font->monospace) {
 				new_x += (font->width + font->horizontal_space) * TAB_SIZE;
 			} else {
-				new_x += (font->widths[text[' '] - ' '] + font->horizontal_space) * TAB_SIZE;
+				new_x += (font->widths[string.data[' '] - ' '] + font->horizontal_space) * TAB_SIZE;
 			}
 
 			continue;
 		}
 
 		// Inline sprites
-		if (text[i] == '`') {
+		if (string.data[i] == '`') {
 			int sprite_index = 0;
 
 			// Read the digits after
 			size_t index = i + 1;
-			while (text[index] >= '0' && text[index] <= '9') {
+			while (string.data[index] >= '0' && string.data[index] <= '9') {
 				sprite_index *= 10;
-				sprite_index += text[index] - '0';
+				sprite_index += string.data[index] - '0';
 
 				index++;
 			}
@@ -52,7 +52,7 @@ void gui_draw_text(ram_t *ram, int font_index, const char text[], point_t pos, i
 		}
 
 		// Get the correct sprite index keeping in mind some fonts could have multiple sprites per character (not tested for more than 1 horizontal sprite)
-		int char_index = text[i] - ' ';
+		int char_index = string.data[i] - ' ';
 		int x_offset = (char_index % (SPRITES_PER_ROW / font->h_sprites)) * font->h_sprites;
 		int y_offset = (char_index / (SPRITES_PER_ROW / font->h_sprites)) * font->v_sprites;
 		int sprite_index = font->sprite_index + x_offset + (y_offset * SPRITES_PER_ROW);
@@ -72,9 +72,14 @@ void gui_draw_text(ram_t *ram, int font_index, const char text[], point_t pos, i
 		if (font->monospace) {
 			new_x += font->width + font->horizontal_space;
 		} else {
-			new_x += font->widths[text[i] - ' '] + font->horizontal_space;
+			new_x += font->widths[string.data[i] - ' '] + font->horizontal_space;
 		}
 	}
+}
+
+void gui_draw_text(ram_t *ram, int font_index, const char text[], point_t pos, int color) {
+	size_t len = strlen(text);
+	gui_draw_string(ram, font_index, (string_t){.data = text, .len = len}, pos, color);
 }
 
 // TODO: make versions of these such that the rect is both in and out if that makes sense
@@ -253,15 +258,15 @@ bool gui_toggle_button(ram_t *ram, char text[], rect_t rect, bool set) {
 	return set;
 }
 
-int gui_get_text_width(font_t *font, char text[], int max_offset) {
+int gui_get_string_width(font_t *font, string_t string, int max_offset) {
 	int len = 0;
 
-	for (int i = 0; i < max_offset; i++) {
-		if (text[i] == '\t') {
+	for (int i = 0; i < (int)string.len && i < max_offset; i++) {
+		if (string.data[i] == '\t') {
 			if (font->monospace) {
 				len += (font->width + font->horizontal_space) * TAB_SIZE;
 			} else {
-				len += (font->widths[text[' '] - ' '] + font->horizontal_space) * TAB_SIZE;
+				len += (font->widths[string.data[' '] - ' '] + font->horizontal_space) * TAB_SIZE;
 			}
 
 			continue;
@@ -270,21 +275,49 @@ int gui_get_text_width(font_t *font, char text[], int max_offset) {
 		if (font->monospace) {
 			len += font->width + font->horizontal_space;
 		} else {
-			len += font->widths[text[i] - ' '] + font->horizontal_space;
+			len += font->widths[string.data[i] - ' '] + font->horizontal_space;
 		}
 	}
 
 	return len;
 }
 
-int gui_x_to_text_index(font_t *font, char text[], int x) {
+int gui_get_text_width(font_t *font, char text[], int max_offset) {
+	size_t len = strlen(text);
+	return gui_get_string_width(font, (string_t){.data = text, .len = len}, max_offset);
+}
+
+// int gui_x_to_text_index(font_t *font, char text[], int x) {
+// 	int index = x / (font->width + font->horizontal_space);
+// 	int len = strlen(text);
+
+// 	int real_index = index;
+
+// 	for (int i = 0; i < index && i < len; i++) {
+// 		if (text[i] == '\t') {
+// 			real_index -= TAB_SIZE - 1;
+// 		}
+
+// 		if (real_index < 0) {
+// 			real_index = 0;
+// 			break;
+// 		}
+// 	}
+	
+	
+// 	if (real_index >= len) {
+// 		real_index = len;
+// 	}
+
+// 	return real_index;
+// }
+int gui_x_to_string_index(font_t *font, string_t string, int x) {
 	int index = x / (font->width + font->horizontal_space);
-	int len = strlen(text);
 
 	int real_index = index;
 
-	for (int i = 0; i < index && i < len; i++) {
-		if (text[i] == '\t') {
+	for (int i = 0; i < index && i < string.len; i++) {
+		if (string.data[i] == '\t') {
 			real_index -= TAB_SIZE - 1;
 		}
 
@@ -295,8 +328,8 @@ int gui_x_to_text_index(font_t *font, char text[], int x) {
 	}
 	
 	
-	if (real_index >= len) {
-		real_index = len;
+	if (real_index >= string.len) {
+		real_index = string.len;
 	}
 
 	return real_index;

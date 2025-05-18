@@ -1,0 +1,1 @@
+make; gdb -ex "set confirm off" -ex run .\zinc95.exe
