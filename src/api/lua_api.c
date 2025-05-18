@@ -10,7 +10,7 @@ static lua_State *_lua = NULL;
 
 // The following static functions are the lua api handlers of the native api functions
 // The return value is the number of return values that are pushed to the lua stack
-static int lua_cls(lua_State *lua) {
+static int _lua_cls(lua_State *lua) {
 	if (lua_gettop(lua) == 1) {
 		if (lua_isnumber(lua, 1)) {
 			computer_t *computer = get_global_computer();
@@ -30,7 +30,7 @@ static int lua_cls(lua_State *lua) {
 	return 0;
 }
 
-static int lua_spr(lua_State *lua) {
+static int _lua_spr(lua_State *lua) {
 	if (lua_gettop(lua) == 5) {
 		if (lua_isnumber(lua, 1) && lua_isnumber(lua, 2) && lua_isnumber(lua, 3) && lua_isnumber(lua, 4) && lua_isnumber(lua, 5)) {
 			computer_t *computer = get_global_computer();
@@ -49,7 +49,7 @@ static int lua_spr(lua_State *lua) {
 	return 0;
 }
 
-static int lua_circ(lua_State *lua) {
+static int _lua_circ(lua_State *lua) {
 	if (lua_gettop(lua) == 4) {
 		if (lua_isnumber(lua, 1) && lua_isnumber(lua, 2) && lua_isnumber(lua, 3) && lua_isnumber(lua, 4)) {
 			computer_t *computer = get_global_computer();
@@ -65,7 +65,7 @@ static int lua_circ(lua_State *lua) {
 	return 0;
 }
 
-static int lua_map(lua_State *lua) {
+static int _lua_map(lua_State *lua) {
 	if (lua_gettop(lua) == 7) {
 		if (lua_isnumber(lua, 1) && lua_isnumber(lua, 2) && lua_isnumber(lua, 3) && lua_isnumber(lua, 4) && lua_isnumber(lua, 5) && lua_isnumber(lua, 6) && lua_isnumber(lua, 7)) {
 			computer_t *computer = get_global_computer();
@@ -88,7 +88,7 @@ static int lua_map(lua_State *lua) {
 	return 0;
 }
 
-static int lua_ticks(lua_State *lua) {
+static int _lua_ticks(lua_State *lua) {
 	computer_t *computer = get_global_computer();
 	int ticks = api_ticks(computer->ram);
 	lua_pushinteger(lua, ticks);
@@ -102,11 +102,11 @@ void lua_init(computer_t *computer) {
 
 	// TODO: handle this in a loop based on the api metas
 	// maybe not because then I have issues with circular dependency
-	lua_register(_lua, api_metas[API_FUNC_CLS].name, lua_cls);
-	lua_register(_lua, api_metas[API_FUNC_SPR].name, lua_spr);
-	lua_register(_lua, api_metas[API_FUNC_CIRC].name, lua_circ);
-	lua_register(_lua, api_metas[API_FUNC_TICKS].name, lua_ticks);
-	lua_register(_lua, api_metas[API_FUNC_MAP].name, lua_map);
+	lua_register(_lua, api_metas[API_FUNC_CLS].name, _lua_cls);
+	lua_register(_lua, api_metas[API_FUNC_SPR].name, _lua_spr);
+	lua_register(_lua, api_metas[API_FUNC_CIRC].name, _lua_circ);
+	lua_register(_lua, api_metas[API_FUNC_TICKS].name, _lua_ticks);
+	lua_register(_lua, api_metas[API_FUNC_MAP].name, _lua_map);
 
 	// if (luaL_dofile(_lua, "test.lua") != LUA_OK) {
 	// if (luaL_dostring(_lua, computer->code->buffer) != LUA_OK) {

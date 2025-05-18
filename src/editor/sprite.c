@@ -59,7 +59,7 @@ void sprite_editor_init(computer_t *computer) {
 
 }
 
-static point_t color_index_to_pos(uint8_t color) {
+static point_t _color_index_to_pos(uint8_t color) {
 	point_t pos = {0};
 
 	if (color < 32) {
@@ -73,7 +73,7 @@ static point_t color_index_to_pos(uint8_t color) {
 	return pos;
 }
 
-static uint8_t pos_to_color_index(point_t pos) {
+static uint8_t _pos_to_color_index(point_t pos) {
 	int cell_x = (pos.x - _layout.color_picker_rect.x) / COLOR_SQUARE_SIZE;
 	int cell_y = (pos.y - _layout.color_picker_rect.y) / COLOR_SQUARE_SIZE;
 
@@ -97,7 +97,7 @@ void sprite_editor_update(computer_t *computer) {
 
 	if (point_in_rect(mouse_pos, _layout.color_picker_rect)) {
 		if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
-			_selected_color = pos_to_color_index(mouse_pos);
+			_selected_color = _pos_to_color_index(mouse_pos);
 		}
 	}
 
@@ -147,12 +147,12 @@ void sprite_editor_draw(computer_t *computer) {
 
 	// Draw colors
 	for (int i = 0; i < PALETTE_SIZE - 8; i++) {
-		point_t color_cell_pos = color_index_to_pos(i);
+		point_t color_cell_pos = _color_index_to_pos(i);
 		gfx_draw_filled_rect(fb, RECT(color_cell_pos.x, color_cell_pos.y, COLOR_SQUARE_SIZE, COLOR_SQUARE_SIZE), i);
 	}
 
 	// Draw selected color square
-	point_t selected_color_cell_pos = color_index_to_pos(_selected_color);
+	point_t selected_color_cell_pos = _color_index_to_pos(_selected_color);
 	gfx_draw_rect(fb, RECT(selected_color_cell_pos.x - 1, selected_color_cell_pos.y - 1, COLOR_SQUARE_SIZE + 2, COLOR_SQUARE_SIZE + 2), 15);
 
 	// Sprite editor

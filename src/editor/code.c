@@ -27,7 +27,7 @@ static const layout_t _layout = {
 	.code_rect = {{68, 24, 568, 452}},
 };
 
-static void move_cursor_to_mouse(ram_t *ram, file_t *code) {
+static void _move_cursor_to_mouse(ram_t *ram, file_t *code) {
 	font_t *font = &ram->fonts[_font_index];
 
 	point_t mouse_pos = input_get_mouse_pos();
@@ -57,11 +57,11 @@ static void move_cursor_to_mouse(ram_t *ram, file_t *code) {
 	code->cursor_pos = pos;
 }
 
-static void unblink_cursor() {
+static void _unblink_cursor() {
 	_cursor_timer = _cursor_blink_speed;
 }
 
-static int get_real_cursor_pos(computer_t *computer) {
+static int _get_real_cursor_pos(computer_t *computer) {
 	// if (computer->file.cursor_line == 0) {
 	// 	return 0;
 	// }
@@ -77,7 +77,7 @@ void code_editor_init(computer_t *computer) {
 }
 
 // Handle all the character inputs
-static void handle_char_input(computer_t *computer, file_t *code) {
+static void _handle_char_input(computer_t *computer, file_t *code) {
 	// Letters
 	for (int i = KEY_A; i <= KEY_Z; i++) {
 		if (input_key_pressed(i)) {
@@ -222,7 +222,7 @@ void code_editor_update(computer_t *computer) {
 			file_move_cursor_left(file);
 		}
 
-		unblink_cursor();
+		_unblink_cursor();
 	}
 
 	// TODO: move this to backend
@@ -233,17 +233,17 @@ void code_editor_update(computer_t *computer) {
 			file_move_cursor_right(file);
 		}
 
-		unblink_cursor();
+		_unblink_cursor();
 	}
 
 	if (input_key_pressed(KEY_UP)) {
 		file_move_cursor_up(file);
-		unblink_cursor();
+		_unblink_cursor();
 	}
 
 	if (input_key_pressed(KEY_DOWN)) {
 		file_move_cursor_down(file);
-		unblink_cursor();
+		_unblink_cursor();
 	}
 
 	// TODO: page up, page down, home, end
@@ -273,12 +273,12 @@ void code_editor_update(computer_t *computer) {
 		file->cursor_pos = 0;
 	}
 
-	handle_char_input(computer, file);
+	_handle_char_input(computer, file);
 
 	// Mouse
 	if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
-		move_cursor_to_mouse(computer->ram, file);
-		unblink_cursor();
+		_move_cursor_to_mouse(computer->ram, file);
+		_unblink_cursor();
 	}
 
 	// Scrolling
@@ -325,7 +325,7 @@ void code_editor_draw(computer_t *computer) {
 
 	// Draw cursor
 	if (_cursor_timer >= _cursor_blink_speed / 2) {
-		int cursor_x = _layout.code_rect.x + 2 + 5 * (font->width + font->horizontal_space) + get_real_cursor_pos(computer);
+		int cursor_x = _layout.code_rect.x + 2 + 5 * (font->width + font->horizontal_space) + _get_real_cursor_pos(computer);
 		int cursor_y = _layout.code_rect.y + 2 + computer->file.cursor_line * (font->height + font->vertical_space) - _scroll_amount * (font->height + font->vertical_space);
 		gfx_draw_line(fb, POINT(cursor_x, cursor_y), POINT(cursor_x, cursor_y + font->height), 3);
 	}
@@ -333,6 +333,6 @@ void code_editor_draw(computer_t *computer) {
 	// Update cursor blink
 	_cursor_timer--;
 	if (_cursor_timer == 0) {
-		unblink_cursor();
+		_unblink_cursor();
 	}
 }

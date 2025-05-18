@@ -39,7 +39,7 @@ static const layout_t _layout = {
 // TODO: i need some kind of function to translate world coords to screen coords and grid coords or whatever
 // Instead or hardcoding it
 
-static void draw_grid(framebuffer_t *fb) {
+static void _draw_grid(framebuffer_t *fb) {
 	int line_x = SCREEN_WIDTH - _cam_pos.x % SCREEN_WIDTH;
 	int line_y = SCREEN_HEIGHT - _cam_pos.y % SCREEN_HEIGHT;
 
@@ -134,7 +134,7 @@ void map_editor_draw(computer_t *computer) {
 		gfx_draw_rect(fb, RECT(rect_pos.x - 1, rect_pos.y - 1, currently_editing_rect.w + 2, currently_editing_rect.h + 2), COLOR_WHITE);
 	}
 
-	draw_grid(fb);
+	_draw_grid(fb);
 
 	gui_outset_frame(computer->ram, _layout.gui_rect);
 	sprite_selector_draw(computer, _layout.spritesheet_rect, _layout.spritesheet_pages_start_pos);

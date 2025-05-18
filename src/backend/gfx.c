@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-static bool point_in_screen(int x, int y) {
+static bool _point_in_screen(int x, int y) {
 	if (x < 0) return false;
 	if (x >= SCREEN_WIDTH) return false;
 	if (y < 0) return false;
@@ -22,13 +22,13 @@ void gfx_generate_rgb_framebuffer(computer_t *computer) {
 
 
 void gfx_set_pixel(framebuffer_t *fb, int x, int y, int color) {
-	if (point_in_screen(x, y)) {
+	if (_point_in_screen(x, y)) {
 		fb->data[y * SCREEN_WIDTH + x] = color;
 	}
 }
 
 color_t gfx_get_pixel(framebuffer_t *fb, int x, int y) {
-	if (point_in_screen(x, y)) {
+	if (_point_in_screen(x, y)) {
 		return fb->data[y * SCREEN_WIDTH + x];
 	}
 	return COLOR_NONE;

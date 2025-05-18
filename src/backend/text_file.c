@@ -28,7 +28,7 @@ typedef struct lua_token {
 } lua_token_t;
 
 // Get the amount of lines in a string, used for loading
-static size_t string_get_lines_amount(const char *text) {
+static size_t _string_get_lines_amount(const char *text) {
 	size_t amount = 1;
 
 	for (size_t i = 0; text[i] != '\0'; i++) {
@@ -56,7 +56,7 @@ int string_get_indent_level(const char text[]) {
 
 // Add a new line to the data structure, used for loading a string before editing
 // len is without null terminator (TODO: confirm this)
-static void file_add_line(file_t *file, const char *text, size_t len) {
+static void _file_add_line(file_t *file, const char *text, size_t len) {
 	string_t *string = &file->lines[file->line_amount].string;
 
 	string->data = malloc(len * sizeof(char));
@@ -72,21 +72,21 @@ static void file_add_line(file_t *file, const char *text, size_t len) {
 }
 
 // Load a string into the file_t datastructure
-static void string_to_file(file_t *file, const char *buffer) {
+static void _string_to_file(file_t *file, const char *buffer) {
 	size_t last_line_start = 0;
 	size_t len = strlen(buffer);
 	
 	for (size_t i = 0; i < len; i++) {
 		if (buffer[i] == '\n') {
 			// - 1 so the \n is not included
-			file_add_line(file, buffer + last_line_start, i - last_line_start);
+			_file_add_line(file, buffer + last_line_start, i - last_line_start);
 			last_line_start = i + 1;
 		}
 	}
 
 	// Handle last line which might not have a newline char
 	if (last_line_start < len) {
-		file_add_line(file, buffer + last_line_start, len - last_line_start);
+		_file_add_line(file, buffer + last_line_start, len - last_line_start);
 	}
 }
 
@@ -96,14 +96,14 @@ void file_load(file_t *file, const char *buffer) {
 	file_free(file);
 
 	// Allocate
-	size_t lines_amount = string_get_lines_amount(buffer);
+	size_t lines_amount = _string_get_lines_amount(buffer);
 	file->lines = malloc(lines_amount * sizeof(line_t));
 	if (file->lines == NULL) {
 		printf("Couldn't allocate memory for code\n");
 		exit(EXIT_FAILURE);
 	}
 
-	string_to_file(file, buffer);
+	_string_to_file(file, buffer);
 }
 
 // TODO: actually use this
@@ -145,11 +145,11 @@ size_t file_to_string(file_t *file, char *buffer) {
 	return offset;
 }
 
-static size_t len_at_pos(string_t *string, size_t pos) {
+static size_t _len_at_pos(string_t *string, size_t pos) {
 	return string->len - pos;
 }
 
-static void move_lines_down(file_t *file, size_t line) {
+static void _move_lines_down(file_t *file, size_t line) {
 	// Realloc lines
 	line_t *temp = realloc(file->lines, (file->line_amount + 1ULL) * sizeof(line_t));
 	if (temp == NULL) {
@@ -169,9 +169,9 @@ static void move_lines_down(file_t *file, size_t line) {
 	file->line_amount++;
 }
 
-static string_t string_split(string_t *origin, size_t pos) {
+static string_t _string_split(string_t *origin, size_t pos) {
 	string_t second = {0};
-	second.len = len_at_pos(origin, pos);
+	second.len = _len_at_pos(origin, pos);
 	second.data = malloc(second.len * sizeof(char));
 	memcpy(second.data, origin->data + pos, second.len * sizeof(char));
 
@@ -189,11 +189,11 @@ static string_t string_split(string_t *origin, size_t pos) {
 	return second;
 }
 
-void file_split_line_down(file_t *file, int line, int pos, int indent_level) {
+void file_split_line_down(file_t *file, size_t line, size_t pos, size_t indent_level) {
 	// Make space for the new line
-	move_lines_down(file, line);
+	_move_lines_down(file, line);
 	
-	file->lines[line + 1ULL].string = string_split(&file->lines[line].string, pos);
+	file->lines[line + 1ULL].string = _string_split(&file->lines[line].string, pos);
 	
 	// TODO: Make this work (insert correct amount of tab characters)
 	// if (strlen(file->lines[line + 1].text) == 0) {
@@ -204,7 +204,7 @@ void file_split_line_down(file_t *file, int line, int pos, int indent_level) {
 }
 
 // Assumes dest has enough memory for the concatenation
-static void string_concat(string_t *dest, string_t *src) {
+static void _string_concat(string_t *dest, string_t *src) {
 	size_t old_len = dest->len;
 	dest->len += src->len;
 	dest->data = realloc(dest->data, dest->len * sizeof(char));
@@ -213,7 +213,7 @@ static void string_concat(string_t *dest, string_t *src) {
 }
 
 // Moves the lines below up by one, do the current line gets deleted
-static void move_lines_up(file_t *file, size_t line) {
+static void _move_lines_up(file_t *file, size_t line) {
 	if (line < file->line_amount - 1) {
 		// Move the lines up
 		memmove(&file->lines[line], &file->lines[line + 1], (file->line_amount - line - 1ULL) * sizeof(line_t));
@@ -225,30 +225,30 @@ static void move_lines_up(file_t *file, size_t line) {
 	file->line_amount--;
 }
 
-int file_merge_line_up(file_t *file, int line) {
+size_t file_merge_line_up(file_t *file, size_t line) {
 	string_t *top_string = &file->lines[line - 1].string;
 	string_t *bottom_string = &file->lines[line].string;
 	size_t old_len = top_string->len;
 
-	string_concat(top_string, bottom_string);
+	_string_concat(top_string, bottom_string);
 
 	// Free the deleted line
 	free(bottom_string->data);
 	bottom_string->data = NULL;
 	bottom_string->len = 0ULL;
 
-	move_lines_up(file, line);
+	_move_lines_up(file, line);
 
 	return old_len;
 }
 
-void file_insert_char_at(file_t *file, int line, int pos, char c) {
+void file_insert_char_at(file_t *file, size_t line, size_t pos, char c) {
 	// size_t len = strlen(file->lines[line].text);
 	string_t *string = &file->lines[line].string;
 
 	// Realloc and move line to make space for new character
 	string->data = realloc(string->data, string->len + 1);
-	memmove(string->data + pos + 1, string->data + pos, len_at_pos(string, pos));
+	memmove(string->data + pos + 1, string->data + pos, _len_at_pos(string, pos));
 	
 	// Increment length after moving so it doesnt do segfault
 	string->len++;
@@ -257,14 +257,14 @@ void file_insert_char_at(file_t *file, int line, int pos, char c) {
 	file->lines[line].string.data[pos] = c;
 }
 
-void file_remove_char_at(file_t *file, int line, int pos) {
+void file_remove_char_at(file_t *file, size_t line, size_t pos) {
 	if (pos == 0) {
 		return;
 	}
 
 	string_t *string = &file->lines[line].string;
 
-	memmove(string->data + pos - 1, string->data + pos, len_at_pos(string, pos));
+	memmove(string->data + pos - 1, string->data + pos, _len_at_pos(string, pos));
 	string->len--;
 	string->data = realloc(string->data, string->len);
 }
@@ -327,7 +327,7 @@ void file_move_cursor_left(file_t *file) {
 }
 
 void file_move_cursor_right(file_t *file) {
-	int len = file->lines[file->cursor_line].string.len;
+	size_t len = file->lines[file->cursor_line].string.len;
 	if (file->cursor_pos < len) {
 		file->cursor_pos++;
 	} else {

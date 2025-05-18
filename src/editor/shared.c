@@ -8,6 +8,7 @@
 #include "../backend/gfx.h"
 #include "../backend/gui.h"
 
+// TODO: look into making these static or something
 rect_t visible_rect = {0};
 
 // Rect in pixels
@@ -19,7 +20,7 @@ rect_t currently_editing_sprites_rect = {0};
 int selected_sprite_index_offset = 0;
 int selected_spritesheet_index = 0;
 
-static void set_selected_spritesheet_index(int index) {
+static void _set_selected_spritesheet_index(int index) {
 	selected_spritesheet_index = index;
 	visible_rect = (rect_t){
 		.x = 0,
@@ -48,7 +49,7 @@ void sprite_selector_init(computer_t *computer) {
 }
 
 // TODO: make this a setter for currently_editing_rect
-static void update_currently_editing_sprites_rect(sprite_select_snap_mode_t snap_mode) {
+static void _update_currently_editing_sprites_rect(sprite_select_snap_mode_t snap_mode) {
 	currently_editing_sprites_rect.w = currently_editing_rect.w / SPRITE_WIDTH;
 	currently_editing_sprites_rect.h = currently_editing_rect.h / SPRITE_HEIGHT;
 
@@ -126,7 +127,7 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 		}
 	}
 
-	update_currently_editing_sprites_rect(snap_mode);
+	_update_currently_editing_sprites_rect(snap_mode);
 }
 
 void sprite_selector_draw(computer_t *computer, rect_t spritesheet_rect, point_t page_buttons_pos) {
@@ -145,7 +146,7 @@ void sprite_selector_draw(computer_t *computer, rect_t spritesheet_rect, point_t
 		sprintf(buffer, "%d", i + 1);
 		
 		if (gui_button_ex(computer->ram, buffer, rect, selected_spritesheet_index == i)) {
-			set_selected_spritesheet_index(i);
+			_set_selected_spritesheet_index(i);
 		}
 	}
 
@@ -165,7 +166,7 @@ void sprite_selector_draw(computer_t *computer, rect_t spritesheet_rect, point_t
 			sprintf(buffer, "%d", index + 1);
 			
 			if (gui_button_ex(computer, buffer, rect, selected_spritesheet_index == index)) {
-				set_selected_spritesheet_index(index);
+				_set_selected_spritesheet_index(index);
 			}
 		}
 	}

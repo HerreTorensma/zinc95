@@ -10,6 +10,7 @@ Main
 #include "editor/menu.h"
 #include "backend/input.h"
 #include "api/lua_api.h"
+#include "api/api.h"
 
 #define SDL_MAIN_HANDLED
 

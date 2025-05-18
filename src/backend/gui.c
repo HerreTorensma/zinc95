@@ -316,7 +316,7 @@ int gui_x_to_string_index(font_t *font, string_t string, int x) {
 
 	int real_index = index;
 
-	for (int i = 0; i < index && i < string.len; i++) {
+	for (size_t i = 0; i < index && i < string.len; i++) {
 		if (string.data[i] == '\t') {
 			real_index -= TAB_SIZE - 1;
 		}

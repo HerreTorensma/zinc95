@@ -35,9 +35,9 @@ typedef struct file {
 	line_t *lines;
 	size_t line_amount;
 	
-	int cursor_line;
-	int cursor_pos;
-	int target_pos;
+	size_t cursor_line;
+	size_t cursor_pos;
+	size_t target_pos;
 } file_t;
 
 // Get the indent level of the given string
@@ -60,16 +60,16 @@ size_t file_to_string(file_t *file, char *buffer);
 
 // Split the line at the given position in 2
 // a new line will be created with anything on the current line after the given pos
-void file_split_line_down(file_t *file, int line, int pos, int indent_level);
+void file_split_line_down(file_t *file, size_t line, size_t pos, size_t indent_level);
 
 // Merge the given line with the line above it
-int file_merge_line_up(file_t *file, int line);
+size_t file_merge_line_up(file_t *file, size_t line);
 
 // Insert a char at a position
-void file_insert_char_at(file_t *file, int line, int pos, char c);
+void file_insert_char_at(file_t *file, size_t line, size_t pos, char c);
 
 // Remove a char at a position
-void file_remove_char_at(file_t *file, int line, int pos);
+void file_remove_char_at(file_t *file, size_t line, size_t pos);
 
 // Frees the file
 void file_free(file_t *file);

@@ -22,7 +22,7 @@ typedef enum workspace_type {
 	WORKSPACE_SOUND,
 } workspace_type_t;
 
-static workspace_type_t active_workspace = WORKSPACE_CODE;
+static workspace_type_t _active_workspace = WORKSPACE_CODE;
 
 typedef struct layout {
 	point_t code_editor_button_pos;
@@ -56,22 +56,22 @@ void workspace_menu_init(computer_t *computer) {
 
 void workspace_menu_update(computer_t *computer) {
 	if (input_key_pressed(KEY_F1)) {
-		active_workspace = WORKSPACE_CODE;
+		_active_workspace = WORKSPACE_CODE;
 	}
 	if (input_key_pressed(KEY_F2)) {
-		active_workspace = WORKSPACE_SPRITE;
+		_active_workspace = WORKSPACE_SPRITE;
 	}
 	if (input_key_pressed(KEY_F3)) {
-		active_workspace = WORKSPACE_MAP;
+		_active_workspace = WORKSPACE_MAP;
 	}
 	if (input_key_pressed(KEY_F4)) {
-		active_workspace = WORKSPACE_SOUND;
+		_active_workspace = WORKSPACE_SOUND;
 	}
 	if (input_key_pressed(KEY_F5)) {
 		play_game(computer);
 	}
 
-	switch (active_workspace) {
+	switch (_active_workspace) {
 		case WORKSPACE_CODE:
 			code_editor_update(computer);
 			break;
@@ -98,7 +98,7 @@ void workspace_menu_draw(computer_t *computer) {
 
 	// gui_outset_frame(computer->ram, workspace_rect);
 
-	switch (active_workspace) {
+	switch (_active_workspace) {
 		case WORKSPACE_CODE:
 			code_editor_draw(computer);
 			break;
@@ -125,20 +125,20 @@ void workspace_menu_draw(computer_t *computer) {
 	
 	// gui_button(computer->ram, "", (rect_t){2, 2, 16, 16});
 	
-	if (gui_button_ex(computer->ram, "Code", RECT(_layout.code_editor_button_pos.x, _layout.code_editor_button_pos.y, 64, 16), active_workspace == WORKSPACE_CODE)) {
-		active_workspace = WORKSPACE_CODE;
+	if (gui_button_ex(computer->ram, "Code", RECT(_layout.code_editor_button_pos.x, _layout.code_editor_button_pos.y, 64, 16), _active_workspace == WORKSPACE_CODE)) {
+		_active_workspace = WORKSPACE_CODE;
 	}
 	
-	if (gui_button_ex(computer->ram, "Sprite", RECT(_layout.sprite_editor_button_pos.x, _layout.sprite_editor_button_pos.y, 64, 16), active_workspace == WORKSPACE_SPRITE)) {
-		active_workspace = WORKSPACE_SPRITE;
+	if (gui_button_ex(computer->ram, "Sprite", RECT(_layout.sprite_editor_button_pos.x, _layout.sprite_editor_button_pos.y, 64, 16), _active_workspace == WORKSPACE_SPRITE)) {
+		_active_workspace = WORKSPACE_SPRITE;
 	}
 	
-	if (gui_button_ex(computer->ram, "Map", RECT(_layout.map_editor_button_pos.x, _layout.map_editor_button_pos.y, 64, 16), active_workspace == WORKSPACE_MAP)) {
-		active_workspace = WORKSPACE_MAP;
+	if (gui_button_ex(computer->ram, "Map", RECT(_layout.map_editor_button_pos.x, _layout.map_editor_button_pos.y, 64, 16), _active_workspace == WORKSPACE_MAP)) {
+		_active_workspace = WORKSPACE_MAP;
 	}
 	
-	if (gui_button_ex(computer->ram, "Sound", RECT(_layout.sound_editor_button_pos.x, _layout.sound_editor_button_pos.y, 64, 16), active_workspace == WORKSPACE_SOUND)) {
-		active_workspace = WORKSPACE_SOUND;
+	if (gui_button_ex(computer->ram, "Sound", RECT(_layout.sound_editor_button_pos.x, _layout.sound_editor_button_pos.y, 64, 16), _active_workspace == WORKSPACE_SOUND)) {
+		_active_workspace = WORKSPACE_SOUND;
 	}
 	
 	if (gui_press_button(computer->ram, "", RECT(_layout.save_button_pos.x, _layout.save_button_pos.y, 16, 16))) {
