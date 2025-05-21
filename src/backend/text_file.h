@@ -18,14 +18,35 @@ typedef struct {
 	size_t len;
 } string_t;
 
-#define STR(_string) ((string_t){.data = (char *)_string, .len = strlen(_string)})
+// Compile time evaluated string macro (not used obv)
+// #define STR(s) {.data = s, .len = sizeof(s) - 1}
+
+// Runtime evaluated string macro
+#define STR(s) (string_t){.data = (char *)s, .len = strlen(s)}
+
+typedef enum lua_token_type {
+	LUA_TOKEN_KEYWORD,
+	LUA_TOKEN_BUILTIN_FUNCTION,
+	LUA_TOKEN_IDENTIFIER,
+	LUA_TOKEN_LITERAL, // Number, true, false, nil
+	LUA_TOKEN_STRING,
+	LUA_TOKEN_COMMENT,
+	LUA_TOKEN_OPERATOR,
+	LUA_TOKEN_WHITESPACE,
+
+	LUA_TOKEN_COUNT,
+} lua_token_type_t;
+
+typedef struct lua_token {
+	string_t string;
+	lua_token_type_t type;
+} lua_token_t;
 
 typedef struct line {
-	// char *text;
 	string_t string;
 
-	// Here will also be the token list,
-	// that's why a line isn't just a plain string
+	lua_token_t *tokens;
+	size_t tokens_len;
 } line_t;
 
 // Datastructure to represent a text file in the text editor

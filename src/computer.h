@@ -43,8 +43,8 @@ Memory layout, global constants
 #define MAX_CHARACTER_WIDTH 16
 #define MAX_CHARACTER_HEIGHT 16
 
-// TODO: should be a static global variable in code.c to be configured later
-#define TAB_SIZE 4
+// TODO: use ram code editor config value instead
+#define TAB_SIZE 2
 
 #define COLOR_NONE 255
 #define COLOR_BLACK 0
@@ -143,12 +143,15 @@ typedef struct gui_colors {
 typedef struct code_editor_config {
 	uint8_t font_index;
 
-	color_t background;
-	color_t keyword;
-	color_t string;
-	color_t api_function;
-	color_t operator;
-	color_t other;
+	// color_t background;
+	// color_t keyword;
+	// color_t string;
+	// color_t api_function;
+	// color_t operator;
+	// color_t other;
+	color_t background_color;
+	color_t token_colors[LUA_TOKEN_COUNT];
+	uint8_t tab_size;
 } code_editor_config_t;
 
 // 8MB RAM (excluding what the lua code takes up)

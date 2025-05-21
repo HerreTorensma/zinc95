@@ -12,6 +12,8 @@
 
 // TODO: These 3 should be configurable thus stored in RAM
 static const int _cursor_blink_speed = 30;
+
+// TODO: use ram config thing
 static const int _font_index = 2;
 static const int _scroll_speed = 3;
 
@@ -254,14 +256,6 @@ void code_editor_update(computer_t *computer) {
 	}
 
 	if (input_key_pressed(KEY_BACKSPACE)) {
-		// if (file->cursor_pos > 0) {
-		// 	file_remove_char_at(file, file->cursor_line, file->cursor_pos);
-		// } else {
-		// 	if (file->cursor_line > 0) {
-		// 		file->cursor_pos = file_merge_line_up(file, file->cursor_line);
-		// 		file->cursor_line--;
-		// 	}
-		// }
 		file_remove_char_at_cursor(file);
 	}
 	
@@ -300,7 +294,7 @@ void code_editor_draw(computer_t *computer) {
 	framebuffer_t *fb = &computer->ram->framebuffer;
 
 	gui_inset_frame(computer->ram, _layout.code_rect);
-	gfx_draw_filled_rect(fb, _layout.code_rect, COLOR_WHITE);
+	gfx_draw_filled_rect(fb, _layout.code_rect, computer->ram->code_editor_config.background_color);
 
 	// TODO: replace with temp alloc (maybe)
 	char line_number_buffer[8];
@@ -318,9 +312,14 @@ void code_editor_draw(computer_t *computer) {
 		// Line number
 		gui_draw_text(computer->ram, _font_index, line_number_buffer, POINT(_layout.code_rect.x + 2, _layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), 8);
 		
-		// Line itself
-		// gui_draw_text(computer->ram, _font_index, computer->file.lines[i + _scroll_amount].text, POINT(_layout.code_rect.x + 2 + 5 * (font->width + font->horizontal_space), _layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), COLOR_BLACK);
-		gui_draw_string(computer->ram, _font_index, computer->file.lines[i + _scroll_amount].string, POINT(_layout.code_rect.x + 2 + 5 * (font->width + font->horizontal_space), _layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), COLOR_BLACK);
+		// Line itself using tokens for syntax highlighting
+		line_t *current_line = &computer->file.lines[i + _scroll_amount];
+		size_t current_x = _layout.code_rect.x + 2 + 5 * (font->width + font->horizontal_space);
+		for (size_t j = 0; j < current_line->tokens_len; j++) {
+			color_t color = computer->ram->code_editor_config.token_colors[current_line->tokens[j].type];
+			gui_draw_string(computer->ram, _font_index, current_line->tokens[j].string, POINT(current_x, _layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), color);
+			current_x += gui_get_string_width(font, current_line->tokens[j].string, current_line->tokens[j].string.len);
+		}
 	}
 
 	// Draw cursor

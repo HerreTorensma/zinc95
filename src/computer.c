@@ -24,7 +24,9 @@ void computer_load_resouces(computer_t *computer) {
 	// /*
 	computer->ram->gui_colors = (gui_colors_t){
 		.text = 0,
-		.screen_background = (rgb_color_t){77, 0, 0},
+		// .screen_background = (rgb_color_t){77, 0, 0},
+		// .screen_background = (rgb_color_t){0, 170, 170},
+		.screen_background = (rgb_color_t){0, 0, 0},
 
 		.inset_frame_background = 7,
 		.outset_frame_background = 7,
@@ -196,10 +198,25 @@ void computer_load_resouces(computer_t *computer) {
 		.h_sprites = 1,
 		.v_sprites = 1,
 	};
+
+	computer->ram->code_editor_config = (code_editor_config_t){
+		.background_color = COLOR_WHITE,
+		.font_index = 2,
+		.tab_size = 4,
+		.token_colors = {
+			[LUA_TOKEN_KEYWORD] = 12,
+			[LUA_TOKEN_BUILTIN_FUNCTION] = 1,
+			[LUA_TOKEN_IDENTIFIER] = COLOR_BLACK,
+			[LUA_TOKEN_LITERAL] = 5,
+			[LUA_TOKEN_STRING] = 2,
+			[LUA_TOKEN_COMMENT] = 7,
+			[LUA_TOKEN_OPERATOR] = 9,
+			[LUA_TOKEN_WHITESPACE] = COLOR_NONE,
+		},
+	};
 }
 
 void computer_init(computer_t *computer) {
-	// Allocate 8MB ram
 	computer->ram = malloc(RAM_SIZE);
 	if (computer->ram == NULL) {
 		printf("Couldn't allocate memory for fantasy RAM.\n");

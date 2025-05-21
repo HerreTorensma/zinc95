@@ -6,26 +6,244 @@
 #include <string.h>
 #include <stdbool.h>
 
-const char *lua_keywords[] = {
+#include "../api/api.h"
+
+// Doesn't contain "true", "false" and "nil" since those should be treated as literals by the lexer
+static const char *lua_keywords[] = {
 	"and", "break", "do", "else", "elseif", "end",
-	"false", "for", "function", "if", "in", "local", "nil",
-	"not", "or", "repeat", "return", "then", "true", "until", "while",
+	"for", "function", "if", "in", "local",
+	"not", "or", "repeat", "return", "then", "until", "while",
 };
 
-typedef enum lua_token_type {
-	LUA_TOKEN_KEYWORD,
-	// Can be a number, boolean literal or nil
-	LUA_TOKEN_LITERAL,
-	LUA_TOKEN_OPERATOR,
-	LUA_TOKEN_BUILTIN_FUNCTION,
-	LUA_TOKEN_FUNCTION_NAME,
-	LUA_TOKEN_FUNCTION_ARGUMENT,
-} lua_token_type_t;
+static bool _string_eq(string_t a, string_t b) {
+	if (a.len != b.len) {
+		return false;
+	}
 
-typedef struct lua_token {
-	char *string;
-	lua_token_type_t type;
-} lua_token_t;
+	for (size_t i = 0; i < a.len; i++) {
+		if (a.data[i] != b.data[i]) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static bool _is_keyword(string_t word) {
+	for (size_t i = 0; i < 18; i++) {
+		if (_string_eq(word, STR(lua_keywords[i]))) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static bool _is_builtin_function(string_t word) {
+	for (size_t i = 0; i < API_FUNC_COUNT; i++) {
+		if (_string_eq(word, STR(api_metas[i].name))) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static bool _is_alphabetic(char c) {
+	if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
+		return true;
+	}
+	return false;
+}
+
+static bool _is_digit(char c) {
+	if (c >= '0' && c <= '9') {
+		return true;
+	}
+	return false;
+}
+
+static bool _is_alphanumeric(char c) {
+	return (_is_alphabetic(c) || _is_digit(c));
+}
+
+static bool _is_whitespace(char c) {
+	return (c == ' ' || c == '\t');
+}
+
+static bool _is_literal(string_t word) {
+	// return _string_eq(word, (string_t)STR("true")) || _string_eq(word, (string_t)STR("false"));
+	return _string_eq(word, STR("true")) || _string_eq(word, STR("false")) || _string_eq(word, STR("nil"));
+}
+
+static void _token_push(line_t *line, lua_token_type_t type, string_t string) {
+	line->tokens = realloc(line->tokens, (line->tokens_len + 1) * sizeof(lua_token_t));
+	
+	line->tokens[line->tokens_len].type = type;
+	line->tokens[line->tokens_len].string = string;
+	
+	line->tokens_len++;
+}
+
+static void _print_token_list(line_t *line) {
+	for (size_t i = 0; i < line->tokens_len; i++) {
+		switch (line->tokens[i].type) {
+			case LUA_TOKEN_KEYWORD: {
+				printf("[KEYWORD] ");
+				break;
+			}
+			case LUA_TOKEN_BUILTIN_FUNCTION: {
+				printf("[BUILTIN_FUNCTION] ");
+				break;
+			}
+			case LUA_TOKEN_IDENTIFIER: {
+				printf("[IDENTIFIER] ");
+				break;
+			}
+			case LUA_TOKEN_LITERAL: {
+				printf("[LITERAL] ");
+				break;
+			}
+			case LUA_TOKEN_STRING: {
+				printf("[STRING] ");
+				break;
+			}
+			case LUA_TOKEN_COMMENT: {
+				printf("[COMMENT] ");
+				break;
+			}
+			case LUA_TOKEN_OPERATOR: {
+				printf("[OPERATOR] ");
+				break;
+			}
+			case LUA_TOKEN_WHITESPACE: {
+				printf("[WHITESPACE] ");
+				break;
+			}
+		}
+
+		for (size_t j = 0; j < line->tokens[i].string.len; j++) {
+			printf("%c", line->tokens[i].string.data[j]);
+		}
+
+		printf("\n");
+	}
+
+	printf("\n");
+}
+
+// Update the token list on a given line
+static void _tokenize_line(file_t *file, size_t line_index) {
+	line_t *line = &file->lines[line_index];
+	string_t *string = &line->string;
+	size_t i = 0;
+
+	// Reset token list
+	line->tokens = malloc(1);
+	line->tokens_len = 0;
+
+	if (string->len == 0) {
+		return;
+	}
+
+	// Loop line string
+	while (i < string->len) {
+		char c = string->data[i];
+
+		// Keyword, builtin function, boolean literal, identifier
+		if (_is_alphabetic(c) || c == '_') {
+			const size_t start = i;
+			while (i < string->len && (_is_alphanumeric(string->data[i]) || string->data[i] == '_')) {
+				i++;
+			}
+
+			string_t word = {
+				.data = &string->data[start],
+				.len = i - start,
+			};
+
+			if (_is_keyword(word)) {
+				_token_push(line, LUA_TOKEN_KEYWORD, word);
+			} else if (_is_builtin_function(word)) {
+				_token_push(line, LUA_TOKEN_BUILTIN_FUNCTION, word);
+			} else if (_is_literal(word)) {
+				// If you think about it a bool is also a number :)
+				_token_push(line, LUA_TOKEN_LITERAL, word);
+			} else {
+				_token_push(line, LUA_TOKEN_IDENTIFIER, word);
+			}
+		// Number
+		} else if (_is_digit(c)) {
+			const size_t start = i;
+			while (i < string->len && (_is_digit(string->data[i]) || string->data[i] == '.')) {
+				i++;
+			}
+
+			string_t word = {
+				.data = &string->data[start],
+				.len = i - start,
+			};
+
+			_token_push(line, LUA_TOKEN_LITERAL, word);
+		// String
+		} else if (string->data[i] == '"' || string->data[i] == '\'') {
+			char quote_used = string->data[i];
+
+			size_t start = i;
+			i++;
+
+			while (i < string->len && (string->data[i] != quote_used)) {
+				i++;
+			}
+
+			if (i < string->len) {
+				i++;
+			}
+
+			string_t word = {
+				.data = &string->data[start],
+				.len = i - start,
+			};
+
+			_token_push(line, LUA_TOKEN_STRING, word);
+		// Comment
+		} else if (string->data[i] == '-' && (i + 1) < string->len && string->data[i + 1] == '-') {
+			string_t word = {
+				.data = &string->data[i],
+				.len = string->len - i,
+			};
+
+			_token_push(line, LUA_TOKEN_COMMENT, word);
+
+			break;
+		// Whitespace
+		} else if (_is_whitespace(c)) {
+			size_t start = i;
+			while (i < string->len && (_is_whitespace(string->data[i]))) {
+				i++;
+			}
+
+			string_t word = {
+				.data = &string->data[start],
+				.len = i - start,
+			};
+
+			_token_push(line, LUA_TOKEN_WHITESPACE, word);
+		// Operator, brackets
+		} else {
+			string_t word = {
+				.data = &string->data[i],
+				.len = 1,
+			};
+			_token_push(line, LUA_TOKEN_OPERATOR, word);
+
+			i++;
+		}
+	}
+
+	// For debugging
+	// _print_token_list(line);
+}
 
 // Get the amount of lines in a string, used for loading
 static size_t _string_get_lines_amount(const char *text) {
@@ -57,6 +275,9 @@ int string_get_indent_level(const char text[]) {
 // Add a new line to the data structure, used for loading a string before editing
 // len is without null terminator (TODO: confirm this)
 static void _file_add_line(file_t *file, const char *text, size_t len) {
+	file->lines[file->line_amount].tokens = malloc(1);
+	file->lines[file->line_amount].tokens_len = 0;
+
 	string_t *string = &file->lines[file->line_amount].string;
 
 	string->data = malloc(len * sizeof(char));
@@ -67,6 +288,8 @@ static void _file_add_line(file_t *file, const char *text, size_t len) {
 
 	memcpy(string->data, text, len);
 	string->len = len;
+
+	_tokenize_line(file, file->line_amount);
 
 	file->line_amount++;
 }
@@ -194,6 +417,9 @@ void file_split_line_down(file_t *file, size_t line, size_t pos, size_t indent_l
 	_move_lines_down(file, line);
 	
 	file->lines[line + 1ULL].string = _string_split(&file->lines[line].string, pos);
+
+	file->lines[line + 1ULL].tokens = malloc(1);
+	file->lines[line + 1ULL].tokens_len = 0;
 	
 	// TODO: Make this work (insert correct amount of tab characters)
 	// if (strlen(file->lines[line + 1].text) == 0) {
@@ -201,6 +427,9 @@ void file_split_line_down(file_t *file, size_t line, size_t pos, size_t indent_l
 	// 		file->lines[line + 1].text[i] = '\t';
 	// 	}
 	// }
+
+	_tokenize_line(file, line);
+	_tokenize_line(file, line + 1ULL);
 }
 
 // Assumes dest has enough memory for the concatenation
@@ -237,7 +466,12 @@ size_t file_merge_line_up(file_t *file, size_t line) {
 	bottom_string->data = NULL;
 	bottom_string->len = 0ULL;
 
+	// Free old tokens
+	free(file->lines[line].tokens);
+
 	_move_lines_up(file, line);
+
+	_tokenize_line(file, line - 1);
 
 	return old_len;
 }
@@ -255,6 +489,8 @@ void file_insert_char_at(file_t *file, size_t line, size_t pos, char c) {
 	
 	// Set character and update length
 	file->lines[line].string.data[pos] = c;
+
+	_tokenize_line(file, line);
 }
 
 void file_remove_char_at(file_t *file, size_t line, size_t pos) {
@@ -267,6 +503,8 @@ void file_remove_char_at(file_t *file, size_t line, size_t pos) {
 	memmove(string->data + pos - 1, string->data + pos, _len_at_pos(string, pos));
 	string->len--;
 	string->data = realloc(string->data, string->len);
+
+	_tokenize_line(file, line);
 }
 
 void file_free(file_t *file) {
