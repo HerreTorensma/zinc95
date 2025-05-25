@@ -1,5 +1,9 @@
 #include "math2d.h"
 
+void rect_print(rect_t rect) {
+	printf("x: %d, y: %d, w: %d, h: %d\n", rect.x, rect.y, rect.w, rect.h);
+}
+
 bool point_in_rect(point_t point, rect_t rect) {
 	if (point.x >= rect.x && point.x < rect.x + rect.w && point.y >= rect.y && point.y < rect.y + rect.h) {
 		return true;
@@ -37,6 +41,28 @@ rect_t rect_clip(rect_t container, rect_t rect) {
 
 	if (rect.h < 0) {
 		rect.h = 0;
+	}
+
+	return rect;
+}
+
+rect_t rect_from_2_points(point_t start, point_t end) {
+	rect_t rect = {0};
+	
+	if (start.x <= end.x) {
+		rect.x = start.x;
+		rect.w = end.x - start.x;
+	} else {
+		rect.x = end.x;
+		rect.w = start.x - end.x;
+	}
+
+	if (start.y <= end.y) {
+		rect.y = start.y;
+		rect.h = end.y - start.y;
+	} else {
+		rect.y = end.y;
+		rect.h = start.y - end.y;
 	}
 
 	return rect;

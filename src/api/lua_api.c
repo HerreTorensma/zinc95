@@ -96,6 +96,15 @@ static int _lua_ticks(lua_State *lua) {
 	return 1;
 }
 
+static int _lua_key(lua_State *lua) {
+	computer_t *computer = get_global_computer();
+	if (lua_gettop(lua) == 1) {
+		int key = (int)lua_tonumber(lua, 1);
+
+		api_key(computer->ram, key);
+	}
+}
+
 void lua_init(computer_t *computer) {
 	_lua = luaL_newstate();
 	luaL_openlibs(_lua);
@@ -107,6 +116,7 @@ void lua_init(computer_t *computer) {
 	lua_register(_lua, api_metas[API_FUNC_CIRC].name, _lua_circ);
 	lua_register(_lua, api_metas[API_FUNC_TICKS].name, _lua_ticks);
 	lua_register(_lua, api_metas[API_FUNC_MAP].name, _lua_map);
+	lua_register(_lua, api_metas[API_FUNC_KEY].name, _lua_key);
 
 	// if (luaL_dofile(_lua, "test.lua") != LUA_OK) {
 	// if (luaL_dostring(_lua, computer->code->buffer) != LUA_OK) {

@@ -1,6 +1,7 @@
 #include "gfx.h"
 
 #include <stdlib.h>
+#include <math.h>
 
 static bool _point_in_screen(int x, int y) {
 	if (x < 0) return false;
@@ -9,6 +10,28 @@ static bool _point_in_screen(int x, int y) {
 	if (y >= SCREEN_HEIGHT) return false;
 
 	return true;
+}
+
+static bool _point_in_bounds(surface_t surf, int x, int y) {
+	if (x < 0) return false;
+	if (x >= surf.width) return false;
+	if (y < 0) return false;
+	if (y >= surf.height) return false;
+
+	return true;
+}
+
+void surf_set_pixel(surface_t surf, int x, int y, int color) {
+	if (_point_in_bounds(surf, x, y)) {
+		surf.data[y * surf.width + x] = color;
+	}
+}
+
+color_t surf_get_pixel(surface_t surf, int x, int y) {
+	if (_point_in_bounds(surf, x, y)) {
+		return surf.data[y * surf.width + x];
+	}
+	return COLOR_NONE;
 }
 
 void gfx_generate_rgb_framebuffer(computer_t *computer) {
@@ -34,44 +57,44 @@ color_t gfx_get_pixel(framebuffer_t *fb, int x, int y) {
 	return COLOR_NONE;
 }
 
-void gfx_clear(framebuffer_t *fb, color_t color) {
+void gfx_clear(surface_t surface, color_t color) {
 	for (int y = 0; y < SCREEN_HEIGHT; y++) {
 		for (int x = 0; x < SCREEN_WIDTH; x++) {
-			gfx_set_pixel(fb, x, y, color);
+			surf_set_pixel(surface, x, y, color);
 		}
 	}
 }
 
 // TODO: make these geometry functions take any uint8_t array and a vec2i of size
 // so they can be used both for the framebuffer and the spritesheet
-void gfx_draw_rect(framebuffer_t *fb, rect_t rect, color_t color) {
+void gfx_draw_rect(surface_t surf, rect_t rect, color_t color) {
 	for (int j = rect.x; j < rect.x+rect.w; j++) {
-		gfx_set_pixel(fb, j, rect.y, color);
+		surf_set_pixel(surf, j, rect.y, color);
 	}
 
 	for (int j = rect.x; j < rect.x+rect.w; j++) {
-		gfx_set_pixel(fb, j, rect.y+rect.h-1, color);
+		surf_set_pixel(surf, j, rect.y+rect.h-1, color);
 	}
 
 	for (int i = rect.y; i < rect.y+rect.h; i++) {
-		gfx_set_pixel(fb, rect.x, i, color);
+		surf_set_pixel(surf, rect.x, i, color);
 	}
 
 	for (int i = rect.y; i < rect.y+rect.h; i++) {
-		gfx_set_pixel(fb, rect.x+rect.w - 1, i, color);
+		surf_set_pixel(surf, rect.x+rect.w - 1, i, color);
 	}
 }
 
-void gfx_draw_filled_rect(framebuffer_t *fb, rect_t rect, color_t color) {
+void gfx_draw_filled_rect(surface_t surf, rect_t rect, color_t color) {
 	for (int i = rect.y; i < rect.y+rect.h; i++) {
 		for (int j = rect.x; j < rect.x+rect.w; j++) {
-			gfx_set_pixel(fb, j, i, color);
+			surf_set_pixel(surf, j, i, color);
 		}
 	}
 }
 
 // Using Bresemham's line algorithm
-void gfx_draw_line(framebuffer_t *fb, point_t start, point_t end, color_t color) {
+void gfx_draw_line(surface_t surf, point_t start, point_t end, color_t color) {
 	int x1 = start.x;
 	int y1 = start.y;
 	int x2 = end.x;
@@ -84,7 +107,7 @@ void gfx_draw_line(framebuffer_t *fb, point_t start, point_t end, color_t color)
 	int error = dx - dy;
 	
 	while (true) {
-		gfx_set_pixel(fb, x1, y1, color);
+		surf_set_pixel(surf, x1, y1, color);
 		
 		if (x1 == x2 && y1 == y2) break;
 		
@@ -102,15 +125,15 @@ void gfx_draw_line(framebuffer_t *fb, point_t start, point_t end, color_t color)
 
 // Midpoint circle algorithm
 // TODO: adopt for ellipses
-void gfx_draw_circle(framebuffer_t *fb, point_t pos, int radius, color_t color) {
+void gfx_draw_circle(surface_t surf, point_t pos, int radius, color_t color) {
 	int x = pos.x;
 	int y = pos.y;
 	
 	// Initial 4 points
-	gfx_set_pixel(fb, x + radius, y, color);
-	gfx_set_pixel(fb, x - radius, y, color);
-	gfx_set_pixel(fb, x, y + radius, color);
-	gfx_set_pixel(fb, x, y - radius, color);
+	surf_set_pixel(surf, x + radius, y, color);
+	surf_set_pixel(surf, x - radius, y, color);
+	surf_set_pixel(surf, x, y + radius, color);
+	surf_set_pixel(surf, x, y - radius, color);
 
 	int x_offset = radius;
 	int y_offset = 0;
@@ -131,18 +154,23 @@ void gfx_draw_circle(framebuffer_t *fb, point_t pos, int radius, color_t color) 
 			break;
 		}
 
-		gfx_set_pixel(fb, x + x_offset, y + y_offset, color);
-		gfx_set_pixel(fb, x - x_offset, y + y_offset, color);
-		gfx_set_pixel(fb, x + x_offset, y - y_offset, color);
-		gfx_set_pixel(fb, x - x_offset, y - y_offset, color);
+		surf_set_pixel(surf, x + x_offset, y + y_offset, color);
+		surf_set_pixel(surf, x - x_offset, y + y_offset, color);
+		surf_set_pixel(surf, x + x_offset, y - y_offset, color);
+		surf_set_pixel(surf, x - x_offset, y - y_offset, color);
 
 		if (x_offset != y_offset) {
-			gfx_set_pixel(fb, x + y_offset, y + x_offset, color);
-			gfx_set_pixel(fb, x - y_offset, y + x_offset, color);
-			gfx_set_pixel(fb, x + y_offset, y - x_offset, color);
-			gfx_set_pixel(fb, x - y_offset, y - x_offset, color);
+			surf_set_pixel(surf, x + y_offset, y + x_offset, color);
+			surf_set_pixel(surf, x - y_offset, y + x_offset, color);
+			surf_set_pixel(surf, x + y_offset, y - x_offset, color);
+			surf_set_pixel(surf, x - y_offset, y - x_offset, color);
 		}
 	}
+}
+
+// TODO: implement
+void gfx_flood_fill(surface_t surf, point_t start, color_t color) {
+
 }
 
 color_t gfx_spritesheet_get_pixel(spritesheet_t *spritesheet, point_t point) {
@@ -171,18 +199,22 @@ rect_t sprite_index_to_spritesheet_rect(int sprite_index, int w, int h) {
 	return rect;
 }
 
-void gfx_draw_spritesheet_rect(ram_t *ram, point_t pos, rect_t rect, color_t color_key) {
+void gfx_draw_surface_rect(framebuffer_t *fb, surface_t surf, point_t pos, rect_t rect, color_t color_key) {
 	for (int i = 0; i < rect.h; i++) {
 		for (int j = 0; j < rect.w; j++) {
-			uint8_t color = gfx_spritesheet_get_pixel(&ram->spritesheet, (point_t){rect.x + j, rect.y + i});
+			uint8_t color = surf_get_pixel(surf, rect.x + j, rect.y + i);
 			if (color != color_key) {
-				gfx_set_pixel(&ram->framebuffer, pos.x + j, pos.y + i, color);
+				gfx_set_pixel(fb, pos.x + j, pos.y + i, color);
 			}
 		}
 	}
 }
 
-void gfx_draw_spritesheet_pro(ram_t *ram, rect_t source_rect, rect_t dest_rect, color_t color_key) {
+void gfx_draw_spritesheet_rect(ram_t *ram, point_t pos, rect_t rect, color_t color_key) {
+	gfx_draw_surface_rect(&ram->framebuffer, SPR_SURF(ram->spritesheet.data), pos, rect, color_key);
+}
+
+void gfx_draw_surface_pro(framebuffer_t *fb, surface_t surf, rect_t source_rect, rect_t dest_rect, color_t color_key) {
 	for (int y = 0; y < dest_rect.h; y++) {
 		for (int x = 0; x < dest_rect.w; x++) {
 			// Calculate normalized coords
@@ -193,13 +225,23 @@ void gfx_draw_spritesheet_pro(ram_t *ram, rect_t source_rect, rect_t dest_rect, 
 			int source_x = source_rect.x + u * source_rect.w;
 			int source_y = source_rect.y + v * source_rect.h;
 
-			uint8_t color = gfx_spritesheet_get_pixel(&ram->spritesheet, (point_t){source_x, source_y});
+			// TODO: look at this again later
+			// It's the same concept but only integer math so it scales less flexibally but also does not have incorrect pixels
+			// int source_x = source_rect.x + (x * source_rect.w) / dest_rect.w;
+			// int source_y = source_rect.y + (y * source_rect.h) / dest_rect.h;
+
+			// uint8_t color = gfx_spritesheet_get_pixel(&ram->spritesheet, (point_t){source_x, source_y});
+			uint8_t color = surf_get_pixel(surf, source_x, source_y);
 			
 			if (color != color_key) {
-				gfx_set_pixel(&ram->framebuffer, dest_rect.x + x, dest_rect.y + y, color);
+				gfx_set_pixel(fb, dest_rect.x + x, dest_rect.y + y, color);
 			}
 		}
 	}
+}
+
+void gfx_draw_spritesheet_pro(ram_t *ram, rect_t source_rect, rect_t dest_rect, color_t color_key) {
+	gfx_draw_surface_pro(&ram->framebuffer, SPR_SURF(ram->spritesheet.data), source_rect, dest_rect, color_key);
 }
 
 // TODO: implement flip_x, flip_y

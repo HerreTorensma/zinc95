@@ -95,28 +95,30 @@ void gui_outset_frame(ram_t *ram, rect_t rect) {
 	w--;
 	h--;
 
+	surface_t fb_surf = FB_SURF(&ram->framebuffer.data);
+
 	// Top gray line
-	gfx_draw_line(&ram->framebuffer, POINT(x, y), POINT(x + w - 1, y), ram->gui_colors.frame_edge_neutral);
+	gfx_draw_line(fb_surf, POINT(x, y), POINT(x + w - 1, y), ram->gui_colors.frame_edge_neutral);
 	// Left gray line
-	gfx_draw_line(&ram->framebuffer, POINT(x, y), POINT(x, y + h - 1), ram->gui_colors.frame_edge_neutral);
+	gfx_draw_line(fb_surf, POINT(x, y), POINT(x, y + h - 1), ram->gui_colors.frame_edge_neutral);
 
 	// Top white line
-	gfx_draw_line(&ram->framebuffer, POINT(x + 1, y + 1), POINT(x + w - 1, y + 1), ram->gui_colors.frame_edge_light);
+	gfx_draw_line(fb_surf, POINT(x + 1, y + 1), POINT(x + w - 1, y + 1), ram->gui_colors.frame_edge_light);
 	// Left white line
-	gfx_draw_line(&ram->framebuffer, POINT(x + 1, y + 1), POINT(x + 1, y + h - 1), ram->gui_colors.frame_edge_light);
+	gfx_draw_line(fb_surf, POINT(x + 1, y + 1), POINT(x + 1, y + h - 1), ram->gui_colors.frame_edge_light);
 
 	// Bottom black line
-	gfx_draw_line(&ram->framebuffer, POINT(x, y + h), POINT(x + w, y + h), ram->gui_colors.frame_edge_darker);
+	gfx_draw_line(fb_surf, POINT(x, y + h), POINT(x + w, y + h), ram->gui_colors.frame_edge_darker);
 	// Right black line
-	gfx_draw_line(&ram->framebuffer, POINT(x + w, y), POINT(x + w, y + h), ram->gui_colors.frame_edge_darker);
+	gfx_draw_line(fb_surf, POINT(x + w, y), POINT(x + w, y + h), ram->gui_colors.frame_edge_darker);
 
 	// Bottom gray line
-	gfx_draw_line(&ram->framebuffer, POINT(x + 1, y + h - 1), POINT(x + w - 1, y + h - 1), ram->gui_colors.frame_edge_dark);
+	gfx_draw_line(fb_surf, POINT(x + 1, y + h - 1), POINT(x + w - 1, y + h - 1), ram->gui_colors.frame_edge_dark);
 	// Right gray line
-	gfx_draw_line(&ram->framebuffer, POINT(x + w - 1, y + 1), POINT(x + w - 1, y + h - 1), ram->gui_colors.frame_edge_dark);
+	gfx_draw_line(fb_surf, POINT(x + w - 1, y + 1), POINT(x + w - 1, y + h - 1), ram->gui_colors.frame_edge_dark);
 
 	// Background
-	gfx_draw_filled_rect(&ram->framebuffer, RECT(x + 2, y + 2, w - 3, h - 3), ram->gui_colors.outset_frame_background);
+	gfx_draw_filled_rect(fb_surf, RECT(x + 2, y + 2, w - 3, h - 3), ram->gui_colors.outset_frame_background);
 }
 
 void gui_inset_frame(ram_t *ram, rect_t rect) {
@@ -135,28 +137,30 @@ void gui_inset_frame(ram_t *ram, rect_t rect) {
 	w--;
 	h--;
 
+	surface_t fb_surf = FB_SURF(&ram->framebuffer.data);
+
 	// Top gray line
-	gfx_draw_line(&ram->framebuffer, POINT(x, y), POINT(x + w - 1, y), ram->gui_colors.frame_edge_dark);
+	gfx_draw_line(fb_surf, POINT(x, y), POINT(x + w - 1, y), ram->gui_colors.frame_edge_dark);
 	// Left gray line
-	gfx_draw_line(&ram->framebuffer, POINT(x, y), POINT(x, y + h - 1), ram->gui_colors.frame_edge_dark);
+	gfx_draw_line(fb_surf, POINT(x, y), POINT(x, y + h - 1), ram->gui_colors.frame_edge_dark);
 
 	// Top black line
-	gfx_draw_line(&ram->framebuffer, POINT(x + 1, y + 1), POINT(x + w - 1, y + 1), ram->gui_colors.frame_edge_darker);
+	gfx_draw_line(fb_surf, POINT(x + 1, y + 1), POINT(x + w - 1, y + 1), ram->gui_colors.frame_edge_darker);
 	// Left black line
-	gfx_draw_line(&ram->framebuffer, POINT(x + 1, y + 1), POINT(x + 1, y + h - 1), ram->gui_colors.frame_edge_darker);
+	gfx_draw_line(fb_surf, POINT(x + 1, y + 1), POINT(x + 1, y + h - 1), ram->gui_colors.frame_edge_darker);
 
 	// Bottom white line
-	gfx_draw_line(&ram->framebuffer, POINT(x, y + h), POINT(x + w, y + h), ram->gui_colors.frame_edge_light);
+	gfx_draw_line(fb_surf, POINT(x, y + h), POINT(x + w, y + h), ram->gui_colors.frame_edge_light);
 	// Right white line
-	gfx_draw_line(&ram->framebuffer, POINT(x + w, y), POINT(x + w, y + h), ram->gui_colors.frame_edge_light);
+	gfx_draw_line(fb_surf, POINT(x + w, y), POINT(x + w, y + h), ram->gui_colors.frame_edge_light);
 
 	// Bottom gray line
-	gfx_draw_line(&ram->framebuffer, POINT(x + 1, y + h - 1), POINT(x + w - 1, y + h - 1), ram->gui_colors.frame_edge_neutral);
+	gfx_draw_line(fb_surf, POINT(x + 1, y + h - 1), POINT(x + w - 1, y + h - 1), ram->gui_colors.frame_edge_neutral);
 	// Right gray line
-	gfx_draw_line(&ram->framebuffer, POINT(x + w - 1, y + 1), POINT(x + w - 1, y + h - 1), ram->gui_colors.frame_edge_neutral);
+	gfx_draw_line(fb_surf, POINT(x + w - 1, y + 1), POINT(x + w - 1, y + h - 1), ram->gui_colors.frame_edge_neutral);
 
 	// Background
-	gfx_draw_filled_rect(&ram->framebuffer, RECT(x + 2, y + 2, w - 3, h - 3), ram->gui_colors.inset_frame_background);
+	gfx_draw_filled_rect(fb_surf, RECT(x + 2, y + 2, w - 3, h - 3), ram->gui_colors.inset_frame_background);
 }
 
 bool gui_button_ex(ram_t *ram, char text[], rect_t rect, bool already_pressed) {

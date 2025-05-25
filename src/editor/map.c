@@ -39,7 +39,7 @@ static const layout_t _layout = {
 // TODO: i need some kind of function to translate world coords to screen coords and grid coords or whatever
 // Instead or hardcoding it
 
-static void _draw_grid(framebuffer_t *fb) {
+static void _draw_grid(surface_t surf) {
 	int line_x = SCREEN_WIDTH - _cam_pos.x % SCREEN_WIDTH;
 	int line_y = SCREEN_HEIGHT - _cam_pos.y % SCREEN_HEIGHT;
 
@@ -50,8 +50,8 @@ static void _draw_grid(framebuffer_t *fb) {
 		line_y = -_cam_pos.y;
 	}
 
-	gfx_draw_line(fb, POINT(0, line_y), POINT(SCREEN_WIDTH, line_y), 7);
-	gfx_draw_line(fb, POINT(line_x, 0), POINT(line_x, SCREEN_HEIGHT), 7);
+	gfx_draw_line(surf, POINT(0, line_y), POINT(SCREEN_WIDTH, line_y), 7);
+	gfx_draw_line(surf, POINT(line_x, 0), POINT(line_x, SCREEN_HEIGHT), 7);
 }
 
 void map_editor_init(computer_t *computer) {
@@ -108,9 +108,9 @@ void map_editor_update(computer_t *computer) {
 }
 
 void map_editor_draw(computer_t *computer) {
-	framebuffer_t *fb = &computer->ram->framebuffer;
+	surface_t fb_surf = FB_SURF(computer->ram->framebuffer.data);
 
-	gfx_draw_filled_rect(fb, _layout.map_rect, 0);
+	gfx_draw_filled_rect(fb_surf, _layout.map_rect, 0);
 
 	// Draw only the visible portion so we're not drawing the entire map
 	// yeah
@@ -131,10 +131,10 @@ void map_editor_draw(computer_t *computer) {
 			.y =  ((mouse_pos.y + _cam_pos.y) / currently_editing_rect.h) * currently_editing_rect.h - _cam_pos.y,
 		};
 
-		gfx_draw_rect(fb, RECT(rect_pos.x - 1, rect_pos.y - 1, currently_editing_rect.w + 2, currently_editing_rect.h + 2), COLOR_WHITE);
+		gfx_draw_rect(fb_surf, RECT(rect_pos.x - 1, rect_pos.y - 1, currently_editing_rect.w + 2, currently_editing_rect.h + 2), COLOR_WHITE);
 	}
 
-	_draw_grid(fb);
+	_draw_grid(fb_surf);
 
 	gui_outset_frame(computer->ram, _layout.gui_rect);
 	sprite_selector_draw(computer, _layout.spritesheet_rect, _layout.spritesheet_pages_start_pos);

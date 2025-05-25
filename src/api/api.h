@@ -26,6 +26,8 @@ typedef enum api_func {
 
 	API_FUNC_MAP,
 
+	API_FUNC_KEY,
+
 	API_FUNC_TICKS,
 
 	API_FUNC_COUNT,

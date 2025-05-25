@@ -22,7 +22,7 @@ typedef enum workspace_type {
 	WORKSPACE_SOUND,
 } workspace_type_t;
 
-static workspace_type_t _active_workspace = WORKSPACE_CODE;
+static workspace_type_t _active_workspace = WORKSPACE_SPRITE;
 
 typedef struct layout {
 	point_t code_editor_button_pos;
@@ -94,7 +94,7 @@ void workspace_menu_update(computer_t *computer) {
 }
 
 void workspace_menu_draw(computer_t *computer) {
-	gfx_clear(&computer->ram->framebuffer, 7);
+	gfx_clear(FB_SURF(computer->ram->framebuffer.data), 7);
 
 	// gui_outset_frame(computer->ram, workspace_rect);
 

@@ -10,9 +10,6 @@
 
 #define COLOR_SQUARE_SIZE 8
 
-// static rect_t color_picker_rect = {0};
-// static rect_t sprite_editor_rect = {0};
-
 // All GUI element rects and positions in one place
 typedef struct layout {
 	rect_t color_picker_rect;
@@ -33,9 +30,12 @@ typedef struct layout {
 	point_t spritesheet_pages_start_pos;
 } layout_t;
 
+#define SPRITE_EDITOR_WIDTH 256
+#define SPRITE_EDITOR_HEIGHT 256
+
 static const layout_t _layout = {
 	.color_picker_rect = {{4, 388, 192, 88}},
-	.sprite_editor_rect = {{192, 56, 256, 256}},
+	.sprite_editor_rect = {{192, 56, SPRITE_EDITOR_WIDTH, SPRITE_EDITOR_HEIGHT}},
 
 	.selected_color_rect = {{4, 368, 16, 16}},
 	.selected_color_label_pos = {24, 371},
@@ -54,6 +54,51 @@ static const layout_t _layout = {
 };
 
 static uint8_t _selected_color = 0;
+
+static point_t _change_start = {0};
+static point_t _change_end = {0};
+
+typedef struct change {
+	rect_t region;
+	color_t *before;
+	color_t *after;
+} change_t;
+
+// I need some kind of overlay for the sprite editor, so
+// when you draw some stuff it will be on the overlay, then a change can be constructed
+// by getting the before from the real memory, then commiting the overlay and then getting the real memory again
+
+// This is also needed for drawing shapes like rectangle so there is a place to preview to
+// Although with that it would need to be cleared every frame
+// Or actually I can just draw it directly to the framebuffer until it is committed
+// Final though the preview is drawn to the framebuffer, then when the mouse is released again the change object is made and the rect is first only drawn on the overlay as well
+
+// Actually this won't work because when you draw freely it isn't guaranteed that
+// everything drawn is within the start and end point
+// the affected rect should get updated while drawing instead
+
+typedef enum tool {
+	TOOL_PENCIL,
+	TOOL_LINE,
+	TOOL_RECT,
+	TOOL_RECTF,
+	TOOL_ELLIPSE,
+	TOOL_ELLIPSEF,
+	TOOL_BUCKET,
+
+	TOOL_COUNT,
+} tool_t;
+
+static tool_t _selected_tool = TOOL_PENCIL;
+
+// Should actually not be accessed at all
+static color_t _overlay_data[SPRITE_EDITOR_WIDTH * SPRITE_EDITOR_HEIGHT];
+// Instead this should be accessed
+static surface_t _overlay = {
+	.data = _overlay_data,
+	.width = 256,
+	.height = 256,
+};
 
 void sprite_editor_init(computer_t *computer) {
 
@@ -90,7 +135,13 @@ static uint8_t _pos_to_color_index(point_t pos) {
 	}
 }
 
+static point_t _editor_to_spritesheet_pos(point_t point) {
+	return POINT(visible_rect.x + currently_editing_rect.x + point.x, visible_rect.y + currently_editing_rect.y + point.y);
+}
+
 void sprite_editor_update(computer_t *computer) {
+	gfx_clear(_overlay, COLOR_NONE);
+
 	point_t mouse_pos = input_get_mouse_pos();
 	
 	sprite_selector_update(computer, SNAP_MODE_ZOOM, _layout.spritesheet_rect);
@@ -104,19 +155,91 @@ void sprite_editor_update(computer_t *computer) {
 	if (point_in_rect(mouse_pos, _layout.sprite_editor_rect)) {
 		int cell_x = (mouse_pos.x - _layout.sprite_editor_rect.x) / (_layout.sprite_editor_rect.w / currently_editing_rect.w);
 		int cell_y = (mouse_pos.y - _layout.sprite_editor_rect.y) / (_layout.sprite_editor_rect.h / currently_editing_rect.h);
-		
-		if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
-			if (input_key_held(KEY_LALT) || input_key_held(KEY_RALT)) {
-				// TODO: make a function for this
-				_selected_color = computer->ram->spritesheet.data[(visible_rect.y + currently_editing_rect.y + cell_y) * SPRITESHEET_WIDTH + (visible_rect.x + currently_editing_rect.x + cell_x)];
-			}
 
-			computer->ram->spritesheet.data[(visible_rect.y + currently_editing_rect.y + cell_y) * SPRITESHEET_WIDTH + (visible_rect.x + currently_editing_rect.x + cell_x)] = _selected_color;
-
+		if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
+			_change_start = POINT(cell_x, cell_y);
 		}
 
-		if (input_mouse_button_held(MOUSE_BUTTON_RIGHT)) {
-			computer->ram->spritesheet.data[(visible_rect.y + currently_editing_rect.y + cell_y) * SPRITESHEET_WIDTH + (visible_rect.x + currently_editing_rect.x + cell_x)] = 0;
+		switch (_selected_tool) {
+			case (TOOL_PENCIL): {
+				if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+					if (input_key_held(KEY_LALT) || input_key_held(KEY_RALT)) {
+						// TODO: make a function for this
+						_selected_color = computer->ram->spritesheet.data[(visible_rect.y + currently_editing_rect.y + cell_y) * SPRITESHEET_WIDTH + (visible_rect.x + currently_editing_rect.x + cell_x)];
+					}
+		
+					computer->ram->spritesheet.data[(visible_rect.y + currently_editing_rect.y + cell_y) * SPRITESHEET_WIDTH + (visible_rect.x + currently_editing_rect.x + cell_x)] = _selected_color;
+		
+				}
+		
+				if (input_mouse_button_held(MOUSE_BUTTON_RIGHT)) {
+					computer->ram->spritesheet.data[(visible_rect.y + currently_editing_rect.y + cell_y) * SPRITESHEET_WIDTH + (visible_rect.x + currently_editing_rect.x + cell_x)] = 0;
+				}
+
+				break;
+			}
+
+			case (TOOL_LINE): {
+				if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+					_change_end = POINT(cell_x, cell_y);
+					// printf("change end: %d %d\n", _change_end.x, _change_end.y);
+					gfx_draw_line(_overlay, _change_start, _change_end, _selected_color);
+				}
+
+				if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
+					gfx_draw_line(SPR_SURF(computer->ram->spritesheet.data), _editor_to_spritesheet_pos(_change_start), _editor_to_spritesheet_pos(_change_end), _selected_color);
+				}
+
+				break;
+			}
+
+			case (TOOL_RECT): {
+				if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+					_change_end = POINT(cell_x, cell_y);
+					rect_t rect = rect_from_2_points(_change_start, _change_end);
+					rect.w++;
+					rect.h++;
+					gfx_draw_rect(_overlay, rect, _selected_color);
+				}
+
+				if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
+					rect_t raw_rect = rect_from_2_points(_change_start, _change_end);
+					rect_t rect = {
+						.x = visible_rect.x + currently_editing_rect.x + raw_rect.x,
+						.y = visible_rect.y + currently_editing_rect.y + raw_rect.y,
+						.w = raw_rect.w + 1,
+						.h = raw_rect.h + 1,
+					};
+
+					gfx_draw_rect(SPR_SURF(computer->ram->spritesheet.data), rect, _selected_color);
+				}
+
+				break;
+			}
+
+			case (TOOL_RECTF): {
+				if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+					_change_end = POINT(cell_x, cell_y);
+					rect_t rect = rect_from_2_points(_change_start, _change_end);
+					rect.w++;
+					rect.h++;
+					gfx_draw_filled_rect(_overlay, rect, _selected_color);
+				}
+
+				if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
+					rect_t raw_rect = rect_from_2_points(_change_start, _change_end);
+					rect_t rect = {
+						.x = visible_rect.x + currently_editing_rect.x + raw_rect.x,
+						.y = visible_rect.y + currently_editing_rect.y + raw_rect.y,
+						.w = raw_rect.w + 1,
+						.h = raw_rect.h + 1,
+					};
+
+					gfx_draw_filled_rect(SPR_SURF(computer->ram->spritesheet.data), rect, _selected_color);
+				}
+
+				break;
+			}
 		}
 	}
 
@@ -137,23 +260,24 @@ void sprite_editor_update(computer_t *computer) {
 
 void sprite_editor_draw(computer_t *computer) {
 	framebuffer_t *fb = &computer->ram->framebuffer;
+	surface_t fb_surf = FB_SURF(fb->data);
 
 	// Spritesheet / sprite selector
 	sprite_selector_draw(computer, _layout.spritesheet_rect, _layout.spritesheet_pages_start_pos);
 
 	// Color picker frame
 	gui_inset_frame(computer->ram, _layout.color_picker_rect);
-	gfx_draw_filled_rect(fb, _layout.color_picker_rect, 0);
+	gfx_draw_filled_rect(fb_surf, _layout.color_picker_rect, 0);
 
 	// Draw colors
 	for (int i = 0; i < PALETTE_SIZE - 8; i++) {
 		point_t color_cell_pos = _color_index_to_pos(i);
-		gfx_draw_filled_rect(fb, RECT(color_cell_pos.x, color_cell_pos.y, COLOR_SQUARE_SIZE, COLOR_SQUARE_SIZE), i);
+		gfx_draw_filled_rect(fb_surf, RECT(color_cell_pos.x, color_cell_pos.y, COLOR_SQUARE_SIZE, COLOR_SQUARE_SIZE), i);
 	}
 
 	// Draw selected color square
 	point_t selected_color_cell_pos = _color_index_to_pos(_selected_color);
-	gfx_draw_rect(fb, RECT(selected_color_cell_pos.x - 1, selected_color_cell_pos.y - 1, COLOR_SQUARE_SIZE + 2, COLOR_SQUARE_SIZE + 2), 15);
+	gfx_draw_rect(fb_surf, RECT(selected_color_cell_pos.x - 1, selected_color_cell_pos.y - 1, COLOR_SQUARE_SIZE + 2, COLOR_SQUARE_SIZE + 2), 15);
 
 	// Sprite editor
 	gui_inset_frame(computer->ram, _layout.sprite_editor_rect);
@@ -171,19 +295,22 @@ void sprite_editor_draw(computer_t *computer) {
 		.w = currently_editing_rect.w * scale,
 		.h = currently_editing_rect.h * scale,
 	};
-	gfx_draw_filled_rect(fb, _layout.sprite_editor_rect, 151);
+	gfx_draw_filled_rect(fb_surf, _layout.sprite_editor_rect, 151);
 	gfx_draw_spritesheet_pro(computer->ram, sprite_editing_rect, real_editor_rect, COLOR_NONE);
+
+	// Draw the overlay
+	gfx_draw_surface_pro(fb, _overlay, RECT(0, 0, currently_editing_rect.w, currently_editing_rect.h), real_editor_rect, COLOR_NONE);
 
 	// Selected color
 	char buffer[32];
 	gui_inset_frame(computer->ram, _layout.selected_color_rect);
-	gfx_draw_filled_rect(fb, _layout.selected_color_rect, _selected_color);
+	gfx_draw_filled_rect(fb_surf, _layout.selected_color_rect, _selected_color);
 	sprintf(buffer, "#%03d\n", _selected_color);
 	gui_draw_text(computer->ram, 0, buffer, _layout.selected_color_label_pos, computer->ram->gui_colors.text);
 	
 	// Selected sprite preview
 	gui_inset_frame(computer->ram, _layout.selected_sprite_rect);
-	gfx_draw_spritesheet_pro(computer->ram, currently_editing_rect, _layout.selected_sprite_rect, COLOR_NONE);
+	gfx_draw_spritesheet_pro(computer->ram, currently_editing_rect, _layout.selected_sprite_rect, COLOR_NONE); // TODO: fix so it adds the other rects to currently_editing_rect
 	sprintf(buffer, "#%04d\n", get_selected_sprite_index());
 	gui_draw_text(computer->ram, 0, buffer, _layout.selected_sprite_label_pos, computer->ram->gui_colors.text);
 
@@ -208,6 +335,13 @@ void sprite_editor_draw(computer_t *computer) {
 		selected_sprite->color_key = _selected_color;
 	}
 
-	gfx_draw_filled_rect(fb, _layout.color_key_rect, selected_sprite->color_key);
+	gfx_draw_filled_rect(fb_surf, _layout.color_key_rect, selected_sprite->color_key);
 	// gui_draw_text(computer->ram, 2, "Key:", POINT(spritesheet_rect.x + spritesheet_rect.w + 4 + 2, spritesheet_rect.y - 12 - 4 + 2), computer->ram->gui_colors.text);
+
+	// Tools
+	for (int i = 0; i < TOOL_COUNT; i++) {
+		if (gui_button_ex(computer->ram, "", RECT(i * 8, 20, 8, 8), i == _selected_tool)) {
+			_selected_tool = i;
+		}
+	}
 }

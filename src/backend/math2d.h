@@ -31,6 +31,8 @@ typedef union rect {
 
 #define RECT(_x, _y, _w, _h) ((rect_t){.x = _x, .y = _y, .w = _w, .h = _h})
 
+void rect_print(rect_t rect);
+
 // Check if an x, y coordinate is inside a given rect
 bool point_in_rect(point_t point, rect_t rect);
 
@@ -43,3 +45,5 @@ typedef union vec2 {
 	float x;
 	float y;
 } vec2_t;
+
+rect_t rect_from_2_points(point_t start, point_t end);

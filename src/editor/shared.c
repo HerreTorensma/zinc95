@@ -172,7 +172,7 @@ void sprite_selector_draw(computer_t *computer, rect_t spritesheet_rect, point_t
 	}
 	*/
 
-	gfx_draw_rect(&computer->ram->framebuffer, RECT(spritesheet_rect.x + currently_editing_rect.x - 1, spritesheet_rect.y + currently_editing_rect.y - 1, currently_editing_rect.w + 2, currently_editing_rect.h + 2), 15);
+	gfx_draw_rect(FB_SURF(computer->ram->framebuffer.data), RECT(spritesheet_rect.x + currently_editing_rect.x - 1, spritesheet_rect.y + currently_editing_rect.y - 1, currently_editing_rect.w + 2, currently_editing_rect.h + 2), 15);
 }
 
 int get_selected_sprite_index() {

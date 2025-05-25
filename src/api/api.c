@@ -47,6 +47,12 @@ const api_meta_t api_metas[API_FUNC_COUNT] = {
 		.desc = "Draw a portion of the given map layer",
 	},
 
+	[API_FUNC_KEY] = {
+		.name = "key",
+		.signature = "key(key)",
+		.desc = "Key if a key is being held",
+	},
+
 	[API_FUNC_TICKS] = {
 		.name = "ticks",
 		.signature = "ticks()",
@@ -70,23 +76,23 @@ void api_meta_print() {
 
 
 void api_cls(ram_t *ram, int color) {
-	gfx_clear(&ram->framebuffer, color);
+	gfx_clear(FB_SURF(ram->framebuffer.data), color);
 }
 
 void api_rect(ram_t *ram, int x, int y, int w, int h, int color) {
-	gfx_draw_rect(&ram->framebuffer, RECT(x, y, w, h), color);
+	gfx_draw_rect(FB_SURF(ram->framebuffer.data), RECT(x, y, w, h), color);
 }
 
 void api_rectf(ram_t *ram, int x, int y, int w, int h, int color) {
-	gfx_draw_filled_rect(&ram->framebuffer, RECT(x, y, w, h), color);
+	gfx_draw_filled_rect(FB_SURF(ram->framebuffer.data), RECT(x, y, w, h), color);
 }
 
 void api_line(ram_t *ram, int x1, int y1, int x2, int y2, int color) {
-	gfx_draw_line(&ram->framebuffer, POINT(x1, y1), POINT(x2, y2), color);
+	gfx_draw_line(FB_SURF(ram->framebuffer.data), POINT(x1, y1), POINT(x2, y2), color);
 }
 
 void api_circ(ram_t *ram, int x, int y, int radius, int color) {
-	gfx_draw_circle(&ram->framebuffer, POINT(x, y), radius, color);
+	gfx_draw_circle(FB_SURF(ram->framebuffer.data), POINT(x, y), radius, color);
 }
 
 void api_spr(ram_t *ram, int idx, int x, int y, int width, int height) {
