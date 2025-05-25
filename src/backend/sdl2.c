@@ -391,3 +391,32 @@ bool sdl2_input_mouse_button_held(mouse_button_t gui_button) {
 bool sdl2_input_mouse_scrolled(scroll_dir_t direction) {
 	return _scroll_state == direction;
 }
+
+void audio_update(float *buffer, int frames);
+
+static void _sdl2_audio_callback(void *userdata, uint8_t *stream, int len) {
+	float *out = (float *)stream;
+	int frames = len / (sizeof(float) * CHANNELS);
+	audio_update(out, frames);
+}
+
+void sdl2_audio_init(computer_t *computer) {
+	SDL_AudioSpec wav_spec;
+
+	SDL_AudioSpec spec = {
+		.freq = SAMPLE_RATE,
+		// .format = AUDIO_S16LSB,
+		.format = AUDIO_F32SYS, // A sample is a 32 bit float
+		// .channels = 1, // 1 channel for stereo audio
+		.channels = 2, // 2 channels for stereo audio
+		.samples = SAMPLES, // 1024 size of the audio buffer to be filled
+		.callback = _sdl2_audio_callback,
+	};
+
+	if (SDL_OpenAudio(&spec, NULL) < 0) {
+		printf("SDL_OpenAudio failed! SDL_Error: %s\n", SDL_GetError());
+		return 1;
+	}
+
+	// SDL_PauseAudio(0);
+}

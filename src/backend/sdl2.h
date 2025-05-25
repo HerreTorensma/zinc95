@@ -39,3 +39,6 @@ bool sdl2_input_mouse_button_released(mouse_button_t gui_button);
 bool sdl2_input_mouse_button_held(mouse_button_t gui_button);
 
 bool sdl2_input_mouse_scrolled(scroll_dir_t direction);
+
+// void sdl2_audio_callback(void *userdata, uint8_t *stream, int len);
+void sdl2_audio_init(computer_t *computer);

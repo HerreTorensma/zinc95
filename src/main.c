@@ -11,6 +11,7 @@ Main
 #include "backend/input.h"
 #include "api/lua_api.h"
 #include "api/api.h"
+#include "backend/audio.h"
 
 #define SDL_MAIN_HANDLED
 
@@ -23,6 +24,7 @@ int main(int argc, char *argv[]) {
 	api_meta_print();
 
 	window_init("zinc95", 2);
+	audio_init(&computer);
 
 	// Spritesheet page: 352x128 pixels (416x128 maybe)
 	// or 44x16 = 704 sprites per pages

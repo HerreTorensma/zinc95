@@ -58,6 +58,10 @@ Memory layout, global constants
 #define FPS 60
 #define FRAME_DELAY 1000/FPS
 
+#define SAMPLE_RATE 44100
+#define SAMPLES 1024
+#define CHANNELS 2
+
 typedef uint8_t color_t;
 
 typedef struct rgb_color {
