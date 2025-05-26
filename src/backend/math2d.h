@@ -8,6 +8,9 @@ Vector and rect implemention
 
 #include <stdbool.h>
 
+#define MIN(a, b) (a < b ? a : b)
+#define MAX(a, b) (a > b ? a : b)
+
 typedef struct point {
 	int x;
 	int y;

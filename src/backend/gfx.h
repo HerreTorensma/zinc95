@@ -59,6 +59,8 @@ void gfx_spritesheet_set_pixel(spritesheet_t *spritesheet, point_t point, color_
 // But I'm not sure if this should be in this file
 rect_t sprite_index_to_spritesheet_rect(int sprite_index, int w, int h);
 
+void gfx_copy_surface_rect(surface_t dest, surface_t src, point_t pos, rect_t rect, color_t color_key);
+
 void gfx_draw_surface_rect(framebuffer_t *fb, surface_t surf, point_t pos, rect_t rect, color_t color_key);
 
 // 4 ways to draw sprites
@@ -81,3 +83,6 @@ void gfx_draw_sprites_page(ram_t *ram, int page_index, int relative_index, point
 void gfx_draw_sprite_mask(ram_t *ram, int index, color_t color_key, color_t drawn_color);
 
 void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section);
+
+// Load bmp, might just use stb image actually
+void load_bmp(surface_t *surface, const char filename[]);

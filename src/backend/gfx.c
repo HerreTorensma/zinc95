@@ -199,6 +199,17 @@ rect_t sprite_index_to_spritesheet_rect(int sprite_index, int w, int h) {
 	return rect;
 }
 
+void gfx_copy_surface_rect(surface_t dest, surface_t src, point_t pos, rect_t rect, color_t color_key) {
+	for (int i = 0; i < rect.h; i++) {
+		for (int j = 0; j < rect.w; j++) {
+			uint8_t color = surf_get_pixel(src, rect.x + j, rect.y + i);
+			if (color != color_key) {
+				surf_set_pixel(dest, pos.x + j, pos.y + i, color);
+			}
+		}
+	}
+}
+
 void gfx_draw_surface_rect(framebuffer_t *fb, surface_t surf, point_t pos, rect_t rect, color_t color_key) {
 	for (int i = 0; i < rect.h; i++) {
 		for (int j = 0; j < rect.w; j++) {
@@ -268,4 +279,8 @@ void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section) {
 			gfx_draw_sprites(ram, sprite_index, POINT(pos.x + j * SPRITE_WIDTH, pos.y + i * SPRITE_HEIGHT), 1, 1);
 		}
 	}
+}
+
+void load_bmp(surface_t *surface, const char filename[]) {
+
 }

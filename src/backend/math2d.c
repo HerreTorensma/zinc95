@@ -12,6 +12,7 @@ bool point_in_rect(point_t point, rect_t rect) {
 }
 
 // TODO: properly test this function
+// TODO: make CLAMP macro and use it here
 rect_t rect_clip(rect_t container, rect_t rect) {
 	if (rect.x < container.x) {
 		rect.x = container.x;
@@ -46,6 +47,7 @@ rect_t rect_clip(rect_t container, rect_t rect) {
 	return rect;
 }
 
+// TODO: change to use MIN, MAX
 rect_t rect_from_2_points(point_t start, point_t end) {
 	rect_t rect = {0};
 	
