@@ -16,6 +16,11 @@ frequency: how dense the waves are kind of, controls the pitch
 
 #include <stdbool.h>
 
+// Define PI in case that didn't already happen for some reason
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 typedef enum note {
 	NOTE_C,
 	NOTE_CSHARP,
@@ -31,51 +36,10 @@ typedef enum note {
 	NOTE_B,
 } note_t;
 
-// typedef struct audio_frame {
-// 	float left;
-// 	float right;
-// } audio_frame_t;
+extern const char *note_to_string_map[];
 
-// #define AUDIO_BUFFER_SIZE 1024
+voice_t *voice_alloc(voice_pool_t *pool);
 
-// typedef struct audio_buffer {
-// 	audio_frame_t frames[AUDIO_BUFFER_SIZE];
-// 	int frames_amount;
-// } audio_buffer_t;
-
-typedef struct sample {
-	float left;
-	float right;
-} sample_t;
-
-typedef enum waveform {
-	WAVEFORM_SINE,
-	WAVEFORM_SQUARE,
-	WAVEFORM_TRIANGLE,
-} waveform_t;
-
-typedef struct oscillator {
-	waveform_t waveform;
-	float freq;
-	float phase;
-} oscillator_t;
-
-typedef struct voice {
-	oscillator_t oscillator;
-	float amplitude;
-
-	float duration;
-	float time;
-	
-	bool active;
-} voice_t;
-
-#define MAX_VOICES 32
-
-typedef struct voice_pool {
-	voice_t voices[MAX_VOICES];
-} voice_pool_t;
-
-float note_to_freq(note_t note, int octave);
+float note_to_freq_tet12(note_t note, int octave);
 
 void audio_update(float *buffer, int frames);

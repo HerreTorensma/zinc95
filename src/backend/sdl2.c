@@ -418,5 +418,5 @@ void sdl2_audio_init(computer_t *computer) {
 		return 1;
 	}
 
-	// SDL_PauseAudio(0);
+	SDL_PauseAudio(0);
 }

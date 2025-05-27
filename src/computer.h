@@ -181,6 +181,39 @@ typedef enum computer_state {
 	STATE_PLAYING,
 } computer_state_t;
 
+typedef struct sample {
+	float left;
+	float right;
+} sample_t;
+
+typedef enum waveform {
+	WAVEFORM_SINE,
+	WAVEFORM_SQUARE,
+	WAVEFORM_TRIANGLE,
+} waveform_t;
+
+typedef struct oscillator {
+	waveform_t waveform;
+	float freq;
+	float phase;
+} oscillator_t;
+
+typedef struct voice {
+	oscillator_t oscillator;
+	float amplitude;
+
+	// float duration;
+	// float time;
+	
+	bool active;
+} voice_t;
+
+#define MAX_VOICES 32
+
+typedef struct voice_pool {
+	voice_t voices[MAX_VOICES];
+} voice_pool_t;
+
 typedef struct computer {
 	ram_t *ram;
 	rgb_color_t rgb_framebuffer[SCREEN_WIDTH * SCREEN_HEIGHT];
@@ -195,6 +228,8 @@ typedef struct computer {
 	// later when I have the file collection system I will make this dynamically allocated
 	// I tried that currently but I'll have to revamp it again to why bother
 	char code_buffer[1024 * 1024 * sizeof(char)];
+
+	voice_pool_t voice_pool;
 } computer_t;
 
 void set_global_computer(computer_t *computer);
