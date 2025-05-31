@@ -79,7 +79,9 @@ void gui_draw_string(ram_t *ram, int font_index, string_t string, point_t pos, i
 
 void gui_draw_text(ram_t *ram, int font_index, const char text[], point_t pos, int color) {
 	size_t len = strlen(text);
-	gui_draw_string(ram, font_index, (string_t){.data = text, .len = len}, pos, color);
+	
+	// Dirty typecast, TODO look at this again maybe
+	gui_draw_string(ram, font_index, (string_t){.data = (char *)text, .len = len}, pos, color);
 }
 
 // TODO: make versions of these such that the rect is both in and out if that makes sense

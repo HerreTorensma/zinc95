@@ -1,8 +1,10 @@
 #include "mem.h"
 
 #include <inttypes.h>
+#include <stdio.h>
+#include <string.h>
 
-void stack_init(stack_t *stack, size_t item_size, size_t capacity) {
+void stack_init(zinc_stack_t *stack, size_t item_size, size_t capacity) {
 	stack->len = 0;
 	stack->capacity = capacity;
 	stack->item_size = item_size;
@@ -11,7 +13,7 @@ void stack_init(stack_t *stack, size_t item_size, size_t capacity) {
 }
 
 // TODO: when the stack is empty move the items down and still add the new one
-void stack_push(stack_t *stack, void *item) {
+void stack_push(zinc_stack_t *stack, void *item) {
 	if (stack->len >= stack->capacity) {
 		// Stack if full
 		printf("Stack has reached capacity of %zu\n", stack->capacity);
@@ -23,7 +25,7 @@ void stack_push(stack_t *stack, void *item) {
 }
 
 // Returns false if stack is empty
-bool stack_pop(stack_t *stack, void *item) {
+bool stack_pop(zinc_stack_t *stack, void *item) {
 	if (stack->len == 0) {
 		printf("Stack is empty\n");
 		// Stack is already empty
@@ -39,7 +41,7 @@ bool stack_pop(stack_t *stack, void *item) {
 	return true;
 }
 
-void stack_quit(stack_t *stack) {
+void stack_quit(zinc_stack_t *stack) {
 	free(stack->items);
 	stack->items = NULL;
 }

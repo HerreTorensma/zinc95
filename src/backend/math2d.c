@@ -1,5 +1,7 @@
 #include "math2d.h"
 
+#include <stdio.h>
+
 void rect_print(rect_t rect) {
 	printf("x: %d, y: %d, w: %d, h: %d\n", rect.x, rect.y, rect.w, rect.h);
 }

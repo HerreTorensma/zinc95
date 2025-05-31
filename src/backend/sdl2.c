@@ -415,7 +415,6 @@ void sdl2_audio_init(computer_t *computer) {
 
 	if (SDL_OpenAudio(&spec, NULL) < 0) {
 		printf("SDL_OpenAudio failed! SDL_Error: %s\n", SDL_GetError());
-		return 1;
 	}
 
 	SDL_PauseAudio(0);

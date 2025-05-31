@@ -44,4 +44,6 @@ voice_t *voice_alloc(voice_pool_t *pool);
 
 float note_to_freq_tet12(note_t note, int octave);
 
+void audio_init(computer_t *computer);
+
 void audio_update(float *buffer, int frames);
