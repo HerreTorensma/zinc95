@@ -136,7 +136,7 @@ void map_editor_draw(computer_t *computer) {
 
 	_draw_grid(fb_surf);
 
-	gui_outset_frame(computer->ram, _layout.gui_rect);
+	// gui_outset_frame(computer->ram, _layout.gui_rect);
 	sprite_selector_draw(computer, _layout.spritesheet_rect, _layout.spritesheet_pages_start_pos);
 
 	gui_button(computer->ram, "Entities", RECT(_layout.layer_buttons_start_pos.x, _layout.layer_buttons_start_pos.y, 48, 16));

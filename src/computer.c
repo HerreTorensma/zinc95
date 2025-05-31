@@ -6,6 +6,7 @@
 
 #include "res.h"
 #include "api/lua_api.h"
+#include "backend/stb_image.h"
 
 static computer_t *_computer;
 
@@ -496,4 +497,46 @@ void game_load(computer_t *computer, const char filename[]) {
 	fclose(file);
 
 	free(line);
+}
+
+color_t gfx_rgb_color_to_color(palette_t *palette, rgb_color_t rgb_color, color_t undefined_color);
+
+void skin_load(ram_t *ram, const char filename[]) {
+	int width = 0;
+	int height = 0;
+	int channels = 0;
+	uint8_t *data = stbi_load(filename, &width, &height, &channels, 0);
+	
+	if (data == NULL) {
+		printf("Image could not be loaded: %s\n", stbi_failure_reason());
+		return;
+	}
+
+	if (width != SKIN_WIDTH || height != SKIN_HEIGHT) {
+		stbi_image_free(data);
+		// Skin is not right
+		printf("Provided skin does not have the correct dimensions\n");
+		// TODO: default to some default skin maybe
+		return;
+	}
+	
+	// Load into skin
+	for (int y = 0; y < SKIN_HEIGHT; y++) {
+		for (int x = 0; x < SKIN_WIDTH; x++) {
+			int index = (y * SKIN_WIDTH + x) * channels;
+			
+			rgb_color_t rgb_color = {
+				.r = data[index + 0],
+				.g = data[index + 1],
+				.b = data[index + 2],
+			};
+
+			// Convert to pallete pixel
+			color_t color = gfx_rgb_color_to_color(&ram->palette, rgb_color, COLOR_BLACK);
+			// color_t color = data[index];
+			ram->skin.data[y * SKIN_WIDTH + x] = color;
+		}
+	}
+
+	stbi_image_free(data);
 }

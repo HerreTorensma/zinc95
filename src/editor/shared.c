@@ -131,7 +131,7 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 }
 
 void sprite_selector_draw(computer_t *computer, rect_t spritesheet_rect, point_t page_buttons_pos) {
-	gui_inset_frame(computer->ram, spritesheet_rect);
+	// gui_inset_frame(computer->ram, spritesheet_rect);
 	gfx_draw_spritesheet_rect(computer->ram, spritesheet_rect.pos, visible_rect, COLOR_NONE);
 
 	for (int i = 0; i < 8; i++) {

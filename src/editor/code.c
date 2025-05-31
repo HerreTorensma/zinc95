@@ -293,7 +293,7 @@ void code_editor_draw(computer_t *computer) {
 	font_t *font = &computer->ram->fonts[_font_index];
 	surface_t fb_surf = FB_SURF(computer->ram->framebuffer.data);
 
-	gui_inset_frame(computer->ram, _layout.code_rect);
+	// gui_inset_frame(computer->ram, _layout.code_rect);
 	gfx_draw_filled_rect(fb_surf, _layout.code_rect, computer->ram->code_editor_config.background_color);
 
 	// TODO: replace with temp alloc (maybe)

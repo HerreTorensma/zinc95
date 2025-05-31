@@ -364,7 +364,7 @@ void sprite_editor_draw(computer_t *computer) {
 	sprite_selector_draw(computer, _layout.spritesheet_rect, _layout.spritesheet_pages_start_pos);
 
 	// Color picker frame
-	gui_inset_frame(computer->ram, _layout.color_picker_rect);
+	// gui_inset_frame(computer->ram, _layout.color_picker_rect);
 	gfx_draw_filled_rect(fb_surf, _layout.color_picker_rect, 0);
 
 	// Draw colors
@@ -378,7 +378,7 @@ void sprite_editor_draw(computer_t *computer) {
 	gfx_draw_rect(fb_surf, RECT(selected_color_cell_pos.x - 1, selected_color_cell_pos.y - 1, COLOR_SQUARE_SIZE + 2, COLOR_SQUARE_SIZE + 2), 15);
 
 	// Sprite editor
-	gui_inset_frame(computer->ram, _layout.sprite_editor_rect);
+	// gui_inset_frame(computer->ram, _layout.sprite_editor_rect);
 	rect_t sprite_editing_rect = {
 		.x = visible_rect.x + currently_editing_rect.x,
 		.y = visible_rect.y + currently_editing_rect.y,
@@ -401,13 +401,13 @@ void sprite_editor_draw(computer_t *computer) {
 
 	// Selected color
 	char buffer[32];
-	gui_inset_frame(computer->ram, _layout.selected_color_rect);
+	// gui_inset_frame(computer->ram, _layout.selected_color_rect);
 	gfx_draw_filled_rect(fb_surf, _layout.selected_color_rect, _selected_color);
 	sprintf(buffer, "#%03d\n", _selected_color);
 	gui_draw_text(computer->ram, 0, buffer, _layout.selected_color_label_pos, computer->ram->gui_colors.text);
 	
 	// Selected sprite preview
-	gui_inset_frame(computer->ram, _layout.selected_sprite_rect);
+	// gui_inset_frame(computer->ram, _layout.selected_sprite_rect);
 	gfx_draw_spritesheet_pro(computer->ram, currently_editing_rect, _layout.selected_sprite_rect, COLOR_NONE); // TODO: fix so it adds the other rects to currently_editing_rect
 	sprintf(buffer, "#%04d\n", get_selected_sprite_index());
 	gui_draw_text(computer->ram, 0, buffer, _layout.selected_sprite_label_pos, computer->ram->gui_colors.text);

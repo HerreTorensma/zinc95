@@ -62,12 +62,15 @@ Memory layout, global constants
 #define SAMPLES 1024
 #define CHANNELS 2
 
+#define SKIN_WIDTH SCREEN_WIDTH * 5
+#define SKIN_HEIGHT SCREEN_HEIGHT
+
 typedef uint8_t color_t;
 
 typedef struct rgb_color {
-	color_t r;
-	color_t g;
-	color_t b;
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
 } rgb_color_t;
 
 typedef struct palette {
@@ -158,6 +161,10 @@ typedef struct code_editor_config {
 	uint8_t tab_size;
 } code_editor_config_t;
 
+typedef struct skin {
+	color_t data[SKIN_WIDTH * SKIN_HEIGHT];
+} skin_t;
+
 // 8MB RAM (excluding what the lua code takes up)
 typedef union ram {
 	struct {
@@ -171,6 +178,7 @@ typedef union ram {
 		gui_colors_t gui_colors;
 		uint64_t ticks;
 		code_editor_config_t code_editor_config;
+		skin_t skin;
 	};
 
 	uint8_t data[RAM_SIZE];
@@ -262,3 +270,5 @@ void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int 
 void game_save(computer_t *computer, const char filename[]);
 
 void game_load(computer_t *computer, const char filename[]);
+
+void skin_load(ram_t *ram, const char filename[]);

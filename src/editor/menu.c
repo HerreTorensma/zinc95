@@ -94,7 +94,16 @@ void workspace_menu_update(computer_t *computer) {
 }
 
 void workspace_menu_draw(computer_t *computer) {
-	gfx_clear(FB_SURF(computer->ram->framebuffer.data), 7);
+	// gfx_clear(FB_SURF(computer->ram->framebuffer.data), 7);
+	gfx_clear(FB_SURF(computer->ram->framebuffer.data), 0);
+
+	surface_t skin_surface = {
+		.data = computer->ram->skin.data,
+		.width = SKIN_WIDTH,
+		.height = SKIN_HEIGHT,
+	};
+	
+	gfx_draw_surface_rect(&computer->ram->framebuffer, skin_surface, POINT(0, 0), RECT(SCREEN_WIDTH * _active_workspace, 0, SCREEN_WIDTH, SCREEN_HEIGHT), COLOR_NONE);
 
 	// gui_outset_frame(computer->ram, workspace_rect);
 
@@ -121,7 +130,9 @@ void workspace_menu_draw(computer_t *computer) {
 
 	// Menu bar
 	// gui_outset_frame(computer->ram, bar_rect);
-	gui_outset_frame(computer->ram, RECT(0, 0, SCREEN_WIDTH, 20));
+	// gui_outset_frame(computer->ram, RECT(0, 0, SCREEN_WIDTH, 20));
+	// TODO: not hardcode
+	gfx_draw_surface_rect(&computer->ram->framebuffer, skin_surface, POINT(0, 0), RECT(SCREEN_WIDTH * 4, 0, SCREEN_WIDTH, 20), COLOR_NONE);
 	
 	// gui_button(computer->ram, "", (rect_t){2, 2, 16, 16});
 	

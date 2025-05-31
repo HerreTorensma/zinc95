@@ -10,6 +10,7 @@ void stack_init(stack_t *stack, size_t item_size, size_t capacity) {
 	stack->items = calloc(capacity, item_size);
 }
 
+// TODO: when the stack is empty move the items down and still add the new one
 void stack_push(stack_t *stack, void *item) {
 	if (stack->len >= stack->capacity) {
 		// Stack if full

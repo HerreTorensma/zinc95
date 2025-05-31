@@ -33,6 +33,8 @@ color_t surf_get_pixel(surface_t surf, int x, int y);
 // Generate a buffer of rgb_color_t using palette so it can be rendered by a backend later
 void gfx_generate_rgb_framebuffer(computer_t *computer);
 
+color_t gfx_rgb_color_to_color(palette_t *palette, rgb_color_t rgb_color, color_t undefined_color);
+
 // Set a pixel on the framebuffer
 void gfx_set_pixel(framebuffer_t *fb, int x, int y, int color);
 

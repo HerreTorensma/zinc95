@@ -1,6 +1,7 @@
 #include "gfx.h"
 
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 
 static bool _point_in_screen(int x, int y) {
@@ -43,6 +44,17 @@ void gfx_generate_rgb_framebuffer(computer_t *computer) {
 	}
 }
 
+// TODO: don't do linear search
+color_t gfx_rgb_color_to_color(palette_t *palette, rgb_color_t rgb_color, color_t undefined_color) {
+	for (size_t i = 0; i < PALETTE_SIZE; i++) {
+		if (palette->colors[i].r == rgb_color.r && palette->colors[i].g == rgb_color.g && palette->colors[i].b == rgb_color.b) {
+			return i;
+		}
+	}
+
+	printf("idk either man\n");
+	return undefined_color;
+}
 
 void gfx_set_pixel(framebuffer_t *fb, int x, int y, int color) {
 	if (_point_in_screen(x, y)) {

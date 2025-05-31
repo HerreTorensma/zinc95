@@ -1,7 +1,6 @@
 #include "audio.h"
 
 #include "sdl2.h"
-#include "../computer.h"
 
 #include <math.h>
 
@@ -65,6 +64,18 @@ void audio_init(computer_t *computer) {
 	sdl2_audio_init(computer);
 }
 
+static oscillator_t _osc1 = {
+	.freq = 440.0f,
+	.phase = 0.0f,
+	.waveform = WAVEFORM_SINE,
+};
+
+static oscillator_t _osc2 = {
+	.freq = 460.0f,
+	.phase = 0.0f,
+	.waveform = WAVEFORM_SQUARE,
+};
+
 void audio_update(float *buffer, int frames) {
 	voice_pool_t *pool = &get_global_computer()->voice_pool;
 
@@ -79,9 +90,14 @@ void audio_update(float *buffer, int frames) {
 			}
 
 			sample_t sample = osc_next_sample(&voice->oscillator);
-
 			left += sample.left * voice->amplitude;
 			right += sample.right * voice->amplitude;
+
+			// sample_t sample1 = osc_next_sample(&_osc1);
+			// sample_t sample2 = osc_next_sample(&_osc2);
+
+			// left += (sample1.left * 10.0f + sample2.left) * voice->amplitude;
+			// right += (sample1.right * 10.0f + sample2.right) * voice->amplitude;
 		}
 
 		buffer[i * 2 + 0] = left;

@@ -2,6 +2,7 @@
 
 CC = gcc
 CFLAGS = -g -Wall -Wextra -Wsign-conversion -Wpedantic -std=c11 -Wno-unused-parameter -Werror=incompatible-pointer-types
+# CFLAGS = -O2 -Wall -Wextra -Wsign-conversion -Wpedantic -std=c11 -Wno-unused-parameter -Werror=incompatible-pointer-types
 
 ifeq ($(OS), Windows_NT)
 	CFLAGS += -Ilib/SDL2_win/include -Ilib/lua-5.4.7/src
@@ -23,7 +24,7 @@ else
 endif
 
 SRC = src/main.c src/computer.c src/res.c \
-src/backend/window.c src/backend/sdl2.c src/backend/input.c src/backend/math2d.c src/backend/gfx.c src/backend/gui.c src/backend/text_file.c src/backend/audio.c src/backend/mem.c \
+src/backend/window.c src/backend/sdl2.c src/backend/input.c src/backend/math2d.c src/backend/gfx.c src/backend/gui.c src/backend/text_file.c src/backend/audio.c src/backend/mem.c src/backend/stb_image.c\
 src/editor/menu.c  src/editor/code.c src/editor/sprite.c src/editor/map.c \
 src/editor/sound.c src/editor/shared.c \
 src/api/api.c src/api/lua_api.c
