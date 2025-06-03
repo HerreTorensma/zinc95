@@ -12,6 +12,7 @@ Memory layout, global constants
 #include <stdbool.h>
 
 #include "backend/text_file.h"
+#include "backend/math2d.h"
 
 // TODO: rename some stuff so it's all consistent, dont mix AMOUNT, MAX, TOTAL etc.
 
@@ -270,5 +271,32 @@ void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int 
 void game_save(computer_t *computer, const char filename[]);
 
 void game_load(computer_t *computer, const char filename[]);
+
+typedef struct button {
+	rect_t unpressed_rect;
+	rect_t pressed_rect;
+} button_t;
+
+typedef struct skin_layout {
+	rect_t code_button_unpressed_rect;
+	rect_t code_button_pressed_rect;
+
+	rect_t sprite_button_unpressed_rect;
+	rect_t sprite_button_pressed_rect;
+	
+	rect_t map_button_unpressed_rect;
+	rect_t map_button_pressed_rect;
+
+	rect_t sound_button_unpressed_rect;
+	rect_t sound_button_pressed_rect;
+
+	rect_t save_button_unpressed_rect;
+	rect_t save_button_pressed_rect;
+
+	rect_t play_button_unpressed_rect;
+	rect_t play_button_pressed_rect;
+} skin_layout_t;
+
+extern const skin_layout_t skin_layout;
 
 void skin_load(ram_t *ram, const char filename[]);

@@ -8,6 +8,7 @@ GUI-related stuff like text drawing, buttons etc.
 
 #include "../computer.h"
 #include "../backend/math2d.h"
+#include "../backend/gfx.h"
 
 #define GUI_STANDARD_BUTTON_SIZE 16
 #define GUI_SMALL_BUTTON_SIZE 12
@@ -41,3 +42,5 @@ int gui_x_to_string_index(font_t *font, string_t string, int x);
 void gui_init_font(ram_t *ram, int index, int start_sprite_index, int horizontal_space, int height, int h_sprites, int v_sprites);
 
 rect_t gui_rect_to_outset_frame_rect(rect_t rect);
+
+bool static_button(framebuffer_t *fb, surface_t src, point_t pos, rect_t unpressed_rect, rect_t pressed_rect, bool already_pressed);

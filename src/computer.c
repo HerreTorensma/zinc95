@@ -540,3 +540,23 @@ void skin_load(ram_t *ram, const char filename[]) {
 
 	stbi_image_free(data);
 }
+
+const skin_layout_t skin_layout = {
+	.code_button_unpressed_rect = {{2560, 32, 64, 16}},
+	.code_button_pressed_rect = {{2560, 48, 64, 16}},
+
+	.sprite_button_unpressed_rect = {{2624, 32, 64, 16}},
+	.sprite_button_pressed_rect = {{2624, 48, 64, 16}},
+
+	.map_button_unpressed_rect = {{2688, 32, 64, 16}},
+	.map_button_pressed_rect = {{2688, 48, 64, 16}},
+
+	.sound_button_unpressed_rect = {{2752, 32, 64, 16}},
+	.sound_button_pressed_rect = {{2752, 48, 64, 16}},
+
+	.save_button_unpressed_rect = {{2816, 32, 16, 16}},
+	.save_button_pressed_rect = {{2816, 48, 16, 16}},
+	
+	.play_button_unpressed_rect = {{2832, 32, 16, 16}},
+	.play_button_pressed_rect = {{2832, 48, 16, 16}},
+};

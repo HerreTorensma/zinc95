@@ -6,3 +6,4 @@ zinc95.exe
 lib/lua-5.4.7/src/liblua.a
 lib/lua-5.4.7/src/lua
 lib/lua-5.4.7/src/luac
+.DS_Store

@@ -200,6 +200,39 @@ bool gui_button(ram_t *ram, char text[], rect_t rect) {
 	return gui_button_ex(ram, text, rect, false);
 }
 
+bool static_button(framebuffer_t *fb, surface_t src, point_t pos, rect_t unpressed_rect, rect_t pressed_rect, bool already_pressed) {
+	point_t mouse_pos = input_get_mouse_pos();
+
+	rect_t rect = {
+		.x = pos.x,
+		.y = pos.y,
+		.w = unpressed_rect.w,
+		.h = unpressed_rect.h,
+	};
+	
+	if (point_in_rect(mouse_pos, rect)) {
+		if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+			already_pressed = true;
+		}
+	}
+	
+	if (already_pressed) {
+		rect_t new_rect = {
+			.x = rect.x + 2,
+			.y = rect.y + 2,
+			.w = rect.w - 4,
+			.h = rect.h - 4,
+		};
+		
+		gfx_draw_surface_rect(fb, src, pos, pressed_rect, COLOR_NONE);
+
+	} else {
+		gfx_draw_surface_rect(fb, src, pos, unpressed_rect, COLOR_NONE);
+	}
+	
+	return already_pressed;
+}
+
 // TODO: investigate why this function exists because apparantly I forgot
 // aha it only returns true once when clicked, instead of as long as the mouse button is held
 // I should probably refactor this a little bit
