@@ -48,7 +48,23 @@ Memory layout, global constants
 #define TAB_SIZE 2
 
 #define COLOR_NONE 255
+
+// First 16 VGA colors
 #define COLOR_BLACK 0
+#define COLOR_DARKBLUE 1
+#define COLOR_DARKGREEN 2
+#define COLOR_DARKCYAN 3
+#define COLOR_DARKRED 4
+#define COLOR_PURPLE 5
+#define COLOR_BROWN 6
+#define COLOR_LIGHTGRAY 7
+#define COLOR_DARKGRAY 8
+#define COLOR_BLUE 9
+#define COLOR_GREEN 10
+#define COLOR_CYAN 11
+#define COLOR_RED 12
+#define COLOR_PINK 13
+#define COLOR_YELLOW 14
 #define COLOR_WHITE 15
 
 #define MAP_LAYERS_AMOUNT 4
@@ -130,6 +146,7 @@ typedef struct file_collection {
 // } draw_state_t;
 
 // Colors used by GUI
+// TODO: remove completely because it's replaced by the skin system
 typedef struct gui_colors {
 	// Since the borders of the screen are not in the framebuffer it can just be an rgb color
 	rgb_color_t screen_background;
@@ -159,11 +176,15 @@ typedef struct code_editor_config {
 	// color_t other;
 	color_t background_color;
 	color_t token_colors[LUA_TOKEN_COUNT];
-	uint8_t tab_size;
+	uint8_t tab_size; // TODO: use this instead of that #define
 } code_editor_config_t;
 
 typedef struct skin {
 	color_t data[SKIN_WIDTH * SKIN_HEIGHT];
+	color_t color_key;
+
+	uint8_t font_index;
+	color_t font_color;
 } skin_t;
 
 // 8MB RAM (excluding what the lua code takes up)
@@ -272,29 +293,37 @@ void game_save(computer_t *computer, const char filename[]);
 
 void game_load(computer_t *computer, const char filename[]);
 
+// GUI related stuff
 typedef struct button {
 	rect_t unpressed_rect;
 	rect_t pressed_rect;
 } button_t;
 
+typedef struct button_array {
+	button_t base;
+	point_t increase; // Used for both positioning in the skin and the program layout, so the skin and layout should match
+	int amount;
+} button_array_t;
+
 typedef struct skin_layout {
-	rect_t code_button_unpressed_rect;
-	rect_t code_button_pressed_rect;
+	button_t code_button;
+	button_t sprite_button;
+	button_t map_button;
+	button_t sound_button;
 
-	rect_t sprite_button_unpressed_rect;
-	rect_t sprite_button_pressed_rect;
+	button_t save_button;
+	button_t play_button;
+
+	button_array_t sprite_flag_buttons;
+
+	button_t color_key_button;
 	
-	rect_t map_button_unpressed_rect;
-	rect_t map_button_pressed_rect;
+	button_array_t spritesheet_page_buttons;
 
-	rect_t sound_button_unpressed_rect;
-	rect_t sound_button_pressed_rect;
+	button_t map_entity_layer_button;
+	button_array_t map_layer_buttons;
 
-	rect_t save_button_unpressed_rect;
-	rect_t save_button_pressed_rect;
-
-	rect_t play_button_unpressed_rect;
-	rect_t play_button_pressed_rect;
+	button_array_t sprite_tool_buttons;
 } skin_layout_t;
 
 extern const skin_layout_t skin_layout;

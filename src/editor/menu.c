@@ -94,18 +94,10 @@ void workspace_menu_update(computer_t *computer) {
 }
 
 void workspace_menu_draw(computer_t *computer) {
-	// gfx_clear(FB_SURF(computer->ram->framebuffer.data), 7);
 	gfx_clear(FB_SURF(computer->ram->framebuffer.data), 0);
 
-	surface_t skin_surface = {
-		.data = computer->ram->skin.data,
-		.width = SKIN_WIDTH,
-		.height = SKIN_HEIGHT,
-	};
-	
-	gfx_draw_surface_rect(&computer->ram->framebuffer, skin_surface, POINT(0, 0), RECT(SCREEN_WIDTH * _active_workspace, 0, SCREEN_WIDTH, SCREEN_HEIGHT), COLOR_NONE);
-
-	// gui_outset_frame(computer->ram, workspace_rect);
+	// Draw active editor part of skin
+	gfx_draw_surface_rect(&computer->ram->framebuffer, SKIN_SURF(computer->ram->skin.data), POINT(0, 0), RECT(SCREEN_WIDTH * _active_workspace, 0, SCREEN_WIDTH, SCREEN_HEIGHT), COLOR_NONE);
 
 	switch (_active_workspace) {
 		case WORKSPACE_CODE:
@@ -129,46 +121,32 @@ void workspace_menu_draw(computer_t *computer) {
 	}
 
 	// Menu bar
-	// gui_outset_frame(computer->ram, bar_rect);
-	// gui_outset_frame(computer->ram, RECT(0, 0, SCREEN_WIDTH, 20));
 	// TODO: not hardcode
-	gfx_draw_surface_rect(&computer->ram->framebuffer, skin_surface, POINT(0, 0), RECT(SCREEN_WIDTH * 4, 0, SCREEN_WIDTH, 20), COLOR_NONE);
-	
-	// gui_button(computer->ram, "", (rect_t){2, 2, 16, 16});
-	
-	// if (gui_button_ex(computer->ram, "Code", RECT(_layout.code_editor_button_pos.x, _layout.code_editor_button_pos.y, 64, 16), _active_workspace == WORKSPACE_CODE)) {
-	if (static_button(&computer->ram->framebuffer, skin_surface, _layout.code_editor_button_pos, skin_layout.code_button_unpressed_rect, skin_layout.code_button_pressed_rect, _active_workspace == WORKSPACE_CODE)) {
+	gfx_draw_surface_rect(&computer->ram->framebuffer, SKIN_SURF(computer->ram->skin.data), POINT(0, 0), RECT(SCREEN_WIDTH * 4, 0, SCREEN_WIDTH, 20), COLOR_NONE);
+
+	// Editors
+	if (gui_button(computer->ram, _layout.code_editor_button_pos, skin_layout.code_button, _active_workspace == WORKSPACE_CODE)) {
 		_active_workspace = WORKSPACE_CODE;
 	}
 	
-	// if (gui_button_ex(computer->ram, "Sprite", RECT(_layout.sprite_editor_button_pos.x, _layout.sprite_editor_button_pos.y, 64, 16), _active_workspace == WORKSPACE_SPRITE)) {
-	if (static_button(&computer->ram->framebuffer, skin_surface, _layout.sprite_editor_button_pos, skin_layout.sprite_button_unpressed_rect, skin_layout.sprite_button_pressed_rect, _active_workspace == WORKSPACE_SPRITE)) {
+	if (gui_button(computer->ram, _layout.sprite_editor_button_pos, skin_layout.sprite_button, _active_workspace == WORKSPACE_SPRITE)) {
 		_active_workspace = WORKSPACE_SPRITE;
 	}
 	
-	// if (gui_button_ex(computer->ram, "Map", RECT(_layout.map_editor_button_pos.x, _layout.map_editor_button_pos.y, 64, 16), _active_workspace == WORKSPACE_MAP)) {
-	if (static_button(&computer->ram->framebuffer, skin_surface, _layout.map_editor_button_pos, skin_layout.map_button_unpressed_rect, skin_layout.map_button_pressed_rect, _active_workspace == WORKSPACE_MAP)) {
+	if (gui_button(computer->ram, _layout.map_editor_button_pos, skin_layout.map_button, _active_workspace == WORKSPACE_MAP)) {
 		_active_workspace = WORKSPACE_MAP;
 	}
 	
-	// if (gui_button_ex(computer->ram, "Sound", RECT(_layout.sound_editor_button_pos.x, _layout.sound_editor_button_pos.y, 64, 16), _active_workspace == WORKSPACE_SOUND)) {
-	if (static_button(&computer->ram->framebuffer, skin_surface, _layout.sound_editor_button_pos, skin_layout.sound_button_unpressed_rect, skin_layout.sound_button_pressed_rect, _active_workspace == WORKSPACE_SOUND)) {
+	if (gui_button(computer->ram, _layout.sound_editor_button_pos, skin_layout.sound_button, _active_workspace == WORKSPACE_SOUND)) {
 		_active_workspace = WORKSPACE_SOUND;
 	}
-	
-	// if (gui_press_button(computer->ram, "", RECT(_layout.save_button_pos.x, _layout.save_button_pos.y, 16, 16))) {
-	if (static_button(&computer->ram->framebuffer, skin_surface, _layout.save_button_pos, skin_layout.save_button_unpressed_rect, skin_layout.save_button_pressed_rect, false)) {
+
+	// Save and load
+	if (gui_press_button(computer->ram, _layout.save_button_pos, skin_layout.save_button)) {
 		game_save(computer, "game.zinc95");
 	}
-	// api_spr(computer, 5858, SCREEN_WIDTH-16-16-2, 2, 2, 2, 1);
-	// api_spr(computer, 5858, SCREEN_WIDTH-16-16-2, 2, 2, 2);
-	// gfx_draw_sprites(computer->ram, SAVE_ICON_INDEX, POINT(SCREEN_WIDTH-16-16-2, 2), 2, 2);
 	
-	// if (gui_press_button(computer->ram, "", RECT(_layout.play_button_pos.x, _layout.play_button_pos.y, 16, 16))) {
-	if (static_button(&computer->ram->framebuffer, skin_surface, _layout.play_button_pos, skin_layout.play_button_unpressed_rect, skin_layout.play_button_pressed_rect, false)) {
+	if (gui_press_button(computer->ram, _layout.play_button_pos, skin_layout.play_button)) {
 		play_game(computer);
 	}
-	// api_spr(computer, 5856, SCREEN_WIDTH-16-2, 2, 2, 2, 1);
-	// api_spr(computer, 5856, SCREEN_WIDTH-16-2, 2, 2, 2);
-	// gfx_draw_sprites(computer->ram, PLAY_ICON_INDEX, POINT(SCREEN_WIDTH-16-2, 2), 2, 2);
 }

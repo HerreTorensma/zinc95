@@ -26,6 +26,9 @@ typedef struct surface {
 // Same for the spritesheet
 #define SPR_SURF(_data) ((surface_t){.data = (color_t *)_data, .width = SPRITESHEET_WIDTH, .height = SPRITESHEET_HEIGHT})
 
+// Skin
+#define SKIN_SURF(_data) ((surface_t){.data = (color_t *)_data, .width = SKIN_WIDTH, .height = SKIN_HEIGHT})
+
 void surf_set_pixel(surface_t surf, int x, int y, int color);
 
 color_t surf_get_pixel(surface_t surf, int x, int y);

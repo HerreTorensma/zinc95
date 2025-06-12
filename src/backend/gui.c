@@ -84,130 +84,15 @@ void gui_draw_text(ram_t *ram, int font_index, const char text[], point_t pos, i
 	gui_draw_string(ram, font_index, (string_t){.data = (char *)text, .len = len}, pos, color);
 }
 
-// TODO: make versions of these such that the rect is both in and out if that makes sense
-// just make it nicer to use bc now it's pretty bad
-void gui_outset_frame(ram_t *ram, rect_t rect) {
-	int x = rect.x;
-	int y = rect.y;
-	int w = rect.w;
-	int h = rect.h;
-
-	// Because we draw lines it will include x + w or y + h in the pixels drawn
-	// Which we don't want so subtract 1
-	w--;
-	h--;
-
-	surface_t fb_surf = FB_SURF(&ram->framebuffer.data);
-
-	// Top gray line
-	gfx_draw_line(fb_surf, POINT(x, y), POINT(x + w - 1, y), ram->gui_colors.frame_edge_neutral);
-	// Left gray line
-	gfx_draw_line(fb_surf, POINT(x, y), POINT(x, y + h - 1), ram->gui_colors.frame_edge_neutral);
-
-	// Top white line
-	gfx_draw_line(fb_surf, POINT(x + 1, y + 1), POINT(x + w - 1, y + 1), ram->gui_colors.frame_edge_light);
-	// Left white line
-	gfx_draw_line(fb_surf, POINT(x + 1, y + 1), POINT(x + 1, y + h - 1), ram->gui_colors.frame_edge_light);
-
-	// Bottom black line
-	gfx_draw_line(fb_surf, POINT(x, y + h), POINT(x + w, y + h), ram->gui_colors.frame_edge_darker);
-	// Right black line
-	gfx_draw_line(fb_surf, POINT(x + w, y), POINT(x + w, y + h), ram->gui_colors.frame_edge_darker);
-
-	// Bottom gray line
-	gfx_draw_line(fb_surf, POINT(x + 1, y + h - 1), POINT(x + w - 1, y + h - 1), ram->gui_colors.frame_edge_dark);
-	// Right gray line
-	gfx_draw_line(fb_surf, POINT(x + w - 1, y + 1), POINT(x + w - 1, y + h - 1), ram->gui_colors.frame_edge_dark);
-
-	// Background
-	gfx_draw_filled_rect(fb_surf, RECT(x + 2, y + 2, w - 3, h - 3), ram->gui_colors.outset_frame_background);
-}
-
-void gui_inset_frame(ram_t *ram, rect_t rect) {
-	int x = rect.x;
-	int y = rect.y;
-	int w = rect.w;
-	int h = rect.h;
-
-	x -= 2;
-	y -= 2;
-	w += 4;
-	h += 4;
-
-	// Again, because we draw lines it will include x + w or y + h in the pixels drawn
-	// Which we don't want so subtract 1
-	w--;
-	h--;
-
-	surface_t fb_surf = FB_SURF(&ram->framebuffer.data);
-
-	// Top gray line
-	gfx_draw_line(fb_surf, POINT(x, y), POINT(x + w - 1, y), ram->gui_colors.frame_edge_dark);
-	// Left gray line
-	gfx_draw_line(fb_surf, POINT(x, y), POINT(x, y + h - 1), ram->gui_colors.frame_edge_dark);
-
-	// Top black line
-	gfx_draw_line(fb_surf, POINT(x + 1, y + 1), POINT(x + w - 1, y + 1), ram->gui_colors.frame_edge_darker);
-	// Left black line
-	gfx_draw_line(fb_surf, POINT(x + 1, y + 1), POINT(x + 1, y + h - 1), ram->gui_colors.frame_edge_darker);
-
-	// Bottom white line
-	gfx_draw_line(fb_surf, POINT(x, y + h), POINT(x + w, y + h), ram->gui_colors.frame_edge_light);
-	// Right white line
-	gfx_draw_line(fb_surf, POINT(x + w, y), POINT(x + w, y + h), ram->gui_colors.frame_edge_light);
-
-	// Bottom gray line
-	gfx_draw_line(fb_surf, POINT(x + 1, y + h - 1), POINT(x + w - 1, y + h - 1), ram->gui_colors.frame_edge_neutral);
-	// Right gray line
-	gfx_draw_line(fb_surf, POINT(x + w - 1, y + 1), POINT(x + w - 1, y + h - 1), ram->gui_colors.frame_edge_neutral);
-
-	// Background
-	gfx_draw_filled_rect(fb_surf, RECT(x + 2, y + 2, w - 3, h - 3), ram->gui_colors.inset_frame_background);
-}
-
-bool gui_button_ex(ram_t *ram, char text[], rect_t rect, bool already_pressed) {
-	point_t mouse_pos = input_get_mouse_pos();
-
-	bool return_value = false;
-	
-	if (point_in_rect(mouse_pos, rect)) {
-		if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
-			already_pressed = true;
-			return_value = true;
-		}
-	}
-	
-	if (already_pressed) {
-		rect_t new_rect = {
-			.x = rect.x + 2,
-			.y = rect.y + 2,
-			.w = rect.w - 4,
-			.h = rect.h - 4,
-		};
-		
-		gui_inset_frame(ram, new_rect);
-		gui_draw_text(ram, 0, text, POINT(rect.x + 3, rect.y + 3), ram->gui_colors.text);
-
-	} else {
-		gui_outset_frame(ram, rect);
-		gui_draw_text(ram, 0, text, POINT(rect.x + 3, rect.y + 3), ram->gui_colors.text);
-	}
-	
-	return return_value;
-}
-
-bool gui_button(ram_t *ram, char text[], rect_t rect) {
-	return gui_button_ex(ram, text, rect, false);
-}
-
-bool static_button(framebuffer_t *fb, surface_t src, point_t pos, rect_t unpressed_rect, rect_t pressed_rect, bool already_pressed) {
+// Uses the size of the unpressed rect for mouse detection
+bool gui_button(ram_t *ram, point_t pos, button_t button, bool already_pressed) {
 	point_t mouse_pos = input_get_mouse_pos();
 
 	rect_t rect = {
 		.x = pos.x,
 		.y = pos.y,
-		.w = unpressed_rect.w,
-		.h = unpressed_rect.h,
+		.w = button.unpressed_rect.w,
+		.h = button.unpressed_rect.h,
 	};
 	
 	if (point_in_rect(mouse_pos, rect)) {
@@ -217,27 +102,23 @@ bool static_button(framebuffer_t *fb, surface_t src, point_t pos, rect_t unpress
 	}
 	
 	if (already_pressed) {
-		rect_t new_rect = {
-			.x = rect.x + 2,
-			.y = rect.y + 2,
-			.w = rect.w - 4,
-			.h = rect.h - 4,
-		};
-		
-		gfx_draw_surface_rect(fb, src, pos, pressed_rect, COLOR_NONE);
-
+		gfx_draw_surface_rect(&ram->framebuffer, SKIN_SURF(ram->skin.data), pos, button.pressed_rect, COLOR_NONE);
 	} else {
-		gfx_draw_surface_rect(fb, src, pos, unpressed_rect, COLOR_NONE);
+		gfx_draw_surface_rect(&ram->framebuffer, SKIN_SURF(ram->skin.data), pos, button.unpressed_rect, COLOR_NONE);
 	}
 	
 	return already_pressed;
 }
 
-// TODO: investigate why this function exists because apparantly I forgot
-// aha it only returns true once when clicked, instead of as long as the mouse button is held
-// I should probably refactor this a little bit
-bool gui_press_button(ram_t *ram, char text[], rect_t rect) {
+bool gui_press_button(ram_t *ram, point_t pos, button_t button) {
 	point_t mouse_pos = input_get_mouse_pos();
+
+	rect_t rect = {
+		.x = pos.x,
+		.y = pos.y,
+		.w = button.unpressed_rect.w,
+		.h = button.unpressed_rect.h,
+	};
 
 	bool pressed = false;
 	bool held = false;
@@ -253,25 +134,23 @@ bool gui_press_button(ram_t *ram, char text[], rect_t rect) {
 	}
 	
 	if (held) {
-		rect_t new_rect = {
-			.x = rect.x + 2,
-			.y = rect.y + 2,
-			.w = rect.w - 4,
-			.h = rect.h - 4,
-		};
-		
-		gui_inset_frame(ram, new_rect);
-		gui_draw_text(ram, 0, text, POINT(rect.x + 3, rect.y + 3), ram->gui_colors.text);
+		gfx_draw_surface_rect(&ram->framebuffer, SKIN_SURF(ram->skin.data), pos, button.pressed_rect, COLOR_NONE);
 	} else {
-		gui_outset_frame(ram, rect);
-		gui_draw_text(ram, 0, text, POINT(rect.x + 3, rect.y + 3), ram->gui_colors.text);
+		gfx_draw_surface_rect(&ram->framebuffer, SKIN_SURF(ram->skin.data), pos, button.unpressed_rect, COLOR_NONE);
 	}
 	
 	return pressed;
 }
 
-bool gui_toggle_button(ram_t *ram, char text[], rect_t rect, bool set) {
+bool gui_toggle_button(ram_t *ram, point_t pos, button_t button, bool set) {
 	point_t mouse_pos = input_get_mouse_pos();
+
+	rect_t rect = {
+		.x = pos.x,
+		.y = pos.y,
+		.w = button.unpressed_rect.w,
+		.h = button.unpressed_rect.h,
+	};
 	
 	if (point_in_rect(mouse_pos, rect)) {
 		if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
@@ -280,18 +159,9 @@ bool gui_toggle_button(ram_t *ram, char text[], rect_t rect, bool set) {
 	}
 	
 	if (set) {
-		rect_t new_rect = {
-			.x = rect.x + 2,
-			.y = rect.y + 2,
-			.w = rect.w - 4,
-			.h = rect.h - 4,
-		};
-		
-		gui_inset_frame(ram, new_rect);
-		gui_draw_text(ram, 2, text, POINT(rect.x + 2, rect.y + 2), ram->gui_colors.toggle_button_set_text);
+		gfx_draw_surface_rect(&ram->framebuffer, SKIN_SURF(ram->skin.data), pos, button.pressed_rect, COLOR_NONE);
 	} else {
-		gui_outset_frame(ram, rect);
-		gui_draw_text(ram, 2, text, POINT(rect.x + 2, rect.y + 2), ram->gui_colors.toggle_button_unset_text);
+		gfx_draw_surface_rect(&ram->framebuffer, SKIN_SURF(ram->skin.data), pos, button.unpressed_rect, COLOR_NONE);
 	}
 	
 	return set;
@@ -395,4 +265,24 @@ rect_t gui_rect_to_outset_frame_rect(rect_t rect) {
 	rect.h += GUI_BORDER_WIDTH * 2;
 
 	return rect;
+}
+
+button_t button_array_get(button_array_t *array, int index) {
+	button_t button = array->base;
+	
+	button.unpressed_rect.x += array->increase.x * index;
+	button.unpressed_rect.y += array->increase.y * index;
+	button.pressed_rect.x += array->increase.x * index;
+	button.pressed_rect.y += array->increase.y * index;
+
+	return button;
+}
+
+point_t button_array_get_pos(button_array_t *array, point_t base_pos, int index) {
+	point_t pos = base_pos;
+	
+	pos.x += array->increase.x * index;
+	pos.y += array->increase.y * index;
+
+	return pos;
 }

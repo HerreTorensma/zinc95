@@ -78,10 +78,19 @@ int main(int argc, char *argv[]) {
 
 	// I want to add debugging stuff like a stack of print statements that are drawn while the game is playing
 	// maybe implement breakpoints in the editor if possible but thats gonna be hard
+
+	// Fonts
+	// A skin should contain a GUI and text mode font (maybe the same)
+	// Then there should be a builtin font used by games if there is no font index given or the user didn't make any font themself
+	// Because that shouldn't rely on the skin, it should just be hardcoded builtin type shit
+	// Or maybe in the spritesheet but nah because I want a blank project to be truly blank, no boilerplate whatsoever
+	// Then IDK if the code editor font should be part of the skin or not
+	// I think the text mode font shouldn't be part of the skin
+
 	
 	game_load(&computer, "game.zinc95");
 	computer_load_resouces(&computer);
-	skin_load(computer.ram, "skin2.png");
+	skin_load(computer.ram, "skin.png");
 	
 	workspace_menu_init(&computer);
 	

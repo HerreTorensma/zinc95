@@ -31,8 +31,6 @@ static void _set_selected_spritesheet_index(int index) {
 }
 
 void sprite_selector_init(computer_t *computer) {
-	// spritesheet_rect = (rect_t){200, 348, 384, 128};
-
 	visible_rect = (rect_t){
 		.x = 0,
 		.y = selected_spritesheet_index * SPRITESHEET_PAGE_HEIGHT,
@@ -134,18 +132,11 @@ void sprite_selector_draw(computer_t *computer, rect_t spritesheet_rect, point_t
 	// gui_inset_frame(computer->ram, spritesheet_rect);
 	gfx_draw_spritesheet_rect(computer->ram, spritesheet_rect.pos, visible_rect, COLOR_NONE);
 
-	for (int i = 0; i < 8; i++) {
-		rect_t rect = {
-			.x = page_buttons_pos.x,
-			.y = page_buttons_pos.y + i * 16,
-			.w = 48,
-			.h = 16,
-		};
+	for (int i = 0; i < skin_layout.spritesheet_page_buttons.amount; i++) {
+		point_t pos = button_array_get_pos(&skin_layout.spritesheet_page_buttons, page_buttons_pos, i);
+		button_t button = button_array_get(&skin_layout.spritesheet_page_buttons, i);
 
-		char buffer[3];
-		sprintf(buffer, "%d", i + 1);
-		
-		if (gui_button_ex(computer->ram, buffer, rect, selected_spritesheet_index == i)) {
+		if (gui_button(computer->ram, pos, button, selected_spritesheet_index == i)) {
 			_set_selected_spritesheet_index(i);
 		}
 	}

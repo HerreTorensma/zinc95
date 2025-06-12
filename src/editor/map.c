@@ -17,6 +17,8 @@ static int _selected_layer = 0;
 
 typedef struct layout {
 	rect_t map_rect;
+
+	point_t entity_layer_pos;
 	point_t layer_buttons_start_pos;
 
 	// Will remove after I've got skins implemented
@@ -30,7 +32,8 @@ static const layout_t _layout = {
 	.map_rect = {{0, 20, 640, 324}},
 	.gui_rect = {{0, 344, 640, 136}},
 
-	.layer_buttons_start_pos = {2, 346},
+	.entity_layer_pos = {4, 394},
+	.layer_buttons_start_pos = {4, 412},
 	
 	.spritesheet_rect = {{200, 348, 384, 128}},
 	.spritesheet_pages_start_pos = {588, 348},
@@ -122,6 +125,12 @@ void map_editor_draw(computer_t *computer) {
 		gfx_draw_map(computer->ram, i, POINT(-_cam_pos.x, -_cam_pos.y), RECT(map_x, map_y, 81, 60));
 	}
 
+	_draw_grid(fb_surf);
+
+	// Draw skin again because currently I don't have a way to clip the gfx_draw_map function
+	surface_t skin_surface = (surface_t){.data = computer->ram->skin.data, .width = SKIN_WIDTH, .height = SKIN_HEIGHT};
+	gfx_draw_surface_rect(&computer->ram->framebuffer, skin_surface, POINT(0, 0), RECT(SCREEN_WIDTH * 2, 0, SCREEN_WIDTH, SCREEN_HEIGHT), computer->ram->skin.color_key);
+
 	// Draw rect where mouse is
 	point_t mouse_pos = input_get_mouse_pos();
 
@@ -134,26 +143,17 @@ void map_editor_draw(computer_t *computer) {
 		gfx_draw_rect(fb_surf, RECT(rect_pos.x - 1, rect_pos.y - 1, currently_editing_rect.w + 2, currently_editing_rect.h + 2), COLOR_WHITE);
 	}
 
-	_draw_grid(fb_surf);
-
-	// gui_outset_frame(computer->ram, _layout.gui_rect);
 	sprite_selector_draw(computer, _layout.spritesheet_rect, _layout.spritesheet_pages_start_pos);
 
-	gui_button(computer->ram, "Entities", RECT(_layout.layer_buttons_start_pos.x, _layout.layer_buttons_start_pos.y, 48, 16));
+	// Entity layer
+	gui_button(computer->ram, _layout.entity_layer_pos, skin_layout.map_entity_layer_button, false);
 
-	// Layer buttons
-	for (int i = 0; i < MAP_LAYERS_AMOUNT; i++) {
-		char buffer[2];
-		sprintf(buffer, "%d", i);
+	// Other layers
+	for (int i = 0; i < skin_layout.map_layer_buttons.amount; i++) {
+		point_t pos = button_array_get_pos(&skin_layout.map_layer_buttons, _layout.layer_buttons_start_pos, i);
+		button_t button = button_array_get(&skin_layout.map_layer_buttons, i);
 
-		rect_t rect = {
-			.x = _layout.layer_buttons_start_pos.x,
-			.y = _layout.layer_buttons_start_pos.y + (i + 1) * 16,
-			.w = 48,
-			.h = 16
-		};
-
-		if (gui_button_ex(computer->ram, buffer, rect, _selected_layer == i)) {
+		if (gui_button(computer->ram, pos, button, _selected_layer == i)) {
 			_selected_layer = i;
 		}
 	}

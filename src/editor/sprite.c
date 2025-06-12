@@ -29,6 +29,8 @@ typedef struct layout {
 
 	rect_t spritesheet_rect;
 	point_t spritesheet_pages_start_pos;
+
+	point_t tools_start_pos;
 } layout_t;
 
 #define SPRITE_EDITOR_WIDTH 256
@@ -52,6 +54,8 @@ static const layout_t _layout = {
 
 	.spritesheet_rect = {{200, 348, 384, 128}},
 	.spritesheet_pages_start_pos = {588, 348},
+
+	.tools_start_pos = {264, 38},
 };
 
 static uint8_t _selected_color = 0;
@@ -364,7 +368,6 @@ void sprite_editor_draw(computer_t *computer) {
 	sprite_selector_draw(computer, _layout.spritesheet_rect, _layout.spritesheet_pages_start_pos);
 
 	// Color picker frame
-	// gui_inset_frame(computer->ram, _layout.color_picker_rect);
 	gfx_draw_filled_rect(fb_surf, _layout.color_picker_rect, 0);
 
 	// Draw colors
@@ -378,7 +381,6 @@ void sprite_editor_draw(computer_t *computer) {
 	gfx_draw_rect(fb_surf, RECT(selected_color_cell_pos.x - 1, selected_color_cell_pos.y - 1, COLOR_SQUARE_SIZE + 2, COLOR_SQUARE_SIZE + 2), 15);
 
 	// Sprite editor
-	// gui_inset_frame(computer->ram, _layout.sprite_editor_rect);
 	rect_t sprite_editing_rect = {
 		.x = visible_rect.x + currently_editing_rect.x,
 		.y = visible_rect.y + currently_editing_rect.y,
@@ -401,26 +403,27 @@ void sprite_editor_draw(computer_t *computer) {
 
 	// Selected color
 	char buffer[32];
-	// gui_inset_frame(computer->ram, _layout.selected_color_rect);
 	gfx_draw_filled_rect(fb_surf, _layout.selected_color_rect, _selected_color);
 	sprintf(buffer, "#%03d\n", _selected_color);
 	gui_draw_text(computer->ram, 0, buffer, _layout.selected_color_label_pos, computer->ram->gui_colors.text);
 	
 	// Selected sprite preview
-	// gui_inset_frame(computer->ram, _layout.selected_sprite_rect);
 	gfx_draw_spritesheet_pro(computer->ram, currently_editing_rect, _layout.selected_sprite_rect, COLOR_NONE); // TODO: fix so it adds the other rects to currently_editing_rect
 	sprintf(buffer, "#%04d\n", get_selected_sprite_index());
 	gui_draw_text(computer->ram, 0, buffer, _layout.selected_sprite_label_pos, computer->ram->gui_colors.text);
 
 	// Sprite flags and color key
 	sprite_t *selected_sprite = &computer->ram->sprites[get_selected_sprite_index()];
-	for (int i = 0; i < SPRITE_FLAGS_SIZE; i++) {
-		sprintf(buffer, "%c", i < 10 ? '0' + i : 'a' + i - 10);
-		
-		bool set = selected_sprite->flags & (1U << i);
-		set = gui_toggle_button(computer->ram, buffer, RECT(_layout.sprite_flags_start_pos.x + i * 12, _layout.sprite_flags_start_pos.y, 12, 12), set);
 
-		// TODO: update for every selected sprite, not just top left
+	// Still using the macro because it is probably safer
+	for (int i = 0; i < SPRITE_FLAGS_SIZE; i++) {
+		bool set = selected_sprite->flags & (1U << i);
+
+		point_t pos = button_array_get_pos(&skin_layout.sprite_flag_buttons, _layout.sprite_flags_start_pos, i);
+		button_t button = button_array_get(&skin_layout.sprite_flag_buttons, i);
+		
+		set = gui_toggle_button(computer->ram, pos, button, set);
+
 		if (set) {
 			selected_sprite->flags |= (1U << i);
 		} else {
@@ -429,16 +432,17 @@ void sprite_editor_draw(computer_t *computer) {
 	}
 
 	// Color key
-	if (gui_button(computer->ram, "", RECT(_layout.color_key_button_pos.x, _layout.color_key_button_pos.y, 12, 12))) {
+	if (gui_button(computer->ram, _layout.color_key_button_pos, skin_layout.color_key_button, false)) {
 		selected_sprite->color_key = _selected_color;
 	}
-
 	gfx_draw_filled_rect(fb_surf, _layout.color_key_rect, selected_sprite->color_key);
-	// gui_draw_text(computer->ram, 2, "Key:", POINT(spritesheet_rect.x + spritesheet_rect.w + 4 + 2, spritesheet_rect.y - 12 - 4 + 2), computer->ram->gui_colors.text);
 
 	// Tools
-	for (int i = 0; i < TOOL_COUNT; i++) {
-		if (gui_button_ex(computer->ram, "", RECT(i * 8, 20, 8, 8), i == _selected_tool)) {
+	for (int i = 0; i < skin_layout.sprite_tool_buttons.amount; i++) {
+		point_t pos = button_array_get_pos(&skin_layout.sprite_tool_buttons, _layout.tools_start_pos, i);
+		button_t button = button_array_get(&skin_layout.sprite_tool_buttons, i);
+
+		if (gui_button(computer->ram, pos, button, i == _selected_tool)) {
 			_selected_tool = i;
 		}
 	}

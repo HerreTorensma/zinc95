@@ -18,19 +18,11 @@ void gui_draw_string(ram_t *ram, int font_index, string_t string, point_t pos, i
 
 void gui_draw_text(ram_t *ram, int font_index, const char text[], point_t pos, int color);
 
-// Draw inside the specified area
-void gui_outset_frame(ram_t *ram, rect_t rect);
+bool gui_button(ram_t *ram, point_t pos, button_t button, bool already_pressed);
 
-// Draw around the specified area
-void gui_inset_frame(ram_t *ram, rect_t rect);
+bool gui_press_button(ram_t *ram, point_t pos, button_t button);
 
-bool gui_button_ex(ram_t *ram, char text[], rect_t rect, bool already_pressed);
-
-bool gui_button(ram_t *ram, char text[], rect_t rect);
-
-bool gui_press_button(ram_t *ram, char text[], rect_t rect);
-
-bool gui_toggle_button(ram_t *ram, char text[], rect_t rect, bool set);
+bool gui_toggle_button(ram_t *ram, point_t pos, button_t button, bool set);
 
 int gui_get_string_width(font_t *font, string_t string, int max_offset);
 
@@ -43,4 +35,6 @@ void gui_init_font(ram_t *ram, int index, int start_sprite_index, int horizontal
 
 rect_t gui_rect_to_outset_frame_rect(rect_t rect);
 
-bool static_button(framebuffer_t *fb, surface_t src, point_t pos, rect_t unpressed_rect, rect_t pressed_rect, bool already_pressed);
+button_t button_array_get(button_array_t *array, int index);
+
+point_t button_array_get_pos(button_array_t *array, point_t base_pos, int index);

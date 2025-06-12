@@ -215,6 +215,10 @@ void computer_load_resouces(computer_t *computer) {
 			[LUA_TOKEN_WHITESPACE] = COLOR_NONE,
 		},
 	};
+
+	computer->ram->skin.color_key = 1;
+	computer->ram->skin.font_index = 0;
+	computer->ram->skin.font_color = 15;
 }
 
 void computer_init(computer_t *computer) {
@@ -302,6 +306,8 @@ void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int 
 #define SECTION_END_STRING ">>> --- <<<\n"
 
 void game_save(computer_t *computer, const char filename[]) {
+	printf("Saving game...\n");
+
 	// Since we zero-initialize we don't need a \0 at the end (but I still do)
 	// TODO: make buffer a size guaranteed to fit the future contents of the file
 	// This is definitely gonna cause a crash for a future user if the program gets that far
@@ -387,6 +393,8 @@ void game_save(computer_t *computer, const char filename[]) {
 	fclose(file);
 
 	free(buffer);
+
+	printf("Game saved.\n");
 }
 
 typedef enum file_section {
@@ -501,6 +509,8 @@ void game_load(computer_t *computer, const char filename[]) {
 
 color_t gfx_rgb_color_to_color(palette_t *palette, rgb_color_t rgb_color, color_t undefined_color);
 
+// TODO: move to gui
+// and also make a general image load function maybe
 void skin_load(ram_t *ram, const char filename[]) {
 	int width = 0;
 	int height = 0;
@@ -541,22 +551,100 @@ void skin_load(ram_t *ram, const char filename[]) {
 	stbi_image_free(data);
 }
 
-const skin_layout_t skin_layout = {
-	.code_button_unpressed_rect = {{2560, 32, 64, 16}},
-	.code_button_pressed_rect = {{2560, 48, 64, 16}},
+// const skin_layout_t skin_layout = {
+// 	.code_button_unpressed_rect = {{2560, 32, 64, 16}},
+// 	.code_button_pressed_rect = {{2560, 48, 64, 16}},
 
-	.sprite_button_unpressed_rect = {{2624, 32, 64, 16}},
-	.sprite_button_pressed_rect = {{2624, 48, 64, 16}},
+// 	.sprite_button_unpressed_rect = {{2624, 32, 64, 16}},
+// 	.sprite_button_pressed_rect = {{2624, 48, 64, 16}},
 
-	.map_button_unpressed_rect = {{2688, 32, 64, 16}},
-	.map_button_pressed_rect = {{2688, 48, 64, 16}},
+// 	.map_button_unpressed_rect = {{2688, 32, 64, 16}},
+// 	.map_button_pressed_rect = {{2688, 48, 64, 16}},
 
-	.sound_button_unpressed_rect = {{2752, 32, 64, 16}},
-	.sound_button_pressed_rect = {{2752, 48, 64, 16}},
+// 	.sound_button_unpressed_rect = {{2752, 32, 64, 16}},
+// 	.sound_button_pressed_rect = {{2752, 48, 64, 16}},
 
-	.save_button_unpressed_rect = {{2816, 32, 16, 16}},
-	.save_button_pressed_rect = {{2816, 48, 16, 16}},
+// 	.save_button_unpressed_rect = {{2816, 32, 16, 16}},
+// 	.save_button_pressed_rect = {{2816, 48, 16, 16}},
 	
-	.play_button_unpressed_rect = {{2832, 32, 16, 16}},
-	.play_button_pressed_rect = {{2832, 48, 16, 16}},
+// 	.play_button_unpressed_rect = {{2832, 32, 16, 16}},
+// 	.play_button_pressed_rect = {{2832, 48, 16, 16}},
+// };
+
+const skin_layout_t skin_layout = {
+	.code_button = (button_t){
+		.unpressed_rect = {{2560, 44, 64, 16}},
+		.pressed_rect = {{2560, 60, 64, 16}},
+	},
+
+	.sprite_button = (button_t){
+		.unpressed_rect = {{2624, 44, 64, 16}},
+		.pressed_rect = {{2624, 60, 64, 16}},
+	},
+
+	.map_button = (button_t){
+		.unpressed_rect = {{2688, 44, 64, 16}},
+		.pressed_rect = {{2688, 60, 64, 16}},
+	},
+
+	.sound_button = (button_t){
+		.unpressed_rect = {{2752, 44, 64, 16}},
+		.pressed_rect = {{2752, 60, 64, 16}},
+	},
+
+	.save_button = (button_t){
+		.unpressed_rect = {{2816, 44, 16, 16}},
+		.pressed_rect = {{2816, 60, 16, 16}},
+	},
+
+	.play_button = (button_t){
+		.unpressed_rect = {{2832, 44, 16, 16}},
+		.pressed_rect = {{2832, 60, 16, 16}},
+	},
+
+	.sprite_flag_buttons = (button_array_t){
+		.base = (button_t){
+			.unpressed_rect = {{2560, 20, 12, 12}},
+			.pressed_rect = {{2560, 32, 12, 12}},
+		},
+		.increase = (point_t){12, 0},
+		.amount = 32,
+	},
+
+	.color_key_button = (button_t){
+		.unpressed_rect = {{2944, 20, 12, 12}},
+		.pressed_rect = {{2944, 32, 12, 12}},
+	},
+
+	.spritesheet_page_buttons = (button_array_t){
+		.base = (button_t){
+			.unpressed_rect = {{2560, 76, 48, 16}},
+			.pressed_rect = {{2608, 76, 48, 16}},
+		},
+		.increase = (point_t){0, 16},
+		.amount = 8,
+	},
+
+	.sprite_tool_buttons = (button_array_t){
+		.base = (button_t){
+			.unpressed_rect = {{2560, 204, 16, 16}},
+			.pressed_rect = {{2560, 220, 16, 16}},
+		},
+		.increase = (point_t){16, 0},
+		.amount = 7,
+	},
+
+	.map_entity_layer_button = (button_t){
+		.unpressed_rect = {{2560, 236, 48, 16}},
+		.pressed_rect = {{2608, 236, 48, 16}},
+	},
+
+	.map_layer_buttons = (button_array_t){
+		.base = (button_t){
+			.unpressed_rect = {{2560, 252, 48, 16}},
+			.pressed_rect = {{2608, 252, 48, 16}},
+		},
+		.increase = {0, 16},
+		.amount = 4,
+	}
 };
