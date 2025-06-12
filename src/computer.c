@@ -3,10 +3,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stb_image.h>
 
 #include "res.h"
 #include "api/lua_api.h"
-#include "backend/stb_image.h"
 
 static computer_t *_computer;
 
@@ -465,8 +465,14 @@ void game_load(computer_t *computer, const char filename[]) {
 				// Read line into buffer
 				size_t len = strlen(line);
 
+				if (code_offset + len >= (1024 * 1024 * sizeof(char))) {
+					fprintf(stderr, "Buffer overflow at offset %zu with len %zu\n", code_offset, len);
+					break;
+				}
+
 				// TODO: Slightly unsafe since I'm still relying on null-termination, might rewrite
 				strncpy(computer->code_buffer + code_offset, line, len);
+				// strcpy(computer->code_buffer + code_offset, line);
 				
 				code_offset += len;
 				computer->code_buffer[code_offset] = '\0';
@@ -572,75 +578,75 @@ void skin_load(ram_t *ram, const char filename[]) {
 // };
 
 const skin_layout_t skin_layout = {
-	.code_button = (button_t){
+	.code_button = {
 		.unpressed_rect = {{2560, 44, 64, 16}},
 		.pressed_rect = {{2560, 60, 64, 16}},
 	},
 
-	.sprite_button = (button_t){
+	.sprite_button = {
 		.unpressed_rect = {{2624, 44, 64, 16}},
 		.pressed_rect = {{2624, 60, 64, 16}},
 	},
 
-	.map_button = (button_t){
+	.map_button = {
 		.unpressed_rect = {{2688, 44, 64, 16}},
 		.pressed_rect = {{2688, 60, 64, 16}},
 	},
 
-	.sound_button = (button_t){
+	.sound_button = {
 		.unpressed_rect = {{2752, 44, 64, 16}},
 		.pressed_rect = {{2752, 60, 64, 16}},
 	},
 
-	.save_button = (button_t){
+	.save_button = {
 		.unpressed_rect = {{2816, 44, 16, 16}},
 		.pressed_rect = {{2816, 60, 16, 16}},
 	},
 
-	.play_button = (button_t){
+	.play_button = {
 		.unpressed_rect = {{2832, 44, 16, 16}},
 		.pressed_rect = {{2832, 60, 16, 16}},
 	},
 
-	.sprite_flag_buttons = (button_array_t){
-		.base = (button_t){
+	.sprite_flag_buttons = {
+		.base = {
 			.unpressed_rect = {{2560, 20, 12, 12}},
 			.pressed_rect = {{2560, 32, 12, 12}},
 		},
-		.increase = (point_t){12, 0},
+		.increase = {12, 0},
 		.amount = 32,
 	},
 
-	.color_key_button = (button_t){
+	.color_key_button = {
 		.unpressed_rect = {{2944, 20, 12, 12}},
 		.pressed_rect = {{2944, 32, 12, 12}},
 	},
 
-	.spritesheet_page_buttons = (button_array_t){
-		.base = (button_t){
+	.spritesheet_page_buttons = {
+		.base = {
 			.unpressed_rect = {{2560, 76, 48, 16}},
 			.pressed_rect = {{2608, 76, 48, 16}},
 		},
-		.increase = (point_t){0, 16},
+		.increase = {0, 16},
 		.amount = 8,
 	},
 
-	.sprite_tool_buttons = (button_array_t){
-		.base = (button_t){
+	.sprite_tool_buttons = {
+		.base = {
 			.unpressed_rect = {{2560, 204, 16, 16}},
 			.pressed_rect = {{2560, 220, 16, 16}},
 		},
-		.increase = (point_t){16, 0},
+		.increase = {16, 0},
 		.amount = 7,
 	},
 
-	.map_entity_layer_button = (button_t){
+	.map_entity_layer_button = {
 		.unpressed_rect = {{2560, 236, 48, 16}},
 		.pressed_rect = {{2608, 236, 48, 16}},
 	},
 
-	.map_layer_buttons = (button_array_t){
-		.base = (button_t){
+	.map_layer_buttons = {
+		.base = {
 			.unpressed_rect = {{2560, 252, 48, 16}},
 			.pressed_rect = {{2608, 252, 48, 16}},
 		},

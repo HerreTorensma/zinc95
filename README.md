@@ -5,15 +5,52 @@ zinc95 is a complete fantasy PC and game development enviroment inspired by fant
 - Builtin code editor, sprite editor, map editor
 
 ## Specification
-display: 640 x 480 pixels, 256 colors
-input: mouse, keyboard, gamepad
+display: 640x480, 256 colors graphics mode
+input: keyboard, mouse
+
+## API
+### cls
+`cls(color=0)`
+Clear the screen
+
+### rect
+`rect(x, y, w, h, color)`
+Draw an unfilled rectangle
+
+### rectf
+`rectf(x, y, w, h, color)`
+Draw a filled rectangle
+
+### line
+`line(x1, y1, x2, y2, color)`
+Draw a line from (x1, y1) to (x2, y2)
+
+### circ
+`circ(x, y, radius, color)`
+Draw an unfilled circle
+
+### spr
+`spr(idx, x, y, [width], [height])`
+Draw a sprite by global index
+
+### map
+`map(layer, x, y, cell_x, cell_y, cell_w, cell_h)`
+Draw a portion of the given map layer
+
+### key
+`key(key)`
+Key if a key is being held
+
+### ticks
+`ticks()`
+Get the amount of ticks the program has been running
 
 ## Dependencies
 - SDL2
-- SDL2_Mixer
 - Lua
-
-For now these are hard-included in the project in the `lib` directory, but later I will try to seperate them from the source code.
+- stb_image
 
 ## Compiling
-- `make`
+For now the program only runs on Windows
+
+- `make libs all`

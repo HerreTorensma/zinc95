@@ -90,7 +90,10 @@ int main(int argc, char *argv[]) {
 	
 	game_load(&computer, "game.zinc95");
 	computer_load_resouces(&computer);
-	skin_load(computer.ram, "skin.png");
+	skin_load(computer.ram, "res/skin.png");
+
+	printf("fuck you man\n");
+	printf("fuck you 3man\n");
 	
 	workspace_menu_init(&computer);
 	
