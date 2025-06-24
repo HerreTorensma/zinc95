@@ -40,7 +40,9 @@ Memory layout, global constants
 #define SPRITES_PER_PAGE ((SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT) / (SPRITE_WIDTH * SPRITE_HEIGHT))
 #define TOTAL_SPRITES ((SPRITESHEET_WIDTH * SPRITESHEET_HEIGHT) / (SPRITE_WIDTH * SPRITE_HEIGHT))
 
+#define VISIBLE_CHARACTERS_START 32
 #define VISIBLE_CHARACTERS_SIZE 96
+
 #define MAX_CHARACTER_WIDTH 16
 #define MAX_CHARACTER_HEIGHT 16
 
@@ -123,16 +125,14 @@ typedef struct font {
 	// Index of first visible ASCII character, which is space ( )
 	uint16_t sprite_index;
 
-	uint8_t width;
-	uint8_t height;
-	uint8_t h_sprites;
-	uint8_t v_sprites;
-	uint8_t horizontal_space;
-	uint8_t vertical_space;
-
-	// Bool
-	uint8_t monospace;
-	uint8_t widths[VISIBLE_CHARACTERS_SIZE];
+	uint8_t sprite_width; // Width in sprites
+	uint8_t sprite_height; // Height in sprites
+	
+	uint8_t horizontal_space; // Horizontal space between letters in pixels
+	uint8_t vertical_space; // Horizontal space between letters in pixels
+	
+	uint8_t height; // Height in pixels
+	uint8_t widths[VISIBLE_CHARACTERS_SIZE]; // Array of widths in pixels
 } font_t;
 
 typedef struct file_collection {

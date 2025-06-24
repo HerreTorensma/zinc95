@@ -34,7 +34,7 @@ static void _move_cursor_to_mouse(ram_t *ram, file_t *code) {
 
 	point_t mouse_pos = input_get_mouse_pos();
 
-	int corrected_x = mouse_pos.x - (_layout.code_rect.x + 5 * (font->width + font->horizontal_space));
+	int corrected_x = mouse_pos.x - (_layout.code_rect.x + 5 * (font->widths[0] + font->horizontal_space));
 	int corrected_y = mouse_pos.y - _layout.code_rect.y + (_scroll_amount * (font->height + font->vertical_space));
 
 	size_t line = corrected_y / (font->height + font->vertical_space);
@@ -314,7 +314,9 @@ void code_editor_draw(computer_t *computer) {
 		
 		// Line itself using tokens for syntax highlighting
 		line_t *current_line = &computer->file.lines[i + _scroll_amount];
-		size_t current_x = _layout.code_rect.x + 2 + 5 * (font->width + font->horizontal_space);
+		size_t current_x = _layout.code_rect.x + 2 + 5 * (font->widths[0] + font->horizontal_space);
+		// printf("font width: %d\n", font->widths[0]);
+
 		for (size_t j = 0; j < current_line->tokens_len; j++) {
 			color_t color = computer->ram->code_editor_config.token_colors[current_line->tokens[j].type];
 			gui_draw_string(computer->ram, _font_index, current_line->tokens[j].string, POINT(current_x, _layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), color);
@@ -324,7 +326,7 @@ void code_editor_draw(computer_t *computer) {
 
 	// Draw cursor
 	if (_cursor_timer >= _cursor_blink_speed / 2) {
-		int cursor_x = _layout.code_rect.x + 2 + 5 * (font->width + font->horizontal_space) + _get_real_cursor_pos(computer);
+		int cursor_x = _layout.code_rect.x + 2 + 5 * (font->widths[0] + font->horizontal_space) + _get_real_cursor_pos(computer);
 		int cursor_y = _layout.code_rect.y + 2 + computer->file.cursor_line * (font->height + font->vertical_space) - _scroll_amount * (font->height + font->vertical_space);
 		gfx_draw_line(fb_surf, POINT(cursor_x, cursor_y), POINT(cursor_x, cursor_y + font->height), 3);
 	}

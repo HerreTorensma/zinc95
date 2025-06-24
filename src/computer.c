@@ -18,6 +18,8 @@ computer_t *get_global_computer() {
 	return _computer;
 }
 
+void gui_init_monospace_font_widths(ram_t *ram, int font_index, int width);
+
 void computer_load_resouces(computer_t *computer) {
 	// memcpy(computer->ram->spritesheet.data, builtin_spritesheet, SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT);
 	memcpy(computer->ram->spritesheet.data + ((SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT) * (SPRITESHEET_PAGE_AMOUNT - 1)), builtin_spritesheet, SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT);
@@ -68,12 +70,12 @@ void computer_load_resouces(computer_t *computer) {
 		.sprite_index = 5376,
 		.horizontal_space = 1,
 		.vertical_space = 3,
-		.width = 8,
+		// .width = 8,
 		.height = 10,
-		.h_sprites = 1,
-		.v_sprites = 2,
+		.sprite_width = 1,
+		.sprite_height = 2,
 
-		.monospace = false,
+		// .monospace = false,
 		.widths = {
 			4, //  
 			1, // !
@@ -182,23 +184,21 @@ void computer_load_resouces(computer_t *computer) {
 		.sprite_index = 5568,
 		.horizontal_space = 1,
 		.vertical_space = 0,
-		.monospace = true,
-		.width = 6,
 		.height = 10,
-		.h_sprites = 1,
-		.v_sprites = 2,
+		.sprite_width = 1,
+		.sprite_height = 2,
 	};
+	gui_init_monospace_font_widths(computer->ram, 1, 6);
 
 	computer->ram->fonts[2] = (font_t){
 		.sprite_index = 5760,
 		.horizontal_space = 0,
 		.vertical_space = 0,
-		.monospace = true,
-		.width = 8,
 		.height = 8,
-		.h_sprites = 1,
-		.v_sprites = 1,
+		.sprite_width = 1,
+		.sprite_height = 1,
 	};
+	gui_init_monospace_font_widths(computer->ram, 2, 8);
 
 	computer->ram->code_editor_config = (code_editor_config_t){
 		.background_color = COLOR_WHITE,
@@ -556,26 +556,6 @@ void skin_load(ram_t *ram, const char filename[]) {
 
 	stbi_image_free(data);
 }
-
-// const skin_layout_t skin_layout = {
-// 	.code_button_unpressed_rect = {{2560, 32, 64, 16}},
-// 	.code_button_pressed_rect = {{2560, 48, 64, 16}},
-
-// 	.sprite_button_unpressed_rect = {{2624, 32, 64, 16}},
-// 	.sprite_button_pressed_rect = {{2624, 48, 64, 16}},
-
-// 	.map_button_unpressed_rect = {{2688, 32, 64, 16}},
-// 	.map_button_pressed_rect = {{2688, 48, 64, 16}},
-
-// 	.sound_button_unpressed_rect = {{2752, 32, 64, 16}},
-// 	.sound_button_pressed_rect = {{2752, 48, 64, 16}},
-
-// 	.save_button_unpressed_rect = {{2816, 32, 16, 16}},
-// 	.save_button_pressed_rect = {{2816, 48, 16, 16}},
-	
-// 	.play_button_unpressed_rect = {{2832, 32, 16, 16}},
-// 	.play_button_pressed_rect = {{2832, 48, 16, 16}},
-// };
 
 const skin_layout_t skin_layout = {
 	.code_button = {

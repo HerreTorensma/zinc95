@@ -28,10 +28,9 @@ int gui_get_string_width(font_t *font, string_t string, int max_offset);
 
 int gui_get_text_width(font_t *font, char text[], int max_offset);
 
-// int gui_x_to_text_index(font_t *font, char text[], int x);
 int gui_x_to_string_index(font_t *font, string_t string, int x);
 
-void gui_init_font(ram_t *ram, int index, int start_sprite_index, int horizontal_space, int height, int h_sprites, int v_sprites);
+void gui_init_monospace_font_widths(ram_t *ram, int font_index, int width);
 
 rect_t gui_rect_to_outset_frame_rect(rect_t rect);
 

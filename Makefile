@@ -61,6 +61,7 @@ clean_all:
 
 clean:
 	find src -type f -name "*.o" -delete
+	rm -f $(EXECUTABLE)
 
 lib_lua:
 	mkdir -p extern

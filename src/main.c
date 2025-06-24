@@ -92,9 +92,6 @@ int main(int argc, char *argv[]) {
 	computer_load_resouces(&computer);
 	skin_load(computer.ram, "res/skin.png");
 
-	printf("fuck you man\n");
-	printf("fuck you 3man\n");
-	
 	workspace_menu_init(&computer);
 	
 	while (window_is_open()) {
