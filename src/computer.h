@@ -309,5 +309,3 @@ typedef struct skin_layout {
 } skin_layout_t;
 
 extern const skin_layout_t skin_layout;
-
-void skin_load(ram_t *ram, const char filename[], color_t color_key, color_t font_color);

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <stb_image.h>
 
 static bool _point_in_screen(int x, int y) {
 	if (x < 0) return false;
@@ -296,4 +297,42 @@ void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section) {
 
 void load_bmp(surface_t *surface, const char filename[]) {
 
+}
+
+void gfx_load_surface(palette_t *palette, surface_t surface, const char filename[]) {
+	int width = 0;
+	int height = 0;
+	int channels = 0;
+	uint8_t *data = stbi_load(filename, &width, &height, &channels, 0);
+	
+	if (data == NULL) {
+		printf("Image could not be loaded: %s\n", stbi_failure_reason());
+		return;
+	}
+
+	if (width != surface.width || height != surface.height) {
+		stbi_image_free(data);
+		printf("Provided image does not have the expected dimensions, aborting.\n");
+		return;
+	}
+	
+	// Load into skin
+	for (int y = 0; y < SKIN_HEIGHT; y++) {
+		for (int x = 0; x < SKIN_WIDTH; x++) {
+			int index = (y * SKIN_WIDTH + x) * channels;
+			
+			rgb_color_t rgb_color = {
+				.r = data[index + 0],
+				.g = data[index + 1],
+				.b = data[index + 2],
+			};
+
+			// Convert to pallete pixel
+			color_t color = gfx_rgb_color_to_color(palette, rgb_color, COLOR_BLACK);
+			surface.data[y * SKIN_WIDTH + x] = color;
+		}
+	}
+
+	stbi_image_free(data);
+	printf("Successfully loaded image %s\n", filename);
 }

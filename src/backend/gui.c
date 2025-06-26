@@ -242,3 +242,14 @@ point_t button_array_get_pos(button_array_t *array, point_t base_pos, int index)
 
 	return pos;
 }
+
+void gui_load_skin(ram_t *ram, const char filename[], color_t color_key, color_t font_color) {
+	gfx_load_surface(&ram->palette, SKIN_SURF(ram->skin.data), filename);
+
+	// Copy fonts
+	gfx_copy_surface_rect(SPR_SURF(ram->spritesheet.data), SKIN_SURF(ram->skin.data), (point_t){0, 896}, skin_layout.gui_font_rect, COLOR_NONE);
+	gfx_copy_surface_rect(SPR_SURF(ram->spritesheet.data), SKIN_SURF(ram->skin.data), (point_t){0, 928}, skin_layout.code_editor_font_rect, COLOR_NONE);
+
+	ram->skin.color_key = color_key;
+	ram->skin.font_color = font_color;
+}

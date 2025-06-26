@@ -91,3 +91,5 @@ void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section);
 
 // Load bmp, might just use stb image actually
 void load_bmp(surface_t *surface, const char filename[]);
+
+void gfx_load_surface(palette_t *palette, surface_t surface, const char filename[]);

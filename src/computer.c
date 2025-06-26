@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stb_image.h>
 
 #include "res.h"
 #include "api/lua_api.h"
@@ -461,75 +460,6 @@ void game_load(computer_t *computer, const char filename[]) {
 	fclose(file);
 
 	free(line);
-}
-
-color_t gfx_rgb_color_to_color(palette_t *palette, rgb_color_t rgb_color, color_t undefined_color);
-
-typedef struct surface {
-	color_t *data;
-	int width;
-	int height;
-} surface_t;
-
-void gfx_copy_surface_rect(surface_t dest, surface_t src, point_t pos, rect_t rect, color_t color_key);
-
-// TODO: move to gui
-// and also make a general image load function maybe
-void skin_load(ram_t *ram, const char filename[], color_t color_key, color_t font_color) {
-	int width = 0;
-	int height = 0;
-	int channels = 0;
-	uint8_t *data = stbi_load(filename, &width, &height, &channels, 0);
-	
-	if (data == NULL) {
-		printf("Image could not be loaded: %s\n", stbi_failure_reason());
-		return;
-	}
-
-	if (width != SKIN_WIDTH || height != SKIN_HEIGHT) {
-		stbi_image_free(data);
-		// Skin is not right
-		printf("Provided skin does not have the correct dimensions\n");
-		// TODO: default to some default skin maybe
-		return;
-	}
-	
-	// Load into skin
-	for (int y = 0; y < SKIN_HEIGHT; y++) {
-		for (int x = 0; x < SKIN_WIDTH; x++) {
-			int index = (y * SKIN_WIDTH + x) * channels;
-			
-			rgb_color_t rgb_color = {
-				.r = data[index + 0],
-				.g = data[index + 1],
-				.b = data[index + 2],
-			};
-
-			// Convert to pallete pixel
-			color_t color = gfx_rgb_color_to_color(&ram->palette, rgb_color, COLOR_BLACK);
-			// color_t color = data[index];
-			ram->skin.data[y * SKIN_WIDTH + x] = color;
-		}
-	}
-
-	stbi_image_free(data);
-
-	// Copy font
-	surface_t spritesheet_surface = (surface_t){
-		.data = ram->spritesheet.data,
-		.width = SPRITESHEET_WIDTH,
-		.height = SPRITESHEET_HEIGHT,
-	};
-	surface_t skin_surface = (surface_t){
-		.data = ram->skin.data,
-		.width = SKIN_WIDTH,
-		.height = SKIN_HEIGHT,
-	};
-	gfx_copy_surface_rect(spritesheet_surface, skin_surface, (point_t){0, 896}, skin_layout.gui_font_rect, COLOR_NONE);
-	gfx_copy_surface_rect(spritesheet_surface, skin_surface, (point_t){0, 928}, skin_layout.code_editor_font_rect, COLOR_NONE);
-
-	ram->skin.color_key = color_key;
-	ram->skin.font_color = font_color;
 }
 
 const skin_layout_t skin_layout = {

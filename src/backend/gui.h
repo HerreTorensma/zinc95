@@ -37,3 +37,5 @@ rect_t gui_rect_to_outset_frame_rect(rect_t rect);
 button_t button_array_get(button_array_t *array, int index);
 
 point_t button_array_get_pos(button_array_t *array, point_t base_pos, int index);
+
+void gui_load_skin(ram_t *ram, const char filename[], color_t color_key, color_t font_color);
