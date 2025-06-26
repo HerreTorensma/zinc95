@@ -405,12 +405,14 @@ void sprite_editor_draw(computer_t *computer) {
 	char buffer[32];
 	gfx_draw_filled_rect(fb_surf, _layout.selected_color_rect, _selected_color);
 	sprintf(buffer, "#%03d\n", _selected_color);
-	gui_draw_text(computer->ram, 2, buffer, _layout.selected_color_label_pos, computer->ram->gui_colors.text);
+	gui_draw_text(computer->ram, GUI_FONT_INDEX, buffer, _layout.selected_color_label_pos, computer->ram->skin.font_color);
+
+	// gui_draw_text(computer->ram, 2, buffer, _layout.selected_color_label_pos, COLOR_NONE); // Testing not passing a color
 	
 	// Selected sprite preview
 	gfx_draw_spritesheet_pro(computer->ram, currently_editing_rect, _layout.selected_sprite_rect, COLOR_NONE); // TODO: fix so it adds the other rects to currently_editing_rect
 	sprintf(buffer, "#%04d\n", get_selected_sprite_index());
-	gui_draw_text(computer->ram, 0, buffer, _layout.selected_sprite_label_pos, computer->ram->gui_colors.text);
+	gui_draw_text(computer->ram, GUI_FONT_INDEX, buffer, _layout.selected_sprite_label_pos, computer->ram->skin.font_color);
 
 	// Sprite flags and color key
 	sprite_t *selected_sprite = &computer->ram->sprites[get_selected_sprite_index()];

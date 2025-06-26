@@ -84,6 +84,9 @@ Memory layout, global constants
 #define SKIN_WIDTH SCREEN_WIDTH * 5
 #define SKIN_HEIGHT SCREEN_HEIGHT
 
+#define GUI_FONT_INDEX 0
+#define CODE_EDITOR_FONT_INDEX 1
+
 typedef uint8_t color_t;
 
 typedef struct rgb_color {
@@ -133,6 +136,9 @@ typedef struct font {
 	
 	uint8_t height; // Height in pixels
 	uint8_t widths[VISIBLE_CHARACTERS_SIZE]; // Array of widths in pixels
+
+	color_t color_key;
+	color_t seperator_color;
 } font_t;
 
 typedef struct file_collection {
@@ -145,35 +151,9 @@ typedef struct file_collection {
 // 	int16_t cam_pos_y;
 // } draw_state_t;
 
-// Colors used by GUI
-// TODO: remove completely because it's replaced by the skin system
-typedef struct gui_colors {
-	// Since the borders of the screen are not in the framebuffer it can just be an rgb color
-	rgb_color_t screen_background;
-
-	color_t text;
-	color_t inset_frame_background;
-	color_t outset_frame_background;
-
-	// From dark to bright
-	color_t frame_edge_darker;
-	color_t frame_edge_dark;
-	color_t frame_edge_neutral;
-	color_t frame_edge_light;
-
-	color_t toggle_button_set_text;
-	color_t toggle_button_unset_text;
-} gui_colors_t;
-
 typedef struct code_editor_config {
 	uint8_t font_index;
 
-	// color_t background;
-	// color_t keyword;
-	// color_t string;
-	// color_t api_function;
-	// color_t operator;
-	// color_t other;
 	color_t background_color;
 	color_t token_colors[LUA_TOKEN_COUNT];
 	uint8_t tab_size; // TODO: use this instead of that #define
@@ -183,7 +163,6 @@ typedef struct skin {
 	color_t data[SKIN_WIDTH * SKIN_HEIGHT];
 	color_t color_key;
 
-	uint8_t font_index;
 	color_t font_color;
 } skin_t;
 
@@ -197,10 +176,10 @@ typedef union ram {
 		font_t fonts[8];
 		map_t map;
 		// draw_state_t draw_state;
-		gui_colors_t gui_colors;
 		uint64_t ticks;
 		code_editor_config_t code_editor_config;
 		skin_t skin;
+		color_t border_color;
 	};
 
 	uint8_t data[RAM_SIZE];
@@ -324,8 +303,11 @@ typedef struct skin_layout {
 	button_array_t map_layer_buttons;
 
 	button_array_t sprite_tool_buttons;
+
+	rect_t gui_font_rect;
+	rect_t code_editor_font_rect;
 } skin_layout_t;
 
 extern const skin_layout_t skin_layout;
 
-void skin_load(ram_t *ram, const char filename[]);
+void skin_load(ram_t *ram, const char filename[], color_t color_key, color_t font_color);

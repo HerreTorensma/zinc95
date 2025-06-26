@@ -25,26 +25,26 @@ void gui_draw_string(ram_t *ram, int font_index, string_t string, point_t pos, i
 			continue;
 		}
 
-		// Inline sprites
-		if (string.data[i] == '`') {
-			int sprite_index = 0;
+		// Inline sprites, will probably remove in favor of making 256 characters available in the fonts
+		// if (string.data[i] == '`') {
+		// 	int sprite_index = 0;
 
-			// Read the digits after
-			size_t index = i + 1;
-			while (string.data[index] >= '0' && string.data[index] <= '9') {
-				sprite_index *= 10;
-				sprite_index += string.data[index] - '0';
+		// 	// Read the digits after
+		// 	size_t index = i + 1;
+		// 	while (string.data[index] >= '0' && string.data[index] <= '9') {
+		// 		sprite_index *= 10;
+		// 		sprite_index += string.data[index] - '0';
 
-				index++;
-			}
+		// 		index++;
+		// 	}
 
-			gfx_draw_sprites(ram, sprite_index, POINT(new_x, new_y), font->sprite_width, font->sprite_height);
-			new_x += 16 + font->horizontal_space;
+		// 	gfx_draw_sprites(ram, sprite_index, POINT(new_x, new_y), font->sprite_width, font->sprite_height);
+		// 	new_x += 16 + font->horizontal_space;
 
-			i = index - 1;
+		// 	i = index - 1;
 
-			continue;
-		}
+		// 	continue;
+		// }
 
 		// Get the correct sprite index keeping in mind some fonts could have multiple sprites per character (not tested for more than 1 horizontal sprite)
 		int char_index = string.data[i] - VISIBLE_CHARACTERS_START;
@@ -56,10 +56,14 @@ void gui_draw_string(ram_t *ram, int font_index, string_t string, point_t pos, i
 
 		for (int i = 0; i < rect.h; i++) {
 			for (int j = 0; j < rect.w; j++) {
-				// uint8_t font_color = computer->ram->spritesheet.data[(rect.y + i) * SPRITESHEET_WIDTH + (rect.x + j)];
-				color_t font_color = gfx_spritesheet_get_pixel(&ram->spritesheet, (point_t){rect.x + j, rect.y + i});
-				if (font_color == 15) {
-					gfx_set_pixel(&ram->framebuffer, new_x + j, new_y + i, color);
+				color_t pixel_color = gfx_spritesheet_get_pixel(&ram->spritesheet, (point_t){rect.x + j, rect.y + i});
+
+				if (pixel_color != font->color_key && pixel_color != font->seperator_color) {
+					if (color != COLOR_NONE) {
+						gfx_set_pixel(&ram->framebuffer, new_x + j, new_y + i, color);
+					} else {
+						gfx_set_pixel(&ram->framebuffer, new_x + j, new_y + i, pixel_color);
+					}
 				}
 			}
 		}

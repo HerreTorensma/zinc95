@@ -21,48 +21,6 @@ computer_t *get_global_computer() {
 void gui_init_monospace_font_widths(ram_t *ram, int font_index, int width);
 
 void computer_load_resouces(computer_t *computer) {
-	// memcpy(computer->ram->spritesheet.data, builtin_spritesheet, SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT);
-	memcpy(computer->ram->spritesheet.data + ((SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT) * (SPRITESHEET_PAGE_AMOUNT - 1)), builtin_spritesheet, SPRITESHEET_PAGE_WIDTH * SPRITESHEET_PAGE_HEIGHT);
-
-	// /*
-	computer->ram->gui_colors = (gui_colors_t){
-		.text = 0,
-		// .screen_background = (rgb_color_t){77, 0, 0},
-		// .screen_background = (rgb_color_t){0, 170, 170},
-		.screen_background = (rgb_color_t){0, 0, 0},
-
-		.inset_frame_background = 7,
-		.outset_frame_background = 7,
-		
-		.frame_edge_darker = 0,
-		.frame_edge_dark = 23,
-		.frame_edge_neutral = 7,
-		.frame_edge_light = 15,
-
-		.toggle_button_set_text = 2,
-		.toggle_button_unset_text = 0,
-	};
-	// */
-	
-	// Dark mode
-	/*
-	computer->ram->gui_colors = (gui_colors_t){
-		.text = 15,
-		.screen_background = (rgb_color_t){77, 0, 0},
-
-		.inset_frame_background = 20,
-		.outset_frame_background = 20,
-		
-		.frame_edge_darker = 0,
-		.frame_edge_dark = 18,
-		.frame_edge_neutral = 20,
-		.frame_edge_light = 23,
-
-		.toggle_button_set_text = 48,
-		.toggle_button_unset_text = 15,
-	};
-	*/
-
 	// TODO: load the widths based on the lines drawn in the sprites
 	// the monospace bool can also go
 	// And the vertical_space is kinda stupid since there is already height
@@ -74,6 +32,9 @@ void computer_load_resouces(computer_t *computer) {
 		.height = 10,
 		.sprite_width = 1,
 		.sprite_height = 2,
+
+		.color_key = COLOR_BLACK,
+		.seperator_color = 10,
 
 		// .monospace = false,
 		.widths = {
@@ -182,23 +143,16 @@ void computer_load_resouces(computer_t *computer) {
 
 	computer->ram->fonts[1] = (font_t){
 		.sprite_index = 5568,
-		.horizontal_space = 1,
-		.vertical_space = 0,
-		.height = 10,
-		.sprite_width = 1,
-		.sprite_height = 2,
-	};
-	gui_init_monospace_font_widths(computer->ram, 1, 6);
-
-	computer->ram->fonts[2] = (font_t){
-		.sprite_index = 5760,
 		.horizontal_space = 0,
 		.vertical_space = 0,
 		.height = 8,
 		.sprite_width = 1,
 		.sprite_height = 1,
+
+		.color_key = COLOR_BLACK,
+		.seperator_color = COLOR_DARKRED,
 	};
-	gui_init_monospace_font_widths(computer->ram, 2, 8);
+	gui_init_monospace_font_widths(computer->ram, 1, 8);
 
 	computer->ram->code_editor_config = (code_editor_config_t){
 		.background_color = COLOR_WHITE,
@@ -215,10 +169,6 @@ void computer_load_resouces(computer_t *computer) {
 			[LUA_TOKEN_WHITESPACE] = COLOR_NONE,
 		},
 	};
-
-	computer->ram->skin.color_key = 1;
-	computer->ram->skin.font_index = 0;
-	computer->ram->skin.font_color = 15;
 }
 
 void computer_init(computer_t *computer) {
@@ -515,9 +465,17 @@ void game_load(computer_t *computer, const char filename[]) {
 
 color_t gfx_rgb_color_to_color(palette_t *palette, rgb_color_t rgb_color, color_t undefined_color);
 
+typedef struct surface {
+	color_t *data;
+	int width;
+	int height;
+} surface_t;
+
+void gfx_copy_surface_rect(surface_t dest, surface_t src, point_t pos, rect_t rect, color_t color_key);
+
 // TODO: move to gui
 // and also make a general image load function maybe
-void skin_load(ram_t *ram, const char filename[]) {
+void skin_load(ram_t *ram, const char filename[], color_t color_key, color_t font_color) {
 	int width = 0;
 	int height = 0;
 	int channels = 0;
@@ -555,6 +513,23 @@ void skin_load(ram_t *ram, const char filename[]) {
 	}
 
 	stbi_image_free(data);
+
+	// Copy font
+	surface_t spritesheet_surface = (surface_t){
+		.data = ram->spritesheet.data,
+		.width = SPRITESHEET_WIDTH,
+		.height = SPRITESHEET_HEIGHT,
+	};
+	surface_t skin_surface = (surface_t){
+		.data = ram->skin.data,
+		.width = SKIN_WIDTH,
+		.height = SKIN_HEIGHT,
+	};
+	gfx_copy_surface_rect(spritesheet_surface, skin_surface, (point_t){0, 896}, skin_layout.gui_font_rect, COLOR_NONE);
+	gfx_copy_surface_rect(spritesheet_surface, skin_surface, (point_t){0, 928}, skin_layout.code_editor_font_rect, COLOR_NONE);
+
+	ram->skin.color_key = color_key;
+	ram->skin.font_color = font_color;
 }
 
 const skin_layout_t skin_layout = {
@@ -632,5 +607,8 @@ const skin_layout_t skin_layout = {
 		},
 		.increase = {0, 16},
 		.amount = 4,
-	}
+	},
+
+	.gui_font_rect = {{2560, 432, 384, 32}},
+	.code_editor_font_rect = {{2560, 464, 384, 16}},
 };

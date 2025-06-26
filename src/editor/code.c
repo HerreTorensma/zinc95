@@ -14,7 +14,7 @@
 static const int _cursor_blink_speed = 30;
 
 // TODO: use ram config thing
-static const int _font_index = 2;
+// static const int CODE_EDITOR_FONT_INDEX = 2;
 static const int _scroll_speed = 3;
 
 static int _scroll_amount = 0;
@@ -30,7 +30,7 @@ static const layout_t _layout = {
 };
 
 static void _move_cursor_to_mouse(ram_t *ram, file_t *code) {
-	font_t *font = &ram->fonts[_font_index];
+	font_t *font = &ram->fonts[CODE_EDITOR_FONT_INDEX];
 
 	point_t mouse_pos = input_get_mouse_pos();
 
@@ -68,12 +68,12 @@ static int _get_real_cursor_pos(computer_t *computer) {
 	// 	return 0;
 	// }
 
-	return gui_get_string_width(&computer->ram->fonts[_font_index], computer->file.lines[computer->file.cursor_line].string, computer->file.cursor_pos);
+	return gui_get_string_width(&computer->ram->fonts[CODE_EDITOR_FONT_INDEX], computer->file.lines[computer->file.cursor_line].string, computer->file.cursor_pos);
 }
 
 void code_editor_init(computer_t *computer) {
 	// TODO: Changed workspace_rect.h to layout.code_rect.h without knowing the implications, might wanna check that later
-	_lines_on_screen = _layout.code_rect.h / (computer->ram->fonts[_font_index].height + computer->ram->fonts[_font_index].horizontal_space);
+	_lines_on_screen = _layout.code_rect.h / (computer->ram->fonts[CODE_EDITOR_FONT_INDEX].height + computer->ram->fonts[CODE_EDITOR_FONT_INDEX].horizontal_space);
 
 	file_load(&computer->file, computer->code_buffer);
 }
@@ -290,7 +290,7 @@ void code_editor_update(computer_t *computer) {
 }
 
 void code_editor_draw(computer_t *computer) {
-	font_t *font = &computer->ram->fonts[_font_index];
+	font_t *font = &computer->ram->fonts[CODE_EDITOR_FONT_INDEX];
 	surface_t fb_surf = FB_SURF(computer->ram->framebuffer.data);
 
 	// gui_inset_frame(computer->ram, _layout.code_rect);
@@ -310,7 +310,7 @@ void code_editor_draw(computer_t *computer) {
 		sprintf(line_number_buffer, "% 4d", i + _scroll_amount + 1);
 
 		// Line number
-		gui_draw_text(computer->ram, _font_index, line_number_buffer, POINT(_layout.code_rect.x + 2, _layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), 8);
+		gui_draw_text(computer->ram, CODE_EDITOR_FONT_INDEX, line_number_buffer, POINT(_layout.code_rect.x + 2, _layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), 8);
 		
 		// Line itself using tokens for syntax highlighting
 		line_t *current_line = &computer->file.lines[i + _scroll_amount];
@@ -319,7 +319,7 @@ void code_editor_draw(computer_t *computer) {
 
 		for (size_t j = 0; j < current_line->tokens_len; j++) {
 			color_t color = computer->ram->code_editor_config.token_colors[current_line->tokens[j].type];
-			gui_draw_string(computer->ram, _font_index, current_line->tokens[j].string, POINT(current_x, _layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), color);
+			gui_draw_string(computer->ram, CODE_EDITOR_FONT_INDEX, current_line->tokens[j].string, POINT(current_x, _layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), color);
 			current_x += gui_get_string_width(font, current_line->tokens[j].string, current_line->tokens[j].string.len);
 		}
 	}

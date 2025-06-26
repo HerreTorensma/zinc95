@@ -176,10 +176,9 @@ void sdl2_tick_start(computer_t *computer) {
 }
 
 void sdl2_render(computer_t *computer) {
-	// SDL_SetRenderDrawColor(_renderer, 0, 170, 170, 255);
-	SDL_SetRenderDrawColor(_renderer, computer->ram->gui_colors.screen_background.r, computer->ram->gui_colors.screen_background.g, computer->ram->gui_colors.screen_background.b, 255);
-	// SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 255);
-	// SDL_SetRenderDrawColor(_renderer, 16, 65, 0, 255);
+	rgb_color_t border_color = computer->ram->palette.colors[computer->ram->border_color];
+	SDL_SetRenderDrawColor(_renderer, border_color.r, border_color.g, border_color.b, 255);
+
 	SDL_RenderClear(_renderer);
 
 	_update_screen_texture(computer);
