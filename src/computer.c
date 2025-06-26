@@ -19,6 +19,8 @@ computer_t *get_global_computer() {
 
 void gui_init_monospace_font_widths(ram_t *ram, int font_index, int width);
 
+void gui_init_font_widths(ram_t *ram, int font_index);
+
 void computer_load_resouces(computer_t *computer) {
 	// TODO: load the widths based on the lines drawn in the sprites
 	// the monospace bool can also go
@@ -27,118 +29,14 @@ void computer_load_resouces(computer_t *computer) {
 		.sprite_index = 5376,
 		.horizontal_space = 1,
 		.vertical_space = 3,
-		// .width = 8,
 		.height = 10,
 		.sprite_width = 1,
 		.sprite_height = 2,
 
 		.color_key = COLOR_BLACK,
 		.seperator_color = 10,
-
-		// .monospace = false,
-		.widths = {
-			4, //  
-			1, // !
-			3, // "
-			6, // #
-			5, // $
-			7, // %
-			5, // &
-			1, // '
-			2, // (
-			2, // )
-			3, // *
-			5, // +
-			2, // ,
-			4, // -
-			1, // .
-			4, // /
-
-			5, // 0
-			5, // 1
-			5, // 2
-			5, // 3
-			5, // 4
-			5, // 5
-			5, // 6
-			5, // 7
-			5, // 8
-			5, // 9
-			1, // :
-			2, // ;
-			5, // <
-			5, // =
-			5, // >
-			5, // ?
-
-			8, // @
-			7, // A
-			5, // B
-			6, // C
-			6, // D
-			5, // E
-			5, // F
-			6, // G
-			6, // H
-			1, // I
-			4, // J
-			6, // K
-			5, // L
-			7, // M
-			6, // N
-			6, // O
-
-			6, // P
-			6, // Q
-			6, // R
-			5, // S
-			5, // T
-			6, // U
-			7, // V
-			5, // W
-			7, // X
-			7, // Y
-			7, // Z
-			2, // [
-			4, // backslash fuck it
-			2, // ]
-			5, // ^
-			5, // _
-
-			3, // `
-			5, // a
-			5, // b
-			5, // c
-			5, // d
-			5, // e
-			2, // f
-			5, // g
-			5, // h
-			1, // i
-			2, // j
-			5, // k
-			1, // l
-			7, // m
-			5, // n
-			5, // o
-
-			5, // p
-			5, // q
-			3, // r
-			4, // s
-			2, // t
-			5, // u
-			5, // v
-			7, // w
-			4, // x
-			5, // y
-			4, // z
-			3, // {
-			1, // |
-			3, // }
-			6, // ~
-		},
 	};
+	gui_init_font_widths(computer->ram, 0);
 
 	computer->ram->fonts[1] = (font_t){
 		.sprite_index = 5568,

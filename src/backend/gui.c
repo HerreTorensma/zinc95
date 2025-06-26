@@ -5,6 +5,11 @@
 #include "input.h"
 #include "gfx.h"
 
+// Get the rect of the char in the spritesheet
+static void _get_char_rect(font_t *font, char c) {
+
+}
+
 // TODO: for each font set a color_key and divider color so you can have funky fonts idk
 void gui_draw_string(ram_t *ram, int font_index, string_t string, point_t pos, int color) {
 	font_t *font = &ram->fonts[font_index];
@@ -211,6 +216,33 @@ int gui_x_to_string_index(font_t *font, string_t string, int x) {
 void gui_init_monospace_font_widths(ram_t *ram, int font_index, int width) {
 	for (int i = 0; i < VISIBLE_CHARACTERS_SIZE; i++) {
 		ram->fonts[font_index].widths[i] = width;
+	}
+}
+
+// Init the widths using the seperator lines
+// TODO: maybe do this and the height on the fly instead of during loading, will get back to this
+void gui_init_font_widths(ram_t *ram, int font_index) {
+	font_t *font = &ram->fonts[font_index];
+
+	for (int i = 0; i < VISIBLE_CHARACTERS_SIZE; i++) {
+		// Get the correct sprite index keeping in mind some fonts could have multiple sprites per character (not tested for more than 1 horizontal sprite)
+		int x_offset = (i % (SPRITES_PER_ROW / font->sprite_width)) * font->sprite_width;
+		int y_offset = (i / (SPRITES_PER_ROW / font->sprite_width)) * font->sprite_height;
+		int sprite_index = font->sprite_index + x_offset + (y_offset * SPRITES_PER_ROW);
+
+		rect_t rect = sprite_index_to_spritesheet_rect(sprite_index, font->sprite_width, font->sprite_height);
+		int width = 0;
+
+		for (int x = 0; x < rect.w; x++) {
+			color_t pixel_color = gfx_spritesheet_get_pixel(&ram->spritesheet, (point_t){rect.x + x, rect.y});
+			if (pixel_color == font->seperator_color) {
+				break;
+			}
+
+			width++;
+		}
+
+		font->widths[i] = width;
 	}
 }
 

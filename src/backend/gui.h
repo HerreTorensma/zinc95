@@ -32,6 +32,8 @@ int gui_x_to_string_index(font_t *font, string_t string, int x);
 
 void gui_init_monospace_font_widths(ram_t *ram, int font_index, int width);
 
+void gui_init_font_widths(ram_t *ram, int font_index);
+
 rect_t gui_rect_to_outset_frame_rect(rect_t rect);
 
 button_t button_array_get(button_array_t *array, int index);
