@@ -40,16 +40,16 @@ void computer_load_resouces(computer_t *computer) {
 
 	computer->ram->fonts[1] = (font_t){
 		.sprite_index = 5568,
-		.horizontal_space = 0,
-		.vertical_space = 0,
+		.horizontal_space = 1,
+		.vertical_space = 1,
 		.height = 8,
 		.sprite_width = 1,
 		.sprite_height = 1,
 
 		.color_key = COLOR_BLACK,
-		.seperator_color = COLOR_DARKRED,
+		.seperator_color = 10,
 	};
-	gui_init_monospace_font_widths(computer->ram, 1, 8);
+	gui_init_monospace_font_widths(computer->ram, 1, 5);
 
 	computer->ram->code_editor_config = (code_editor_config_t){
 		.background_color = COLOR_WHITE,
@@ -57,7 +57,7 @@ void computer_load_resouces(computer_t *computer) {
 		.tab_size = 4,
 		.token_colors = {
 			[LUA_TOKEN_KEYWORD] = 12,
-			[LUA_TOKEN_BUILTIN_FUNCTION] = 1,
+			[LUA_TOKEN_BUILTIN_FUNCTION] = 6,
 			[LUA_TOKEN_IDENTIFIER] = COLOR_BLACK,
 			[LUA_TOKEN_LITERAL] = 5,
 			[LUA_TOKEN_STRING] = 2,

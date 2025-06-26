@@ -189,8 +189,8 @@ int gui_get_text_width(font_t *font, char text[], int max_offset) {
 
 // Only works on monospace fonts, uses the width of the space character for the whole string
 int gui_x_to_string_index(font_t *font, string_t string, int x) {
-	// int index = x / (font->widths[0] + font->horizontal_space);
-	int index = x / 8;
+	int index = x / (font->widths[0] + font->horizontal_space);
+	// int index = x / 8;
 
 	int real_index = index;
 

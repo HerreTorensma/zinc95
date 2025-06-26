@@ -11,7 +11,7 @@
 #include "menu.h"
 
 // TODO: These 3 should be configurable thus stored in RAM
-static const int _cursor_blink_speed = 30;
+static const int _cursor_blink_speed = 45;
 
 // TODO: use ram config thing
 // static const int CODE_EDITOR_FONT_INDEX = 2;
@@ -73,7 +73,7 @@ static int _get_real_cursor_pos(computer_t *computer) {
 
 void code_editor_init(computer_t *computer) {
 	// TODO: Changed workspace_rect.h to layout.code_rect.h without knowing the implications, might wanna check that later
-	_lines_on_screen = _layout.code_rect.h / (computer->ram->fonts[CODE_EDITOR_FONT_INDEX].height + computer->ram->fonts[CODE_EDITOR_FONT_INDEX].horizontal_space);
+	_lines_on_screen = _layout.code_rect.h / (computer->ram->fonts[CODE_EDITOR_FONT_INDEX].height + computer->ram->fonts[CODE_EDITOR_FONT_INDEX].vertical_space);
 
 	file_load(&computer->file, computer->code_buffer);
 }
