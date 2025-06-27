@@ -40,7 +40,7 @@ color_t surf_get_pixel(surface_t surf, int x, int y) {
 void gfx_generate_rgb_framebuffer(computer_t *computer) {
 	for (int y = 0; y < SCREEN_HEIGHT; y++) {
 		for (int x = 0; x < SCREEN_WIDTH; x++) {
-			uint8_t pixel = computer->ram->framebuffer.data[y * SCREEN_WIDTH + x];
+			color_t pixel = computer->ram->framebuffer.data[y * SCREEN_WIDTH + x];
 			computer->rgb_framebuffer[y * SCREEN_WIDTH + x] = computer->ram->palette.colors[pixel];
 		}
 	}
@@ -54,7 +54,7 @@ color_t gfx_rgb_color_to_color(palette_t *palette, rgb_color_t rgb_color, color_
 		}
 	}
 
-	printf("idk either man\n");
+	printf("Color not found\n");
 	return undefined_color;
 }
 
@@ -317,9 +317,9 @@ void gfx_load_surface(palette_t *palette, surface_t surface, const char filename
 	}
 	
 	// Load into skin
-	for (int y = 0; y < SKIN_HEIGHT; y++) {
-		for (int x = 0; x < SKIN_WIDTH; x++) {
-			int index = (y * SKIN_WIDTH + x) * channels;
+	for (int y = 0; y < height; y++) {
+		for (int x = 0; x < width; x++) {
+			int index = (y * width + x) * channels;
 			
 			rgb_color_t rgb_color = {
 				.r = data[index + 0],
@@ -329,7 +329,7 @@ void gfx_load_surface(palette_t *palette, surface_t surface, const char filename
 
 			// Convert to pallete pixel
 			color_t color = gfx_rgb_color_to_color(palette, rgb_color, COLOR_BLACK);
-			surface.data[y * SKIN_WIDTH + x] = color;
+			surface.data[y * width + x] = color;
 		}
 	}
 

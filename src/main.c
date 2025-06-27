@@ -13,6 +13,7 @@ Main
 #include "api/api.h"
 #include "backend/audio.h"
 #include "backend/gui.h"
+#include "backend/txt.h"
 
 #define SDL_MAIN_HANDLED
 
@@ -94,11 +95,21 @@ int main(int argc, char *argv[]) {
 
 	gui_load_skin(computer.ram, "res/skin.png", 1, 0);
 	// gui_load_skin(computer.ram, "res/skin2.png", 1, 40);
+	gfx_load_surface(&computer.ram->palette, (surface_t){.data = computer.ram->text_mode_font.data, .width = TEXT_MODE_FONT_BITMAP_WIDTH, .height = TEXT_MODE_FONT_BITMAP_HEIGHT}, "res/font.png");
+
+	// computer.ram->textbuffer.data[TEXTBUFFER_WIDTH * 2 + 3].c = 'a';
+	// computer.ram->textbuffer.data[TEXTBUFFER_WIDTH * 2 + 3].bg_color = 3;
+	// computer.ram->textbuffer.data[TEXTBUFFER_WIDTH * 2 + 3].fg_color = 40;
+	txt_putchar(computer.ram, 'Z', 5, 10, 15, 0);
 
 	workspace_menu_init(&computer);
 	
 	while (window_is_open()) {
 		window_tick_start(&computer);
+
+		if (input_key_pressed(KEY_ESC)) {
+			computer.ram->video_mode = !computer.ram->video_mode;
+		}
 
 		switch (computer.state) {
 			case STATE_EDITING:

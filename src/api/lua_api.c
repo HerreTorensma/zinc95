@@ -101,8 +101,13 @@ static int _lua_key(lua_State *lua) {
 	if (lua_gettop(lua) == 1) {
 		int key = (int)lua_tonumber(lua, 1);
 
-		api_key(computer->ram, key);
+		bool pressed = api_key(computer->ram, key);
+		lua_pushboolean(lua, pressed);
+		return 1;
 	}
+
+	lua_pushboolean(lua, false);
+	return 1;
 }
 
 void lua_init(computer_t *computer) {

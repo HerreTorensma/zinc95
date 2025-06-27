@@ -19,7 +19,11 @@ void window_tick_start(computer_t *computer) {
 }
 
 void window_render(computer_t *computer) {
-	gfx_generate_rgb_framebuffer(computer);
+	if (computer->ram->video_mode == VIDEO_MODE_GRAPHICS) {
+		gfx_generate_rgb_framebuffer(computer);
+	} else if (computer->ram->video_mode == VIDEO_MODE_TEXT) {
+		txt_generate_rgb_framebuffer(computer);
+	}
 
 	#ifdef BACKEND_SDL2
 	sdl2_render(computer);

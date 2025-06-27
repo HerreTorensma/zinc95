@@ -166,11 +166,41 @@ typedef struct skin {
 	color_t font_color;
 } skin_t;
 
+typedef struct {
+	uint8_t c;
+	color_t bg_color;
+	color_t fg_color;
+} char_t;
+
+#define TEXTBUFFER_CHAR_WIDTH 8
+#define TEXTBUFFER_CHAR_HEIGHT 8
+#define TEXTBUFFER_WIDTH 80
+#define TEXTBUFFER_HEIGHT 60
+#define TEXT_MODE_FONT_BITMAP_WIDTH 128
+#define TEXT_MODE_FONT_BITMAP_HEIGHT 128
+
+typedef struct textbuffer {
+	char_t data[TEXTBUFFER_WIDTH * TEXTBUFFER_HEIGHT];
+} textbuffer_t;
+
+typedef struct text_mode_font {
+	color_t data[TEXT_MODE_FONT_BITMAP_WIDTH * TEXT_MODE_FONT_BITMAP_HEIGHT];
+} text_mode_font_t;
+
+typedef enum video_mode {
+	VIDEO_MODE_TEXT = 0,
+	VIDEO_MODE_GRAPHICS = 1,
+} video_mode_t;
+
 // 8MB RAM (excluding what the lua code takes up)
 typedef union ram {
 	struct {
+		// VRAM (might wrap that in a struct as well)
 		framebuffer_t framebuffer;
+		textbuffer_t textbuffer;
+		video_mode_t video_mode;
 		palette_t palette;
+
 		spritesheet_t spritesheet;
 		sprite_t sprites[TOTAL_SPRITES];
 		font_t fonts[8];
@@ -180,6 +210,7 @@ typedef union ram {
 		code_editor_config_t code_editor_config;
 		skin_t skin;
 		color_t border_color;
+		text_mode_font_t text_mode_font;
 	};
 
 	uint8_t data[RAM_SIZE];
