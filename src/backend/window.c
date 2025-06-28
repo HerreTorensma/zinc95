@@ -4,6 +4,7 @@
 #include "window.h"
 #include "sdl2.h"
 #include "gfx.h"
+#include "txt.h"
 #include "../computer.h"
 
 void window_init(char title[], int initial_scale) {

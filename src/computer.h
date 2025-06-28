@@ -176,11 +176,12 @@ typedef struct {
 #define TEXTBUFFER_CHAR_HEIGHT 8
 #define TEXTBUFFER_WIDTH 80
 #define TEXTBUFFER_HEIGHT 60
+#define TEXTBUFFER_SIZE TEXTBUFFER_WIDTH * TEXTBUFFER_HEIGHT
 #define TEXT_MODE_FONT_BITMAP_WIDTH 128
 #define TEXT_MODE_FONT_BITMAP_HEIGHT 128
 
 typedef struct textbuffer {
-	char_t data[TEXTBUFFER_WIDTH * TEXTBUFFER_HEIGHT];
+	char_t data[TEXTBUFFER_SIZE];
 } textbuffer_t;
 
 typedef struct text_mode_font {
@@ -191,6 +192,12 @@ typedef enum video_mode {
 	VIDEO_MODE_TEXT = 0,
 	VIDEO_MODE_GRAPHICS = 1,
 } video_mode_t;
+
+typedef struct terminal {
+	// uint16_t cursor_index;
+	uint8_t cursor_x;
+	uint8_t cursor_y;
+} terminal_t;
 
 // 8MB RAM (excluding what the lua code takes up)
 typedef union ram {
@@ -211,6 +218,8 @@ typedef union ram {
 		skin_t skin;
 		color_t border_color;
 		text_mode_font_t text_mode_font;
+
+		terminal_t terminal;
 	};
 
 	uint8_t data[RAM_SIZE];

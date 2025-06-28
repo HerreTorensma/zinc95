@@ -1,7 +1,7 @@
 # TODO: fix on linux
 
 CC = gcc
-CFLAGS = -g -Wall -Wextra -Wsign-conversion -Wpedantic -std=c11 -Wno-unused-parameter -Werror=incompatible-pointer-types
+CFLAGS = -g -Wall -Wextra -Wsign-conversion -Wpedantic -std=c11 -Wno-unused-parameter -Werror=incompatible-pointer-types -funsigned-char
 
 # Source files
 SRC = src/main.c src/computer.c src/res.c \

@@ -109,7 +109,7 @@ void sdl2_init(char title[], int initial_scale) {
 		exit(EXIT_FAILURE);
 	}
 	
-	_renderer = SDL_CreateRenderer(_window, -1, SDL_RENDERER_ACCELERATED);
+	_renderer = SDL_CreateRenderer(_window, -1, 0);
 	if (_renderer == NULL) {
 		printf("Failed to create SDL2 renderer\n");
 		SDL_DestroyWindow(_window);
