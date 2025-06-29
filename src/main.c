@@ -17,6 +17,12 @@ Main
 
 #define SDL_MAIN_HANDLED
 
+void print_intro_to_terminal(ram_t *ram) {
+	term_print(ram, STR("Zinc"), 0, 15);
+	term_print(ram, STR("95\n"), 0, 15);
+	term_print(ram, STR("Type <help> for help\n"), 0, 15);
+}
+
 int main(int argc, char *argv[]) {
 	computer_t computer = {0};
 	computer_init(&computer);
@@ -97,34 +103,20 @@ int main(int argc, char *argv[]) {
 	// gui_load_skin(computer.ram, "res/skin2.png", 1, 40);
 	gfx_load_surface(&computer.ram->palette, (surface_t){.data = computer.ram->text_mode_font.data, .width = TEXT_MODE_FONT_BITMAP_WIDTH, .height = TEXT_MODE_FONT_BITMAP_HEIGHT}, "res/font.png");
 
-	// computer.ram->textbuffer.data[TEXTBUFFER_WIDTH * 2 + 3].c = 'a';
-	// computer.ram->textbuffer.data[TEXTBUFFER_WIDTH * 2 + 3].bg_color = 3;
-	// computer.ram->textbuffer.data[TEXTBUFFER_WIDTH * 2 + 3].fg_color = 40;
-	// txt_putchar(computer.ram, 'Z', 5, 10, 49, 0);
-
-	// term_print(computer.ram, STR("hello\nfuck\n\npa po pe"), 0, 4);
-
-	for (int i = 0; i < 80; i++) {
-		char thing[32];
-		sprintf(thing, "line %d\n", i);
-		string_t string = {
-			.data = thing,
-			.len = strlen(thing),
-		};
-		term_print(computer.ram, string, 1, 15);
-	}
+	print_intro_to_terminal(computer.ram);
 
 	computer.ram->border_color = 8;
 
 	workspace_menu_init(&computer);
 	
-	color_t color = 0;
 	while (window_is_open()) {
-		term_print(computer.ram, STR("boooooooootje\n"), 0, color);
-		color++;
+		char c = input_get_as_char();
+		if (c != '\0')
+			term_putchar(computer.ram, c, 0, 15);
+
 		window_tick_start(&computer);
 
-		if (input_key_pressed(KEY_ESC)) {
+		if (input_key_pressed(KEY_F10)) {
 			computer.ram->video_mode = !computer.ram->video_mode;
 		}
 

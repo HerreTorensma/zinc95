@@ -1,10 +1,14 @@
 #include "lua_api.h"
 
+#include <string.h>
+
 #include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
 
 #include "api.h"
+
+#include "../backend/txt.h"
 
 static lua_State *_lua = NULL;
 
@@ -110,12 +114,30 @@ static int _lua_key(lua_State *lua) {
 	return 1;
 }
 
+static int _lua_print(lua_State *lua) {
+	computer_t *computer = get_global_computer();
+
+	term_putchar(computer->ram, '\n', COLOR_BLACK, COLOR_WHITE);
+
+	int args_amount = lua_gettop(lua);
+	for (int i = 1; i <= args_amount; i++) {
+		const char *buffer = lua_tostring(lua, i);
+		
+		if (buffer) {
+			term_print(computer->ram, STR(buffer), COLOR_BLACK, COLOR_WHITE);
+		}
+	}
+
+	return 0;
+}
+
 void lua_init(computer_t *computer) {
 	_lua = luaL_newstate();
 	luaL_openlibs(_lua);
 
 	// TODO: handle this in a loop based on the api metas
 	// maybe not because then I have issues with circular dependency
+	lua_register(_lua, "print", _lua_print);
 	lua_register(_lua, api_metas[API_FUNC_CLS].name, _lua_cls);
 	lua_register(_lua, api_metas[API_FUNC_SPR].name, _lua_spr);
 	lua_register(_lua, api_metas[API_FUNC_CIRC].name, _lua_circ);
@@ -123,20 +145,22 @@ void lua_init(computer_t *computer) {
 	lua_register(_lua, api_metas[API_FUNC_MAP].name, _lua_map);
 	lua_register(_lua, api_metas[API_FUNC_KEY].name, _lua_key);
 
-	// if (luaL_dofile(_lua, "test.lua") != LUA_OK) {
-	// if (luaL_dostring(_lua, computer->code->buffer) != LUA_OK) {
 	if (luaL_dostring(_lua, computer->code_buffer) != LUA_OK) {
-		printf("Error loading Lua script: %s\n", lua_tostring(_lua, -1));
+		term_print(computer->ram, STR("\nError loading script: "), COLOR_BLACK, COLOR_RED);
+		term_print(computer->ram, STR(lua_tostring(_lua, -1)), 0, 12);
 		lua_pop(_lua, 1);
 	}
 }
 
 void lua_call_init() {
+	computer_t *computer = get_global_computer();
+
 	lua_getglobal(_lua, "_init");
 
 	if (lua_isfunction(_lua, -1)) {
 		if (lua_pcall(_lua, 0, 0, 0) != LUA_OK) {
-			printf("Error in _init: %s\n", lua_tostring(_lua, -1));
+			term_print(computer->ram, STR("\nError in _init: "), COLOR_BLACK, COLOR_RED);
+			term_print(computer->ram, STR(lua_tostring(_lua, -1)), COLOR_BLACK, COLOR_RED);
 			lua_pop(_lua, 1);
 		} 
 	} else {
@@ -145,11 +169,14 @@ void lua_call_init() {
 }
 
 void lua_call_update() {
+	computer_t *computer = get_global_computer();
+
 	lua_getglobal(_lua, "_update");
 
 	if (lua_isfunction(_lua, -1)) {
 		if (lua_pcall(_lua, 0, 0, 0) != LUA_OK) {
-			printf("Error in _update: %s\n", lua_tostring(_lua, -1));
+			term_print(computer->ram, STR("\nError in _update: "), COLOR_BLACK, COLOR_RED);
+			term_print(computer->ram, STR(lua_tostring(_lua, -1)), COLOR_BLACK, COLOR_RED);
 			lua_pop(_lua, 1);
 		} 
 	} else {
@@ -158,11 +185,14 @@ void lua_call_update() {
 }
 
 void lua_call_draw() {
+	computer_t *computer = get_global_computer();
+
 	lua_getglobal(_lua, "_draw");
 
 	if (lua_isfunction(_lua, -1)) {
 		if (lua_pcall(_lua, 0, 0, 0) != LUA_OK) {
-			printf("Error in _draw: %s\n", lua_tostring(_lua, -1));
+			term_print(computer->ram, STR("\nError in _draw: "), COLOR_BLACK, COLOR_RED);
+			term_print(computer->ram, STR(lua_tostring(_lua, -1)), COLOR_BLACK, COLOR_RED);
 			lua_pop(_lua, 1);
 		} 
 	} else {

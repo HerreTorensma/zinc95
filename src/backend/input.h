@@ -149,3 +149,5 @@ bool input_mouse_button_held(mouse_button_t button);
 bool input_mouse_scrolled(scroll_dir_t direction);
 
 point_t input_get_mouse_pos();
+
+char input_get_as_char();
