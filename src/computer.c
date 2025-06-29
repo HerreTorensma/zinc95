@@ -103,11 +103,16 @@ void play_game(computer_t *computer) {
 	// memset(&computer->ram->draw_state, 0, sizeof(draw_state_t));
 
 	// Set the state
-	computer->state = STATE_PLAYING;
+	computer->game_running = true;
+	computer->state = STATE_IN_GAME;
 }
 
+void shell_new_command(ram_t *ram);
+
 void quit_game(computer_t *computer) {
-	computer->state = STATE_EDITING;
+	computer->game_running = false;
+
+	shell_new_command(computer->ram);
 	
 	lua_quit();
 }
@@ -389,6 +394,11 @@ const skin_layout_t skin_layout = {
 	.play_button = {
 		.unpressed_rect = {{2832, 44, 16, 16}},
 		.pressed_rect = {{2832, 60, 16, 16}},
+	},
+
+	.stop_button = {
+		.unpressed_rect = {{2848, 44, 16, 16}},
+		.pressed_rect = {{2848, 60, 16, 16}},
 	},
 
 	.sprite_flag_buttons = {

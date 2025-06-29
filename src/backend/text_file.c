@@ -15,23 +15,9 @@ static const char *lua_keywords[] = {
 	"not", "or", "repeat", "return", "then", "until", "while",
 };
 
-static bool _string_eq(string_t a, string_t b) {
-	if (a.len != b.len) {
-		return false;
-	}
-
-	for (size_t i = 0; i < a.len; i++) {
-		if (a.data[i] != b.data[i]) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
 static bool _is_keyword(string_t word) {
 	for (size_t i = 0; i < 18; i++) {
-		if (_string_eq(word, STR(lua_keywords[i]))) {
+		if (string_eq(word, STR(lua_keywords[i]))) {
 			return true;
 		}
 	}
@@ -41,7 +27,7 @@ static bool _is_keyword(string_t word) {
 
 static bool _is_builtin_function(string_t word) {
 	for (size_t i = 0; i < API_FUNC_COUNT; i++) {
-		if (_string_eq(word, STR(api_metas[i].name))) {
+		if (string_eq(word, STR(api_metas[i].name))) {
 			return true;
 		}
 	}
@@ -72,8 +58,8 @@ static bool _is_whitespace(char c) {
 }
 
 static bool _is_literal(string_t word) {
-	// return _string_eq(word, (string_t)STR("true")) || _string_eq(word, (string_t)STR("false"));
-	return _string_eq(word, STR("true")) || _string_eq(word, STR("false")) || _string_eq(word, STR("nil"));
+	// return string_eq(word, (string_t)STR("true")) || string_eq(word, (string_t)STR("false"));
+	return string_eq(word, STR("true")) || string_eq(word, STR("false")) || string_eq(word, STR("nil"));
 }
 
 static void _token_push(line_t *line, lua_token_type_t type, string_t string) {

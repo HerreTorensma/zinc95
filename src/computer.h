@@ -188,10 +188,10 @@ typedef struct text_mode_font {
 	color_t data[TEXT_MODE_FONT_BITMAP_WIDTH * TEXT_MODE_FONT_BITMAP_HEIGHT];
 } text_mode_font_t;
 
-typedef enum video_mode {
-	VIDEO_MODE_TEXT = 0,
-	VIDEO_MODE_GRAPHICS = 1,
-} video_mode_t;
+// typedef enum video_mode {
+// 	VIDEO_MODE_TEXT = 0,
+// 	VIDEO_MODE_GRAPHICS = 1,
+// } video_mode_t;
 
 typedef struct terminal {
 	// uint16_t cursor_index;
@@ -199,13 +199,18 @@ typedef struct terminal {
 	uint8_t cursor_y;
 } terminal_t;
 
+typedef struct shell {
+	char line_buffer[80];
+	uint8_t line_len;
+} shell_t;
+
 // 8MB RAM (excluding what the lua code takes up)
 typedef union ram {
 	struct {
 		// VRAM (might wrap that in a struct as well)
 		framebuffer_t framebuffer;
 		textbuffer_t textbuffer;
-		video_mode_t video_mode;
+		// video_mode_t video_mode;
 		palette_t palette;
 
 		spritesheet_t spritesheet;
@@ -220,15 +225,11 @@ typedef union ram {
 		text_mode_font_t text_mode_font;
 
 		terminal_t terminal;
+		shell_t shell;
 	};
 
 	uint8_t data[RAM_SIZE];
 } ram_t;
-
-typedef enum computer_state {
-	STATE_EDITING,
-	STATE_PLAYING,
-} computer_state_t;
 
 typedef struct sample {
 	float left;
@@ -263,10 +264,19 @@ typedef struct voice_pool {
 	voice_t voices[MAX_VOICES];
 } voice_pool_t;
 
+typedef enum computer_state {
+	// STATE_EDITING,
+	// STATE_PLAYING,
+	STATE_IN_SHELL,
+	STATE_IN_EDITOR,
+	STATE_IN_GAME,
+} computer_state_t;
+
 typedef struct computer {
 	ram_t *ram;
 	rgb_color_t rgb_framebuffer[SCREEN_WIDTH * SCREEN_HEIGHT];
 	computer_state_t state;
+	bool game_running;
 
 	file_t file;
 
@@ -332,6 +342,7 @@ typedef struct skin_layout {
 
 	button_t save_button;
 	button_t play_button;
+	button_t stop_button;
 
 	button_array_t sprite_flag_buttons;
 

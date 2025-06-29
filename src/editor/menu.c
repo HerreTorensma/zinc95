@@ -68,7 +68,11 @@ void workspace_menu_update(computer_t *computer) {
 		_active_workspace = WORKSPACE_SOUND;
 	}
 	if (input_key_pressed(KEY_F5)) {
-		play_game(computer);
+		if (computer->game_running) {
+			quit_game(computer);
+		} else {
+			play_game(computer);
+		}
 	}
 
 	switch (_active_workspace) {
@@ -146,7 +150,13 @@ void workspace_menu_draw(computer_t *computer) {
 		game_save(computer, "game.zinc95");
 	}
 	
-	if (gui_press_button(computer->ram, _layout.play_button_pos, skin_layout.play_button)) {
-		play_game(computer);
+	if (!computer->game_running) {
+		if (gui_press_button(computer->ram, _layout.play_button_pos, skin_layout.play_button)) {
+			play_game(computer);
+		}
+	} else {
+		if (gui_press_button(computer->ram, _layout.play_button_pos, skin_layout.stop_button)) {
+			quit_game(computer);
+		}
 	}
 }

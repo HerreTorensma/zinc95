@@ -1,6 +1,7 @@
 #include "txt.h"
 
 #include <string.h>
+#include "input.h"
 
 // Directly generates the rgb framebuffer from the textbuffer
 void txt_generate_rgb_framebuffer(computer_t *computer) {
@@ -25,6 +26,13 @@ void txt_generate_rgb_framebuffer(computer_t *computer) {
 					}
 				}
 			}
+		}
+	}
+
+	// TODO: Cursor
+	for (int y = computer->ram->terminal.cursor_y * TEXTBUFFER_CHAR_HEIGHT; y < computer->ram->terminal.cursor_y * TEXTBUFFER_CHAR_HEIGHT + TEXTBUFFER_CHAR_HEIGHT; y++) {
+		for (int x = computer->ram->terminal.cursor_x * TEXTBUFFER_CHAR_WIDTH; x < computer->ram->terminal.cursor_x * TEXTBUFFER_CHAR_WIDTH + TEXTBUFFER_CHAR_WIDTH; x++) {
+			computer->rgb_framebuffer[y * SCREEN_WIDTH + x] = (rgb_color_t){255, 255, 255};
 		}
 	}
 }
@@ -60,10 +68,12 @@ void txt_shift_lines_down(ram_t *ram) {
 // TODO: test this
 void txt_clear(ram_t *ram) {
 	memset(ram->textbuffer.data, 0, TEXTBUFFER_SIZE * sizeof(char_t));
+	ram->terminal.cursor_x = 0;
+	ram->terminal.cursor_y = 0;
 }
 
 static size_t _get_cursor_index(terminal_t *terminal) {
-	return terminal->cursor_y * TEXTBUFFER_WIDTH + terminal->cursor_x;
+	return (size_t)terminal->cursor_y * (size_t)TEXTBUFFER_WIDTH + (size_t)terminal->cursor_x;
 }
 
 static void _scroll_if_needed(ram_t *ram) {
@@ -73,7 +83,7 @@ static void _scroll_if_needed(ram_t *ram) {
 	}
 }
 
-static void _cursor_newline(ram_t *ram) {
+static void _newline(ram_t *ram) {
 	ram->terminal.cursor_x = 0;
 	ram->terminal.cursor_y++;
 
@@ -84,17 +94,29 @@ static void _increment_cursor(ram_t *ram) {
 	if (ram->terminal.cursor_x < TEXTBUFFER_WIDTH - 1) {
 		ram->terminal.cursor_x++;
 	} else {
-		_cursor_newline(ram);
+		_newline(ram);
 	}
 }
 
 static void _term_backspace(ram_t *ram) {
-	
+	if (ram->terminal.cursor_x > 0) {
+		ram->terminal.cursor_x--;
+	} else if (ram->terminal.cursor_y > 0) {
+		ram->terminal.cursor_y--;
+		ram->terminal.cursor_x = TEXTBUFFER_WIDTH - 1;
+	}
+
+	size_t index = _get_cursor_index(&ram->terminal);
+	ram->textbuffer.data[index] = (char_t){
+		.c = '\0',
+		.bg_color = 0,
+		.fg_color = 0,
+	};
 }
 
 void term_putchar(ram_t *ram, uint8_t c, color_t bg_color, color_t fg_color) {
 	if (c == '\n') {
-		_cursor_newline(ram);
+		_newline(ram);
 		return;
 	}
 	if (c == '\b') {
@@ -111,8 +133,93 @@ void term_putchar(ram_t *ram, uint8_t c, color_t bg_color, color_t fg_color) {
 	_increment_cursor(ram);
 }
 
-void term_print(ram_t *ram, string_t string, color_t bg_color, color_t fg_color) {
+void term_printc(ram_t *ram, string_t string, color_t bg_color, color_t fg_color) {
 	for (size_t i = 0; i < string.len; i++) {
 		term_putchar(ram, string.data[i], bg_color, fg_color);
+	}
+}
+
+void term_print(ram_t *ram, string_t string) {
+	term_printc(ram, string, COLOR_BLACK, COLOR_WHITE);
+}
+
+char term_getchar() {
+	return input_get_as_char();
+}
+
+// TODO: use this instead of just the shell_update function
+string_t term_input(string_t string) {
+
+}
+
+static void _print_help(ram_t *ram) {
+	term_print(ram, STR("load <filename> load a file\n"));
+	term_print(ram, STR("save <filename> save a file\n"));
+	term_print(ram, STR("run             run the currently loaded game\n"));
+	term_print(ram, STR("resume          resume the currently running game\n"));
+	term_print(ram, STR("cd <dirname>    enter a directory\n"));
+	term_print(ram, STR("cd ..           enter the parent directory\n"));
+	term_print(ram, STR("ls              list the files in the current directory\n"));
+	term_print(ram, STR("mkdir <dirname> create a new directory\n"));
+	term_print(ram, STR("clear           clear the screen\n"));
+	term_putchar(ram, '\n', 0, 0);
+	term_print(ram, STR("Press F11 to toggle fullscreen\n"));
+	term_putchar(ram, '\n', 0, 0);
+}
+
+static void _execute_command(ram_t *ram, string_t input) {
+	// term_print(ram, STR("Executing\n"), 0, 15);
+	if (string_eq(input, STR("help"))) {
+		_print_help(ram);
+	} else if (string_eq(input, STR("clear"))) {
+		txt_clear(ram);
+	} else {
+		term_printc(ram, STR("Syntax error\n"), COLOR_BLACK, COLOR_RED);
+	}
+}
+
+void shell_new_command(ram_t *ram) {
+	ram->shell.line_len = 0;
+	term_printc(ram, STR(">"), 0, 7);
+}
+
+static void _print_intro(ram_t *ram) {
+	term_printc(ram, STR("Zinc"), 0, 7);
+	term_printc(ram, STR("95\n"), 0, 12);
+	term_printc(ram, STR("Enter help for help\n"), 0, 15);
+	term_putchar(ram, '\n', 0, 0);
+}
+
+void shell_init(ram_t *ram) {
+	_print_intro(ram);
+	shell_new_command(ram);
+}
+
+void shell_update(ram_t *ram) {
+	char c = term_getchar();
+	if (c == '\0') {
+		return;
+	}
+	
+	if (c == '\n') {
+		// We have the command
+		term_putchar(ram, c, 0, 15);
+		string_t input = (string_t) {
+			.data = ram->shell.line_buffer,
+			.len = ram->shell.line_len,
+		};
+
+		_execute_command(ram, input);
+		shell_new_command(ram);
+	} else if (c == '\b') {
+		// Backspace
+		if (ram->shell.line_len > 0) {
+			ram->shell.line_len--;
+			_term_backspace(ram);
+		}
+	} else if (ram->shell.line_len < 80 - 1) {
+		ram->shell.line_buffer[ram->shell.line_len] = c;
+		ram->shell.line_len++;
+		term_putchar(ram, c, 0, 15);
 	}
 }

@@ -58,6 +58,14 @@ char input_get_as_char() {
 		return ' ';
 	}
 
+	if (input_key_pressed(KEY_RETURN) || input_key_pressed(KEY_NUMENTER)) {
+		return '\n';
+	}
+
+	if (input_key_pressed(KEY_BACKSPACE)) {
+		return '\b';
+	}
+
 	// Letters
 	for (int i = KEY_A; i <= KEY_Z; i++) {
 		if (input_key_pressed(i)) {

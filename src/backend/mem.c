@@ -45,3 +45,17 @@ void stack_quit(zinc_stack_t *stack) {
 	free(stack->items);
 	stack->items = NULL;
 }
+
+bool string_eq(string_t a, string_t b) {
+	if (a.len != b.len) {
+		return false;
+	}
+
+	for (size_t i = 0; i < a.len; i++) {
+		if (a.data[i] != b.data[i]) {
+			return false;
+		}
+	}
+
+	return true;
+}

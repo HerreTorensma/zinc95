@@ -17,12 +17,6 @@ Main
 
 #define SDL_MAIN_HANDLED
 
-void print_intro_to_terminal(ram_t *ram) {
-	term_print(ram, STR("Zinc"), 0, 15);
-	term_print(ram, STR("95\n"), 0, 15);
-	term_print(ram, STR("Type <help> for help\n"), 0, 15);
-}
-
 int main(int argc, char *argv[]) {
 	computer_t computer = {0};
 	computer_init(&computer);
@@ -103,41 +97,63 @@ int main(int argc, char *argv[]) {
 	// gui_load_skin(computer.ram, "res/skin2.png", 1, 40);
 	gfx_load_surface(&computer.ram->palette, (surface_t){.data = computer.ram->text_mode_font.data, .width = TEXT_MODE_FONT_BITMAP_WIDTH, .height = TEXT_MODE_FONT_BITMAP_HEIGHT}, "res/font.png");
 
-	print_intro_to_terminal(computer.ram);
-
 	computer.ram->border_color = 8;
 
 	workspace_menu_init(&computer);
-	
-	while (window_is_open()) {
-		char c = input_get_as_char();
-		if (c != '\0')
-			term_putchar(computer.ram, c, 0, 15);
 
+	// Logic
+	// For now the shell is just always running if the text video mode is active, and the game and editor are paused
+	// When pressing the play button or hitting F5 the game is run
+	// Using the ESC key you 
+	// idk
+	// The shell should not be active when the game is running, it should just print stuff from the game
+	// 
+
+	shell_init(computer.ram);
+	
+	// TODO: simplify the state switching logic
+	while (window_is_open()) {
 		window_tick_start(&computer);
 
-		if (input_key_pressed(KEY_F10)) {
-			computer.ram->video_mode = !computer.ram->video_mode;
+		if (input_key_pressed(KEY_ESC)) {
+			computer.state++;
+			if (computer.state == STATE_IN_GAME + 1) {
+				computer.state = STATE_IN_SHELL;
+			}
+
+			if (computer.state == STATE_IN_GAME && !computer.game_running) {
+				computer.state = STATE_IN_SHELL;
+			}
 		}
 
 		switch (computer.state) {
-			case STATE_EDITING:
+			case STATE_IN_SHELL:
+				if (!computer.game_running) {
+					shell_update(computer.ram);
+				} else {
+					// Game keeps running while the terminal is open
+					lua_call_update();
+				}
+				break;
+			case STATE_IN_EDITOR:
 				workspace_menu_update(&computer);
 				break;
-			case STATE_PLAYING:
+			case STATE_IN_GAME:
 				lua_call_update();
-				if (input_key_pressed(KEY_ESC)) {
-					quit_game(&computer);
-				}
 				break;
 		}
 		
 		switch (computer.state) {
-			case STATE_EDITING:
-				workspace_menu_draw(&computer);
+			case STATE_IN_SHELL:
+				txt_generate_rgb_framebuffer(&computer);
 				break;
-			case STATE_PLAYING:
+			case STATE_IN_EDITOR:
+				workspace_menu_draw(&computer);
+				gfx_generate_rgb_framebuffer(&computer);
+				break;
+				case STATE_IN_GAME:
 				lua_call_draw();
+				gfx_generate_rgb_framebuffer(&computer);
 				break;
 		}
 

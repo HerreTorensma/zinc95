@@ -16,6 +16,15 @@ void txt_shift_lines_down(ram_t *ram);
 // Middle level terminal manipulation
 void term_putchar(ram_t *ram, uint8_t c, color_t bg_color, color_t fg_color);
 
-void term_print(ram_t *ram, string_t string, color_t bg_color, color_t fg_color);
+void term_printc(ram_t *ram, string_t string, color_t bg_color, color_t fg_color);
+
+void term_print(ram_t *ram, string_t string);
+
+char term_getchar();
 
 // High level shell manipulation
+void shell_init(ram_t *ram);
+
+void shell_update(ram_t *ram);
+
+void shell_new_command(ram_t *ram);

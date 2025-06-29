@@ -90,7 +90,12 @@ function _init()
 	--new_fish()
 end
 
+local fuck = 0
+
 function _update()
+	print("fuck: ", fuck)
+	fuck = fuck + 1
+
 	particle_timer = particle_timer + 1
 
 	if particle_timer == 3 then
