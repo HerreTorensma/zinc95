@@ -124,16 +124,44 @@ static int _lua_print(lua_State *lua) {
 		const char *buffer = lua_tostring(lua, i);
 		
 		if (buffer) {
-			term_print(computer->ram, STR(buffer), COLOR_BLACK, COLOR_WHITE);
+			term_printc(computer->ram, STR(buffer), COLOR_BLACK, COLOR_WHITE);
 		}
 	}
 
 	return 0;
 }
 
+// The following is copy-pasted and edited from the Lua docs and has some parts of the standard library commented out
+// so that the game cannot do dangerous things to the host system
+static const luaL_Reg loadedlibs[] = {
+	{"_G", luaopen_base},
+	{LUA_LOADLIBNAME, luaopen_package},
+	// {LUA_COLIBNAME, luaopen_coroutine},
+	{LUA_TABLIBNAME, luaopen_table},
+	// {LUA_IOLIBNAME, luaopen_io},
+	// {LUA_OSLIBNAME, luaopen_os},
+	{LUA_STRLIBNAME, luaopen_string},
+	{LUA_MATHLIBNAME, luaopen_math},
+	// {LUA_UTF8LIBNAME, luaopen_utf8},
+	// {LUA_DBLIBNAME, luaopen_debug},
+#if defined(LUA_COMPAT_BITLIB)
+	{LUA_BITLIBNAME, luaopen_bit32},
+#endif
+	{NULL, NULL}
+};
+
+static void _open_safe_libs(lua_State *lua) {
+	const luaL_Reg *lib;
+	/* "require" functions from 'loadedlibs' and set results to global table */
+	for (lib = loadedlibs; lib->func; lib++) {
+		luaL_requiref(lua, lib->name, lib->func, 1);
+		lua_pop(lua, 1);  /* remove lib */
+	}
+}
+
 void lua_init(computer_t *computer) {
 	_lua = luaL_newstate();
-	luaL_openlibs(_lua);
+	_open_safe_libs(_lua);
 
 	// TODO: handle this in a loop based on the api metas
 	// maybe not because then I have issues with circular dependency
@@ -146,8 +174,8 @@ void lua_init(computer_t *computer) {
 	lua_register(_lua, api_metas[API_FUNC_KEY].name, _lua_key);
 
 	if (luaL_dostring(_lua, computer->code_buffer) != LUA_OK) {
-		term_print(computer->ram, STR("\nError loading script: "), COLOR_BLACK, COLOR_RED);
-		term_print(computer->ram, STR(lua_tostring(_lua, -1)), 0, 12);
+		term_printc(computer->ram, STR("\nError loading script: "), COLOR_BLACK, COLOR_RED);
+		term_printc(computer->ram, STR(lua_tostring(_lua, -1)), 0, 12);
 		lua_pop(_lua, 1);
 	}
 }
@@ -159,8 +187,8 @@ void lua_call_init() {
 
 	if (lua_isfunction(_lua, -1)) {
 		if (lua_pcall(_lua, 0, 0, 0) != LUA_OK) {
-			term_print(computer->ram, STR("\nError in _init: "), COLOR_BLACK, COLOR_RED);
-			term_print(computer->ram, STR(lua_tostring(_lua, -1)), COLOR_BLACK, COLOR_RED);
+			term_printc(computer->ram, STR("\nError in _init: "), COLOR_BLACK, COLOR_RED);
+			term_printc(computer->ram, STR(lua_tostring(_lua, -1)), COLOR_BLACK, COLOR_RED);
 			lua_pop(_lua, 1);
 		} 
 	} else {
@@ -175,8 +203,8 @@ void lua_call_update() {
 
 	if (lua_isfunction(_lua, -1)) {
 		if (lua_pcall(_lua, 0, 0, 0) != LUA_OK) {
-			term_print(computer->ram, STR("\nError in _update: "), COLOR_BLACK, COLOR_RED);
-			term_print(computer->ram, STR(lua_tostring(_lua, -1)), COLOR_BLACK, COLOR_RED);
+			term_printc(computer->ram, STR("\nError in _update: "), COLOR_BLACK, COLOR_RED);
+			term_printc(computer->ram, STR(lua_tostring(_lua, -1)), COLOR_BLACK, COLOR_RED);
 			lua_pop(_lua, 1);
 		} 
 	} else {
@@ -191,8 +219,8 @@ void lua_call_draw() {
 
 	if (lua_isfunction(_lua, -1)) {
 		if (lua_pcall(_lua, 0, 0, 0) != LUA_OK) {
-			term_print(computer->ram, STR("\nError in _draw: "), COLOR_BLACK, COLOR_RED);
-			term_print(computer->ram, STR(lua_tostring(_lua, -1)), COLOR_BLACK, COLOR_RED);
+			term_printc(computer->ram, STR("\nError in _draw: "), COLOR_BLACK, COLOR_RED);
+			term_printc(computer->ram, STR(lua_tostring(_lua, -1)), COLOR_BLACK, COLOR_RED);
 			lua_pop(_lua, 1);
 		} 
 	} else {

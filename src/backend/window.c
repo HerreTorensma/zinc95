@@ -7,6 +7,11 @@
 #include "txt.h"
 #include "../computer.h"
 
+// TODO: instead of the ifdef stuff SDL2 there should be one window.h file and then window_sdl2.c or window_sokol.c what contain the implementation
+// because this is almost that but with more bloat
+// I will take care of this in another commit
+// Like the IO
+
 void window_init(char title[], int initial_scale) {
 	#ifdef BACKEND_SDL2
 	sdl2_init(title, initial_scale);

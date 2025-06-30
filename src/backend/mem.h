@@ -1,7 +1,39 @@
+/*
+Memory and string related functionality
+A kind of more extensive version of string.h with added datastructures
+*/
+
 #pragma once
 
 #include <stdlib.h>
 #include <stdbool.h>
+
+// Memory arena
+typedef struct arena {
+	void *data;
+	size_t pos;
+	size_t size;
+} arena_t;
+
+void arena_init(arena_t *arena, size_t initial_size);
+
+void *arena_alloc(arena_t *arena, size_t size);
+
+void *arena_calloc(arena_t *arena, size_t size);
+
+void arena_clear(arena_t *arena);
+
+void arena_free(arena_t *arena);
+
+void temp_arena_init(size_t initial_size);
+
+void *temp_alloc(size_t size);
+
+void *temp_calloc(size_t size);
+
+void temp_clear();
+
+void temp_free();
 
 // Plans for length based strings:
 // I'm going to use this everywhere related to the code editor and the saving/loading of the complete cartridge
@@ -38,4 +70,18 @@ bool stack_pop(zinc_stack_t *stack, void *item);
 
 void stack_quit(zinc_stack_t *stack);
 
+// Some kind of array thing
+typedef struct string_array {
+	string_t *data;
+	size_t size;
+} string_array_t;
+
+void string_array_push(string_array_t *array, string_t string);
+
+// String functions
+// any that use the temporary allocator have temp in the name somewhere
 bool string_eq(string_t a, string_t b);
+
+char *string_to_temp_c_string(string_t string);
+
+string_array_t string_split_to_temp(string_t string, char seperator);

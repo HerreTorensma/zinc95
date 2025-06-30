@@ -14,6 +14,7 @@ Main
 #include "backend/audio.h"
 #include "backend/gui.h"
 #include "backend/txt.h"
+#include "backend/io.h"
 
 #define SDL_MAIN_HANDLED
 
@@ -89,7 +90,9 @@ int main(int argc, char *argv[]) {
 	// Then IDK if the code editor font should be part of the skin or not
 	// I think the text mode font shouldn't be part of the skin
 
-	
+	// 16KB
+	temp_arena_init(1024 * 16);
+
 	game_load(&computer, "game.zinc95");
 	computer_load_resouces(&computer);
 
@@ -110,6 +113,8 @@ int main(int argc, char *argv[]) {
 	// 
 
 	shell_init(computer.ram);
+
+	create_default_directories();
 	
 	// TODO: simplify the state switching logic
 	while (window_is_open()) {

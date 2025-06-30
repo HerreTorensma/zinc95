@@ -418,7 +418,7 @@ void file_split_line_down(file_t *file, size_t line, size_t pos, size_t indent_l
 	_tokenize_line(file, line + 1ULL);
 }
 
-// Assumes dest has enough memory for the concatenation
+// Reallocs dest
 static void _string_concat(string_t *dest, string_t *src) {
 	size_t old_len = dest->len;
 	dest->len += src->len;

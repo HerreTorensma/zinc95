@@ -17,6 +17,8 @@ computer_t *get_global_computer() {
 	return _computer;
 }
 
+// TODO: design this file, probably seperate some stuff into another file, in a way I don't have forward declarations
+
 void gui_init_monospace_font_widths(ram_t *ram, int font_index, int width);
 
 void gui_init_font_widths(ram_t *ram, int font_index);

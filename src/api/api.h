@@ -33,6 +33,8 @@ typedef enum api_func {
 	API_FUNC_COUNT,
 } api_func_t;
 
+// Uses null-terminated strings because they are only fed to Lua or used to generate documentation
+// there is no real benefit to using length-based strings here
 typedef struct api_meta {
 	char *name;
 	char *signature;

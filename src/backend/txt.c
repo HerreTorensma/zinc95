@@ -153,28 +153,98 @@ string_t term_input(string_t string) {
 }
 
 static void _print_help(ram_t *ram) {
-	term_print(ram, STR("load <filename> load a file\n"));
-	term_print(ram, STR("save <filename> save a file\n"));
-	term_print(ram, STR("run             run the currently loaded game\n"));
-	term_print(ram, STR("resume          resume the currently running game\n"));
-	term_print(ram, STR("cd <dirname>    enter a directory\n"));
-	term_print(ram, STR("cd ..           enter the parent directory\n"));
-	term_print(ram, STR("ls              list the files in the current directory\n"));
-	term_print(ram, STR("mkdir <dirname> create a new directory\n"));
-	term_print(ram, STR("clear           clear the screen\n"));
+	term_print(ram, STR("help              print commands\n"));
+	term_print(ram, STR("load   <filename> load a file\n"));
+	term_print(ram, STR("save   <filename> save a file\n"));
+	term_print(ram, STR("run               run the currently loaded game\n"));
+	term_print(ram, STR("resume            resume the currently running game\n"));
+	term_print(ram, STR("cd     <dirname>  enter a directory\n"));
+	term_print(ram, STR("cd ..             enter the parent directory\n"));
+	term_print(ram, STR("ls                list the files in the current directory\n"));
+	term_print(ram, STR("mkdir  <dirname>  create a new directory\n"));
+	term_print(ram, STR("clear             clear the screen\n"));
 	term_putchar(ram, '\n', 0, 0);
 	term_print(ram, STR("Press F11 to toggle fullscreen\n"));
 	term_putchar(ram, '\n', 0, 0);
 }
 
 static void _execute_command(ram_t *ram, string_t input) {
-	// term_print(ram, STR("Executing\n"), 0, 15);
-	if (string_eq(input, STR("help"))) {
+	string_array_t strings = string_split_to_temp(input, ' ');
+
+	// Print the list of splitted strings
+	// for (int i = 0; i < strings.size; i++) {
+	// 	printf("'");
+	// 	for (int j = 0; j < strings.data[i].len; j++) {
+	// 		printf("%c", strings.data[i].data[j]);
+	// 	}
+	// 	printf("'");
+	// 	printf("\n");
+	// }
+
+	if (strings.size == 0) {
+		return;
+	}
+
+	if (string_eq(strings.data[0], STR("help"))) {
+		// Print help
 		_print_help(ram);
-	} else if (string_eq(input, STR("clear"))) {
+	} 
+	
+	else if (string_eq(strings.data[0], STR("load"))) {
+		if (strings.size >= 2) {
+			// Load the file
+		} else {
+			term_printc(ram, STR("Syntax error: expected 1 argument\n"), COLOR_BLACK, COLOR_RED);
+		}
+	}
+
+	else if (string_eq(strings.data[0], STR("save"))) {
+		if (strings.size >= 2) {
+			// Save the file
+		} else {
+			term_printc(ram, STR("Syntax error: expected 1 argument\n"), COLOR_BLACK, COLOR_RED);
+		}
+	}
+
+	else if (string_eq(strings.data[0], STR("run"))) {
+		// Run the currently loaded game
+	}
+
+	else if (string_eq(strings.data[0], STR("resume"))) {
+		// Resume the currently running but paused game
+	}
+
+	else if (string_eq(strings.data[0], STR("cd"))) {
+		if (strings.size >= 2) {
+			if (string_eq(strings.data[1], STR(".."))) {
+				// Go to parent directory
+			} else {
+				// Go to child directory
+			}
+		} else {
+			term_printc(ram, STR("Syntax error: expected 1 argument\n"), COLOR_BLACK, COLOR_RED);
+		}
+	}
+
+	else if (string_eq(strings.data[0], STR("ls"))) {
+		// List files and directories
+	}
+
+	else if (string_eq(strings.data[0], STR("mkdir"))) {
+		if (strings.size >= 2) {
+			// Create a new directory in the discs dir
+		} else {
+			term_printc(ram, STR("Syntax error: expected 1 argument\n"), COLOR_BLACK, COLOR_RED);
+		}
+	}
+
+	else if (string_eq(strings.data[0], STR("clear"))) {
+		// Clear the textbuffer
 		txt_clear(ram);
-	} else {
-		term_printc(ram, STR("Syntax error\n"), COLOR_BLACK, COLOR_RED);
+	}
+	
+	else {
+		term_printc(ram, STR("Syntax error: unrecognized command\n"), COLOR_BLACK, COLOR_RED);
 	}
 }
 
