@@ -2,6 +2,7 @@
 
 #include <string.h>
 #include "input.h"
+#include "io.h"
 
 // Directly generates the rgb framebuffer from the textbuffer
 void txt_generate_rgb_framebuffer(computer_t *computer) {
@@ -233,6 +234,8 @@ static void _execute_command(ram_t *ram, string_t input) {
 	else if (string_eq(strings.data[0], STR("mkdir"))) {
 		if (strings.size >= 2) {
 			// Create a new directory in the discs dir
+			string_t path_with_discs = string_concat_temp(STR("discs/"), strings.data[1]);
+			create_directory(path_with_discs);
 		} else {
 			term_printc(ram, STR("Syntax error: expected 1 argument\n"), COLOR_BLACK, COLOR_RED);
 		}

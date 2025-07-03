@@ -115,6 +115,9 @@ int main(int argc, char *argv[]) {
 	shell_init(computer.ram);
 
 	create_default_directories();
+	// create_directory("idkman\\something\\iets");
+	// create_directory("idkman/something/iets");
+	// create_directory("idkman");
 	
 	// TODO: simplify the state switching logic
 	while (window_is_open()) {

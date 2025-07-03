@@ -78,10 +78,20 @@ typedef struct string_array {
 
 void string_array_push(string_array_t *array, string_t string);
 
+string_t temp_alloc_string(size_t size);
+
 // String functions
 // any that use the temporary allocator have temp in the name somewhere
 bool string_eq(string_t a, string_t b);
 
+string_t string_concat_temp(string_t a, string_t b);
+
 char *string_to_temp_c_string(string_t string);
+
+string_t string_duplicate_temp(string_t string);
+
+void print_string(string_t string);
+
+void string_concat(string_t *dest, string_t src);
 
 string_array_t string_split_to_temp(string_t string, char seperator);

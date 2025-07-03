@@ -111,6 +111,14 @@ void string_array_push(string_array_t *array, string_t string) {
 	array->size++;
 }
 
+string_t temp_alloc_string(size_t size) {
+	return (string_t) {
+		.data = temp_alloc(size * sizeof(char)),
+		// TODO: why is the len 0? there was a reason for it but i don't remember
+		.len = 0,
+	};
+}
+
 bool string_eq(string_t a, string_t b) {
 	if (a.len != b.len) {
 		return false;
@@ -125,8 +133,6 @@ bool string_eq(string_t a, string_t b) {
 	return true;
 }
 
-// Not currently needed and also untested so it's commented out
-/*
 string_t string_concat_temp(string_t a, string_t b) {
 	string_t new_string = {
 		.data = temp_alloc((a.len + b.len) * sizeof(char)),
@@ -138,7 +144,6 @@ string_t string_concat_temp(string_t a, string_t b) {
 
 	return new_string;
 }
-*/
 
 char *string_to_temp_c_string(string_t string) {
 	char *buffer = temp_alloc((string.len + 1) * sizeof(char));
@@ -146,6 +151,25 @@ char *string_to_temp_c_string(string_t string) {
 	buffer[string.len] = '\0';
 
 	return buffer;
+}
+
+string_t string_duplicate_temp(string_t string) {
+	string_t new_string = temp_alloc_string(string.len);
+	memcpy(new_string.data, string.data, string.len * sizeof(char));
+	return new_string;
+}
+
+void print_string(string_t string) {
+	for (size_t i = 0; i < string.len; i++) {
+		putchar(string.data[i]);
+	}
+}
+
+void string_concat(string_t *dest, string_t src) {
+	size_t old_len = dest->len;
+	dest->len += src.len;
+
+	memcpy(dest->data + old_len, src.data, src.len);
 }
 
 string_array_t string_split_to_temp(string_t string, char seperator) {
