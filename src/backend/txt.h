@@ -1,6 +1,11 @@
+/*
+Textbuffer, terminal and shell related functionality
+*/
+
 #pragma once
 
 #include "../computer.h"
+#include "../common/string.h"
 
 void txt_generate_rgb_framebuffer(computer_t *computer);
 

@@ -6,7 +6,7 @@ Input
 
 #include <stdbool.h>
 
-#include "math2d.h"
+#include "../common/math2d.h"
 
 // TODO: manually number these (maybe)
 // Also write them to RAM

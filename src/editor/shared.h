@@ -5,7 +5,7 @@ Shared components among editors
 #pragma once
 
 #include "../computer.h"
-#include "../backend/math2d.h"
+#include "../common/math2d.h"
 
 extern rect_t spritesheet_rect;
 extern rect_t visible_rect;

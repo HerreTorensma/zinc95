@@ -5,7 +5,7 @@
 #include "../backend/input.h"
 #include "../backend/gfx.h"
 #include "../backend/gui.h"
-#include "../backend/mem.h"
+#include "../common/mem.h"
 #include "menu.h"
 #include "shared.h"
 

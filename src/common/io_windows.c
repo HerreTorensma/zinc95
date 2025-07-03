@@ -20,7 +20,6 @@ static void _convert_to_windows_path(string_t path) {
 static int _get_temp_root_path(string_t *path) {
 	if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, path->data))) {
 		path->len = strlen(path->data);
-		// strcat(path, "\\zinc95");
 		string_concat(path, STR("\\zinc95"));
 		return path;
 	}

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mem.h"
+#include "string.h"
 
 // Creates a directory in the zinc95 directory
 void create_directory(string_t path);

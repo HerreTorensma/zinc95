@@ -7,6 +7,7 @@
 #include "res.h"
 #include "api/lua_api.h"
 
+// This is global because the Lua API functions can't take arguments and they need the computer
 static computer_t *_computer;
 
 void set_global_computer(computer_t *computer) {

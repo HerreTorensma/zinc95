@@ -3,7 +3,7 @@ String and text editor file datastructure and functions
 */
 #pragma once
 
-#include "mem.h"
+#include "../common/string.h"
 #include <stdlib.h>
 
 typedef enum lua_token_type {
@@ -40,7 +40,7 @@ typedef struct file {
 	
 	size_t cursor_line;
 	size_t cursor_pos;
-	size_t target_pos;
+	size_t target_pos; // TODO: I don't think this belongs on the data structure, should be moved to the editor
 } file_t;
 
 // Get the indent level of the given string

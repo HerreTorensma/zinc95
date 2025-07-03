@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <SDL2/SDL.h>
 
-#include "../backend/math2d.h"
+#include "../common/math2d.h"
 #include "../backend/gfx.h"
 #include "../backend/input.h"
 #include "../backend/gui.h"

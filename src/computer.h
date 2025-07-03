@@ -12,7 +12,7 @@ Memory layout, global constants
 #include <stdbool.h>
 
 #include "backend/text_file.h"
-#include "backend/math2d.h"
+#include "common/math2d.h"
 
 // TODO: rename some stuff so it's all consistent, dont mix AMOUNT, MAX, TOTAL etc.
 

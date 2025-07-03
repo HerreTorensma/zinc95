@@ -7,8 +7,9 @@ GUI-related stuff like text drawing, buttons etc.
 #pragma once
 
 #include "../computer.h"
-#include "../backend/math2d.h"
-#include "../backend/gfx.h"
+#include "../common/math2d.h"
+#include "../common/string.h"
+#include "gfx.h"
 
 #define GUI_STANDARD_BUTTON_SIZE 16
 #define GUI_SMALL_BUTTON_SIZE 12

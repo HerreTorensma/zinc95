@@ -14,7 +14,8 @@ Main
 #include "backend/audio.h"
 #include "backend/gui.h"
 #include "backend/txt.h"
-#include "backend/io.h"
+#include "common/io.h"
+#include "common/string.h"
 
 #define SDL_MAIN_HANDLED
 
@@ -91,7 +92,7 @@ int main(int argc, char *argv[]) {
 	// I think the text mode font shouldn't be part of the skin
 
 	// 16KB
-	temp_arena_init(1024 * 16);
+	temp_mem_init(1024 * 16);
 
 	game_load(&computer, "game.zinc95");
 	computer_load_resouces(&computer);
@@ -121,6 +122,8 @@ int main(int argc, char *argv[]) {
 	
 	// TODO: simplify the state switching logic
 	while (window_is_open()) {
+		temp_clear();
+
 		window_tick_start(&computer);
 
 		if (input_key_pressed(KEY_ESC)) {
@@ -169,6 +172,8 @@ int main(int argc, char *argv[]) {
 
 		window_tick_end(&computer);
 	}
+
+	temp_free();
 
 	computer_quit(&computer);
 

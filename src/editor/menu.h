@@ -6,7 +6,7 @@ Draws bar and is in charge of calling the correct editor update and draw loop
 #pragma once
 
 #include "../computer.h"
-#include "../backend/math2d.h"
+#include "../common/math2d.h"
 
 void workspace_menu_init(computer_t *computer);
 

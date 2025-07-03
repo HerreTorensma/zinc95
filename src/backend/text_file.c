@@ -378,6 +378,7 @@ static void _move_lines_down(file_t *file, size_t line) {
 	file->line_amount++;
 }
 
+// Edits the passed string and returns the new one
 static string_t _string_split(string_t *origin, size_t pos) {
 	string_t second = {0};
 	second.len = _len_at_pos(origin, pos);

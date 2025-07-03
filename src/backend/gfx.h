@@ -5,7 +5,7 @@ Graphics
 #pragma once
 
 #include "../computer.h"
-#include "math2d.h"
+#include "../common/math2d.h"
 
 // TODO: use this in gfx draw functions instead of framebuffer_t,
 // so it can later also be used for drawing on the spritesheet
