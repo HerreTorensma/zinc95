@@ -204,7 +204,7 @@ typedef struct shell {
 	uint8_t line_len;
 } shell_t;
 
-// 8MB RAM (excluding what the lua code takes up)
+// TODO: Manually align this stuff
 typedef union ram {
 	struct {
 		// VRAM (might wrap that in a struct as well)

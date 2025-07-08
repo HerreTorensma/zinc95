@@ -123,6 +123,7 @@ static surface_t _overlay = {
 	.height = 256,
 };
 
+// TODO: free this
 static zinc_stack_t _undo_stack = {0};
 
 #define UNDO_STACK_SIZE 64

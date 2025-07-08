@@ -104,9 +104,9 @@ void get_files_in_path(string_t path) {
 	HANDLE h_find = FindFirstFile(search_path.data, &find_file_data);
 
 	if (h_find == INVALID_HANDLE_VALUE) {
-	DWORD error = GetLastError();
-	printf("FindFirstFile failed. Error code: %lu\n", error);
-	return;
+		DWORD error = GetLastError();
+		printf("FindFirstFile failed. Error code: %lu\n", error);
+		return;
 	}
 
 	do {

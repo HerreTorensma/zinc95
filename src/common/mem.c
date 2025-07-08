@@ -3,6 +3,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 typedef struct temp_mem {
 	void *data;
@@ -11,6 +12,34 @@ typedef struct temp_mem {
 } temp_mem_t;
 
 static temp_mem_t _temp_mem = {0};
+
+void *alloc(allocator_t allocator, size_t size) {
+	assert(size > 0 && "You requested to allocate 0 bytes which is illegal");
+	allocator.proc(size, NULL, ALLOCATOR_ALLOCATE);
+}
+
+void dealloc(allocator_t allocator, void *data) {
+	assert(data != NULL && "You tried to deallocate a NULL pointer");
+	allocator.proc(0, data, ALLOCATOR_DEALLOCATE);
+}
+
+void *heap_alloc(size_t size) {
+	assert(size > 0 && "You requested to allocate 0 bytes which is illegal");
+	void *ptr = malloc(size);
+	memset(ptr, 0, size);
+	return ptr;
+}
+
+void *heap_realloc(void *data, size_t new_size) {
+	assert(new_size > 0 && "You requested to allocate 0 bytes which is illegal");
+	void *ptr = realloc(data, new_size);
+	return ptr;
+}
+
+void heap_dealloc(void *data) {
+	assert(data != NULL && "You tried to deallocate a NULL pointer");
+	free(data);
+}
 
 void temp_mem_init(size_t capacity) {
 	_temp_mem.pos = 0;
@@ -23,23 +52,14 @@ void temp_mem_init(size_t capacity) {
 }
 
 void *temp_alloc(size_t size) {
-	if (_temp_mem.pos >= _temp_mem.capacity) {
-		fprintf(stderr, "The temporary memory is full.\n");
-		return NULL;
-	}
+	assert(_temp_mem.pos < _temp_mem.capacity && "The temp memory is full");
 
 	void *ptr = (uint8_t *)_temp_mem.data + _temp_mem.pos;
+	memset(ptr, 0, size);
 
 	_temp_mem.pos += size;
 
 	return ptr;
-}
-
-void *temp_calloc(size_t size) {
-	void *data = temp_alloc(size);
-	memset(data, 0, size);
-
-	return data;
 }
 
 void temp_clear() {
@@ -51,6 +71,54 @@ void temp_free() {
 	_temp_mem.capacity = 0;
 	_temp_mem.pos = 0;
 }
+
+void *heap_allocator_proc(size_t size, void *existing, allocator_message_t message) {
+	switch (message) {
+		case ALLOCATOR_ALLOCATE: {
+			return heap_alloc(size);
+		}
+		case ALLOCATOR_REALLOCATE: {
+			return heap_realloc(existing, size);
+		}
+		case ALLOCATOR_DEALLOCATE: {
+			heap_dealloc(existing);
+			return NULL;
+		}
+	}
+
+	return NULL;
+}
+
+void *temp_allocator_proc(size_t size, void *existing, allocator_message_t message) {
+	switch (message) {
+		case ALLOCATOR_ALLOCATE: {
+			return temp_alloc(size);
+		}
+		case ALLOCATOR_REALLOCATE: {
+			printf("Temporary allocator cannot reallocate");
+			return NULL;
+		}
+		case ALLOCATOR_DEALLOCATE: {
+			// You can't free temporary memory
+			return NULL;
+		}
+	}
+
+	return NULL;
+}
+
+allocator_t get_heap_allocator() {
+	return (allocator_t){
+		.proc = heap_allocator_proc,
+	};
+}
+
+allocator_t get_temp_allocator() {
+	return (allocator_t){
+		.proc = temp_allocator_proc,
+	};
+}
+
 
 void stack_init(zinc_stack_t *stack, size_t item_size, size_t capacity) {
 	stack->len = 0;

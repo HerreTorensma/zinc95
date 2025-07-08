@@ -1,9 +1,9 @@
 -- Main
 
-print("i dont kno wmannn", "another string")
+--print("i dont kno wmannn", "another string")
 
 local item_table = {
-	["glock17"] = {
+	glock17 = {
 		sprite = 12,
 		stack_size = 1,
 		type = "gun",
@@ -50,6 +50,21 @@ Keys = {
 	S = 19,
 }
 
+local function dump(o)
+	if type(o) == 'table' then
+		local s = '{ '
+		for k,v in pairs(o) do
+			if type(k) ~= 'number' then k = '"'..k..'"' end
+			s = s .. '['..k..'] = ' .. dump(v) .. ','
+		end
+		return s .. '}'
+	elseif type(o) == 'string' then
+		return '"' .. o .. '"'	
+	else
+		return tostring(o)
+	end
+end
+
 local function new_particle()
 	local p = {
 		x = 320,
@@ -81,9 +96,18 @@ local function new_fish()
 	--fish_num = fish_num + 1
 end
 
+local table_with_function = {
+	something = function()
+		print("hello")
+	end
+}
+
 function _init()
-	print("time: " .. os.time())
-	math.randomseed(os.time())
+	--print("time: " .. os.time())
+	--math.randomseed(os.time())
+
+	-- print(dump(item_table[player.inventory.items.name]))
+	print(dump(table_with_function))
 
 	--new_fish()
 	--new_fish()
@@ -165,7 +189,7 @@ function _draw()
 	spr(player.sp, player.x, player.y, player.tw, player.th)
 end
 
-print("jatoch broer")
+--print("jatoch broer")
 
 --[[
 <<< gfx >>>

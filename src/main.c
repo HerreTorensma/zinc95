@@ -91,8 +91,9 @@ int main(int argc, char *argv[]) {
 	// Then IDK if the code editor font should be part of the skin or not
 	// I think the text mode font shouldn't be part of the skin
 
-	// 16KB
-	temp_mem_init(1024 * 16);
+	// printf("RAM size: %llu\n", sizeof(struct readable_ram));
+
+	temp_mem_init(MB(1ULL));
 
 	game_load(&computer, "game.zinc95");
 	computer_load_resouces(&computer);
@@ -119,6 +120,8 @@ int main(int argc, char *argv[]) {
 	// create_directory("idkman\\something\\iets");
 	// create_directory("idkman/something/iets");
 	// create_directory("idkman");
+
+	// printf("array header size: %d\n", sizeof(array_header_t));
 	
 	// TODO: simplify the state switching logic
 	while (window_is_open()) {

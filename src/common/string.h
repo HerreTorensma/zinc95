@@ -21,6 +21,11 @@ typedef struct {
 // Runtime evaluated string macro
 #define STR(s) (string_t){.data = (char *)s, .len = strlen(s)}
 
+// TODO: Maybe dynamically growing string??? wrap the string in another struct and add a capacity and allocator
+// No I think I might be doing to much manual shit with them in the code editor
+// And I'm gonna be passing an allocator to the string functions
+// I need a string builder or somethin
+
 // Some kind of array thing
 typedef struct string_array {
 	string_t *data;
