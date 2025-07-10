@@ -15,7 +15,7 @@ static temp_mem_t _temp_mem = {0};
 
 void *alloc(allocator_t allocator, size_t size) {
 	assert(size > 0 && "You requested to allocate 0 bytes which is illegal");
-	allocator.proc(size, NULL, ALLOCATOR_ALLOCATE);
+	return allocator.proc(size, NULL, ALLOCATOR_ALLOCATE);
 }
 
 void dealloc(allocator_t allocator, void *data) {
@@ -160,4 +160,27 @@ bool stack_pop(zinc_stack_t *stack, void *item) {
 void stack_quit(zinc_stack_t *stack) {
 	free(stack->items);
 	stack->items = NULL;
+}
+
+void _array_reserve(allocator_t allocator, void **data, size_t *capacity, size_t *len, size_t item_size, size_t needed_size) {
+	if (*capacity >= needed_size) {
+		return;
+	}
+
+	size_t old_capacity = *capacity;
+
+	if (*capacity == 0) {
+		*capacity = ARRAY_INITIAL_CAPACITY;
+	} else {
+		*capacity *= 2;
+	}
+
+	void *new_data = alloc(allocator, *capacity * item_size);
+	memcpy(new_data, *data, old_capacity * item_size);
+
+	if (*data != NULL) {
+		dealloc(allocator, *data);
+	}
+
+	*data = new_data;
 }

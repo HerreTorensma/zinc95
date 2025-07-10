@@ -2,6 +2,8 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
+#include "mem.h"
 
 // Plans for length based strings:
 // I'm going to use this everywhere related to the code editor and the saving/loading of the complete cartridge
@@ -21,36 +23,30 @@ typedef struct {
 // Runtime evaluated string macro
 #define STR(s) (string_t){.data = (char *)s, .len = strlen(s)}
 
+// Define string array
+ARRAY_DEFINE(string_t)
+
 // TODO: Maybe dynamically growing string??? wrap the string in another struct and add a capacity and allocator
 // No I think I might be doing to much manual shit with them in the code editor
 // And I'm gonna be passing an allocator to the string functions
 // I need a string builder or somethin
 
-// Some kind of array thing
-typedef struct string_array {
-	string_t *data;
-	size_t size;
-} string_array_t;
-
-void string_array_push(string_array_t *array, string_t string);
-
-string_t temp_alloc_string(size_t size);
+string_t temp_alloc_string(size_t capacity);
 
 // String functions
 // any that use the temporary allocator have temp in the name somewhere
 bool string_eq(string_t a, string_t b);
 
-string_t string_concat_temp(string_t a, string_t b);
+string_t string_concat(allocator_t allocator, string_t a, string_t b);
 
-char *string_to_temp_c_string(string_t string);
+char *string_to_c_string(allocator_t allocator, string_t string);
 
-string_t string_duplicate_temp(string_t string);
+string_t string_copy(allocator_t allocator, string_t string);
 
 void print_string(string_t string);
 
-void string_concat(string_t *dest, string_t src);
+void string_append(string_t *dest, string_t src);
 
-string_array_t string_split_to_temp(string_t string, char seperator);
+string_t string_view(string_t source, size_t start, size_t len);
 
-// TODO: string_view function that returns a new string referencing part of anothers memory
-// and use it in the tokenizer in the code editor
+string_t_array_t string_split(allocator_t allocator, string_t string, char seperator);

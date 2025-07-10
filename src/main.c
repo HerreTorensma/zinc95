@@ -19,7 +19,11 @@ Main
 
 #define SDL_MAIN_HANDLED
 
+void run_tests(void);
+
 int main(int argc, char *argv[]) {
+	run_tests();
+
 	computer_t computer = {0};
 	computer_init(&computer);
 

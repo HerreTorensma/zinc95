@@ -2,7 +2,7 @@
 
 #include <string.h>
 #include "input.h"
-#include "io.h"
+#include "../common/io.h"
 
 // Directly generates the rgb framebuffer from the textbuffer
 void txt_generate_rgb_framebuffer(computer_t *computer) {
@@ -170,7 +170,7 @@ static void _print_help(ram_t *ram) {
 }
 
 static void _execute_command(ram_t *ram, string_t input) {
-	string_array_t strings = string_split_to_temp(input, ' ');
+	string_t_array_t strings = string_split(get_temp_allocator(), input, ' ');
 
 	// Print the list of splitted strings
 	// for (int i = 0; i < strings.size; i++) {
@@ -182,7 +182,7 @@ static void _execute_command(ram_t *ram, string_t input) {
 	// 	printf("\n");
 	// }
 
-	if (strings.size == 0) {
+	if (strings.len == 0) {
 		return;
 	}
 
@@ -192,7 +192,7 @@ static void _execute_command(ram_t *ram, string_t input) {
 	} 
 	
 	else if (string_eq(strings.data[0], STR("load"))) {
-		if (strings.size >= 2) {
+		if (strings.len >= 2) {
 			// Load the file
 		} else {
 			term_printc(ram, STR("Syntax error: expected 1 argument\n"), COLOR_BLACK, COLOR_RED);
@@ -200,7 +200,7 @@ static void _execute_command(ram_t *ram, string_t input) {
 	}
 
 	else if (string_eq(strings.data[0], STR("save"))) {
-		if (strings.size >= 2) {
+		if (strings.len >= 2) {
 			// Save the file
 		} else {
 			term_printc(ram, STR("Syntax error: expected 1 argument\n"), COLOR_BLACK, COLOR_RED);
@@ -216,7 +216,7 @@ static void _execute_command(ram_t *ram, string_t input) {
 	}
 
 	else if (string_eq(strings.data[0], STR("cd"))) {
-		if (strings.size >= 2) {
+		if (strings.len >= 2) {
 			if (string_eq(strings.data[1], STR(".."))) {
 				// Go to parent directory
 			} else {
@@ -228,13 +228,23 @@ static void _execute_command(ram_t *ram, string_t input) {
 	}
 
 	else if (string_eq(strings.data[0], STR("ls"))) {
-		// List files and directories
+		string_t_array_t directories = get_directories_in_path(get_temp_allocator(), STR("discs"));
+		for (size_t i = 0; i < directories.len; i++) {
+			term_printc(ram, directories.data[i], 0, 9);
+			term_print(ram, STR("\n"));
+		}
+
+		string_t_array_t files = get_files_in_path(get_temp_allocator(), STR("discs"));
+		for (size_t i = 0; i < files.len; i++) {
+			term_printc(ram, files.data[i], COLOR_BLACK, COLOR_WHITE);
+			term_print(ram, STR("\n"));
+		}
 	}
 
 	else if (string_eq(strings.data[0], STR("mkdir"))) {
-		if (strings.size >= 2) {
+		if (strings.len >= 2) {
 			// Create a new directory in the discs dir
-			string_t path_with_discs = string_concat_temp(STR("discs/"), strings.data[1]);
+			string_t path_with_discs = string_concat(get_temp_allocator(), STR("discs/"), strings.data[1]);
 			create_directory(path_with_discs);
 		} else {
 			term_printc(ram, STR("Syntax error: expected 1 argument\n"), COLOR_BLACK, COLOR_RED);

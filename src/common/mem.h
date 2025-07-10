@@ -11,6 +11,10 @@ A kind of more extensive version of string.h with added datastructures
 #include <stdlib.h>
 #include <stdbool.h>
 
+
+
+// --- Allocator ---
+
 typedef enum allocator_message {
 	ALLOCATOR_ALLOCATE,
 	ALLOCATOR_REALLOCATE,
@@ -49,6 +53,10 @@ allocator_t get_heap_allocator();
 
 allocator_t get_temp_allocator();
 
+
+
+// --- Stack ---
+
 // Non-growing stack datastructure
 // I have to name it zinc_stack because struct stack and stack_t conflict with some MacOS stuff
 // TODO: consider removing this and just using an array
@@ -67,35 +75,51 @@ bool stack_pop(zinc_stack_t *stack, void *item);
 
 void stack_quit(zinc_stack_t *stack);
 
-// Array data structure
-typedef struct array {
-	void *data;
-	size_t capacity;
-	size_t item_size;
-	size_t len;
-	allocator_t allocator;
-} array_t;
 
-// Init the array with more options, useful for arrays not meant to be resized for example
-void array_init_ex(array_t *array, size_t item_size, size_t capacity);
 
-// Init the array
-void array_init(array_t *array, size_t item_size);
+// --- Array ---
 
-// Append to the array
-void array_push(array_t *array, void *item);
+#define ARRAY_DEFINE(type)  \
+	typedef struct type##_array { \
+		allocator_t allocator; \
+		type *data; \
+		size_t capacity; \
+		size_t len; \
+	} type##_array_t;
 
-// Pop the array
-void array_pop(array_t *array, void *item);
+#ifndef ARRAY_INITIAL_CAPACITY
+#define ARRAY_INITIAL_CAPACITY 8
+#endif
 
-// Get the item at the given index, the item will be copied to the passed void *item
-void array_get(array_t *array, size_t index, void *item);
+void _array_reserve(allocator_t allocator, void **data, size_t *capacity, size_t *len, size_t item_size, size_t needed_size);
 
-// Set the item at the given index
-void array_set(array_t *array, size_t index, void *item);
+// The following macros are in lowercase because it looks better
+// and also they are more like actions instead of declarations or definitions so I think it's fair 
+#define array_init(array, _allocator)  \
+	do { \
+		(array)->allocator = (_allocator); \
+		(array)->capacity = 0; \
+		(array)->len = 0; \
+		_array_reserve((array)->allocator, (void **)&(array)->data, &(array)->capacity, &(array)->len, sizeof(*((array)->data)), ARRAY_INITIAL_CAPACITY); \
+	} while (0);
 
-// Removes item at index and moves the items after it back
-void array_remove_at(array_t *array, size_t index);
+#define array_append(array, item)  \
+	do { \
+		_array_reserve((array)->allocator, (void **)&(array)->data, &(array)->capacity, &(array)->len, sizeof(*((array)->data)), (array)->len + 1); \
+		(array)->data[(array)->len] = item; \
+		(array)->len++; \
+	} while (0);
 
-// Removes all items
-void array_reset(array_t *array);
+// Clears the array, keeps the memory and capacity, just sets len to 0
+#define array_clear(array) \
+	do { \
+		(array)->len = 0; \
+	} while (0);
+
+#define array_deinit(array) \
+	do { \
+		dealloc((array)->allocator, (array)->data); \
+		(array)->data = NULL; \
+		(array)->capacity = 0; \
+		(array)->len = 0; \
+	} while (0);
