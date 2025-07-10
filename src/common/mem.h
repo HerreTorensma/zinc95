@@ -91,7 +91,9 @@ void stack_quit(zinc_stack_t *stack);
 #define ARRAY_INITIAL_CAPACITY 8
 #endif
 
-void _array_reserve(allocator_t allocator, void **data, size_t *capacity, size_t *len, size_t item_size, size_t needed_size);
+size_t get_next_power_of_2(size_t number);
+
+void _array_reserve(allocator_t allocator, void **data, size_t *capacity, size_t item_size, size_t needed_size);
 
 // The following macros are in lowercase because it looks better
 // and also they are more like actions instead of declarations or definitions so I think it's fair 
@@ -100,20 +102,21 @@ void _array_reserve(allocator_t allocator, void **data, size_t *capacity, size_t
 		(array)->allocator = (_allocator); \
 		(array)->capacity = 0; \
 		(array)->len = 0; \
-		_array_reserve((array)->allocator, (void **)&(array)->data, &(array)->capacity, &(array)->len, sizeof(*((array)->data)), ARRAY_INITIAL_CAPACITY); \
+		_array_reserve((array)->allocator, (void **)&(array)->data, &(array)->capacity, sizeof(*((array)->data)), ARRAY_INITIAL_CAPACITY); \
 	} while (0);
 
 #define array_append(array, item)  \
 	do { \
-		_array_reserve((array)->allocator, (void **)&(array)->data, &(array)->capacity, &(array)->len, sizeof(*((array)->data)), (array)->len + 1); \
+		_array_reserve((array)->allocator, (void **)&(array)->data, &(array)->capacity, sizeof(*((array)->data)), (array)->len + 1); \
 		(array)->data[(array)->len] = item; \
 		(array)->len++; \
 	} while (0);
 
-// Clears the array, keeps the memory and capacity, just sets len to 0
+// Clears the array, making it just like array_init except the allocator doesn't change
 #define array_clear(array) \
 	do { \
 		(array)->len = 0; \
+		_array_reserve((array)->allocator, (void **)&(array)->data, &(array)->capacity, sizeof(*((array)->data)), ARRAY_INITIAL_CAPACITY); \
 	} while (0);
 
 #define array_deinit(array) \

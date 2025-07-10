@@ -9,6 +9,8 @@ Dirty windows implementation of IO functions
 #include <stdio.h>
 #include <string.h>
 
+#include "string.h"
+
 static void _convert_to_windows_path(string_t path) {
 	for (size_t i = 0; i < path.len; i++) {
 		if (path.data[i] == '/') {
@@ -17,36 +19,40 @@ static void _convert_to_windows_path(string_t path) {
 	}
 }
 
-static int _get_temp_root_path(string_t *path) {
-	if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, path->data))) {
-		path->len = strlen(path->data);
-		string_append(path, STR("\\zinc95"));
-		// return path;
+static string_t _get_root_path(allocator_t allocator) {
+	string_t path = {
+		.data = alloc(allocator, MAX_PATH),
+		.len = 0,
+	};
+
+	if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, path.data))) {
+		path.len = strlen(path.data);
+		
+		return string_concat(allocator, path, STR("\\zinc95"));
 	}
 
-	return 0;
+	return path;
 }
 
-static string_t _get_absolute_path(string_t path) {
+static string_t _get_absolute_path(allocator_t allocator, string_t path) {
 	_convert_to_windows_path(path);
 
-	string_t absolute_path = temp_alloc_string(MAX_PATH);
-	_get_temp_root_path(&absolute_path);
-	string_append(&absolute_path, STR("\\"));
-	string_append(&absolute_path, path);
+	string_t root_path = _get_root_path(allocator);
+	string_t temp = string_concat(allocator, root_path, STR("\\"));
+	string_t absolute_path = string_concat(allocator, temp, path);
 
 	return absolute_path;
 }
 
 static void _create_single_directory(string_t path) {
-	string_t absolute_path = _get_absolute_path(path);
+	string_t absolute_path = _get_absolute_path(get_temp_allocator(), path);
 
 	printf("Trying to create directory ");
 	print_string(absolute_path);
 	printf("...\n");
 	
 	if (CreateDirectory(string_to_c_string(get_temp_allocator(), absolute_path), NULL) || GetLastError() == ERROR_ALREADY_EXISTS) {
-		printf("Directory created or already exists: ", absolute_path);
+		printf("Directory created or already exists: %s", absolute_path);
 		print_string(absolute_path);
 		printf("\n");
 	} else {
@@ -55,17 +61,18 @@ static void _create_single_directory(string_t path) {
 }
 
 void create_directory(string_t path) {
-	// TODO: use string builder
 	string_t_array_t array = string_split(get_temp_allocator(), path, '/');
 
-	string_t base_path = temp_alloc_string(MAX_PATH);
+	string_builder_t builder = {0};
+	string_builder_init(&builder, get_temp_allocator(), MAX_PATH);
 
+	// We have to create every subdirectory from the root of path seperately
 	for (size_t i = 0; i < array.len; i++) {
 		// TODO: create some path functions
-		string_append(&base_path, array.data[i]);
-		string_append(&base_path, STR("\\"));
+		string_builder_append(&builder, array.data[i]);
+		string_builder_append(&builder, STR("\\"));
 
-		_create_single_directory(base_path);
+		_create_single_directory(builder.string);
 	}
 }
 
@@ -74,7 +81,7 @@ string_t_array_t get_directories_in_path(allocator_t allocator, string_t path) {
 	string_t_array_t array = {0};
 	array_init(&array, allocator);
 
-	string_t absolute_path = _get_absolute_path(path);
+	string_t absolute_path = _get_absolute_path(get_temp_allocator(), path);
 
 	WIN32_FIND_DATA find_file_data;
 	string_t search_path = temp_alloc_string(MAX_PATH);
@@ -85,7 +92,7 @@ string_t_array_t get_directories_in_path(allocator_t allocator, string_t path) {
 	if (h_find == INVALID_HANDLE_VALUE) {
 		DWORD error = GetLastError();
 		printf("FindFirstFile failed. Error code: %lu\n", error);
-		return;
+		return array;
 	}
 
 	do {
@@ -105,7 +112,7 @@ string_t_array_t get_files_in_path(allocator_t allocator, string_t path) {
 	string_t_array_t array = {0};
 	array_init(&array, allocator);
 
-	string_t absolute_path = _get_absolute_path(path);
+	string_t absolute_path = _get_absolute_path(get_temp_allocator(), path);
 
 	WIN32_FIND_DATA find_file_data;
 	string_t search_path = temp_alloc_string(MAX_PATH);
@@ -116,7 +123,7 @@ string_t_array_t get_files_in_path(allocator_t allocator, string_t path) {
 	if (h_find == INVALID_HANDLE_VALUE) {
 		DWORD error = GetLastError();
 		printf("FindFirstFile failed. Error code: %lu\n", error);
-		return;
+		return array;
 	}
 
 	do {
@@ -133,13 +140,16 @@ string_t_array_t get_files_in_path(allocator_t allocator, string_t path) {
 
 
 void create_default_directories() {
-	char path[MAX_PATH];
+	// char path[MAX_PATH];
+	string_t path = temp_alloc_string(MAX_PATH);
 
-	if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, path))) {
-		printf("AppData path: %s\n", path);
-		strcat(path, "\\zinc95");
+	if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, path.data))) {
+		path.len = strlen(path.data);
 
-		if (CreateDirectory(path, NULL) || GetLastError() == ERROR_ALREADY_EXISTS) {
+		printf("AppData path: %s\n", path.data);
+		path = string_concat(get_temp_allocator(), path, STR("\\zinc95"));
+
+		if (CreateDirectory(path.data, NULL) || GetLastError() == ERROR_ALREADY_EXISTS) {
 			printf("Root directory created or already exists: %s\n", path);
 		} else {
 			fprintf(stderr, "Failed to create directory. Error: %lu\n", GetLastError());
@@ -150,9 +160,4 @@ void create_default_directories() {
 
 	create_directory(STR("discs"));
 	create_directory(STR("saves"));
-	// create_directory(STR("a/test"));
-	// _create_single_directory(STR("a/test"));
-
-	// string_get_directories_in_path(STR("discs"));
-	// get_files_in_path(STR("discs"));
 }

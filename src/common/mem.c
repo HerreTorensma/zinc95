@@ -162,18 +162,30 @@ void stack_quit(zinc_stack_t *stack) {
 	stack->items = NULL;
 }
 
-void _array_reserve(allocator_t allocator, void **data, size_t *capacity, size_t *len, size_t item_size, size_t needed_size) {
+size_t get_next_power_of_2(size_t number) {
+	if (number == 0) {
+		return 1;
+	}
+
+	number--;
+	number |= number >> 1;
+	number |= number >> 2;
+	number |= number >> 4;
+	number |= number >> 8;
+	number |= number >> 16;
+	number |= number >> 32;
+
+	return number + 1;
+}
+
+void _array_reserve(allocator_t allocator, void **data, size_t *capacity, size_t item_size, size_t needed_size) {
 	if (*capacity >= needed_size) {
 		return;
 	}
 
 	size_t old_capacity = *capacity;
 
-	if (*capacity == 0) {
-		*capacity = ARRAY_INITIAL_CAPACITY;
-	} else {
-		*capacity *= 2;
-	}
+	*capacity = get_next_power_of_2(needed_size);
 
 	void *new_data = alloc(allocator, *capacity * item_size);
 	memcpy(new_data, *data, old_capacity * item_size);

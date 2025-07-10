@@ -4,11 +4,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-// void string_array_push(string_array_t *array, string_t string) {
-// 	array->data[array->size] = string;
-// 	array->size++;
-// }
-
 string_t temp_alloc_string(size_t capacity) {
 	return (string_t) {
 		.data = temp_alloc(capacity * sizeof(char)),
@@ -69,12 +64,12 @@ void print_string(string_t string) {
 
 // Assumes the dest string has enough memory allocated
 // TODO: string builder stuff
-void string_append(string_t *dest, string_t src) {
-	size_t old_len = dest->len;
-	dest->len += src.len;
+// void string_append(string_t *dest, string_t src) {
+// 	size_t old_len = dest->len;
+// 	dest->len += src.len;
 
-	memcpy(dest->data + old_len, src.data, src.len);
-}
+// 	memcpy(dest->data + old_len, src.data, src.len);
+// }
 
 string_t string_view(string_t source, size_t start, size_t len) {
 	return (string_t){
@@ -114,4 +109,44 @@ string_t_array_t string_split(allocator_t allocator, string_t string, char seper
 	}
 
 	return array;
+}
+
+static void _string_builder_reserve(string_builder_t *builder, size_t needed_capacity) {
+	if (builder->capacity >= needed_capacity) {
+		return;
+	}
+
+	size_t old_capacity = builder->capacity;
+
+	builder->capacity = get_next_power_of_2(needed_capacity);
+
+	char *new_data = alloc(builder->allocator, builder->capacity * sizeof(char));
+	memcpy(new_data, builder->string.data, old_capacity * sizeof(char));
+
+	if (builder->string.data != NULL) {
+		dealloc(builder->allocator, builder->string.data);
+	}
+
+	builder->string.data = new_data;
+}
+
+void string_builder_init(string_builder_t *builder, allocator_t allocator, size_t initial_capacity) {
+	builder->allocator = allocator;
+	builder->capacity = 0;
+	builder->string = (string_t){0};
+
+	_string_builder_reserve(builder, initial_capacity);
+}
+
+void string_builder_append(string_builder_t *builder, string_t string) {
+	_string_builder_reserve(builder, builder->string.len + string.len);
+
+	memcpy(builder->string.data + builder->string.len, string.data, string.len * sizeof(char));
+	builder->string.len += string.len;
+}
+
+void string_builder_deinit(string_builder_t *builder) {
+	dealloc(builder->allocator, builder->string.data);
+	builder->string.len = 0;
+	builder->capacity = 0;
 }

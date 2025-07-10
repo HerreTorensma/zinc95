@@ -12,7 +12,7 @@
 // For ease of use
 
 // Length based string struct, not null-terminated
-typedef struct {
+typedef struct string {
 	char *data;
 	size_t len;
 } string_t;
@@ -45,8 +45,25 @@ string_t string_copy(allocator_t allocator, string_t string);
 
 void print_string(string_t string);
 
-void string_append(string_t *dest, string_t src);
+// void string_append(string_t *dest, string_t src);
 
 string_t string_view(string_t source, size_t start, size_t len);
 
 string_t_array_t string_split(allocator_t allocator, string_t string, char seperator);
+
+
+
+// --- String builder ---
+
+typedef struct string_builder {
+	string_t string;
+	size_t capacity;
+	allocator_t allocator;
+} string_builder_t;
+
+// It grows automatically but the initial_capacity is still nice to prevent unnecessary allocations
+void string_builder_init(string_builder_t *builder, allocator_t allocator, size_t initial_capacity);
+
+void string_builder_append(string_builder_t *builder, string_t string);
+
+void string_builder_deinit(string_builder_t *builder);
