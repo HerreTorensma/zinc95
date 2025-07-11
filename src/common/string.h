@@ -26,10 +26,7 @@ typedef struct string {
 // Define string array
 ARRAY_DEFINE(string_t)
 
-// TODO: Maybe dynamically growing string??? wrap the string in another struct and add a capacity and allocator
-// No I think I might be doing to much manual shit with them in the code editor
-// And I'm gonna be passing an allocator to the string functions
-// I need a string builder or somethin
+
 
 string_t temp_alloc_string(size_t capacity);
 

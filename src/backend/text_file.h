@@ -24,11 +24,11 @@ typedef struct lua_token {
 	lua_token_type_t type;
 } lua_token_t;
 
+ARRAY_DEFINE(lua_token_t)
+
 typedef struct line {
 	string_t string;
-
-	lua_token_t *tokens;
-	size_t tokens_len;
+	lua_token_t_array_t tokens;
 } line_t;
 
 // Datastructure to represent a text file in the text editor

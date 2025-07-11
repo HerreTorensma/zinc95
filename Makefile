@@ -31,6 +31,7 @@ endif
 ifeq ($(PLAT),mingw)
 	CFLAGS += -Iextern/sdl2/include -Iextern/lua-5.4.8/src -Iextern/stb
 	LDFLAGS = extern/lua-5.4.8/src/liblua.a -Lextern/sdl2/lib -lmingw32 -lSDL2main -lSDL2 -lm
+	EXECUTABLE = zinc95.exe
 endif
 
 ifeq ($(PLAT),linux)

@@ -5,8 +5,16 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <assert.h>
 
 #include "../api/api.h"
+
+// TODO: investigate why stuff doesn't work when I have asserts after allocations
+// because yes it works but it's also bad code and I should make it good
+// they are commented out for now
+
+
+// --- Tokenizer ---
 
 // Doesn't contain "true", "false" and "nil" since those should be treated as literals by the lexer
 static const char *lua_keywords[] = {
@@ -63,17 +71,17 @@ static bool _is_literal(string_t word) {
 }
 
 static void _token_push(line_t *line, lua_token_type_t type, string_t string) {
-	line->tokens = realloc(line->tokens, (line->tokens_len + 1) * sizeof(lua_token_t));
-	
-	line->tokens[line->tokens_len].type = type;
-	line->tokens[line->tokens_len].string = string;
-	
-	line->tokens_len++;
+	lua_token_t token = {
+		.type = type,
+		.string = string,
+	};
+
+	array_append(&line->tokens, token);
 }
 
 static void _print_token_list(line_t *line) {
-	for (size_t i = 0; i < line->tokens_len; i++) {
-		switch (line->tokens[i].type) {
+	for (size_t i = 0; i < line->tokens.len; i++) {
+		switch (line->tokens.data[i].type) {
 			case LUA_TOKEN_KEYWORD: {
 				printf("[KEYWORD] ");
 				break;
@@ -108,8 +116,8 @@ static void _print_token_list(line_t *line) {
 			}
 		}
 
-		for (size_t j = 0; j < line->tokens[i].string.len; j++) {
-			printf("%c", line->tokens[i].string.data[j]);
+		for (size_t j = 0; j < line->tokens.data[i].string.len; j++) {
+			printf("%c", line->tokens.data[i].string.data[j]);
 		}
 
 		printf("\n");
@@ -124,9 +132,8 @@ static void _tokenize_line(file_t *file, size_t line_index) {
 	string_t *string = &line->string;
 	size_t i = 0;
 
-	// Reset token list
-	line->tokens = malloc(1);
-	line->tokens_len = 0;
+	// Reset token array
+	array_init(&line->tokens, get_heap_allocator());
 
 	if (string->len == 0) {
 		return;
@@ -143,10 +150,7 @@ static void _tokenize_line(file_t *file, size_t line_index) {
 				i++;
 			}
 
-			string_t word = {
-				.data = &string->data[start],
-				.len = i - start,
-			};
+			string_t word = string_view(*string, start, i - start);
 
 			if (_is_keyword(word)) {
 				_token_push(line, LUA_TOKEN_KEYWORD, word);
@@ -158,6 +162,7 @@ static void _tokenize_line(file_t *file, size_t line_index) {
 			} else {
 				_token_push(line, LUA_TOKEN_IDENTIFIER, word);
 			}
+		
 		// Number
 		} else if (_is_digit(c)) {
 			const size_t start = i;
@@ -165,12 +170,11 @@ static void _tokenize_line(file_t *file, size_t line_index) {
 				i++;
 			}
 
-			string_t word = {
-				.data = &string->data[start],
-				.len = i - start,
-			};
+			string_t word = string_view(*string, start, i - start);
+
 
 			_token_push(line, LUA_TOKEN_LITERAL, word);
+		
 		// String
 		} else if (string->data[i] == '"' || string->data[i] == '\'') {
 			char quote_used = string->data[i];
@@ -186,22 +190,18 @@ static void _tokenize_line(file_t *file, size_t line_index) {
 				i++;
 			}
 
-			string_t word = {
-				.data = &string->data[start],
-				.len = i - start,
-			};
+			string_t word = string_view(*string, start, i - start);
 
 			_token_push(line, LUA_TOKEN_STRING, word);
+		
 		// Comment
 		} else if (string->data[i] == '-' && (i + 1) < string->len && string->data[i + 1] == '-') {
-			string_t word = {
-				.data = &string->data[i],
-				.len = string->len - i,
-			};
+			string_t word = string_view(*string, i, string->len - i);
 
 			_token_push(line, LUA_TOKEN_COMMENT, word);
 
 			break;
+		
 		// Whitespace
 		} else if (_is_whitespace(c)) {
 			size_t start = i;
@@ -209,18 +209,14 @@ static void _tokenize_line(file_t *file, size_t line_index) {
 				i++;
 			}
 
-			string_t word = {
-				.data = &string->data[start],
-				.len = i - start,
-			};
+			string_t word = string_view(*string, start, i - start);
 
 			_token_push(line, LUA_TOKEN_WHITESPACE, word);
+		
 		// Operator, brackets
 		} else {
-			string_t word = {
-				.data = &string->data[i],
-				.len = 1,
-			};
+			string_t word = string_view(*string, i, 1);
+
 			_token_push(line, LUA_TOKEN_OPERATOR, word);
 
 			i++;
@@ -230,6 +226,8 @@ static void _tokenize_line(file_t *file, size_t line_index) {
 	// For debugging
 	// _print_token_list(line);
 }
+
+// --- Rest ---
 
 // Get the amount of lines in a string, used for loading
 static size_t _string_get_lines_amount(const char *text) {
@@ -261,16 +259,13 @@ int string_get_indent_level(const char text[]) {
 // Add a new line to the data structure, used for loading a string before editing
 // len is without null terminator (TODO: confirm this)
 static void _file_add_line(file_t *file, const char *text, size_t len) {
-	file->lines[file->line_amount].tokens = malloc(1);
-	file->lines[file->line_amount].tokens_len = 0;
+	// Zero initialize
+	memset(&file->lines[file->line_amount], 0, sizeof(line_t));
 
 	string_t *string = &file->lines[file->line_amount].string;
 
-	string->data = malloc(len * sizeof(char));
-	if (string->data == NULL) {
-		printf("Couldn't allocate memory for new line\n");
-		exit(EXIT_FAILURE);
-	}
+	string->data = heap_alloc(len * sizeof(char));
+	// assert(string->data != NULL);
 
 	memcpy(string->data, text, len);
 	string->len = len;
@@ -306,11 +301,8 @@ void file_load(file_t *file, const char *buffer) {
 
 	// Allocate
 	size_t lines_amount = _string_get_lines_amount(buffer);
-	file->lines = malloc(lines_amount * sizeof(line_t));
-	if (file->lines == NULL) {
-		printf("Couldn't allocate memory for code\n");
-		exit(EXIT_FAILURE);
-	}
+	file->lines = heap_alloc(lines_amount * sizeof(line_t));
+	// assert(file->lines != NULL);
 
 	_string_to_file(file, buffer);
 }
@@ -360,10 +352,8 @@ static size_t _len_at_pos(string_t *string, size_t pos) {
 
 static void _move_lines_down(file_t *file, size_t line) {
 	// Realloc lines
-	line_t *temp = realloc(file->lines, (file->line_amount + 1ULL) * sizeof(line_t));
-	if (temp == NULL) {
-		printf("Couldn't realloc lines\n");
-	}
+	line_t *temp = heap_realloc(file->lines, (file->line_amount + 1ULL) * sizeof(line_t));
+	// assert(temp != NULL && "Realloc failed");
 	file->lines = temp;
 
 	// Move the memory up
@@ -382,7 +372,9 @@ static void _move_lines_down(file_t *file, size_t line) {
 static string_t _string_split(string_t *origin, size_t pos) {
 	string_t second = {0};
 	second.len = _len_at_pos(origin, pos);
-	second.data = malloc(second.len * sizeof(char));
+	second.data = heap_alloc(second.len * sizeof(char));
+	// assert(second.data != NULL);
+
 	memcpy(second.data, origin->data + pos, second.len * sizeof(char));
 
 	origin->len = pos;
@@ -391,9 +383,11 @@ static string_t _string_split(string_t *origin, size_t pos) {
 	// so we realloc to one byte to prevent crashes
 	if (origin->len == 0) {
 		// Give it one byte so we don't crash because of an unintended free
-		origin->data = realloc(origin->data, 1);
+		origin->data = heap_realloc(origin->data, 1);
+		// assert(origin->data != NULL && "Realloc failed");
 	} else {
-		origin->data = realloc(origin->data, origin->len * sizeof(char));
+		origin->data = heap_realloc(origin->data, origin->len * sizeof(char));
+		// assert(origin->data != NULL && "Realloc failed");
 	}
 
 	return second;
@@ -403,11 +397,11 @@ void file_split_line_down(file_t *file, size_t line, size_t pos, size_t indent_l
 	// Make space for the new line
 	_move_lines_down(file, line);
 	
+	// Zero initialize the new line
+	memset(&file->lines[line + 1ULL], 0, sizeof(line_t));
+
 	file->lines[line + 1ULL].string = _string_split(&file->lines[line].string, pos);
 
-	file->lines[line + 1ULL].tokens = malloc(1);
-	file->lines[line + 1ULL].tokens_len = 0;
-	
 	// TODO: Make this work (insert correct amount of tab characters)
 	// if (strlen(file->lines[line + 1].text) == 0) {
 	// 	for (int i = 0; i < indent_level; i++) {
@@ -420,13 +414,13 @@ void file_split_line_down(file_t *file, size_t line, size_t pos, size_t indent_l
 }
 
 // Reallocs dest
-static void _string_concat(string_t *dest, string_t *src) {
-	size_t old_len = dest->len;
-	dest->len += src->len;
-	dest->data = realloc(dest->data, dest->len * sizeof(char));
+// static void _string_concat(string_t *dest, string_t *src) {
+// 	size_t old_len = dest->len;
+// 	dest->len += src->len;
+// 	dest->data = realloc(dest->data, dest->len * sizeof(char));
 
-	memcpy(dest->data + old_len, src->data, src->len);
-}
+// 	memcpy(dest->data + old_len, src->data, src->len);
+// }
 
 // Moves the lines below up by one, do the current line gets deleted
 static void _move_lines_up(file_t *file, size_t line) {
@@ -434,7 +428,8 @@ static void _move_lines_up(file_t *file, size_t line) {
 		// Move the lines up
 		memmove(&file->lines[line], &file->lines[line + 1], (file->line_amount - line - 1ULL) * sizeof(line_t));
 		// Realloc lines
-		file->lines = realloc(file->lines, (file->line_amount - 1ULL) * sizeof(line_t));
+		file->lines = heap_realloc(file->lines, (file->line_amount - 1ULL) * sizeof(line_t));
+		// assert(file->lines != NULL && "Realloc failed");
 	}
 
 	// Decrement line amount
@@ -446,15 +441,20 @@ size_t file_merge_line_up(file_t *file, size_t line) {
 	string_t *bottom_string = &file->lines[line].string;
 	size_t old_len = top_string->len;
 
-	_string_concat(top_string, bottom_string);
+	// _string_concat(top_string, bottom_string);
+
+	string_t new_top_string = string_concat(get_heap_allocator(), *top_string, *bottom_string);
+	heap_dealloc(top_string->data);
+	heap_dealloc(bottom_string->data);
+	*top_string = new_top_string;
 
 	// Free the deleted line
-	free(bottom_string->data);
-	bottom_string->data = NULL;
-	bottom_string->len = 0ULL;
+	// free(bottom_string->data);
+	// bottom_string->data = NULL;
+	// bottom_string->len = 0ULL;
 
 	// Free old tokens
-	free(file->lines[line].tokens);
+	array_deinit(&file->lines[line].tokens);
 
 	_move_lines_up(file, line);
 
@@ -468,7 +468,9 @@ void file_insert_char_at(file_t *file, size_t line, size_t pos, char c) {
 	string_t *string = &file->lines[line].string;
 
 	// Realloc and move line to make space for new character
-	string->data = realloc(string->data, string->len + 1);
+	string->data = heap_realloc(string->data, string->len + 1);
+	// assert(string->data != NULL && "Realloc failed");
+
 	memmove(string->data + pos + 1, string->data + pos, _len_at_pos(string, pos));
 	
 	// Increment length after moving so it doesnt do segfault
@@ -489,7 +491,8 @@ void file_remove_char_at(file_t *file, size_t line, size_t pos) {
 
 	memmove(string->data + pos - 1, string->data + pos, _len_at_pos(string, pos));
 	string->len--;
-	string->data = realloc(string->data, string->len);
+	string->data = heap_realloc(string->data, string->len);
+	// assert(string->data != NULL && "Realloc failed");
 
 	_tokenize_line(file, line);
 }

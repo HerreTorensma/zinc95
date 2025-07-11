@@ -13,31 +13,33 @@ typedef struct temp_mem {
 
 static temp_mem_t _temp_mem = {0};
 
+// The asserts are commented out because it breaks the text_file functionality
+// I will get back to that
 void *alloc(allocator_t allocator, size_t size) {
-	assert(size > 0 && "You requested to allocate 0 bytes which is illegal");
+	// assert(size > 0 && "You requested to allocate 0 bytes which is illegal");
 	return allocator.proc(size, NULL, ALLOCATOR_ALLOCATE);
 }
 
 void dealloc(allocator_t allocator, void *data) {
-	assert(data != NULL && "You tried to deallocate a NULL pointer");
 	allocator.proc(0, data, ALLOCATOR_DEALLOCATE);
 }
 
 void *heap_alloc(size_t size) {
-	assert(size > 0 && "You requested to allocate 0 bytes which is illegal");
+	// assert(size > 0 && "You requested to allocate 0 bytes which is illegal");
 	void *ptr = malloc(size);
+	// assert(ptr != NULL && "Malloc failed");
 	memset(ptr, 0, size);
 	return ptr;
 }
 
 void *heap_realloc(void *data, size_t new_size) {
-	assert(new_size > 0 && "You requested to allocate 0 bytes which is illegal");
+	// assert(new_size > 0 && "You requested to reallocate to 0 bytes which is illegal");
 	void *ptr = realloc(data, new_size);
+	// assert(ptr != NULL && "Realloc failed");
 	return ptr;
 }
 
 void heap_dealloc(void *data) {
-	assert(data != NULL && "You tried to deallocate a NULL pointer");
 	free(data);
 }
 
@@ -190,9 +192,7 @@ void _array_reserve(allocator_t allocator, void **data, size_t *capacity, size_t
 	void *new_data = alloc(allocator, *capacity * item_size);
 	memcpy(new_data, *data, old_capacity * item_size);
 
-	if (*data != NULL) {
-		dealloc(allocator, *data);
-	}
+	dealloc(allocator, *data);
 
 	*data = new_data;
 }

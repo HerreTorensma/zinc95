@@ -317,10 +317,10 @@ void code_editor_draw(computer_t *computer) {
 		size_t current_x = _layout.code_rect.x + 2 + 5 * (font->widths[0] + font->horizontal_space);
 		// printf("font width: %d\n", font->widths[0]);
 
-		for (size_t j = 0; j < current_line->tokens_len; j++) {
-			color_t color = computer->ram->code_editor_config.token_colors[current_line->tokens[j].type];
-			gui_draw_string(computer->ram, CODE_EDITOR_FONT_INDEX, current_line->tokens[j].string, POINT(current_x, _layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), color);
-			current_x += gui_get_string_width(font, current_line->tokens[j].string, current_line->tokens[j].string.len);
+		for (size_t j = 0; j < current_line->tokens.len; j++) {
+			color_t color = computer->ram->code_editor_config.token_colors[current_line->tokens.data[j].type];
+			gui_draw_string(computer->ram, CODE_EDITOR_FONT_INDEX, current_line->tokens.data[j].string, POINT(current_x, _layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), color);
+			current_x += gui_get_string_width(font, current_line->tokens.data[j].string, current_line->tokens.data[j].string.len);
 		}
 	}
 

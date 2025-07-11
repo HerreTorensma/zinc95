@@ -7,8 +7,8 @@
 string_t temp_alloc_string(size_t capacity) {
 	return (string_t) {
 		.data = temp_alloc(capacity * sizeof(char)),
-		// TODO: why is the len 0? there was a reason for it but i don't remember
-		// its me from the future of course the len is zero since you're allocating an empty string
+		// The len is zero since you're allocating an empty string
+		// although I might consider changing this? Idk if there is a good reason
 		.len = 0,
 	};
 }
@@ -61,15 +61,6 @@ void print_string(string_t string) {
 		putchar(string.data[i]);
 	}
 }
-
-// Assumes the dest string has enough memory allocated
-// TODO: string builder stuff
-// void string_append(string_t *dest, string_t src) {
-// 	size_t old_len = dest->len;
-// 	dest->len += src.len;
-
-// 	memcpy(dest->data + old_len, src.data, src.len);
-// }
 
 string_t string_view(string_t source, size_t start, size_t len) {
 	return (string_t){

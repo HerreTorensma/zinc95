@@ -79,6 +79,7 @@ void stack_quit(zinc_stack_t *stack);
 
 // --- Array ---
 
+// TODO: consider removing the automatic typedef so you don't get weird names like string_t_array_t 
 #define ARRAY_DEFINE(type)  \
 	typedef struct type##_array { \
 		allocator_t allocator; \
@@ -97,6 +98,10 @@ void _array_reserve(allocator_t allocator, void **data, size_t *capacity, size_t
 
 // The following macros are in lowercase because it looks better
 // and also they are more like actions instead of declarations or definitions so I think it's fair 
+
+// array_init will also work on an already initialized array, but it will just reset it essentially
+// but no memory leaks unless maybe you pass in a different allocator
+// One catch is that the data pointer but be NULL otherwise it will attempt to free some random pointer found in uninitialized memory
 #define array_init(array, _allocator)  \
 	do { \
 		(array)->allocator = (_allocator); \
