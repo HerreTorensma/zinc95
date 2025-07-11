@@ -10,6 +10,7 @@ A kind of more extensive version of string.h with added datastructures
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 
 
@@ -52,6 +53,9 @@ void *temp_allocator_proc(size_t size, void *existing, allocator_message_t messa
 allocator_t get_heap_allocator();
 
 allocator_t get_temp_allocator();
+
+// TODO: make this
+allocator_t get_static_allocator(uint8_t *memory, size_t size);
 
 
 

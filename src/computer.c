@@ -6,6 +6,8 @@
 
 #include "res.h"
 #include "api/lua_api.h"
+#include "common/mem.h"
+#include "common/string.h"
 
 // This is global because the Lua API functions can't take arguments and they need the computer
 static computer_t *_computer;
@@ -92,11 +94,12 @@ void computer_quit(computer_t *computer) {
 }
 
 // Forward declaration so I don't have cyclic dependencies
-size_t file_to_string(file_t *code, char *buffer);
+string_t file_to_string(file_t *file, allocator_t allocator);
 
 void play_game(computer_t *computer) {
 	// Convert code to string
-	file_to_string(&computer->file, computer->code_buffer);
+	// file_to_string(&computer->file, computer->code_buffer);
+	// string_t code = file_to_string(&computer->file, );
 
 	// Init the lua stuff
 	lua_init(computer);
@@ -160,96 +163,96 @@ void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int 
 #define MAP_SECTION_STRING "<<< map >>>\n"
 #define SECTION_END_STRING ">>> --- <<<\n"
 
-void game_save(computer_t *computer, const char filename[]) {
+static const char _hex_chars[] = "0123456789abcdef";
+
+// hex should be twice as big as bytes
+static void _bytes_to_hex(uint8_t bytes[], size_t len, char hex[]) {
+	for (size_t i = 0; i < len; i++) {
+		hex[i * 2] = _hex_chars[(bytes[i] >> 4) & 0x0f]; \
+		hex[i * 2 + 1] = _hex_chars[(bytes[i] & 0x0f)]; \
+	}
+}
+
+// #define STRING_BUILDER_APPEND_BYTE_AS_HEX(builder, byte) \
+// 	do { \
+// 		char buffer[2] = {0}; \
+// 		buffer[0] = _hex_chars[(byte >> 4) & 0x0f]; \
+// 		buffer[1] = _hex_chars[(byte & 0x0f)]; \
+// 		string_builder_append(builder, (string_t){.data = buffer, .len = 2}); \
+// 	} while (0);
+
+// TODO: some kind of get allocator function that references stack memory
+// Or create an arena for the hex encoding stuff
+
+// New implementation with length based strings
+void game_save(computer_t *computer, string_t filename) {
 	printf("Saving game...\n");
 
-	// Since we zero-initialize we don't need a \0 at the end (but I still do)
-	// TODO: make buffer a size guaranteed to fit the future contents of the file
-	// This is definitely gonna cause a crash for a future user if the program gets that far
-	char *buffer = calloc(RAM_SIZE, sizeof(char));
-	size_t offset = 0;
+	string_builder_t builder = {0};
+
+	// 8MB should be enough for most games
+	// Also make it heap allocated to not overload the temporary memory
+	string_builder_init(&builder, get_heap_allocator(), MB(8));
 
 	// Lua code
-	offset += file_to_string(&computer->file, buffer + offset);
-	// Replace \0 with \n so the string doesn't terminate
-	buffer[offset - 1] = '\n';
+	string_t code = file_to_string(&computer->file, get_heap_allocator());
+	string_builder_append(&builder, code);
+	dealloc(get_heap_allocator(), code.data);
 
-	// Lua comment start
-	strncpy(buffer + offset, "--[[\n", 5);
-	offset += 5;
+	// The rest of the game is inside a lua multiline comment so it can be opened in an IDE without syntax errors
+	string_builder_append(&builder, STR("--[[\n"));
 
 	// Spritesheet
-	strncpy(buffer + offset, "<<< gfx >>>\n", 12);
-	offset += 12;
-	for (int y = 0; y < SPRITESHEET_HEIGHT; y++) {
-		for (int x = 0; x < SPRITESHEET_WIDTH; x++) {
-			uint8_t color = computer->ram->spritesheet.data[y * SPRITESHEET_WIDTH + x];
-			// Print the color in hex
-			sprintf(buffer + offset, "%02x", color);
-			offset += 2;
+	string_builder_append(&builder, STR("<<< gfx >>>\n"));
+	for (size_t y = 0; y < SPRITESHEET_HEIGHT; y++) {
+		for (size_t x = 0; x < SPRITESHEET_WIDTH; x++) {
+			color_t color = computer->ram->spritesheet.data[y * SPRITESHEET_WIDTH + x];
+			
+			char hex[2] = {0};
+			_bytes_to_hex((uint8_t *)&color, 1, hex);
+			string_builder_append(&builder, (string_t){.data = hex, .len = 2});
+
+			// STRING_BUILDER_APPEND_BYTE_AS_HEX(&builder, color);
 		}
-		buffer[offset] = '\n';
-		offset++;
+		string_builder_append(&builder, STR("\n"));
 	}
-	strncpy(buffer + offset, ">>> --- <<<\n\n", 13);
-	offset += 13;
-	
-	// Sprite meta
-	strncpy(buffer + offset, "<<< spr >>>\n", 12);
-	offset += 12;
+	string_builder_append(&builder, STR(">>> --- <<<\n\n"));
 
-	// TODO: rows and columns
-	for (int i = 0; i < TOTAL_SPRITES; i++) {
-		// 4 bytes of flags
-		// 1 byte of colorkey
-		sprintf(buffer + offset, "%08x", computer->ram->sprites[i].flags);
-		offset += 8;
-
-		sprintf(buffer + offset, "%02x", computer->ram->sprites[i].color_key);
-		offset += 2;
+	// Sprite flags and color keys
+	string_builder_append(&builder, STR("<<< spr >>>\n"));
+	for (size_t i = 0; i < TOTAL_SPRITES; i++) {
+		char hex[sizeof(sprite_t) * 2] = {0};
+		_bytes_to_hex((uint8_t *)&computer->ram->sprites[i], sizeof(sprite_t), hex);
+		string_builder_append(&builder, (string_t){.data = hex, .len = 2});
 	}
-	buffer[offset] = '\n';
-	offset++;
-	
-	strncpy(buffer + offset, ">>> --- <<<\n\n", 13);
-	offset += 13;
+	string_builder_append(&builder, STR("\n"));
+	string_builder_append(&builder, STR(">>> --- <<<\n\n"));
 
 	// Map
-	strncpy(buffer + offset, "<<< map >>>\n", 12);
-	offset += 12;
-
-	// Map content
-	// Just loop everything and save it
-	// 16 bit integer, so 4 hex characters per tile
-	// TODO: save all layers, not just 0
-	for (int y = 0; y < MAP_HEIGHT; y++) {
-		for (int x = 0; x < MAP_WIDTH; x++) {
-			sprintf(buffer + offset, "%04x", computer->ram->map.layers[0].data[y * MAP_WIDTH + x]);
-			offset += 4;
+	string_builder_append(&builder, STR("<<< map >>>\n"));
+	for (int i = 0; i < MAP_LAYERS_AMOUNT; i++) {
+		for (int y = 0; y < MAP_HEIGHT; y++) {
+			for (int x = 0; x < MAP_WIDTH; x++) {
+				char hex[sizeof(uint16_t) * 2] = {0};
+				_bytes_to_hex((uint8_t *)&computer->ram->map.layers[i].data, sizeof(uint16_t), hex);
+				string_builder_append(&builder, (string_t){.data = hex, .len = 2});
+			}
+			string_builder_append(&builder, STR("\n"));
 		}
-		buffer[offset] = '\n';
-		offset++;
 	}
+	string_builder_append(&builder, STR(">>> --- <<<\n\n"));
 
-	// End map
-	strncpy(buffer + offset, ">>> --- <<<\n", 12);
-	offset += 12;
+	// End of lua comment
+	string_builder_append(&builder, STR("--]]\n"));
 
-	// End lua comment
-	strncpy(buffer + offset, "--]]\n", 5);
-	offset += 5;
-	
-	// Null terminate the string
-	buffer[offset] = '\0';
-
-	// Write to file
-	FILE *file = fopen(filename, "w");
-	fprintf(file, buffer);
+	// Write it to disk
+	FILE *file = fopen(string_to_c_string(get_temp_allocator(), filename), "w");
+	fwrite(builder.string.data, sizeof(char), builder.string.len, file);
 	fclose(file);
 
-	free(buffer);
+	string_builder_deinit(&builder);
 
-	printf("Game saved.\n");
+	printf("Game saved!\n");
 }
 
 typedef enum file_section {

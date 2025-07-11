@@ -121,6 +121,12 @@ allocator_t get_temp_allocator() {
 	};
 }
 
+// TODO: make this
+// allocator_t get_static_allocator(uint8_t *memory, size_t size) {
+// 	return (allocator_t){
+// 		.proc = 
+// 	}
+// }
 
 void stack_init(zinc_stack_t *stack, size_t item_size, size_t capacity) {
 	stack->len = 0;

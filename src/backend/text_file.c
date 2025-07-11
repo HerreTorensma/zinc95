@@ -307,43 +307,21 @@ void file_load(file_t *file, const char *buffer) {
 	_string_to_file(file, buffer);
 }
 
-// TODO: actually use this
-size_t file_get_string_len(file_t *file) {
-	size_t len = 0;
+// string_builder_t file_to_string_builder(file_t *file, allocator_t allocator) {
+string_t file_to_string(file_t *file, allocator_t allocator) {
+	string_builder_t builder = {0};
+
+	// 1 MB is probably enough (it will still resize if necessary)
+	string_builder_init(&builder, allocator, MB(1));
 
 	for (size_t i = 0; i < file->line_amount; i++) {
-		len += file->lines[i].string.len;
-		
-		// Add +1 for line break
-		len++;
-	}
-
-	// Add +1 for null terminator
-	len++;
-
-	return len;
-}
-
-size_t file_to_string(file_t *file, char *buffer) {
-	size_t offset = 0;
-
-	for (size_t i = 0; i < file->line_amount; i++) {
-		// size_t line_len = strlen(file->lines[i].text);
 		string_t *string = &file->lines[i].string;
-		
-		// The +1 is for line break or null temrinator
-		// memcpy(buffer + offset, file->lines[i].text, (line_len + 1) * sizeof(char));
-		memcpy(buffer + offset, string->data, string->len * sizeof(char));
-		
-		if (i < file->line_amount - 1) {
-			buffer[offset + string->len] = '\n';
-		} else {
-			buffer[offset + string->len] = '\0';
-		}
-		offset += string->len + 1;
+
+		string_builder_append(&builder, *string);
+		string_builder_append(&builder, STR("\n"));
 	}
 
-	return offset;
+	return builder.string;
 }
 
 static size_t _len_at_pos(string_t *string, size_t pos) {

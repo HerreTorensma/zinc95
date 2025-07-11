@@ -318,7 +318,7 @@ int sprite_get_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int x
 void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int x, int y, uint8_t color);
 */
 
-void game_save(computer_t *computer, const char filename[]);
+void game_save(computer_t *computer, string_t filename);
 
 void game_load(computer_t *computer, const char filename[]);
 

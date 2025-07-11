@@ -52,14 +52,8 @@ int string_get_indent_level(const char text[]);
 // without worrying about memory leaks (at least that is the idea)
 void file_load(file_t *file, const char *buffer);
 
-// Gets the size of the string the data structure represents
-// Adds +1 for the null terminator
-size_t file_get_string_len(file_t *file);
-
 // Convert the file_t datastructure back to a string for saving
-// the function assumes that passed buffer is large enough
-// The string it returns is just a raw null terminated c string
-size_t file_to_string(file_t *file, char *buffer);
+string_t file_to_string(file_t *file, allocator_t allocator);
 
 // Split the line at the given position in 2
 // a new line will be created with anything on the current line after the given pos
@@ -77,7 +71,9 @@ void file_remove_char_at(file_t *file, size_t line, size_t pos);
 // Frees the file
 void file_free(file_t *file);
 
-// Higher level functions
+
+
+// --- Higher level functions ---
 
 // Inserts a character at the cursor
 void file_insert_char_at_cursor(file_t *file, char c);
