@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "res.h"
 #include "api/lua_api.h"
@@ -265,7 +266,117 @@ typedef enum file_section {
 
 #define LINE_SIZE RAM_SIZE
 
-void game_load(computer_t *computer, const char filename[]) {
+static string_t _file_load_to_string(allocator_t allocator, string_t filename) {
+	FILE *file = fopen(string_to_c_string(get_temp_allocator(), filename), "r");
+	if (file == NULL) {
+		printf("Unable to open file\n");
+		return (string_t){.data = NULL, .len = 0};
+	}
+
+	fseek(file, 0, SEEK_END);
+	size_t file_size = ftell(file);
+	fseek(file, 0, SEEK_SET);
+
+	string_t string = {
+		.data = alloc(allocator, file_size),
+		.len = file_size,
+	};
+	assert(string.data != NULL);
+
+	size_t read_len = fread(string.data, sizeof(char), file_size, file);
+	// assert(read_len == file_size);
+	
+	fclose(file);
+
+	return string;
+}
+
+static uint8_t _hex_char_to_value(char c) {
+	if (c >= '0' && c <= '9') {
+		return c - '0';
+	}
+
+	if (c >= 'a' && c <= 'f') {
+		return c - 'a' + 10;
+	}
+
+	return 0;
+}
+
+static void _hex_string_to_raw(string_t hex_string, uint8_t buffer[]) {
+	// assert(hex_string.len % 2 == 0);
+
+	for (size_t i = 0; i < hex_string.len / 2; i++) {
+		// Get the first c
+		uint8_t high = _hex_char_to_value(hex_string.data[i * 2]);
+		uint8_t low = _hex_char_to_value(hex_string.data[i * 2 + 1]);
+		buffer[i] = (high << 4) | low;
+	}
+}
+
+void game_load(computer_t *computer, string_t filename) {
+	file_section_t current_section = SECTION_LUA;
+
+	string_t string = _file_load_to_string(get_heap_allocator(), filename);
+
+	string_t_array_t lines = string_split(get_heap_allocator(), string, '\n');
+
+	size_t spritesheet_offset = 0;
+
+	for (size_t i = 0; i < lines.len; i++) {
+		string_t line = lines.data[i];
+
+		putchar(line.data[line.len - 1]);
+
+		if (string_eq(line, STR("--[["))) {
+			current_section = SECTION_NONE;
+			continue;
+		}
+
+		if (string_eq(line, STR("<<< gfx >>>"))) {
+			current_section = SECTION_GFX;
+			continue;
+		}
+
+		if (string_eq(line, STR("<<< spr >>>"))) {
+			current_section = SECTION_SPR;
+			continue;
+		}
+
+		if (string_eq(line, STR("<<< map >>>"))) {
+			current_section = SECTION_MAP;
+			continue;
+		}
+
+		if (string_eq(line, STR(">>> --- <<<"))) {
+			current_section = SECTION_NONE;
+			continue;
+		}
+
+		if (string_eq(line, STR("\n")) && current_section != SECTION_LUA) {
+		// if (line.len == 0 && current_section != SECTION_LUA) {
+			continue;
+		}
+
+		switch (current_section) {
+			case SECTION_LUA: {
+				// Add the line directly to the text file data structure 
+			}
+
+			case SECTION_GFX: {
+				_hex_string_to_raw(line, computer->ram->spritesheet.data + spritesheet_offset);
+				spritesheet_offset += line.len / 2;
+				break;
+			}
+		}
+	}
+
+	array_deinit(&lines);
+
+	dealloc(get_heap_allocator(), string.data);
+}
+
+void game_load_old(computer_t *computer, const char filename[]) {
 	char *line = calloc(LINE_SIZE, sizeof(char));
 
 	file_section_t current_section = SECTION_LUA;

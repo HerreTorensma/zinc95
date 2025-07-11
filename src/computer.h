@@ -320,7 +320,8 @@ void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int 
 
 void game_save(computer_t *computer, string_t filename);
 
-void game_load(computer_t *computer, const char filename[]);
+void game_load_old(computer_t *computer, const char filename[]);
+void game_load(computer_t *computer, string_t filename);
 
 // GUI related stuff
 typedef struct button {
