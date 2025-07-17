@@ -235,7 +235,7 @@ void game_save(computer_t *computer, string_t filename) {
 		for (int y = 0; y < MAP_HEIGHT; y++) {
 			for (int x = 0; x < MAP_WIDTH; x++) {
 				char hex[sizeof(uint16_t) * 2] = {0};
-				_bytes_to_hex((uint8_t *)&computer->ram->map.layers[i].data, sizeof(uint16_t), hex);
+				_bytes_to_hex((uint8_t *)(&computer->ram->map.layers[i].data[y * MAP_WIDTH + x]), sizeof(uint16_t), hex);
 				string_builder_append(&builder, (string_t){.data = hex, .len = 2});
 			}
 			string_builder_append(&builder, STR("\n"));
@@ -305,6 +305,11 @@ static uint8_t _hex_char_to_value(char c) {
 
 static void _hex_string_to_raw(string_t hex_string, uint8_t buffer[]) {
 	// assert(hex_string.len % 2 == 0);
+	if (hex_string.len % 2 != 0) {
+		printf("faulty line: ");
+		print_string(hex_string);
+		printf("\n");
+	}
 
 	for (size_t i = 0; i < hex_string.len / 2; i++) {
 		// Get the first c
@@ -322,6 +327,7 @@ void game_load(computer_t *computer, string_t filename) {
 	string_t_array_t lines = string_split(get_heap_allocator(), string, '\n');
 
 	size_t spritesheet_offset = 0;
+	size_t map_offset = 0;
 
 	for (size_t i = 0; i < lines.len; i++) {
 		string_t line = lines.data[i];
@@ -361,11 +367,20 @@ void game_load(computer_t *computer, string_t filename) {
 		switch (current_section) {
 			case SECTION_LUA: {
 				// Add the line directly to the text file data structure 
+				break;
 			}
 
 			case SECTION_GFX: {
-				_hex_string_to_raw(line, computer->ram->spritesheet.data + spritesheet_offset);
+				_hex_string_to_raw(line, (uint8_t *)computer->ram->spritesheet.data + spritesheet_offset);
 				spritesheet_offset += line.len / 2;
+				break;
+			}
+
+			case SECTION_MAP: {
+				// uint8_t *bytes = (uint8_t *)computer->ram->map.layers[0].data;
+				_hex_string_to_raw(line, (uint8_t *)(computer->ram->map.layers[0].data) + map_offset);
+				// _hex_string_to_raw(line, bytes + map_offset);
+				map_offset += line.len / 2;
 				break;
 			}
 		}

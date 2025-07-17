@@ -69,6 +69,7 @@ string_t string_view(string_t source, size_t start, size_t len) {
 	};
 }
 
+// TODO: don't include strings that are exactly the seperator
 string_t_array_t string_split(allocator_t allocator, string_t string, char seperator) {
 	size_t items_amount = 0;
 	
@@ -96,7 +97,6 @@ string_t_array_t string_split(allocator_t allocator, string_t string, char seper
 	if (last_index < string.len) {
 		string_t substring = string_view(string, last_index, string.len - last_index);
 		array_append(&array, substring);
-
 	}
 
 	return array;

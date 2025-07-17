@@ -52,6 +52,23 @@ static void _test_string(void) {
 
 	string_t helloworld = string_concat(get_heap_allocator(), hello, world);
 	assert(string_eq(helloworld, STR("helloworld")));
+
+	string_t_array_t split_strings = string_split(get_heap_allocator(), STR("hello\nworld\n\n"), '\n');
+	for (size_t i = 0; i < split_strings.len; i++) {
+		printf("'");
+		print_string(split_strings.data[i]);
+		printf("', ");
+	}
+
+	printf("now strtok\n");
+	
+	char other_string[] = "hello\nworld\n\n";
+	char *token = strtok(other_string, "\n");
+	while (token != NULL) {
+		printf("'%s', ", token);
+		token = strtok(NULL, "\n");
+	}
+	
 }
 
 void run_tests(void) {

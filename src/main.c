@@ -99,8 +99,8 @@ int main(int argc, char *argv[]) {
 
 	temp_mem_init(MB(1ULL));
 
-	// game_load(&computer, STR("game.zinc95"));
-	game_load_old(&computer, "game.zinc95");
+	game_load(&computer, STR("game.zinc95"));
+	// game_load_old(&computer, "game.zinc95");
 	computer_load_resouces(&computer);
 
 	gui_load_skin(computer.ram, "res/skin.png", 1, 0);
