@@ -227,21 +227,11 @@ static void _tokenize_line(file_t *file, size_t line_index) {
 	// _print_token_list(line);
 }
 
+
+
 // --- Rest ---
 
-// Get the amount of lines in a string, used for loading
-static size_t _string_get_lines_amount(const char *text) {
-	size_t amount = 1;
-
-	for (size_t i = 0; text[i] != '\0'; i++) {
-		if (text[i] == '\n') {
-			amount++;
-		}
-	}
-
-	return amount;
-}
-
+// TODO: make this take a string and actually use it
 int string_get_indent_level(const char text[]) {
 	int indent = 0;
 
@@ -256,58 +246,21 @@ int string_get_indent_level(const char text[]) {
 	return indent;
 }
 
-// Add a new line to the data structure, used for loading a string before editing
-// len is without null terminator (TODO: confirm this)
-static void _file_add_line(file_t *file, const char *text, size_t len) {
-	// Zero initialize
+void file_append_line(file_t *file, string_t line_view) {
+	// Realloc
+	file->lines = heap_realloc(file->lines, (file->line_amount + 1) * sizeof(line_t));
+
+	// Zero-initialize
 	memset(&file->lines[file->line_amount], 0, sizeof(line_t));
 
-	string_t *string = &file->lines[file->line_amount].string;
-
-	string->data = heap_alloc(len * sizeof(char));
-	// assert(string->data != NULL);
-
-	memcpy(string->data, text, len);
-	string->len = len;
+	file->lines[file->line_amount].string = string_copy(get_heap_allocator(), line_view);
 
 	_tokenize_line(file, file->line_amount);
 
 	file->line_amount++;
 }
 
-// Load a string into the file_t datastructure
-static void _string_to_file(file_t *file, const char *buffer) {
-	size_t last_line_start = 0;
-	size_t len = strlen(buffer);
-	
-	for (size_t i = 0; i < len; i++) {
-		if (buffer[i] == '\n') {
-			// - 1 so the \n is not included
-			_file_add_line(file, buffer + last_line_start, i - last_line_start);
-			last_line_start = i + 1;
-		}
-	}
-
-	// Handle last line which might not have a newline char
-	if (last_line_start < len) {
-		_file_add_line(file, buffer + last_line_start, len - last_line_start);
-	}
-}
-
-void file_load(file_t *file, const char *buffer) {
-	// Apparantly calling free on a null pointer has no effect
-	// so this is safe to do even if nothing is allocated yet
-	file_free(file);
-
-	// Allocate
-	size_t lines_amount = _string_get_lines_amount(buffer);
-	file->lines = heap_alloc(lines_amount * sizeof(line_t));
-	// assert(file->lines != NULL);
-
-	_string_to_file(file, buffer);
-}
-
-// string_builder_t file_to_string_builder(file_t *file, allocator_t allocator) {
+// Get the file as a string_t
 string_t file_to_string(file_t *file, allocator_t allocator) {
 	string_builder_t builder = {0};
 
@@ -315,9 +268,7 @@ string_t file_to_string(file_t *file, allocator_t allocator) {
 	string_builder_init(&builder, allocator, MB(1));
 
 	for (size_t i = 0; i < file->line_amount; i++) {
-		string_t *string = &file->lines[i].string;
-
-		string_builder_append(&builder, *string);
+		string_builder_append(&builder, file->lines[i].string);
 		string_builder_append(&builder, STR("\n"));
 	}
 
@@ -390,15 +341,6 @@ void file_split_line_down(file_t *file, size_t line, size_t pos, size_t indent_l
 	_tokenize_line(file, line);
 	_tokenize_line(file, line + 1ULL);
 }
-
-// Reallocs dest
-// static void _string_concat(string_t *dest, string_t *src) {
-// 	size_t old_len = dest->len;
-// 	dest->len += src->len;
-// 	dest->data = realloc(dest->data, dest->len * sizeof(char));
-
-// 	memcpy(dest->data + old_len, src->data, src->len);
-// }
 
 // Moves the lines below up by one, do the current line gets deleted
 static void _move_lines_up(file_t *file, size_t line) {
@@ -475,7 +417,7 @@ void file_remove_char_at(file_t *file, size_t line, size_t pos) {
 	_tokenize_line(file, line);
 }
 
-void file_free(file_t *file) {
+void file_deinit(file_t *file) {
 	for (size_t i = 0; i < file->line_amount; i++) {
 		free(file->lines[i].string.data);
 	}

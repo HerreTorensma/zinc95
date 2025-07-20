@@ -159,7 +159,7 @@ static void _open_safe_libs(lua_State *lua) {
 	}
 }
 
-void lua_init(computer_t *computer) {
+void lua_init(computer_t *computer, string_t code) {
 	_lua = luaL_newstate();
 	_open_safe_libs(_lua);
 
@@ -173,8 +173,12 @@ void lua_init(computer_t *computer) {
 	lua_register(_lua, api_metas[API_FUNC_MAP].name, _lua_map);
 	lua_register(_lua, api_metas[API_FUNC_KEY].name, _lua_key);
 
-	if (luaL_dostring(_lua, computer->code_buffer) != LUA_OK) {
-		term_printc(computer->ram, STR("\nError loading script: "), COLOR_BLACK, COLOR_RED);
+	if (luaL_loadbuffer(_lua, code.data, code.len, "all_code") != LUA_OK) {
+		term_printc(computer->ram, STR("\nSyntax error: "), COLOR_BLACK, COLOR_RED);
+		term_printc(computer->ram, STR(lua_tostring(_lua, -1)), 0, 12);
+		lua_pop(_lua, 1);
+	} else if (lua_pcall(_lua, 0, LUA_MULTRET, 0) != LUA_OK) {
+		term_printc(computer->ram, STR("\nRuntime error: "), COLOR_BLACK, COLOR_RED);
 		term_printc(computer->ram, STR(lua_tostring(_lua, -1)), 0, 12);
 		lua_pop(_lua, 1);
 	}
@@ -187,7 +191,7 @@ void lua_call_init() {
 
 	if (lua_isfunction(_lua, -1)) {
 		if (lua_pcall(_lua, 0, 0, 0) != LUA_OK) {
-			term_printc(computer->ram, STR("\nError in _init: "), COLOR_BLACK, COLOR_RED);
+			term_printc(computer->ram, STR("\nRuntime error in _init: "), COLOR_BLACK, COLOR_RED);
 			term_printc(computer->ram, STR(lua_tostring(_lua, -1)), COLOR_BLACK, COLOR_RED);
 			lua_pop(_lua, 1);
 		} 
@@ -203,7 +207,7 @@ void lua_call_update() {
 
 	if (lua_isfunction(_lua, -1)) {
 		if (lua_pcall(_lua, 0, 0, 0) != LUA_OK) {
-			term_printc(computer->ram, STR("\nError in _update: "), COLOR_BLACK, COLOR_RED);
+			term_printc(computer->ram, STR("\nRuntime error in _update: "), COLOR_BLACK, COLOR_RED);
 			term_printc(computer->ram, STR(lua_tostring(_lua, -1)), COLOR_BLACK, COLOR_RED);
 			lua_pop(_lua, 1);
 		} 
@@ -219,7 +223,7 @@ void lua_call_draw() {
 
 	if (lua_isfunction(_lua, -1)) {
 		if (lua_pcall(_lua, 0, 0, 0) != LUA_OK) {
-			term_printc(computer->ram, STR("\nError in _draw: "), COLOR_BLACK, COLOR_RED);
+			term_printc(computer->ram, STR("\nRuntime error in _draw: "), COLOR_BLACK, COLOR_RED);
 			term_printc(computer->ram, STR(lua_tostring(_lua, -1)), COLOR_BLACK, COLOR_RED);
 			lua_pop(_lua, 1);
 		} 

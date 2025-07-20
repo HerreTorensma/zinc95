@@ -283,45 +283,8 @@ typedef struct computer {
 	// TODO: use this
 	// file_collection_t file_collection;
 
-	// TODO: Currenly stack allocated 1MB,
-	// later when I have the file collection system I will make this dynamically allocated
-	// I tried that currently but I'll have to revamp it again to why bother
-	char code_buffer[1024 * 1024 * sizeof(char)];
-
 	voice_pool_t voice_pool;
 } computer_t;
-
-void set_global_computer(computer_t *computer);
-
-computer_t *get_global_computer();
-
-void computer_load_resouces(computer_t *computer);
-
-// This function currently only allocates memory for the fantasy ram
-void computer_init(computer_t *computer);
-
-void computer_quit(computer_t *computer);
-
-// Play the currently loaded game
-void play_game(computer_t *computer);
-
-// Quit the currently loaded game
-void quit_game(computer_t *computer);
-
-/*
-int sprite_x_to_sprite_sheet_x(ram_t *ram, int sprite_sheet_index, int sprite_index, int x);
-
-int sprite_y_to_sprite_sheet_y(ram_t *ram, int sprite_sheet_index, int sprite_index, int y);
-
-int sprite_get_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int x, int y);
-
-void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int x, int y, uint8_t color);
-*/
-
-void game_save(computer_t *computer, string_t filename);
-
-void game_load_old(computer_t *computer, const char filename[]);
-void game_load(computer_t *computer, string_t filename);
 
 // GUI related stuff
 typedef struct button {
@@ -361,3 +324,34 @@ typedef struct skin_layout {
 } skin_layout_t;
 
 extern const skin_layout_t skin_layout;
+
+void set_global_computer(computer_t *computer);
+
+computer_t *get_global_computer();
+
+void computer_load_resouces(computer_t *computer);
+
+// This function currently only allocates memory for the fantasy ram
+void computer_init(computer_t *computer);
+
+void computer_quit(computer_t *computer);
+
+// Play the currently loaded game
+void play_game(computer_t *computer);
+
+// Quit the currently loaded game
+void quit_game(computer_t *computer);
+
+/*
+int sprite_x_to_sprite_sheet_x(ram_t *ram, int sprite_sheet_index, int sprite_index, int x);
+
+int sprite_y_to_sprite_sheet_y(ram_t *ram, int sprite_sheet_index, int sprite_index, int y);
+
+int sprite_get_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int x, int y);
+
+void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int x, int y, uint8_t color);
+*/
+
+void game_save(computer_t *computer, string_t filename);
+
+void game_load(computer_t *computer, string_t filename);

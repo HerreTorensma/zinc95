@@ -75,7 +75,8 @@ void code_editor_init(computer_t *computer) {
 	// TODO: Changed workspace_rect.h to layout.code_rect.h without knowing the implications, might wanna check that later
 	_lines_on_screen = _layout.code_rect.h / (computer->ram->fonts[CODE_EDITOR_FONT_INDEX].height + computer->ram->fonts[CODE_EDITOR_FONT_INDEX].vertical_space);
 
-	file_load(&computer->file, computer->code_buffer);
+	// Not necessary anymore but I'm still keeping it commented out just in case
+	// file_load(&computer->file, computer->code_buffer);
 }
 
 // Handle all the character inputs

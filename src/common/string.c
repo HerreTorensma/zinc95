@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 string_t temp_alloc_string(size_t capacity) {
 	return (string_t) {
@@ -48,11 +49,15 @@ char *string_to_c_string(allocator_t allocator, string_t string) {
 }
 
 string_t string_copy(allocator_t allocator, string_t string) {
+	// assert(string.len > 0);
+
 	string_t new_string = {
 		.data = alloc(allocator, string.len * sizeof(char)),
 		.len = string.len,
 	};
+
 	memcpy(new_string.data, string.data, string.len * sizeof(char));
+	
 	return new_string;
 }
 

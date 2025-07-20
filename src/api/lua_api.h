@@ -6,7 +6,7 @@ Lua API
 
 #include "../computer.h"
 
-void lua_init(computer_t *computer);
+void lua_init(computer_t *computer, string_t code);
 
 void lua_call_init();
 

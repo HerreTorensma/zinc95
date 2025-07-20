@@ -47,12 +47,8 @@ typedef struct file {
 // TODO: make this string_t
 int string_get_indent_level(const char text[]);
 
-// Initializes the given file with the given buffer
-// Takes care of all allocation, so you can use this function at any time
-// without worrying about memory leaks (at least that is the idea)
-void file_load(file_t *file, const char *buffer);
+void file_append_line(file_t *file, string_t line_view);
 
-// Convert the file_t datastructure back to a string for saving
 string_t file_to_string(file_t *file, allocator_t allocator);
 
 // Split the line at the given position in 2
@@ -68,8 +64,8 @@ void file_insert_char_at(file_t *file, size_t line, size_t pos, char c);
 // Remove a char at a position
 void file_remove_char_at(file_t *file, size_t line, size_t pos);
 
-// Frees the file
-void file_free(file_t *file);
+// Deinitializes the file
+void file_deinit(file_t *file);
 
 
 
