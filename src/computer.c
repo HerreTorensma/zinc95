@@ -382,9 +382,9 @@ static uint8_t _hex_char_to_value(char c) {
 static void _hex_string_to_raw(string_t hex_string, uint8_t buffer[]) {
 	// assert(hex_string.len % 2 == 0);
 	if (hex_string.len % 2 != 0) {
-		printf("faulty line: ");
-		print_string(hex_string);
-		printf("\n");
+		// printf("faulty line: ");
+		// print_string(hex_string);
+		// printf("\n");
 	}
 
 	for (size_t i = 0; i < hex_string.len / 2; i++) {
@@ -396,6 +396,8 @@ static void _hex_string_to_raw(string_t hex_string, uint8_t buffer[]) {
 }
 
 void game_load(computer_t *computer, string_t filename) {
+	printf("Loading game...\n");
+
 	file_deinit(&computer->file);
 
 	file_section_t current_section = SECTION_LUA;
@@ -411,7 +413,7 @@ void game_load(computer_t *computer, string_t filename) {
 	for (size_t i = 0; i < lines.len; i++) {
 		string_t line = lines.data[i];
 
-		putchar(line.data[line.len - 1]);
+		// putchar(line.data[line.len - 1]);
 
 		if (string_eq(line, STR("--[["))) {
 			current_section = SECTION_NONE;
@@ -472,4 +474,6 @@ void game_load(computer_t *computer, string_t filename) {
 	array_deinit(&lines);
 
 	dealloc(get_heap_allocator(), string.data);
+
+	printf("Game loaded!\n");
 }
