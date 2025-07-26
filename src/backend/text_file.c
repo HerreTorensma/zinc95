@@ -419,9 +419,21 @@ void file_remove_char_at(file_t *file, size_t line, size_t pos) {
 
 void file_deinit(file_t *file) {
 	for (size_t i = 0; i < file->line_amount; i++) {
-		free(file->lines[i].string.data);
+		if (file->lines[i].string.data != NULL) {
+			free(file->lines[i].string.data);
+			file->lines[i].string.data == NULL;
+		}
 	}
-	free(file->lines);
+	
+	if (file->lines != NULL) {
+		free(file->lines);
+		file->lines = NULL;
+	}
+
+	file->line_amount = 0;
+
+	file->cursor_line = 0;
+	file->cursor_pos = 0;
 }
 
 void file_insert_char_at_cursor(file_t *file, char c) {

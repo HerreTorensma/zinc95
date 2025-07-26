@@ -87,6 +87,8 @@ Memory layout, global constants
 #define GUI_FONT_INDEX 0
 #define CODE_EDITOR_FONT_INDEX 1
 
+#define FILES_AMOUNT 32
+
 typedef uint8_t color_t;
 
 typedef struct rgb_color {
@@ -141,9 +143,9 @@ typedef struct font {
 	color_t seperator_color;
 } font_t;
 
-typedef struct file_collection {
-	file_t file[32];
-} file_collection_t;
+// typedef struct file_collection {
+// 	file_t file[32];
+// } file_collection_t;
 
 // Should be reset before game is played
 // typedef struct draw_state {
@@ -278,7 +280,9 @@ typedef struct computer {
 	computer_state_t state;
 	bool game_running;
 
-	file_t file;
+	// file_t file;
+	file_t files[FILES_AMOUNT];
+	size_t active_files_amount;
 
 	// TODO: use this
 	// file_collection_t file_collection;
@@ -321,6 +325,9 @@ typedef struct skin_layout {
 
 	rect_t gui_font_rect;
 	rect_t code_editor_font_rect;
+
+	button_t code_file_button;
+	button_t add_file_button;
 } skin_layout_t;
 
 extern const skin_layout_t skin_layout;

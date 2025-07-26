@@ -122,11 +122,6 @@ int main(int argc, char *argv[]) {
 	shell_init(computer.ram);
 
 	create_default_directories();
-	// create_directory("idkman\\something\\iets");
-	// create_directory("idkman/something/iets");
-	// create_directory("idkman");
-
-	// printf("array header size: %d\n", sizeof(array_header_t));
 	
 	// TODO: simplify the state switching logic
 	while (window_is_open()) {
@@ -146,7 +141,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		switch (computer.state) {
-			case STATE_IN_SHELL:
+			case STATE_IN_SHELL: {
 				if (!computer.game_running) {
 					shell_update(computer.ram);
 				} else {
@@ -154,26 +149,32 @@ int main(int argc, char *argv[]) {
 					lua_call_update();
 				}
 				break;
-			case STATE_IN_EDITOR:
+			}
+			case STATE_IN_EDITOR: {
 				workspace_menu_update(&computer);
 				break;
-			case STATE_IN_GAME:
+			}
+			case STATE_IN_GAME: {
 				lua_call_update();
 				break;
+			}
 		}
 		
 		switch (computer.state) {
-			case STATE_IN_SHELL:
+			case STATE_IN_SHELL: {
 				txt_generate_rgb_framebuffer(&computer);
 				break;
-			case STATE_IN_EDITOR:
+			}
+			case STATE_IN_EDITOR: {
 				workspace_menu_draw(&computer);
 				gfx_generate_rgb_framebuffer(&computer);
 				break;
-				case STATE_IN_GAME:
+			}
+			case STATE_IN_GAME: {
 				lua_call_draw();
 				gfx_generate_rgb_framebuffer(&computer);
 				break;
+			}
 		}
 
 		window_render(&computer);

@@ -97,6 +97,16 @@ const skin_layout_t skin_layout = {
 
 	.gui_font_rect = {{2560, 432, 384, 32}},
 	.code_editor_font_rect = {{2560, 464, 384, 16}},
+
+	.code_file_button = {
+		.unpressed_rect = {{2560, 316, 64, 13}},
+		.pressed_rect = {{2624, 316, 64, 13}},
+	},
+
+	.add_file_button = {
+		.unpressed_rect = {{2560, 329, 13, 13}},
+		.pressed_rect = {{2573, 329, 13, 13}},
+	}
 };
 
 void set_global_computer(computer_t *computer) {
@@ -169,11 +179,13 @@ void computer_init(computer_t *computer) {
 	memset(computer->ram, 0, RAM_SIZE);
 
 	computer->ram->palette = builtin_palette;
+
+	computer->active_files_amount = 1;
 }
 
 void computer_quit(computer_t *computer) {
 	// Free the code first
-	file_deinit(&computer->file);
+	file_deinit(&computer->files[0]);
 
 	// free(computer->code_buffer);
 
@@ -187,7 +199,7 @@ void play_game(computer_t *computer) {
 	// Convert code to string
 	// file_to_string(&computer->file, computer->code_buffer);
 	// string_t code = file_to_string(&computer->file, );
-	string_t code = file_to_string(&computer->file, get_heap_allocator());
+	string_t code = file_to_string(&computer->files[0], get_heap_allocator());
 
 	// Init the lua stuff
 	lua_init(computer, code);
@@ -274,7 +286,7 @@ void game_save(computer_t *computer, string_t filename) {
 	string_builder_init(&builder, get_heap_allocator(), MB(8));
 
 	// Lua code
-	string_t code = file_to_string(&computer->file, get_heap_allocator());
+	string_t code = file_to_string(&computer->files[0], get_heap_allocator());
 	string_builder_append(&builder, code);
 	dealloc(get_heap_allocator(), code.data);
 
@@ -398,7 +410,7 @@ static void _hex_string_to_raw(string_t hex_string, uint8_t buffer[]) {
 void game_load(computer_t *computer, string_t filename) {
 	printf("Loading game...\n");
 
-	file_deinit(&computer->file);
+	file_deinit(&computer->files[0]);
 
 	file_section_t current_section = SECTION_LUA;
 
@@ -448,7 +460,7 @@ void game_load(computer_t *computer, string_t filename) {
 		switch (current_section) {
 			case SECTION_LUA: {
 				// Add the line directly to the text file data structure
-				file_append_line(&computer->file, line);
+				file_append_line(&computer->files[0], line);
 				break;
 			}
 
