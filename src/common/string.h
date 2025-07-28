@@ -72,3 +72,7 @@ bool is_digit(char c);
 bool is_alphanumeric(char c);
 
 bool is_whitespace(char c);
+
+string_t int_to_string(allocator_t allocator, int number);
+
+int string_to_int(string_t string);

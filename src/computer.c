@@ -179,8 +179,6 @@ void computer_init(computer_t *computer) {
 	memset(computer->ram, 0, RAM_SIZE);
 
 	computer->ram->palette = builtin_palette;
-
-	computer->active_files_amount = 1;
 }
 
 void computer_quit(computer_t *computer) {
@@ -289,15 +287,18 @@ void game_save(computer_t *computer, string_t filename) {
 	string_builder_init(&builder, get_heap_allocator(), MB(8));
 
 	// Lua code
-	string_t code = file_to_string(&computer->files[0], get_heap_allocator());
-	string_builder_append(&builder, code);
-	dealloc(get_heap_allocator(), code.data);
+	for (size_t i = 0; i < computer->active_files_amount; i++) {
+		if (i > 0) {
+			string_builder_append(&builder, STR("-->8\n"));
+		}
 
-	// The rest of the game is inside a lua multiline comment so it can be opened in an IDE without syntax errors
-	string_builder_append(&builder, STR("--[[\n"));
+		string_t code = file_to_string(&computer->files[i], get_heap_allocator());
+		string_builder_append(&builder, code);
+		dealloc(get_heap_allocator(), code.data);
+	}
 
 	// Spritesheet
-	string_builder_append(&builder, STR("<<< gfx >>>\n"));
+	string_builder_append(&builder, STR("__gfx__\n"));
 	for (size_t y = 0; y < SPRITESHEET_HEIGHT; y++) {
 		for (size_t x = 0; x < SPRITESHEET_WIDTH; x++) {
 			color_t color = computer->ram->spritesheet.data[y * SPRITESHEET_WIDTH + x];
@@ -308,20 +309,19 @@ void game_save(computer_t *computer, string_t filename) {
 		}
 		string_builder_append(&builder, STR("\n"));
 	}
-	string_builder_append(&builder, STR(">>> --- <<<\n\n"));
+	string_builder_append(&builder, STR("\n"));
 
 	// Sprite flags and color keys
-	string_builder_append(&builder, STR("<<< spr >>>\n"));
+	string_builder_append(&builder, STR("__spr__\n"));
 	for (size_t i = 0; i < TOTAL_SPRITES; i++) {
 		char hex[sizeof(sprite_t) * 2] = {0};
 		_bytes_to_hex((uint8_t *)&computer->ram->sprites[i], sizeof(sprite_t), hex);
 		string_builder_append(&builder, (string_t){.data = hex, .len = sizeof(sprite_t) * 2});
 	}
-	string_builder_append(&builder, STR("\n"));
-	string_builder_append(&builder, STR(">>> --- <<<\n\n"));
+	string_builder_append(&builder, STR("\n\n"));
 
 	// Map
-	string_builder_append(&builder, STR("<<< map >>>\n"));
+	string_builder_append(&builder, STR("__map__\n"));
 	for (int i = 0; i < MAP_LAYERS_AMOUNT; i++) {
 		for (int y = 0; y < MAP_HEIGHT; y++) {
 			for (int x = 0; x < MAP_WIDTH; x++) {
@@ -332,10 +332,6 @@ void game_save(computer_t *computer, string_t filename) {
 			string_builder_append(&builder, STR("\n"));
 		}
 	}
-	string_builder_append(&builder, STR(">>> --- <<<\n\n"));
-
-	// End of lua comment
-	string_builder_append(&builder, STR("--]]\n"));
 
 	// Write it to disk
 	FILE *file = fopen(string_to_c_string(get_temp_allocator(), filename), "w");
@@ -403,10 +399,12 @@ static void _hex_string_to_raw(string_t hex_string, uint8_t buffer[]) {
 void game_load(computer_t *computer, string_t filename) {
 	printf("Loading game...\n");
 
-	file_deinit(&computer->files[0]);
+	// Deinit all files
+	for (size_t i = 0; i < FILES_AMOUNT; i++) {
+		file_deinit(&computer->files[i]);
+	}
 
 	enum {
-		SECTION_NONE,
 		SECTION_LUA,
 		SECTION_GFX,
 		SECTION_SPR,
@@ -421,45 +419,44 @@ void game_load(computer_t *computer, string_t filename) {
 	size_t spr_offset = 0;
 	size_t map_offset = 0;
 
+	computer->active_files_amount = 0;
+
+	bool last_line_was_seperator = true;
+
 	for (size_t i = 0; i < lines.len; i++) {
 		string_t line = lines.data[i];
 
-		// putchar(line.data[line.len - 1]);
-
-		if (string_eq(line, STR("--[["))) {
-			current_section = SECTION_NONE;
-			continue;
-		}
-
-		if (string_eq(line, STR("<<< gfx >>>"))) {
+		if (string_eq(line, STR("__gfx__"))) {
 			current_section = SECTION_GFX;
 			continue;
 		}
 
-		if (string_eq(line, STR("<<< spr >>>"))) {
+		if (string_eq(line, STR("__spr__"))) {
 			current_section = SECTION_SPR;
 			continue;
 		}
 
-		if (string_eq(line, STR("<<< map >>>"))) {
+		if (string_eq(line, STR("__map__"))) {
 			current_section = SECTION_MAP;
 			continue;
 		}
 
-		if (string_eq(line, STR(">>> --- <<<"))) {
-			current_section = SECTION_NONE;
-			continue;
-		}
+		if (current_section == SECTION_LUA) {
+			bool is_seperator = string_eq(line, STR("-->8"));
 
-		if (string_eq(line, STR("\n")) && current_section != SECTION_LUA) {
-		// if (line.len == 0 && current_section != SECTION_LUA) {
-			continue;
+			if (is_seperator && !last_line_was_seperator) {
+				computer->active_files_amount++;
+				last_line_was_seperator = is_seperator;
+				continue;
+			}
+
+			last_line_was_seperator = is_seperator;
 		}
 
 		switch (current_section) {
 			case SECTION_LUA: {
 				// Add the line directly to the text file data structure
-				file_append_line(&computer->files[0], line);
+				file_append_line(&computer->files[computer->active_files_amount], line);
 				break;
 			}
 
@@ -480,6 +477,10 @@ void game_load(computer_t *computer, string_t filename) {
 				break;
 			}
 		}
+	}
+
+	if (!last_line_was_seperator) {
+		computer->active_files_amount++;
 	}
 
 	array_deinit(&lines);

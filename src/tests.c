@@ -68,6 +68,16 @@ static void _test_string(void) {
 		printf("'%s', ", token);
 		token = strtok(NULL, "\n");
 	}
+
+	int number = 345;
+	string_t number_as_string = int_to_string(get_heap_allocator(), number);
+	assert(string_eq(number_as_string, STR("345")) && "int_to_string failed");
+	int number_as_number_again = string_to_int(number_as_string);
+	assert(number_as_number_again == 345 && "string_to_int failed");
+
+	assert(string_to_int(STR("0")) == 0 && "string_to_int failed");
+	assert(string_to_int(STR("1")) == 1 && "string_to_int failed");
+
 }
 
 void run_tests(void) {

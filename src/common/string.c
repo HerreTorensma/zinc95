@@ -168,3 +168,56 @@ bool is_alphanumeric(char c) {
 bool is_whitespace(char c) {
 	return (c == ' ' || c == '\t');
 }
+
+string_t int_to_string(allocator_t allocator, int n) {
+	string_t string = {
+		// -2147483648: 11 bytes
+		.data = alloc(allocator, 11),
+		.len = 0,
+	};
+
+	if (n == 0) {
+		string.data[0] = '0';
+		string.len = 1;
+		return string;
+	}
+	
+	bool is_signed = false;
+	if (n < 0) {
+		n = -n;
+		is_signed = true;
+	}
+
+	while (n > 0) {
+		string.data[string.len] = n % 10 + '0';
+		string.len++;
+		n /= 10;
+	}
+
+	if (is_signed) {
+		string.data[string.len] = '-';
+		string.len++;
+	}
+
+	// Reverse the string
+	for (size_t i = 0; i < string.len / 2; i++) {
+		char temp = string.data[i];
+		string.data[i] = string.data[string.len - i - 1];
+		string.data[string.len - i - 1] = temp;
+	}
+
+	return string;
+}
+
+int string_to_int(string_t string) {
+	int n = 0;
+
+	for (size_t i = 0; i < string.len; i++) {
+		if (is_digit(string.data[i])) {
+			n *= 10;
+			n += string.data[i] - '0';
+		}
+	}
+
+	return n;
+}
