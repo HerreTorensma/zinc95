@@ -185,9 +185,9 @@ void computer_init(computer_t *computer) {
 
 void computer_quit(computer_t *computer) {
 	// Free the code first
-	file_deinit(&computer->files[0]);
-
-	// free(computer->code_buffer);
+	for (size_t i = 0; i < FILES_AMOUNT; i++) {
+		file_deinit(&computer->files[0]);
+	}
 
 	free(computer->ram);
 }
@@ -196,26 +196,29 @@ void computer_quit(computer_t *computer) {
 string_t file_to_string(file_t *file, allocator_t allocator);
 
 void play_game(computer_t *computer) {
-	// Convert code to string
-	// file_to_string(&computer->file, computer->code_buffer);
-	// string_t code = file_to_string(&computer->file, );
-	string_t code = file_to_string(&computer->files[0], get_heap_allocator());
-
-	// Init the lua stuff
-	lua_init(computer, code);
-	lua_call_init();
-
-	dealloc(get_heap_allocator(), code.data);
-
-	// Reset draw state
-	// memset(&computer->ram->draw_state, 0, sizeof(draw_state_t));
-
-	// Set the state
-	computer->game_running = true;
-	computer->state = STATE_IN_GAME;
+	if (lua_init(computer) == 0 && lua_call_init() == 0) {
+		
+		// Reset draw state
+		// memset(&computer->ram->draw_state, 0, sizeof(draw_state_t));
+		
+		// Set the state
+		computer->game_running = true;
+		computer->state = STATE_IN_GAME;
+	} else {
+		abort_game(computer);
+	}
 }
 
 void shell_new_command(ram_t *ram);
+
+
+void abort_game(computer_t *computer) {
+	computer->game_running = false;
+	computer->state = STATE_IN_SHELL;
+	lua_quit();
+
+	shell_new_command(computer->ram);
+}
 
 void quit_game(computer_t *computer) {
 	computer->game_running = false;
@@ -344,16 +347,6 @@ void game_save(computer_t *computer, string_t filename) {
 	printf("Game saved!\n");
 }
 
-typedef enum file_section {
-	SECTION_NONE,
-	SECTION_LUA,
-	SECTION_GFX,
-	SECTION_SPR,
-	SECTION_MAP,
-} file_section_t;
-
-#define LINE_SIZE RAM_SIZE
-
 static string_t _file_load_to_string(allocator_t allocator, string_t filename) {
 	FILE *file = fopen(string_to_c_string(get_temp_allocator(), filename), "r");
 	if (file == NULL) {
@@ -412,7 +405,13 @@ void game_load(computer_t *computer, string_t filename) {
 
 	file_deinit(&computer->files[0]);
 
-	file_section_t current_section = SECTION_LUA;
+	enum {
+		SECTION_NONE,
+		SECTION_LUA,
+		SECTION_GFX,
+		SECTION_SPR,
+		SECTION_MAP,
+	} current_section = SECTION_LUA;
 
 	string_t string = _file_load_to_string(get_heap_allocator(), filename);
 

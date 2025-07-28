@@ -64,3 +64,11 @@ void string_builder_init(string_builder_t *builder, allocator_t allocator, size_
 void string_builder_append(string_builder_t *builder, string_t string);
 
 void string_builder_deinit(string_builder_t *builder);
+
+bool is_alphabetic(char c);
+
+bool is_digit(char c);
+
+bool is_alphanumeric(char c);
+
+bool is_whitespace(char c);

@@ -146,3 +146,25 @@ void string_builder_deinit(string_builder_t *builder) {
 	builder->string.len = 0;
 	builder->capacity = 0;
 }
+
+bool is_alphabetic(char c) {
+	if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
+		return true;
+	}
+	return false;
+}
+
+bool is_digit(char c) {
+	if (c >= '0' && c <= '9') {
+		return true;
+	}
+	return false;
+}
+
+bool is_alphanumeric(char c) {
+	return (is_alphabetic(c) || is_digit(c));
+}
+
+bool is_whitespace(char c) {
+	return (c == ' ' || c == '\t');
+}

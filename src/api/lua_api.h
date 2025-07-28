@@ -6,12 +6,12 @@ Lua API
 
 #include "../computer.h"
 
-void lua_init(computer_t *computer, string_t code);
+int lua_init(computer_t *computer);
 
-void lua_call_init();
+int lua_call_init();
 
-void lua_call_update();
+int lua_call_update();
 
-void lua_call_draw();
+int lua_call_draw();
 
 void lua_quit();

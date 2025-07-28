@@ -90,3 +90,5 @@ void file_move_cursor_right(file_t *file);
 void file_move_cursor_to_next_word(file_t *file);
 
 void file_move_cursor_to_prev_word(file_t *file);
+
+string_t file_get_name(file_t *file);

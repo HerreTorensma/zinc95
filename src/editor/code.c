@@ -8,7 +8,6 @@
 #include "../backend/input.h"
 #include "../backend/gui.h"
 #include "../backend/text_file.h"
-#include "menu.h"
 
 // TODO: These 3 should be configurable thus stored in RAM
 static const int _cursor_blink_speed = 45;
@@ -68,13 +67,11 @@ static void _unblink_cursor() {
 }
 
 static int _get_real_cursor_pos(computer_t *computer) {
-	// if (computer->file.cursor_line == 0) {
-	// 	return 0;
-	// }
-
 	if (computer->files[_current_file_index].line_amount > 0) {
 		return gui_get_string_width(&computer->ram->fonts[CODE_EDITOR_FONT_INDEX], computer->files[_current_file_index].lines[computer->files[_current_file_index].cursor_line].string, computer->files[_current_file_index].cursor_pos);
 	}
+
+	return 0;
 }
 
 void code_editor_init(computer_t *computer) {
@@ -296,18 +293,6 @@ void code_editor_update(computer_t *computer) {
 	}
 }
 
-static string_t _string_remove_comment_prefix(string_t string) {
-	for (size_t i = 0; i < string.len; i++) {
-		if (string.data[i] == '-' || string.data[i] == ' ' || string.data[i] == '\t') {
-			continue;
-		}
-
-		return string_view(string, i, MIN(string.len - i, 10));
-	}
-
-	return string;
-}
-
 void code_editor_draw(computer_t *computer) {
 	font_t *font = &computer->ram->fonts[CODE_EDITOR_FONT_INDEX];
 	surface_t fb_surf = FB_SURF(computer->ram->framebuffer.data);
@@ -344,8 +329,21 @@ void code_editor_draw(computer_t *computer) {
 
 		ignore_current_file:
 
-		gui_draw_string(computer->ram, CODE_EDITOR_FONT_INDEX, _string_remove_comment_prefix(computer->files[i].lines[0].string), POINT(pos.x + 3, pos.y + 3), COLOR_BLACK);
+		gui_draw_string(computer->ram, CODE_EDITOR_FONT_INDEX, file_get_name(&computer->files[i]), POINT(pos.x + 3, pos.y + 3), COLOR_BLACK);
 	}
+
+	// TODO: don't also move cursor
+	if (input_key_held(KEY_LALT) && input_key_pressed(KEY_UP)) {
+		if (_current_file_index > 0) {
+			_current_file_index--;
+		}
+	}
+	if (input_key_held(KEY_LALT) && input_key_pressed(KEY_DOWN)) {
+		if (_current_file_index < computer->active_files_amount - 1) {
+			_current_file_index++;
+		}
+	}
+
 	// Add file button
 	if (computer->active_files_amount < FILES_AMOUNT) {
 		if (gui_button(computer->ram, POINT(_layout.file_buttons_pos.x, _layout.file_buttons_pos.y + computer->active_files_amount * skin_layout.code_file_button.pressed_rect.h), skin_layout.add_file_button, false)) {

@@ -1,5 +1,6 @@
 #include "lua_api.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 #include <lua.h>
@@ -159,7 +160,13 @@ static void _open_safe_libs(lua_State *lua) {
 	}
 }
 
-void lua_init(computer_t *computer, string_t code) {
+static void _print_lua_error(ram_t *ram, string_t error_string) {
+	term_printc(ram, STR("\nLua Error: "), COLOR_BLACK, COLOR_RED);
+	term_printc(ram, error_string, COLOR_BLACK, COLOR_RED);
+	term_putchar(ram, '\n', 0, 0);
+}
+
+int lua_init(computer_t *computer) {
 	_lua = luaL_newstate();
 	_open_safe_libs(_lua);
 
@@ -173,63 +180,91 @@ void lua_init(computer_t *computer, string_t code) {
 	lua_register(_lua, api_metas[API_FUNC_MAP].name, _lua_map);
 	lua_register(_lua, api_metas[API_FUNC_KEY].name, _lua_key);
 
-	if (luaL_loadbuffer(_lua, code.data, code.len, "all_code") != LUA_OK) {
-		term_printc(computer->ram, STR("\nSyntax error: "), COLOR_BLACK, COLOR_RED);
-		term_printc(computer->ram, STR(lua_tostring(_lua, -1)), 0, 12);
-		lua_pop(_lua, 1);
-	} else if (lua_pcall(_lua, 0, LUA_MULTRET, 0) != LUA_OK) {
-		term_printc(computer->ram, STR("\nRuntime error: "), COLOR_BLACK, COLOR_RED);
-		term_printc(computer->ram, STR(lua_tostring(_lua, -1)), 0, 12);
-		lua_pop(_lua, 1);
+	for (size_t i = 0; i < computer->active_files_amount; i++) {
+		string_t file_string = file_to_string(&computer->files[i], get_heap_allocator());
+
+		char *file_name = string_to_c_string(get_temp_allocator(), file_get_name(&computer->files[i]));
+
+		// 'file ': 5 bytes
+		// file index: 2 bytes
+		// ': ' 2 bytes
+		// file name: 10 bytes
+		// null terminator: 1 byte
+		// so 5 + 2 + 2 + 10 + 1 = 20 bytes
+		char chunk_name[20] = {0};
+		sprintf(chunk_name, "file %zu: %s", i, file_name);
+
+		if (luaL_loadbuffer(_lua, file_string.data, file_string.len, chunk_name) != LUA_OK) {
+			_print_lua_error(computer->ram, STR(lua_tostring(_lua, -1)));
+			lua_pop(_lua, 1);
+			dealloc(get_heap_allocator(), file_string.data);
+			return 1;
+		} else if (lua_pcall(_lua, 0, LUA_MULTRET, 0) != LUA_OK) {
+			_print_lua_error(computer->ram, STR(lua_tostring(_lua, -1)));
+			lua_pop(_lua, 1);
+			dealloc(get_heap_allocator(), file_string.data);
+			return 1;
+		}
 	}
+
+	return 0;
 }
 
-void lua_call_init() {
+int lua_call_init() {
 	computer_t *computer = get_global_computer();
 
 	lua_getglobal(_lua, "_init");
 
 	if (lua_isfunction(_lua, -1)) {
 		if (lua_pcall(_lua, 0, 0, 0) != LUA_OK) {
-			term_printc(computer->ram, STR("\nRuntime error in _init: "), COLOR_BLACK, COLOR_RED);
-			term_printc(computer->ram, STR(lua_tostring(_lua, -1)), COLOR_BLACK, COLOR_RED);
+			_print_lua_error(computer->ram, STR(lua_tostring(_lua, -1)));
 			lua_pop(_lua, 1);
+			return 1;
 		} 
 	} else {
 		lua_pop(_lua, 1);
+		return 1;
 	}
+
+	return 0;
 }
 
-void lua_call_update() {
+int lua_call_update() {
 	computer_t *computer = get_global_computer();
 
 	lua_getglobal(_lua, "_update");
 
 	if (lua_isfunction(_lua, -1)) {
 		if (lua_pcall(_lua, 0, 0, 0) != LUA_OK) {
-			term_printc(computer->ram, STR("\nRuntime error in _update: "), COLOR_BLACK, COLOR_RED);
-			term_printc(computer->ram, STR(lua_tostring(_lua, -1)), COLOR_BLACK, COLOR_RED);
+			_print_lua_error(computer->ram, STR(lua_tostring(_lua, -1)));
 			lua_pop(_lua, 1);
+			return 1;
 		} 
 	} else {
 		lua_pop(_lua, 1);
+		return 1;
 	}
+
+	return 0;
 }
 
-void lua_call_draw() {
+int lua_call_draw() {
 	computer_t *computer = get_global_computer();
 
 	lua_getglobal(_lua, "_draw");
 
 	if (lua_isfunction(_lua, -1)) {
 		if (lua_pcall(_lua, 0, 0, 0) != LUA_OK) {
-			term_printc(computer->ram, STR("\nRuntime error in _draw: "), COLOR_BLACK, COLOR_RED);
-			term_printc(computer->ram, STR(lua_tostring(_lua, -1)), COLOR_BLACK, COLOR_RED);
+			_print_lua_error(computer->ram, STR(lua_tostring(_lua, -1)));
 			lua_pop(_lua, 1);
+			return 1;
 		} 
 	} else {
 		lua_pop(_lua, 1);
+		return 1;
 	}
+	
+	return 0;
 }
 
 void lua_quit() {

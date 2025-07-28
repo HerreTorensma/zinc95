@@ -349,6 +349,10 @@ void play_game(computer_t *computer);
 // Quit the currently loaded game
 void quit_game(computer_t *computer);
 
+// Like quit_game, but also puts you in the shell to view the error
+// Should only be used when the game is involuntarily quit (because of an error)
+void abort_game(computer_t *computer);
+
 /*
 int sprite_x_to_sprite_sheet_x(ram_t *ram, int sprite_sheet_index, int sprite_index, int x);
 

@@ -119,6 +119,12 @@ int main(int argc, char *argv[]) {
 	// The shell should not be active when the game is running, it should just print stuff from the game
 	// 
 
+	// I gotta think about getting rid of the update loop in the editors
+	// I feel like it's redundant there because the main advantage I think is being able to pause the update while the draw keeps running
+	// especially when you have GUI stuff in the draw you can pause your game and stuff have working UI
+	// But there will never be an option to pause the editor since it's all GUI anyway
+	// idk
+
 	shell_init(computer.ram);
 
 	create_default_directories();
@@ -146,7 +152,9 @@ int main(int argc, char *argv[]) {
 					shell_update(computer.ram);
 				} else {
 					// Game keeps running while the terminal is open
-					lua_call_update();
+					if (lua_call_update() != 0) {
+						abort_game(&computer);
+					}
 				}
 				break;
 			}
@@ -155,7 +163,9 @@ int main(int argc, char *argv[]) {
 				break;
 			}
 			case STATE_IN_GAME: {
-				lua_call_update();
+				if (lua_call_update() != 0) {
+					abort_game(&computer);
+				}
 				break;
 			}
 		}
@@ -171,7 +181,10 @@ int main(int argc, char *argv[]) {
 				break;
 			}
 			case STATE_IN_GAME: {
-				lua_call_draw();
+				if (lua_call_draw() != 0) {
+					abort_game(&computer);
+				}
+
 				gfx_generate_rgb_framebuffer(&computer);
 				break;
 			}

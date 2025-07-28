@@ -68,7 +68,6 @@ static void _test_string(void) {
 		printf("'%s', ", token);
 		token = strtok(NULL, "\n");
 	}
-	
 }
 
 void run_tests(void) {

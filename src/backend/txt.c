@@ -273,6 +273,8 @@ static void _print_intro(ram_t *ram) {
 	term_putchar(ram, '\n', 0, 0);
 }
 
+// TODO: seperate shell into editor/frontend
+// Also make user able to terminate the game with Ctrl+C
 void shell_init(ram_t *ram) {
 	_print_intro(ram);
 	shell_new_command(ram);

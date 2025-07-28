@@ -43,28 +43,6 @@ static bool _is_builtin_function(string_t word) {
 	return false;
 }
 
-static bool _is_alphabetic(char c) {
-	if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
-		return true;
-	}
-	return false;
-}
-
-static bool _is_digit(char c) {
-	if (c >= '0' && c <= '9') {
-		return true;
-	}
-	return false;
-}
-
-static bool _is_alphanumeric(char c) {
-	return (_is_alphabetic(c) || _is_digit(c));
-}
-
-static bool _is_whitespace(char c) {
-	return (c == ' ' || c == '\t');
-}
-
 static bool _is_literal(string_t word) {
 	// return string_eq(word, (string_t)STR("true")) || string_eq(word, (string_t)STR("false"));
 	return string_eq(word, STR("true")) || string_eq(word, STR("false")) || string_eq(word, STR("nil"));
@@ -144,9 +122,9 @@ static void _tokenize_line(file_t *file, size_t line_index) {
 		char c = string->data[i];
 
 		// Keyword, builtin function, boolean literal, identifier
-		if (_is_alphabetic(c) || c == '_') {
+		if (is_alphabetic(c) || c == '_') {
 			const size_t start = i;
-			while (i < string->len && (_is_alphanumeric(string->data[i]) || string->data[i] == '_')) {
+			while (i < string->len && (is_alphanumeric(string->data[i]) || string->data[i] == '_')) {
 				i++;
 			}
 
@@ -164,9 +142,9 @@ static void _tokenize_line(file_t *file, size_t line_index) {
 			}
 		
 		// Number
-		} else if (_is_digit(c)) {
+		} else if (is_digit(c)) {
 			const size_t start = i;
-			while (i < string->len && (_is_digit(string->data[i]) || string->data[i] == '.')) {
+			while (i < string->len && (is_digit(string->data[i]) || string->data[i] == '.')) {
 				i++;
 			}
 
@@ -203,9 +181,9 @@ static void _tokenize_line(file_t *file, size_t line_index) {
 			break;
 		
 		// Whitespace
-		} else if (_is_whitespace(c)) {
+		} else if (is_whitespace(c)) {
 			size_t start = i;
-			while (i < string->len && (_is_whitespace(string->data[i]))) {
+			while (i < string->len && (is_whitespace(string->data[i]))) {
 				i++;
 			}
 
@@ -421,7 +399,7 @@ void file_deinit(file_t *file) {
 	for (size_t i = 0; i < file->line_amount; i++) {
 		if (file->lines[i].string.data != NULL) {
 			free(file->lines[i].string.data);
-			file->lines[i].string.data == NULL;
+			file->lines[i].string.data = NULL;
 		}
 	}
 	
@@ -539,4 +517,18 @@ void file_move_cursor_to_prev_word(file_t *file) {
 			break;
 		}
 	}
+}
+
+string_t file_get_name(file_t *file) {
+	string_t string = file->lines[0].string;
+
+	for (size_t i = 0; i < string.len; i++) {
+		if (string.data[i] == '-' || string.data[i] == ' ' || string.data[i] == '\t') {
+			continue;
+		}
+
+		return string_view(string, i, MIN(string.len - i, 10));
+	}
+
+	return string;
 }
