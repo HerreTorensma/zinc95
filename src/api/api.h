@@ -29,8 +29,11 @@ typedef enum api_func {
 	API_FUNC_KEY,
 
 	API_FUNC_TICKS,
+	
+	API_FUNC_SAVE_TO_SLOT,
 
 	API_FUNC_COUNT,
+
 } api_func_t;
 
 // Uses null-terminated strings because they are only fed to Lua or used to generate documentation

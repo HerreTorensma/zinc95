@@ -170,6 +170,10 @@ void computer_load_resouces(computer_t *computer) {
 	};
 }
 
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+
 void computer_init(computer_t *computer) {
 	computer->ram = malloc(RAM_SIZE);
 	if (computer->ram == NULL) {
@@ -179,6 +183,8 @@ void computer_init(computer_t *computer) {
 	memset(computer->ram, 0, RAM_SIZE);
 
 	computer->ram->palette = builtin_palette;
+
+	computer->current_path = string_copy(get_heap_allocator(), STR("/"));
 }
 
 void computer_quit(computer_t *computer) {

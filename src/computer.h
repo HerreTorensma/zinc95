@@ -288,6 +288,8 @@ typedef struct computer {
 	// file_collection_t file_collection;
 
 	voice_pool_t voice_pool;
+
+	string_t current_path;
 } computer_t;
 
 // GUI related stuff

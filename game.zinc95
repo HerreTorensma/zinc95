@@ -98,6 +98,13 @@ function _init()
 	new_fish()
 	new_fish()
 	new_fish()
+
+	local stress_test = {}
+	for i=1,1000000 do
+		table.insert(stress_test, i)
+	end
+	--save_to_slot(0, stress_test)
+	save_to_slot(0, player)
 end
 
 function _update()

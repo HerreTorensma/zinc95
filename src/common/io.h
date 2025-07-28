@@ -15,3 +15,5 @@ string_t_array_t get_files_in_path(allocator_t allocator, string_t path);
 // Create the default directories
 // AppData/Roaming on Windows
 void create_default_directories();
+
+string_t path_concat_directory(allocator_t allocator, string_t directory);

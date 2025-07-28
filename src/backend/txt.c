@@ -153,6 +153,10 @@ string_t term_input(string_t string) {
 
 }
 
+
+
+// --- Shell ---
+
 static void _print_help(ram_t *ram) {
 	term_print(ram, STR("help              print commands\n"));
 	term_print(ram, STR("load   <filename> load a file\n"));
@@ -220,7 +224,7 @@ static void _execute_command(ram_t *ram, string_t input) {
 			if (string_eq(strings.data[1], STR(".."))) {
 				// Go to parent directory
 			} else {
-				// Go to child directory
+				// Go to second argument directory
 			}
 		} else {
 			term_printc(ram, STR("Syntax error: expected 1 argument\n"), COLOR_BLACK, COLOR_RED);

@@ -13,6 +13,8 @@
 
 static lua_State *_lua = NULL;
 
+// TODO: throw errors when amount of arguments is not correct
+
 // The following static functions are the lua api handlers of the native api functions
 // The return value is the number of return values that are pushed to the lua stack
 static int _lua_cls(lua_State *lua) {
@@ -132,6 +134,106 @@ static int _lua_print(lua_State *lua) {
 	return 0;
 }
 
+static void _serialize_lua_value(lua_State *lua, int index, string_builder_t *builder) {
+	// Make index absolute
+	if (index < 0) {
+		index = lua_gettop(lua) + index + 1;
+	}
+	
+	int type = lua_type(lua, index);
+
+	switch (type) {
+		case LUA_TSTRING: {
+			string_builder_append(builder, STR("\""));
+			string_builder_append(builder, STR(lua_tostring(lua, index)));
+			string_builder_append(builder, STR("\""));
+			
+			break;
+		}
+
+		case LUA_TNUMBER: {
+			// Using sprintf here because I can't be bothered to implement my own float to string function right now
+			char number_buffer[64];
+			sprintf(number_buffer, "%g", lua_tonumber(lua, index));
+			string_builder_append(builder, STR(number_buffer));
+			
+			break;
+		}
+
+		case LUA_TBOOLEAN: {
+			int value = lua_toboolean(lua, index);
+			if (value) {
+				string_builder_append(builder, STR("true"));
+			} else {
+				string_builder_append(builder, STR("false"));
+			}
+			
+			break;
+		}
+
+		case LUA_TTABLE: {
+			string_builder_append(builder, STR("{"));
+
+			lua_pushnil(lua);
+			while (lua_next(lua, index) != 0) {
+				// Index -1: value
+				// Index -2: key
+
+				string_builder_append(builder, STR("["));
+
+				_serialize_lua_value(lua, -2, builder);
+
+				string_builder_append(builder, STR("]"));
+				string_builder_append(builder, STR("="));
+				_serialize_lua_value(lua, -1, builder);
+				string_builder_append(builder, STR(","));
+
+				lua_pop(lua, 1);
+			}
+
+			string_builder_append(builder, STR("}"));
+			
+			break;
+		}
+
+		case LUA_TNIL: {
+			string_builder_append(builder, STR("nil"));
+
+			break;
+		}
+	}
+}
+
+static int _lua_save_to_slot(lua_State *lua) {
+	computer_t *computer = get_global_computer();
+
+	if (lua_gettop(lua) == 2) {
+		int slot_index = (int)lua_tonumber(lua, 1);
+		if (slot_index < 0 || slot_index > 9) {
+			return luaL_error(lua, "Save slot index is out of bounds");
+		}
+
+		if (!lua_istable(lua, 2)) {
+			return luaL_error(lua, "Second argument is not a table");
+		}
+
+		string_builder_t builder = {0};
+		string_builder_init(&builder, get_heap_allocator(), 128);
+		string_builder_append(&builder, STR("return "));
+		_serialize_lua_value(lua, 2, &builder);
+		print_string(builder.string);
+		printf("\n");
+		string_builder_deinit(&builder);
+
+		// TODO: actually save to file
+		// but for that first I need to store the name of the currently opened file somewhere
+	} else {
+		return luaL_error(lua, "Expected 2 arguments");
+	}
+
+	return 0;
+}
+
 // The following is copy-pasted and edited from the Lua docs and has some parts of the standard library commented out
 // so that the game cannot do dangerous things to the host system
 static const luaL_Reg loadedlibs[] = {
@@ -179,6 +281,7 @@ int lua_init(computer_t *computer) {
 	lua_register(_lua, api_metas[API_FUNC_TICKS].name, _lua_ticks);
 	lua_register(_lua, api_metas[API_FUNC_MAP].name, _lua_map);
 	lua_register(_lua, api_metas[API_FUNC_KEY].name, _lua_key);
+	lua_register(_lua, api_metas[API_FUNC_SAVE_TO_SLOT].name, _lua_save_to_slot);
 
 	for (size_t i = 0; i < computer->active_files_amount; i++) {
 		string_t file_string = file_to_string(&computer->files[i], get_heap_allocator());

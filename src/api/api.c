@@ -58,6 +58,11 @@ const api_meta_t api_metas[API_FUNC_COUNT] = {
 		.signature = "ticks()",
 		.desc = "Get the amount of ticks the program has been running",
 	},
+	[API_FUNC_SAVE_TO_SLOT] = {
+		.name = "save_to_slot",
+		.signature = "save_to_slot(index, table)",
+		.desc = "Saves the given table to given slot index",
+	},
 };
 
 void api_meta_print() {
