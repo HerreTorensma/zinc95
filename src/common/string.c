@@ -74,6 +74,19 @@ string_t string_view(string_t source, size_t start, size_t len) {
 	};
 }
 
+void string_place(string_t *base, string_t new_string) {
+	memcpy(base->data, new_string.data, new_string.len);
+	base->len = new_string.len;
+}
+
+bool string_is_empty(string_t string) {
+	if (string.len == 0) {
+		return true;
+	}
+
+	return false;
+}
+
 // TODO: don't include strings that are exactly the seperator
 string_t_array_t string_split(allocator_t allocator, string_t string, char seperator) {
 	size_t items_amount = 0;
@@ -220,4 +233,81 @@ int string_to_int(string_t string) {
 	}
 
 	return n;
+}
+
+string_t path_append(allocator_t allocator, string_t base, string_t appendage) {
+	if (base.len == 0 && appendage.len == 0) {
+		return (string_t){0};
+	}
+	if (base.len == 0) {
+		return string_copy(allocator, appendage);
+	}
+	if (appendage.len == 0) {
+		return string_copy(allocator, base);
+	}
+
+	bool base_ends_in_slash = base.data[base.len - 1] == '/';
+	bool appendage_starts_with_slash = appendage.data[0] == '/';
+
+	if (base_ends_in_slash && appendage_starts_with_slash) {
+		// Copy appendage from index 1
+		string_t new_string = {
+			.data = alloc(allocator, base.len + (appendage.len - 1)),
+			.len = base.len + (appendage.len - 1),
+		};
+
+		memcpy(new_string.data, base.data, base.len);
+		memcpy(new_string.data + base.len, appendage.data + 1, appendage.len - 1);
+
+		return new_string;
+	}
+
+	if ((base_ends_in_slash && !appendage_starts_with_slash) || (!base_ends_in_slash && appendage_starts_with_slash)) {
+		// Normal concatenation
+		string_t new_string = {
+			.data = alloc(allocator, base.len + appendage.len),
+			.len = base.len + appendage.len,
+		};
+		
+		memcpy(new_string.data, base.data, base.len);
+		memcpy(new_string.data + base.len, appendage.data, appendage.len);
+
+		return new_string;
+	}
+
+	// Else: copy base, add a /, copy appendage
+	// if (!base_ends_in_slash && !appendage_starts_with_slash) {
+	string_t new_string = {
+		.data = alloc(allocator, base.len + appendage.len + 1),
+		.len = base.len + appendage.len + 1,
+	};
+	memcpy(new_string.data, base.data, base.len);
+	new_string.data[base.len] = '/';
+	memcpy(new_string.data + base.len + 1, appendage.data, appendage.len);
+	return new_string;
+	// }
+}
+
+string_t path_get_truncated_view(string_t path) {
+	if (path.len == 0) {
+		return path;
+	}
+
+	if (path.len == 1 && path.data[0] == '/') {
+		return path;
+	}
+
+	// TODO: define ssize_t myself and use
+	for (int64_t i = path.len - 1; i >= 0; i--) {
+		if (path.data[i] == '/') {
+			if (i == 0) {
+				path.len = 1;
+			} else {
+				path.len = i;
+			}
+			break;
+		}
+	}
+
+	return path;
 }

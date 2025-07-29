@@ -11,6 +11,8 @@ Dirty windows implementation of IO functions
 
 #include "string.h"
 
+// TODO: mostly replace string_concat with path_append (when I'm back on Windows)
+
 static void _convert_to_windows_path(string_t path) {
 	for (size_t i = 0; i < path.len; i++) {
 		if (path.data[i] == '/') {
@@ -37,6 +39,7 @@ static string_t _get_root_path(allocator_t allocator) {
 static string_t _get_absolute_path(allocator_t allocator, string_t path) {
 	_convert_to_windows_path(path);
 
+	// TODO: always use the temp allocator for root_path I think
 	string_t root_path = _get_root_path(allocator);
 	string_t temp = string_concat(allocator, root_path, STR("\\"));
 	string_t absolute_path = string_concat(allocator, temp, path);

@@ -28,8 +28,8 @@ void term_print(ram_t *ram, string_t string);
 char term_getchar();
 
 // High level shell manipulation
-void shell_init(ram_t *ram);
+void shell_init(computer_t *computer);
 
-void shell_update(ram_t *ram);
+void shell_update(computer_t *computer);
 
-void shell_new_command(ram_t *ram);
+void shell_new_command(computer_t *computer);

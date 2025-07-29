@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
 	// But there will never be an option to pause the editor since it's all GUI anyway
 	// idk
 
-	shell_init(computer.ram);
+	shell_init(&computer);
 
 	create_default_directories();
 	
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
 		switch (computer.state) {
 			case STATE_IN_SHELL: {
 				if (!computer.game_running) {
-					shell_update(computer.ram);
+					shell_update(&computer);
 				} else {
 					// Game keeps running while the terminal is open
 					if (lua_call_update() != 0) {

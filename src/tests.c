@@ -8,6 +8,7 @@ Unit tests for low level stuff
 
 #include "common/mem.h"
 #include "common/string.h"
+#include "common/io.h"
 
 static void _test_array(void) {
 	ARRAY_DEFINE(int)
@@ -77,7 +78,21 @@ static void _test_string(void) {
 
 	assert(string_to_int(STR("0")) == 0 && "string_to_int failed");
 	assert(string_to_int(STR("1")) == 1 && "string_to_int failed");
+	
+	// Path append
+	assert(string_eq(path_append(get_heap_allocator(), STR("/"), STR("sample")), STR("/sample")) && "path_append failed");
+	assert(string_eq(path_append(get_heap_allocator(), STR("/sample/"), STR("/sample2")), STR("/sample/sample2")) && "path_append failed");
+	assert(string_eq(path_append(get_heap_allocator(), STR("what"), STR("the")), STR("what/the")) && "path_append failed");
+	assert(string_eq(path_append(get_heap_allocator(), STR("yes/"), STR("no")), STR("yes/no")) && "path_append failed");
+	assert(string_eq(path_append(get_heap_allocator(), STR("no"), STR("/yes")), STR("no/yes")) && "path_append failed");
+	assert(string_eq(path_append(get_heap_allocator(), STR("maybe/"), STR("/idk")), STR("maybe/idk")) && "path_append failed");
 
+	// Path truncate
+	assert(string_eq(path_get_truncated_view(STR("/")), STR("/")) && "path_get_truncated_view failed");
+	assert(string_eq(path_get_truncated_view(STR("/idk")), STR("/")) && "path_get_truncated_view failed");
+	assert(string_eq(path_get_truncated_view(STR("/idk/ad")), STR("/idk")) && "path_get_truncated_view failed");
+	assert(string_eq(path_get_truncated_view(STR("/idk/ad/what.txt")), STR("/idk/ad")) && "path_get_truncated_view failed");
+	assert(string_eq(path_get_truncated_view(STR("idk")), STR("idk")) && "path_get_truncated_view failed");
 }
 
 void run_tests(void) {

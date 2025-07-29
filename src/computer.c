@@ -213,21 +213,20 @@ void play_game(computer_t *computer) {
 	}
 }
 
-void shell_new_command(ram_t *ram);
-
+void shell_new_command(computer_t *computer);
 
 void abort_game(computer_t *computer) {
 	computer->game_running = false;
 	computer->state = STATE_IN_SHELL;
 	lua_quit();
 
-	shell_new_command(computer->ram);
+	shell_new_command(computer);
 }
 
 void quit_game(computer_t *computer) {
 	computer->game_running = false;
 
-	shell_new_command(computer->ram);
+	shell_new_command(computer);
 	
 	lua_quit();
 }

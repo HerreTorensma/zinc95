@@ -290,6 +290,7 @@ typedef struct computer {
 	voice_pool_t voice_pool;
 
 	string_t current_path;
+	string_t game_name;
 } computer_t;
 
 // GUI related stuff

@@ -1,6 +1,9 @@
 #include "txt.h"
 
 #include <string.h>
+#include <stdio.h>
+#include <sys/types.h>
+
 #include "input.h"
 #include "../common/io.h"
 
@@ -173,8 +176,8 @@ static void _print_help(ram_t *ram) {
 	term_putchar(ram, '\n', 0, 0);
 }
 
-static void _execute_command(ram_t *ram, string_t input) {
-	string_t_array_t strings = string_split(get_temp_allocator(), input, ' ');
+static void _execute_command(computer_t *computer, string_t input) {
+	string_t_array_t arguments = string_split(get_temp_allocator(), input, ' ');
 
 	// Print the list of splitted strings
 	// for (int i = 0; i < strings.size; i++) {
@@ -186,76 +189,97 @@ static void _execute_command(ram_t *ram, string_t input) {
 	// 	printf("\n");
 	// }
 
-	if (strings.len == 0) {
+	ram_t *ram = computer->ram;
+
+	if (arguments.len == 0) {
 		return;
 	}
 
-	if (string_eq(strings.data[0], STR("help"))) {
+	if (string_eq(arguments.data[0], STR("help"))) {
 		// Print help
 		_print_help(ram);
 	} 
 	
-	else if (string_eq(strings.data[0], STR("load"))) {
-		if (strings.len >= 2) {
+	else if (string_eq(arguments.data[0], STR("load"))) {
+		if (arguments.len >= 2) {
 			// Load the file
 		} else {
 			term_printc(ram, STR("Syntax error: expected 1 argument\n"), COLOR_BLACK, COLOR_RED);
 		}
 	}
 
-	else if (string_eq(strings.data[0], STR("save"))) {
-		if (strings.len >= 2) {
+	else if (string_eq(arguments.data[0], STR("save"))) {
+		if (arguments.len >= 2) {
 			// Save the file
 		} else {
 			term_printc(ram, STR("Syntax error: expected 1 argument\n"), COLOR_BLACK, COLOR_RED);
 		}
 	}
 
-	else if (string_eq(strings.data[0], STR("run"))) {
+	else if (string_eq(arguments.data[0], STR("run"))) {
 		// Run the currently loaded game
 	}
 
-	else if (string_eq(strings.data[0], STR("resume"))) {
+	else if (string_eq(arguments.data[0], STR("resume"))) {
 		// Resume the currently running but paused game
 	}
 
-	else if (string_eq(strings.data[0], STR("cd"))) {
-		if (strings.len >= 2) {
-			if (string_eq(strings.data[1], STR(".."))) {
+	else if (string_eq(arguments.data[0], STR("cd"))) {
+		if (arguments.len >= 2) {
+			if (string_eq(arguments.data[1], STR(".."))) {
 				// Go to parent directory
+				computer->current_path = path_get_truncated_view(computer->current_path);
 			} else {
 				// Go to second argument directory
+				string_t new_current_path = path_append(get_heap_allocator(), computer->current_path, arguments.data[1]);
+				string_t full_path = path_append(get_temp_allocator(), STR("discs"), new_current_path);
+
+				// Check if new current path actually exists
+				if (path_is_dir(full_path)) {
+					heap_dealloc(computer->current_path.data);
+					computer->current_path = new_current_path;
+				} else {
+					term_printc(ram, STR("The given argument is not a directory\n"), COLOR_BLACK, COLOR_RED);
+				}
 			}
 		} else {
 			term_printc(ram, STR("Syntax error: expected 1 argument\n"), COLOR_BLACK, COLOR_RED);
 		}
 	}
 
-	else if (string_eq(strings.data[0], STR("ls"))) {
-		string_t_array_t directories = get_directories_in_path(get_temp_allocator(), STR("discs"));
+	// TODO: display os absolute path instead of within the program
+	else if (string_eq(arguments.data[0], STR("pwd"))) {
+		term_print(ram, computer->current_path);
+		term_putchar(ram, '\n', 0, 0);
+	}
+
+	else if (string_eq(arguments.data[0], STR("ls"))) {
+		string_t path_with_discs = path_append(get_temp_allocator(), STR("discs"), computer->current_path);
+		
+		string_t_array_t directories = get_directories_in_path(get_temp_allocator(), path_with_discs);
 		for (size_t i = 0; i < directories.len; i++) {
 			term_printc(ram, directories.data[i], 0, 9);
 			term_print(ram, STR("\n"));
 		}
 
-		string_t_array_t files = get_files_in_path(get_temp_allocator(), STR("discs"));
+		string_t_array_t files = get_files_in_path(get_temp_allocator(), path_with_discs);
 		for (size_t i = 0; i < files.len; i++) {
 			term_printc(ram, files.data[i], COLOR_BLACK, COLOR_WHITE);
 			term_print(ram, STR("\n"));
 		}
 	}
 
-	else if (string_eq(strings.data[0], STR("mkdir"))) {
-		if (strings.len >= 2) {
+	else if (string_eq(arguments.data[0], STR("mkdir"))) {
+		if (arguments.len >= 2) {
 			// Create a new directory in the discs dir
-			string_t path_with_discs = string_concat(get_temp_allocator(), STR("discs/"), strings.data[1]);
-			create_directory(path_with_discs);
+			string_t full_path = path_append(get_temp_allocator(), path_append(get_temp_allocator(), STR("discs"), computer->current_path), arguments.data[1]);
+			create_directory(full_path);
 		} else {
 			term_printc(ram, STR("Syntax error: expected 1 argument\n"), COLOR_BLACK, COLOR_RED);
 		}
 	}
 
-	else if (string_eq(strings.data[0], STR("clear"))) {
+	else if (string_eq(arguments.data[0], STR("clear"))) {
 		// Clear the textbuffer
 		txt_clear(ram);
 	}
@@ -265,9 +289,10 @@ static void _execute_command(ram_t *ram, string_t input) {
 	}
 }
 
-void shell_new_command(ram_t *ram) {
-	ram->shell.line_len = 0;
-	term_printc(ram, STR(">"), 0, 7);
+void shell_new_command(computer_t *computer) {
+	computer->ram->shell.line_len = 0;
+	term_printc(computer->ram, computer->current_path, 0, 7);
+	term_printc(computer->ram, STR(">"), 0, 8);
 }
 
 static void _print_intro(ram_t *ram) {
@@ -279,12 +304,14 @@ static void _print_intro(ram_t *ram) {
 
 // TODO: seperate shell into editor/frontend
 // Also make user able to terminate the game with Ctrl+C
-void shell_init(ram_t *ram) {
-	_print_intro(ram);
-	shell_new_command(ram);
+void shell_init(computer_t *computer) {
+	_print_intro(computer->ram);
+	shell_new_command(computer);
 }
 
-void shell_update(ram_t *ram) {
+void shell_update(computer_t *computer) {
+	ram_t *ram = computer->ram;
+
 	char c = term_getchar();
 	if (c == '\0') {
 		return;
@@ -298,8 +325,8 @@ void shell_update(ram_t *ram) {
 			.len = ram->shell.line_len,
 		};
 
-		_execute_command(ram, input);
-		shell_new_command(ram);
+		_execute_command(computer, input);
+		shell_new_command(computer);
 	} else if (c == '\b') {
 		// Backspace
 		if (ram->shell.line_len > 0) {

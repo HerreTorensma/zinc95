@@ -16,4 +16,8 @@ string_t_array_t get_files_in_path(allocator_t allocator, string_t path);
 // AppData/Roaming on Windows
 void create_default_directories();
 
-string_t path_concat_directory(allocator_t allocator, string_t directory);
+// Check if the path exists and is a directory
+bool path_is_dir(string_t path);
+
+// Check if the path exists and is a file
+bool path_is_file(string_t path);

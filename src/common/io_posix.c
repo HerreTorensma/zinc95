@@ -1,4 +1,6 @@
 #include "io.h"
+#include "mem.h"
+#include "string.h"
 
 #include <stdio.h>
 #include <dirent.h>
@@ -22,9 +24,13 @@ static string_t _get_root_path(allocator_t allocator) {
 	}
 	root_path.len = strlen(root_path.data);
 
-	root_path = string_concat(allocator, root_path, STR("/.local/share/zinc95"));
+	root_path = path_append(allocator, root_path, STR("/.local/share/zinc95"));
 
 	return root_path;
+}
+
+static string_t _get_absolute_path(allocator_t allocator, string_t path) {
+	return path_append(allocator, _get_root_path(get_temp_allocator()), path);
 }
 
 void create_directory(string_t path) {
@@ -57,9 +63,7 @@ static string_t_array_t _get_files_or_directories_in_path(allocator_t allocator,
 	string_t_array_t array = {0};
 	array_init(&array, allocator);
 
-	string_t absolute_path = string_concat(get_temp_allocator(), _get_root_path(get_temp_allocator()), STR("/"));
-	absolute_path = string_concat(get_temp_allocator(), absolute_path, path);
-	print_string(absolute_path);
+	string_t absolute_path = _get_absolute_path(get_temp_allocator(), path);
 
 	DIR *dir = opendir(string_to_c_string(get_temp_allocator(), absolute_path));
 	if (dir == NULL) {
@@ -67,19 +71,18 @@ static string_t_array_t _get_files_or_directories_in_path(allocator_t allocator,
 		// TODO: handle
 	}
 
-	printf("Trying to get directories\n");
-
 	struct dirent *entry;
 	while ((entry = readdir(dir)) != NULL) {
-		string_t full_path = string_concat(get_temp_allocator(), absolute_path, STR("/"));
-		full_path = string_concat(get_temp_allocator(), full_path, STR(entry->d_name));
+		string_t full_path = path_append(get_temp_allocator(), absolute_path, STR(entry->d_name));
 
 		struct stat st;
 
 		if (file_or_directory == DIRECTORIES) {
 			if (stat(string_to_c_string(get_temp_allocator(), full_path), &st) == 0 && S_ISDIR(st.st_mode)) {
-				string_t copy = string_copy(get_temp_allocator(), STR(entry->d_name));
-				array_append(&array, copy);
+				if (!string_eq(STR(entry->d_name), STR(".")) && !string_eq(STR(entry->d_name), STR(".."))) {
+					string_t copy = string_copy(get_temp_allocator(), STR(entry->d_name));
+					array_append(&array, copy);
+				}
 			}
 		} else {
 			if (stat(string_to_c_string(get_temp_allocator(), full_path), &st) == 0 && S_ISREG(st.st_mode)) {
@@ -115,15 +118,41 @@ void create_default_directories() {
 	root_path.len = strlen(root_path.data);
 
 	// TODO: error handling
-	root_path = string_concat(get_temp_allocator(), root_path, STR("/.local"));
+	root_path = path_append(get_temp_allocator(), root_path, STR("/.local"));
 	mkdir(string_to_c_string(get_temp_allocator(), root_path), 0755);
 	
-	root_path = string_concat(get_temp_allocator(), root_path, STR("/share"));
+	root_path = path_append(get_temp_allocator(), root_path, STR("/share"));
 	mkdir(string_to_c_string(get_temp_allocator(), root_path), 0755);
 	
-	root_path = string_concat(get_temp_allocator(), root_path, STR("/zinc95"));
+	root_path = path_append(get_temp_allocator(), root_path, STR("/zinc95"));
 	mkdir(string_to_c_string(get_temp_allocator(), root_path), 0755);
 	
 	create_directory(STR("discs"));
 	create_directory(STR("saves"));
+}
+
+bool path_is_dir(string_t path) {
+	string_t absolute_path = _get_absolute_path(get_temp_allocator(), path);
+
+	struct stat path_stat;
+
+	if (stat(string_to_c_string(get_temp_allocator(), absolute_path), &path_stat) != 0) {
+		// Directory doesn't exist
+		return false;
+	}
+
+	return S_ISDIR(path_stat.st_mode);
+}
+
+bool path_is_file(string_t path) {
+	string_t absolute_path = _get_absolute_path(get_temp_allocator(), path);
+
+	struct stat path_stat;
+
+	if (stat(string_to_c_string(get_temp_allocator(), absolute_path), &path_stat) != 0) {
+		// File doesn't exist
+		return false;
+	}
+
+	return S_ISREG(path_stat.st_mode);
 }

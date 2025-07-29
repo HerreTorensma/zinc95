@@ -46,6 +46,12 @@ void print_string(string_t string);
 
 string_t string_view(string_t source, size_t start, size_t len);
 
+// Copies new_string to base, without doing any allocation
+// Assumes base has enough memory allocated for new_string
+void string_place(string_t *base, string_t new_string);
+
+bool string_is_empty(string_t string);
+
 string_t_array_t string_split(allocator_t allocator, string_t string, char seperator);
 
 
@@ -76,3 +82,10 @@ bool is_whitespace(char c);
 string_t int_to_string(allocator_t allocator, int number);
 
 int string_to_int(string_t string);
+
+// Appends a path to another path
+string_t path_append(allocator_t allocator, string_t base, string_t appendage);
+
+// Truncates the given path, returns a string view to the part of the path without the end directory or file
+// Also removes the slash
+string_t path_get_truncated_view(string_t path);
