@@ -210,7 +210,10 @@ static void _execute_command(computer_t *computer, string_t input) {
 
 	else if (string_eq(arguments.data[0], STR("save"))) {
 		if (arguments.len >= 2) {
-			// Save the file
+			// Set game name
+
+			// Save the game
+			game_save(computer, path_append(get_temp_allocator(), computer->current_path, arguments.data[1]));
 		} else {
 			term_printc(ram, STR("Syntax error: expected 1 argument\n"), COLOR_BLACK, COLOR_RED);
 		}
