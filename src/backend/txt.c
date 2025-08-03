@@ -203,17 +203,49 @@ static void _execute_command(computer_t *computer, string_t input) {
 	else if (string_eq(arguments.data[0], STR("load"))) {
 		if (arguments.len >= 2) {
 			// Load the file
+			string_t absolute_path = get_absolute_path(get_temp_allocator(), path_append(get_temp_allocator(), STR("discs"), path_append(get_temp_allocator(), computer->current_path, arguments.data[1])));
+			if (game_load(computer, absolute_path) == 0) {
+				term_print(ram, STR("Loaded "));
+				term_print(ram, path_get_filename(computer->game_path));
+				term_print(ram, STR("\n"));
+			} else {
+				term_printc(ram, STR("The given file does not exist\n"), COLOR_BLACK, COLOR_RED);
+			}
 		} else {
 			term_printc(ram, STR("Syntax error: expected 1 argument\n"), COLOR_BLACK, COLOR_RED);
 		}
 	}
 
 	else if (string_eq(arguments.data[0], STR("save"))) {
-		if (arguments.len >= 2) {
+		if (arguments.len == 1) {
 			// Set game name
+			term_print(ram, STR("Saving "));
+
+			// Check if untitled
+			if (computer->game_path.len == 0) {
+				string_t base = get_absolute_path(get_temp_allocator(), path_append(get_temp_allocator(), STR("discs"), path_append(get_temp_allocator(), computer->current_path, STR("untitled"))));
+				int index = 0;
+				string_t thing = base;
+				
+				while (path_is_file(thing)) {
+					thing = string_concat(get_temp_allocator(), base, int_to_string(get_temp_allocator(), index));
+					index++;
+				}
+
+				set_game_path(computer, thing);
+			}
+			term_print(ram, path_get_filename(computer->game_path));
+			term_print(ram, STR("...\n"));
 
 			// Save the game
-			game_save(computer, path_append(get_temp_allocator(), computer->current_path, arguments.data[1]));
+			game_save(computer, computer->game_path);
+
+			term_print(ram, STR("Completed!\n"));
+		} else if (arguments.len > 1) {
+			string_t absolute_path = get_absolute_path(get_temp_allocator(), path_append(get_temp_allocator(), STR("discs"), path_append(get_temp_allocator(), computer->current_path, arguments.data[1])));
+			set_game_path(computer, absolute_path);
+			game_save(computer, absolute_path);
+
 		} else {
 			term_printc(ram, STR("Syntax error: expected 1 argument\n"), COLOR_BLACK, COLOR_RED);
 		}
@@ -231,14 +263,15 @@ static void _execute_command(computer_t *computer, string_t input) {
 		if (arguments.len >= 2) {
 			if (string_eq(arguments.data[1], STR(".."))) {
 				// Go to parent directory
-				computer->current_path = path_get_truncated_view(computer->current_path);
+				computer->current_path = path_get_parent_dir(computer->current_path);
 			} else {
 				// Go to second argument directory
 				string_t new_current_path = path_append(get_heap_allocator(), computer->current_path, arguments.data[1]);
-				string_t full_path = path_append(get_temp_allocator(), STR("discs"), new_current_path);
+				// string_t full_path = path_append(get_temp_allocator(), STR("discs"), new_current_path);
+				string_t absolute_path = get_absolute_path(get_heap_allocator(), path_append(get_temp_allocator(), STR("discs"), new_current_path));
 
 				// Check if new current path actually exists
-				if (path_is_dir(full_path)) {
+				if (path_is_dir(absolute_path)) {
 					heap_dealloc(computer->current_path.data);
 					computer->current_path = new_current_path;
 				} else {

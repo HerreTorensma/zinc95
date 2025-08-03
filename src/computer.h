@@ -119,7 +119,7 @@ typedef struct spritesheet {
 } spritesheet_t;
 
 typedef struct map_layer {
-	uint16_t data[MAP_LAYER_SIZE];
+	uint16_t data[MAP_LAYER_SIZE]; // TODO: typedef uint16_t to tile_t
 } map_layer_t;
 
 typedef struct map {
@@ -290,7 +290,7 @@ typedef struct computer {
 	voice_pool_t voice_pool;
 
 	string_t current_path;
-	string_t game_name;
+	string_t game_path; // Absolute path
 } computer_t;
 
 // GUI related stuff
@@ -366,6 +366,10 @@ int sprite_get_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int x
 void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int x, int y, uint8_t color);
 */
 
-void game_save(computer_t *computer, string_t filename);
+void set_game_path(computer_t *computer, string_t new_path);
 
-void game_load(computer_t *computer, string_t filename);
+// Takes absolute file path
+void game_save(computer_t *computer, string_t path);
+
+// Takes absolute file path
+int game_load(computer_t *computer, string_t path);

@@ -88,4 +88,10 @@ string_t path_append(allocator_t allocator, string_t base, string_t appendage);
 
 // Truncates the given path, returns a string view to the part of the path without the end directory or file
 // Also removes the slash
-string_t path_get_truncated_view(string_t path);
+string_t path_get_parent_dir(string_t path);
+
+// Get the filename without the extension
+string_t path_truncate_extension(string_t path);
+
+// Get the filename without the extension
+string_t path_get_filename(string_t path);

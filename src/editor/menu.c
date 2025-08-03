@@ -147,7 +147,7 @@ void workspace_menu_draw(computer_t *computer) {
 
 	// Save and load
 	if (gui_press_button(computer->ram, _layout.save_button_pos, skin_layout.save_button)) {
-		game_save(computer, STR("game.zinc95"));
+		game_save(computer, computer->game_path);
 	}
 	
 	if (!computer->game_running) {

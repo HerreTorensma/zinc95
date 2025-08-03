@@ -99,13 +99,17 @@ int main(int argc, char *argv[]) {
 
 	temp_mem_init(MB(1ULL));
 
-	game_load(&computer, STR("game.zinc95"));
+	// game_load(&computer, STR("game.zinc95"));
 	// game_load_old(&computer, "game.zinc95");
-	computer_load_resouces(&computer);
-
+	
 	gui_load_skin(computer.ram, "res/skin.png", 1, 0);
+	computer_load_resouces(&computer);
 	// gui_load_skin(computer.ram, "res/skin2.png", 1, 40);
 	gfx_load_surface(&computer.ram->palette, (surface_t){.data = computer.ram->text_mode_font.data, .width = TEXT_MODE_FONT_BITMAP_WIDTH, .height = TEXT_MODE_FONT_BITMAP_HEIGHT}, "res/font.png");
+
+	if (argc > 1) {
+		game_load(&computer, STR(argv[1]));
+	}
 
 	computer.ram->border_color = 8;
 
@@ -134,6 +138,9 @@ int main(int argc, char *argv[]) {
 		temp_clear();
 
 		window_tick_start(&computer);
+
+		// printf("ticks: %zu\n", computer.ram->ticks);
+		// printf("font index: %d\n", computer.ram->code_editor_config.font_index);
 
 		if (input_key_pressed(KEY_ESC)) {
 			computer.state++;

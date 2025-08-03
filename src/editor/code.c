@@ -369,6 +369,7 @@ void code_editor_draw(computer_t *computer) {
 		sprintf(line_number_buffer, "% 4d", i + _scroll_amount + 1);
 
 		// Line number
+		// TODO: don't hardcode color
 		gui_draw_text(computer->ram, CODE_EDITOR_FONT_INDEX, line_number_buffer, POINT(_layout.code_rect.x + 2, _layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), 8);
 		
 		// Line itself using tokens for syntax highlighting
@@ -385,9 +386,9 @@ void code_editor_draw(computer_t *computer) {
 
 	// Draw cursor
 	if (_cursor_timer >= _cursor_blink_speed / 2) {
-		int cursor_x = _layout.code_rect.x + 2 + 5 * (font->widths[0] + font->horizontal_space) + _get_real_cursor_pos(computer);
+		int cursor_x = _layout.code_rect.x + 2 + 5 * (font->widths[0] + font->horizontal_space) + _get_real_cursor_pos(computer) - 1;
 		int cursor_y = _layout.code_rect.y + 2 + computer->files[_current_file_index].cursor_line * (font->height + font->vertical_space) - _scroll_amount * (font->height + font->vertical_space);
-		gfx_draw_line(fb_surf, POINT(cursor_x, cursor_y), POINT(cursor_x, cursor_y + font->height), 3);
+		gfx_draw_line(fb_surf, POINT(cursor_x, cursor_y), POINT(cursor_x, cursor_y + font->height - 1), 3);
 	}
 	
 	// Update cursor blink

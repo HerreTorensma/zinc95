@@ -54,7 +54,8 @@ static void _test_string(void) {
 	string_t helloworld = string_concat(get_heap_allocator(), hello, world);
 	assert(string_eq(helloworld, STR("helloworld")));
 
-	string_t_array_t split_strings = string_split(get_heap_allocator(), STR("hello\nworld\n\n"), '\n');
+	// string_t_array_t split_strings = string_split(get_heap_allocator(), STR("hello\nworld\n\n"), '\n');
+	string_t_array_t split_strings = string_split(get_heap_allocator(), STR("hello\n\nworld\n\n"), '\n');
 	for (size_t i = 0; i < split_strings.len; i++) {
 		printf("'");
 		print_string(split_strings.data[i]);
@@ -87,12 +88,26 @@ static void _test_string(void) {
 	assert(string_eq(path_append(get_heap_allocator(), STR("no"), STR("/yes")), STR("no/yes")) && "path_append failed");
 	assert(string_eq(path_append(get_heap_allocator(), STR("maybe/"), STR("/idk")), STR("maybe/idk")) && "path_append failed");
 
-	// Path truncate
-	assert(string_eq(path_get_truncated_view(STR("/")), STR("/")) && "path_get_truncated_view failed");
-	assert(string_eq(path_get_truncated_view(STR("/idk")), STR("/")) && "path_get_truncated_view failed");
-	assert(string_eq(path_get_truncated_view(STR("/idk/ad")), STR("/idk")) && "path_get_truncated_view failed");
-	assert(string_eq(path_get_truncated_view(STR("/idk/ad/what.txt")), STR("/idk/ad")) && "path_get_truncated_view failed");
-	assert(string_eq(path_get_truncated_view(STR("idk")), STR("idk")) && "path_get_truncated_view failed");
+	// Path get parent dir
+	assert(string_eq(path_get_parent_dir(STR("/")), STR("/")) && "path_get_parent_dir failed");
+	assert(string_eq(path_get_parent_dir(STR("/idk")), STR("/")) && "path_get_parent_dir failed");
+	assert(string_eq(path_get_parent_dir(STR("/idk/ad")), STR("/idk")) && "path_get_parent_dir failed");
+	assert(string_eq(path_get_parent_dir(STR("/idk/ad/what.txt")), STR("/idk/ad")) && "path_get_parent_dir failed");
+	assert(string_eq(path_get_parent_dir(STR("idk")), STR("idk")) && "path_get_parent_dir failed");
+
+	// path_truncate_extension
+	assert(string_eq(path_truncate_extension(STR("thing.txt")), STR("thing")) && "path_get_filename failed");
+	assert(string_eq(path_truncate_extension(STR("thing")), STR("thing")) && "path_get_filename failed");
+
+	// path_get_filename
+	assert(string_eq(path_get_filename(STR("")), STR("")) && "path_get_filename failed");
+	assert(string_eq(path_get_filename(STR("/")), STR("")) && "path_get_filename failed");
+	assert(string_eq(path_get_filename(STR("/thing")), STR("thing")) && "path_get_filename failed");
+	assert(string_eq(path_get_filename(STR("thing")), STR("thing")) && "path_get_filename failed");
+	assert(string_eq(path_get_filename(STR("some/path/thing")), STR("thing")) && "path_get_filename failed");
+	assert(string_eq(path_get_filename(STR("some/path/thing.txt")), STR("thing.txt")) && "path_get_filename failed");
+	assert(string_eq(path_get_filename(STR("some/path/thing.txt")), STR("thing.txt")) && "path_get_filename failed");
+	assert(string_eq(path_get_filename(STR("/some/path/thing.txt")), STR("thing.txt")) && "path_get_filename failed");
 }
 
 void run_tests(void) {

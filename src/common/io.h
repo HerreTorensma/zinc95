@@ -3,7 +3,9 @@
 #include "mem.h"
 #include "string.h"
 
-// Creates a directory in the zinc95 directory
+string_t get_absolute_path(allocator_t allocator, string_t path);
+
+// Creates a directory relative to the zinc95 directory
 void create_directory(string_t path);
 
 // Returns a temporarily allocated array of strings names of directories in a path

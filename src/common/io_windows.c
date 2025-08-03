@@ -11,12 +11,10 @@ Dirty windows implementation of IO functions
 
 #include "string.h"
 
-// TODO: mostly replace string_concat with path_append (when I'm back on Windows)
-
-static void _convert_to_windows_path(string_t path) {
+static void _convert_to_unix_path(string_t path) {
 	for (size_t i = 0; i < path.len; i++) {
-		if (path.data[i] == '/') {
-			path.data[i] = '\\';
+		if (path.data[i] == '\\') {
+			path.data[i] = '/';
 		}
 	}
 }
@@ -29,26 +27,25 @@ static string_t _get_root_path(allocator_t allocator) {
 
 	if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, path.data))) {
 		path.len = strlen(path.data);
+
+		_convert_to_unix_path(path);
 		
-		return string_concat(allocator, path, STR("\\zinc95"));
+		return path_append(allocator, path, STR("zinc95"));
 	}
 
 	return path;
 }
 
-static string_t _get_absolute_path(allocator_t allocator, string_t path) {
-	_convert_to_windows_path(path);
-
+string_t get_absolute_path(allocator_t allocator, string_t path) {
 	// TODO: always use the temp allocator for root_path I think
 	string_t root_path = _get_root_path(allocator);
-	string_t temp = string_concat(allocator, root_path, STR("\\"));
-	string_t absolute_path = string_concat(allocator, temp, path);
+	string_t absolute_path = path_append(allocator, root_path, path);
 
 	return absolute_path;
 }
 
 static void _create_single_directory(string_t path) {
-	string_t absolute_path = _get_absolute_path(get_temp_allocator(), path);
+	string_t absolute_path = get_absolute_path(get_temp_allocator(), path);
 
 	printf("Trying to create directory ");
 	print_string(absolute_path);
@@ -73,7 +70,7 @@ void create_directory(string_t path) {
 	for (size_t i = 0; i < array.len; i++) {
 		// TODO: create some path functions
 		string_builder_append(&builder, array.data[i]);
-		string_builder_append(&builder, STR("\\"));
+		string_builder_append(&builder, STR("/"));
 
 		_create_single_directory(builder.string);
 	}
@@ -84,12 +81,12 @@ string_t_array_t get_directories_in_path(allocator_t allocator, string_t path) {
 	string_t_array_t array = {0};
 	array_init(&array, allocator);
 
-	string_t absolute_path = _get_absolute_path(get_temp_allocator(), path);
+	string_t absolute_path = get_absolute_path(get_temp_allocator(), path);
 
 	WIN32_FIND_DATA find_file_data;
 	string_t search_path = temp_alloc_string(MAX_PATH);
 
-	snprintf(search_path.data, MAX_PATH, "%s\\*", string_to_c_string(get_temp_allocator(), absolute_path));
+	snprintf(search_path.data, MAX_PATH, "%s/*", string_to_c_string(get_temp_allocator(), absolute_path));
 	HANDLE h_find = FindFirstFile(search_path.data, &find_file_data);
 	
 	if (h_find == INVALID_HANDLE_VALUE) {
@@ -115,12 +112,12 @@ string_t_array_t get_files_in_path(allocator_t allocator, string_t path) {
 	string_t_array_t array = {0};
 	array_init(&array, allocator);
 
-	string_t absolute_path = _get_absolute_path(get_temp_allocator(), path);
+	string_t absolute_path = get_absolute_path(get_temp_allocator(), path);
 
 	WIN32_FIND_DATA find_file_data;
 	string_t search_path = temp_alloc_string(MAX_PATH);
 
-	snprintf(search_path.data, MAX_PATH, "%s\\*", string_to_c_string(get_temp_allocator(), absolute_path));
+	snprintf(search_path.data, MAX_PATH, "%s/*", string_to_c_string(get_temp_allocator(), absolute_path));
 	HANDLE h_find = FindFirstFile(search_path.data, &find_file_data);
 
 	if (h_find == INVALID_HANDLE_VALUE) {
@@ -150,7 +147,7 @@ void create_default_directories() {
 		path.len = strlen(path.data);
 
 		printf("AppData path: %s\n", path.data);
-		path = string_concat(get_temp_allocator(), path, STR("\\zinc95"));
+		path = path_append(get_temp_allocator(), path, STR("zinc95"));
 
 		if (CreateDirectory(path.data, NULL) || GetLastError() == ERROR_ALREADY_EXISTS) {
 			printf("Root directory created or already exists: %s\n", path);
@@ -163,4 +160,24 @@ void create_default_directories() {
 
 	create_directory(STR("discs"));
 	create_directory(STR("saves"));
+}
+
+bool path_is_dir(string_t path) {
+	DWORD attributes = GetFileAttributesA(string_to_c_string(get_temp_allocator(), path));
+
+	if (attributes == INVALID_FILE_ATTRIBUTES) {
+		return false;
+	}
+
+	return attributes & FILE_ATTRIBUTE_DIRECTORY;
+}
+
+bool path_is_file(string_t path) {
+	DWORD attributes = GetFileAttributesA(string_to_c_string(get_temp_allocator(), path));
+
+	if (attributes == INVALID_FILE_ATTRIBUTES) {
+		return false;
+	}
+
+	return (attributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
 }

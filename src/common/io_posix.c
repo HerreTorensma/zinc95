@@ -29,7 +29,7 @@ static string_t _get_root_path(allocator_t allocator) {
 	return root_path;
 }
 
-static string_t _get_absolute_path(allocator_t allocator, string_t path) {
+static string_t get_absolute_path(allocator_t allocator, string_t path) {
 	return path_append(allocator, _get_root_path(get_temp_allocator()), path);
 }
 
@@ -63,7 +63,7 @@ static string_t_array_t _get_files_or_directories_in_path(allocator_t allocator,
 	string_t_array_t array = {0};
 	array_init(&array, allocator);
 
-	string_t absolute_path = _get_absolute_path(get_temp_allocator(), path);
+	string_t absolute_path = get_absolute_path(get_temp_allocator(), path);
 
 	DIR *dir = opendir(string_to_c_string(get_temp_allocator(), absolute_path));
 	if (dir == NULL) {
@@ -132,11 +132,9 @@ void create_default_directories() {
 }
 
 bool path_is_dir(string_t path) {
-	string_t absolute_path = _get_absolute_path(get_temp_allocator(), path);
-
 	struct stat path_stat;
 
-	if (stat(string_to_c_string(get_temp_allocator(), absolute_path), &path_stat) != 0) {
+	if (stat(string_to_c_string(get_temp_allocator(), path), &path_stat) != 0) {
 		// Directory doesn't exist
 		return false;
 	}
@@ -145,11 +143,9 @@ bool path_is_dir(string_t path) {
 }
 
 bool path_is_file(string_t path) {
-	string_t absolute_path = _get_absolute_path(get_temp_allocator(), path);
-
 	struct stat path_stat;
 
-	if (stat(string_to_c_string(get_temp_allocator(), absolute_path), &path_stat) != 0) {
+	if (stat(string_to_c_string(get_temp_allocator(), path), &path_stat) != 0) {
 		// File doesn't exist
 		return false;
 	}

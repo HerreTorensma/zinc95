@@ -288,7 +288,7 @@ string_t path_append(allocator_t allocator, string_t base, string_t appendage) {
 	// }
 }
 
-string_t path_get_truncated_view(string_t path) {
+string_t path_get_parent_dir(string_t path) {
 	if (path.len == 0) {
 		return path;
 	}
@@ -306,6 +306,41 @@ string_t path_get_truncated_view(string_t path) {
 				path.len = i;
 			}
 			break;
+		}
+	}
+
+	return path;
+}
+
+string_t path_truncate_extension(string_t path) {
+		if (path.len == 0) {
+		return path;
+	}
+
+	// TODO: define ssize_t myself and use
+	for (int64_t i = path.len - 1; i >= 0; i--) {
+		if (path.data[i] == '.') {
+			if (i == 0) {
+				path.len = 1;
+			} else {
+				path.len = i;
+			}
+			break;
+		}
+	}
+
+	return path;
+}
+
+string_t path_get_filename(string_t path) {
+	if (path.len == 0) {
+		return path;
+	}
+
+	// TODO: define ssize_t myself and use
+	for (int64_t i = path.len - 1; i >= 0; i--) {
+		if (path.data[i] == '/') {
+			return string_view(path, i + 1, path.len - (i + 1));
 		}
 	}
 
