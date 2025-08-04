@@ -10,6 +10,7 @@
 #include "api.h"
 
 #include "../backend/txt.h"
+#include "../common/io.h"
 
 static lua_State *_lua = NULL;
 
@@ -221,17 +222,59 @@ static int _lua_save_to_slot(lua_State *lua) {
 		string_builder_init(&builder, get_heap_allocator(), 128);
 		string_builder_append(&builder, STR("return "));
 		_serialize_lua_value(lua, 2, &builder);
-		print_string(builder.string);
-		printf("\n");
-		string_builder_deinit(&builder);
 
-		// TODO: actually save to file
-		// but for that first I need to store the name of the currently opened file somewhere
+		string_t game_name = path_truncate_extension(path_get_filename(computer->game_path));
+		string_t game_saves_dir = path_append(get_temp_allocator(), STR("saves"), game_name);
+		create_directory(game_saves_dir);
+
+		string_t savefile_name = path_append(get_temp_allocator(), game_saves_dir, int_to_string(get_temp_allocator(), slot_index));
+		savefile_name = string_concat(get_temp_allocator(), savefile_name, STR(".lua"));
+		string_t absolute_path = get_absolute_path(get_temp_allocator(), savefile_name);
+
+		file_write_string(absolute_path, builder.string);
+
+		string_builder_deinit(&builder);
 	} else {
 		return luaL_error(lua, "Expected 2 arguments");
 	}
 
 	return 0;
+}
+
+// Returns nil when there is an error in dofile or if the value in the file is not a table
+static int _lua_load_from_slot(lua_State *lua) {
+	computer_t *computer = get_global_computer();
+
+	if (lua_gettop(lua) == 1) {
+		int slot_index = (int)lua_tonumber(lua, 1);
+		if (slot_index < 0 || slot_index > 9) {
+			return luaL_error(lua, "Save slot index is out of bounds");
+		}
+
+		string_t game_name = path_truncate_extension(path_get_filename(computer->game_path));
+		string_t game_saves_dir = path_append(get_temp_allocator(), STR("saves"), game_name);
+		create_directory(game_saves_dir);
+
+		string_t savefile_name = path_append(get_temp_allocator(), game_saves_dir, int_to_string(get_temp_allocator(), slot_index));
+		savefile_name = string_concat(get_temp_allocator(), savefile_name, STR(".lua"));
+		string_t absolute_path = get_absolute_path(get_temp_allocator(), savefile_name);
+
+		// If the return value is equal to LUA_OK it will push the table in the file to the lua stack
+		// Thus there is no explicit lua_pushwhatever
+		if (luaL_dofile(lua, string_to_c_string(get_temp_allocator(), absolute_path)) != LUA_OK) {
+			lua_pushnil(lua);
+			return 1;
+		}
+
+		if (!lua_istable(lua, -1)) {
+			lua_pushnil(lua);
+			return 1;
+		}
+
+		return 1;
+	}
+
+	return luaL_error(lua, "Expected 1 argument");
 }
 
 // The following is copy-pasted and edited from the Lua docs and has some parts of the standard library commented out
@@ -282,6 +325,7 @@ int lua_init(computer_t *computer) {
 	lua_register(_lua, api_metas[API_FUNC_MAP].name, _lua_map);
 	lua_register(_lua, api_metas[API_FUNC_KEY].name, _lua_key);
 	lua_register(_lua, api_metas[API_FUNC_SAVE_TO_SLOT].name, _lua_save_to_slot);
+	lua_register(_lua, api_metas[API_FUNC_LOAD_FROM_SLOT].name, _lua_load_from_slot);
 
 	for (size_t i = 0; i < computer->active_files_amount; i++) {
 		string_t file_string = file_to_string(&computer->files[i], get_heap_allocator());

@@ -31,6 +31,7 @@ typedef enum api_func {
 	API_FUNC_TICKS,
 	
 	API_FUNC_SAVE_TO_SLOT,
+	API_FUNC_LOAD_FROM_SLOT,
 
 	API_FUNC_COUNT,
 

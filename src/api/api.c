@@ -49,19 +49,24 @@ const api_meta_t api_metas[API_FUNC_COUNT] = {
 
 	[API_FUNC_KEY] = {
 		.name = "key",
-		.signature = "key(key)",
+		.signature = "key(key) -> key",
 		.desc = "Key if a key is being held",
 	},
 
 	[API_FUNC_TICKS] = {
 		.name = "ticks",
-		.signature = "ticks()",
+		.signature = "ticks() -> ticks",
 		.desc = "Get the amount of ticks the program has been running",
 	},
 	[API_FUNC_SAVE_TO_SLOT] = {
 		.name = "save_to_slot",
 		.signature = "save_to_slot(index, table)",
 		.desc = "Saves the given table to given slot index",
+	},
+	[API_FUNC_LOAD_FROM_SLOT] = {
+		.name = "load_from_slot",
+		.signature = "load_from_slot(index) -> table",
+		.desc = "Load the table stored in the given slot index",
 	},
 };
 

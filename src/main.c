@@ -139,9 +139,6 @@ int main(int argc, char *argv[]) {
 
 		window_tick_start(&computer);
 
-		// printf("ticks: %zu\n", computer.ram->ticks);
-		// printf("font index: %d\n", computer.ram->code_editor_config.font_index);
-
 		if (input_key_pressed(KEY_ESC)) {
 			computer.state++;
 			if (computer.state == STATE_IN_GAME + 1) {

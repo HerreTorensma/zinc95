@@ -285,6 +285,13 @@ static void _bytes_to_hex(uint8_t bytes[], size_t len, char hex[]) {
 	}
 }
 
+// TODO: put this and the load one in io but first I need an io.c that's not platform specific
+string_t file_write_string(string_t path, string_t string) {
+	FILE *file = fopen(string_to_c_string(get_temp_allocator(), path), "w");
+	fwrite(string.data, sizeof(char), string.len, file);
+	fclose(file);
+}
+
 // New implementation with length based strings
 void game_save(computer_t *computer, string_t path) {
 	printf("Saving game...\n");
@@ -343,17 +350,18 @@ void game_save(computer_t *computer, string_t path) {
 	}
 
 	// Write it to disk
-	FILE *file = fopen(string_to_c_string(get_temp_allocator(), path), "w");
-	fwrite(builder.string.data, sizeof(char), builder.string.len, file);
-	fclose(file);
+	// FILE *file = fopen(string_to_c_string(get_temp_allocator(), path), "w");
+	// fwrite(builder.string.data, sizeof(char), builder.string.len, file);
+	// fclose(file);
+	file_write_string(path, builder.string);
 
 	string_builder_deinit(&builder);
 
 	printf("Game saved!\n");
 }
 
-static string_t _file_load_to_string(allocator_t allocator, string_t filename) {
-	FILE *file = fopen(string_to_c_string(get_temp_allocator(), filename), "r");
+static string_t _file_load_to_string(allocator_t allocator, string_t path) {
+	FILE *file = fopen(string_to_c_string(get_temp_allocator(), path), "r");
 	if (file == NULL) {
 		printf("Unable to open file\n");
 		return (string_t){.data = NULL, .len = 0};
