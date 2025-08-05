@@ -199,8 +199,11 @@ int main(int argc, char *argv[]) {
 		window_tick_end(&computer);
 	}
 
+	shell_deinit(&computer);
+
 	temp_free();
 
+	// TODO: rename to computer_deinit
 	computer_quit(&computer);
 
 	window_quit();

@@ -33,3 +33,5 @@ void shell_init(computer_t *computer);
 void shell_update(computer_t *computer);
 
 void shell_new_command(computer_t *computer);
+
+void shell_deinit(computer_t *computer);

@@ -181,6 +181,7 @@ typedef struct {
 #define TEXTBUFFER_SIZE TEXTBUFFER_WIDTH * TEXTBUFFER_HEIGHT
 #define TEXT_MODE_FONT_BITMAP_WIDTH 128
 #define TEXT_MODE_FONT_BITMAP_HEIGHT 128
+#define SHELL_LINE_BUFFER_SIZE 80
 
 typedef struct textbuffer {
 	char_t data[TEXTBUFFER_SIZE];
@@ -201,9 +202,12 @@ typedef struct terminal {
 	uint8_t cursor_y;
 } terminal_t;
 
+// TODO: make this not part of ram
 typedef struct shell {
-	char line_buffer[80];
+	char line_buffer[SHELL_LINE_BUFFER_SIZE];
 	uint8_t line_len;
+	string_t_array_t command_history;
+	uint32_t command_history_index;
 } shell_t;
 
 // TODO: Manually align this stuff

@@ -327,6 +327,7 @@ static void _execute_command(computer_t *computer, string_t input) {
 
 void shell_new_command(computer_t *computer) {
 	computer->ram->shell.line_len = 0;
+	computer->ram->shell.command_history_index = computer->ram->shell.command_history.len - 1;
 	term_printc(computer->ram, computer->current_path, 0, 7);
 	term_printc(computer->ram, STR(">"), 0, 8);
 }
@@ -342,11 +343,31 @@ static void _print_intro(ram_t *ram) {
 // Also make user able to terminate the game with Ctrl+C
 void shell_init(computer_t *computer) {
 	_print_intro(computer->ram);
+	array_init(&computer->ram->shell.command_history, get_heap_allocator());
 	shell_new_command(computer);
 }
 
 void shell_update(computer_t *computer) {
 	ram_t *ram = computer->ram;
+
+	// Command history
+	// TODO: don't print a whole new line
+	string_t_array_t *command_history = &ram->shell.command_history;
+	if (input_key_pressed(KEY_UP)) {
+		if (command_history->len > 0 && ram->shell.command_history_index >= 0) {
+			string_t thing = command_history->data[ram->shell.command_history_index];
+
+			memcpy(ram->shell.line_buffer, thing.data, thing.len * sizeof(char));
+			ram->shell.line_len = thing.len;
+
+			term_putchar(ram, '\n', 0, 0);
+			term_printc(computer->ram, computer->current_path, 0, 7);
+			term_printc(computer->ram, STR(">"), 0, 8);
+			term_print(ram, thing);
+
+			ram->shell.command_history_index--;
+		}
+	}
 
 	char c = term_getchar();
 	if (c == '\0') {
@@ -362,6 +383,11 @@ void shell_update(computer_t *computer) {
 		};
 
 		_execute_command(computer, input);
+
+		if (input.len > 0) {
+			array_append(command_history, string_copy(get_heap_allocator(), input));
+		}
+
 		shell_new_command(computer);
 	} else if (c == '\b') {
 		// Backspace
@@ -374,4 +400,8 @@ void shell_update(computer_t *computer) {
 		ram->shell.line_len++;
 		term_putchar(ram, c, 0, 15);
 	}
+}
+
+void shell_deinit(computer_t *computer) {
+	array_deinit(&computer->ram->shell.command_history);
 }
