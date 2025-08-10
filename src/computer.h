@@ -207,7 +207,7 @@ typedef struct shell {
 	char line_buffer[SHELL_LINE_BUFFER_SIZE];
 	uint8_t line_len;
 	string_t_array_t command_history;
-	uint32_t command_history_index;
+	int32_t command_history_index;
 } shell_t;
 
 // TODO: Manually align this stuff

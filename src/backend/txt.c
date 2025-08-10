@@ -327,7 +327,8 @@ static void _execute_command(computer_t *computer, string_t input) {
 
 void shell_new_command(computer_t *computer) {
 	computer->ram->shell.line_len = 0;
-	computer->ram->shell.command_history_index = computer->ram->shell.command_history.len - 1;
+	// computer->ram->shell.command_history_index = computer->ram->shell.command_history.len - 1;
+	computer->ram->shell.command_history_index = computer->ram->shell.command_history.len;
 	term_printc(computer->ram, computer->current_path, 0, 7);
 	term_printc(computer->ram, STR(">"), 0, 8);
 }
@@ -354,7 +355,9 @@ void shell_update(computer_t *computer) {
 	// TODO: don't print a whole new line
 	string_t_array_t *command_history = &ram->shell.command_history;
 	if (input_key_pressed(KEY_UP)) {
-		if (command_history->len > 0 && ram->shell.command_history_index >= 0) {
+		if (command_history->len > 0 && ram->shell.command_history_index > 0) {
+			ram->shell.command_history_index--;
+
 			string_t thing = command_history->data[ram->shell.command_history_index];
 
 			memcpy(ram->shell.line_buffer, thing.data, thing.len * sizeof(char));
@@ -364,8 +367,21 @@ void shell_update(computer_t *computer) {
 			term_printc(computer->ram, computer->current_path, 0, 7);
 			term_printc(computer->ram, STR(">"), 0, 8);
 			term_print(ram, thing);
+		}
+	}
+	if (input_key_pressed(KEY_DOWN)) {
+		if (ram->shell.command_history_index < command_history->len - 1) {
+			ram->shell.command_history_index++;
 
-			ram->shell.command_history_index--;
+			string_t thing = command_history->data[ram->shell.command_history_index];
+
+			memcpy(ram->shell.line_buffer, thing.data, thing.len * sizeof(char));
+			ram->shell.line_len = thing.len;
+
+			term_putchar(ram, '\n', 0, 0);
+			term_printc(computer->ram, computer->current_path, 0, 7);
+			term_printc(computer->ram, STR(">"), 0, 8);
+			term_print(ram, thing);
 		}
 	}
 

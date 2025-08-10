@@ -29,7 +29,7 @@ static string_t _get_root_path(allocator_t allocator) {
 	return root_path;
 }
 
-static string_t get_absolute_path(allocator_t allocator, string_t path) {
+string_t get_absolute_path(allocator_t allocator, string_t path) {
 	return path_append(allocator, _get_root_path(get_temp_allocator()), path);
 }
 

@@ -8,6 +8,7 @@
 #include "res.h"
 #include "api/lua_api.h"
 #include "common/mem.h"
+#include "common/io.h"
 #include "common/string.h"
 
 // This is global because the Lua API functions can't take arguments and they need the computer

@@ -47,15 +47,33 @@ const api_meta_t api_metas[API_FUNC_COUNT] = {
 		.desc = "Draw a portion of the given map layer",
 	},
 
+	// [API_FUNC_KEYP] = {
+	// 	.name = "keyp",
+	// 	.signature = "keyp(key) -> key",
+	// 	.desc = "Key if a key is being pressed",
+	// },
+
+	// [API_FUNC_KEYH] = {
+	// 	.name = "keyh",
+	// 	.signature = "keyh(key) -> key",
+	// 	.desc = "Key if a key is being held",
+	// },
+
+	// [API_FUNC_KEYR] = {
+	// 	.name = "keyr",
+	// 	.signature = "keyr(key) -> key",
+	// 	.desc = "Key if a key is being released",
+	// },
+	
 	[API_FUNC_KEY] = {
 		.name = "key",
-		.signature = "key(key) -> key",
+		.signature = "key(key) -> bool",
 		.desc = "Key if a key is being held",
 	},
 
 	[API_FUNC_TICKS] = {
 		.name = "ticks",
-		.signature = "ticks() -> ticks",
+		.signature = "ticks() -> number",
 		.desc = "Get the amount of ticks the program has been running",
 	},
 	[API_FUNC_SAVE_TO_SLOT] = {
@@ -65,7 +83,7 @@ const api_meta_t api_metas[API_FUNC_COUNT] = {
 	},
 	[API_FUNC_LOAD_FROM_SLOT] = {
 		.name = "load_from_slot",
-		.signature = "load_from_slot(index) -> table",
+		.signature = "load_from_slot(index) -> table | nil",
 		.desc = "Load the table stored in the given slot index",
 	},
 };
@@ -78,10 +96,6 @@ void api_meta_print() {
 		printf("\n");
 	}
 }
-
-
-
-// TODO: all api functions should have a ram_t *ram argument instead of computer, since only the ram is meant to be modified by the api anyway
 
 
 
