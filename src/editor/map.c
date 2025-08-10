@@ -15,6 +15,13 @@ static const int _move_speed = 8;
 static float _zoom = 1.0f;
 static int _selected_layer = 0;
 
+// TODO: also add this in the RAM but this variable should still exist
+// because the editor shouldn't influence what layers are visible in-game
+// but it should be able to be set in-game as well
+static bool _hidden_layers[MAP_LAYERS_AMOUNT] = {0};
+
+static bool _entity_layer_hidden = false;
+
 typedef struct layout {
 	rect_t map_rect;
 
@@ -122,7 +129,9 @@ void map_editor_draw(computer_t *computer) {
 	// 81 so the screen is always filled
 
 	for (int i = 0; i < MAP_LAYERS_AMOUNT; i++) {
-		gfx_draw_map(computer->ram, i, POINT(-_cam_pos.x, -_cam_pos.y), RECT(map_x, map_y, 81, 60));
+		if (!_hidden_layers[i]) {
+			gfx_draw_map(computer->ram, i, POINT(-_cam_pos.x, -_cam_pos.y), RECT(map_x, map_y, 81, 60));
+		}
 	}
 
 	_draw_grid(fb_surf);
@@ -147,6 +156,8 @@ void map_editor_draw(computer_t *computer) {
 
 	// Entity layer
 	gui_button(computer->ram, _layout.entity_layer_pos, skin_layout.map_entity_layer_button, false);
+	// Entity layer visible
+	_entity_layer_hidden = gui_toggle_button(computer->ram, POINT(_layout.entity_layer_pos.x + skin_layout.map_entity_layer_button.pressed_rect.w, _layout.entity_layer_pos.y), skin_layout.toggle_layer_button, _entity_layer_hidden);
 
 	// Other layers
 	for (int i = 0; i < skin_layout.map_layer_buttons.amount; i++) {
@@ -156,5 +167,8 @@ void map_editor_draw(computer_t *computer) {
 		if (gui_button(computer->ram, pos, button, _selected_layer == i)) {
 			_selected_layer = i;
 		}
+
+		// Visibility button
+		_hidden_layers[i] = gui_toggle_button(computer->ram, POINT(pos.x + button.pressed_rect.w, pos.y), skin_layout.toggle_layer_button, _hidden_layers[i]);
 	}
 }

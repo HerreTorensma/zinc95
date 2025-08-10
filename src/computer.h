@@ -335,6 +335,8 @@ typedef struct skin_layout {
 
 	button_t code_file_button;
 	button_t add_file_button;
+
+	button_t toggle_layer_button;
 } skin_layout_t;
 
 extern const skin_layout_t skin_layout;

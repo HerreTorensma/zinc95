@@ -107,7 +107,12 @@ const skin_layout_t skin_layout = {
 	.add_file_button = {
 		.unpressed_rect = {{2560, 329, 13, 13}},
 		.pressed_rect = {{2573, 329, 13, 13}},
-	}
+	},
+
+	.toggle_layer_button = {
+		.unpressed_rect = {{2656, 236, 16, 16}},
+		.pressed_rect = {{2672, 236, 16, 16}},
+	},
 };
 
 void set_global_computer(computer_t *computer) {
