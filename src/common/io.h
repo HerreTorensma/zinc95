@@ -3,6 +3,8 @@
 #include "mem.h"
 #include "string.h"
 
+// TODO: fix segfault where you try to save a file but a directory of the same name already exists
+
 string_t get_absolute_path(allocator_t allocator, string_t path);
 
 // Creates a directory relative to the zinc95 directory

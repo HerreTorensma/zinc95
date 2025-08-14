@@ -139,6 +139,7 @@ void gfx_draw_line(surface_t surf, point_t start, point_t end, color_t color) {
 
 // Midpoint circle algorithm
 // TODO: adopt for ellipses
+// TODO: filled bool
 void gfx_draw_circle(surface_t surf, point_t pos, int radius, color_t color) {
 	int x = pos.x;
 	int y = pos.y;
@@ -178,6 +179,67 @@ void gfx_draw_circle(surface_t surf, point_t pos, int radius, color_t color) {
 			surf_set_pixel(surf, x - y_offset, y + x_offset, color);
 			surf_set_pixel(surf, x + y_offset, y - x_offset, color);
 			surf_set_pixel(surf, x - y_offset, y - x_offset, color);
+		}
+	}
+}
+
+// TODO: make this also be able to draw ellipses without a midpoint
+void gfx_draw_ellipse(surface_t surf, rect_t bound, color_t color) {
+	int rx = bound.w / 2;
+	int ry = bound.h / 2;
+
+	int cx = bound.x + bound.w / 2;
+	int cy = bound.y + bound.h / 2;
+	
+	int x = 0;
+	int y = ry;
+
+	// Decision parameters
+	long rx2 = rx * rx;
+	long ry2 = ry * ry;
+	long tworx2 = 2 * rx2;
+	long twory2 = 2 * ry2;
+
+	long px = 0;
+	long py = tworx2 * y;
+
+	// Region 1
+	long p = (long)(ry2 - (rx2 * ry) + (0.25 * rx2));
+	while (px < py) {
+		surf_set_pixel(surf, cx + x, cy + y, color);
+		surf_set_pixel(surf, cx - x, cy + y, color);
+		surf_set_pixel(surf, cx + x, cy - y, color);
+		surf_set_pixel(surf, cx - x, cy - y, color);
+
+		x++;
+		px += twory2;
+		if (p < 0) {
+			p += ry2 + px;
+		} else {
+			y--;
+			py -= tworx2;
+			p += ry2 + px - py;
+		}
+	}
+
+	// Region 2
+	p = (long)(ry2 * (x + 0.5) * (x + 0.5) +
+			   rx2 * (y - 1) * (y - 1) -
+			   rx2 * ry2);
+	while (y >= 0) {
+		surf_set_pixel(surf, cx + x, cy + y, color);
+		surf_set_pixel(surf, cx - x, cy + y, color);
+		surf_set_pixel(surf, cx + x, cy - y, color);
+		surf_set_pixel(surf, cx - x, cy - y, color);
+
+		y--;
+		py -= tworx2;
+		if (p > 0) {
+			p += rx2 - py;
+		} else {
+			x++;
+			px += twory2;
+			p += rx2 - py + px;
 		}
 	}
 }

@@ -343,6 +343,46 @@ void sprite_editor_update(computer_t *computer) {
 
 				break;
 			}
+
+			case (TOOL_ELLIPSE): {
+				gfx_clear(_overlay, COLOR_NONE);
+				
+				if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+					_change_end = local_coord;
+					rect_t rect = rect_from_2_points(_change_start, _change_end);
+					rect.w++;
+					rect.h++;
+					gfx_draw_ellipse(_overlay, rect, _selected_color);
+				}
+
+				if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
+					rect_t raw_rect = rect_from_2_points(_change_start, _change_end);
+					rect_t rect = {
+						.x = visible_rect.x + currently_editing_rect.x + raw_rect.x,
+						.y = visible_rect.y + currently_editing_rect.y + raw_rect.y,
+						.w = raw_rect.w + 1,
+						.h = raw_rect.h + 1,
+					};
+
+					rect_t changed_region = rect_from_2_points(_editor_to_spritesheet_pos(_change_start), _editor_to_spritesheet_pos(_change_end));
+					changed_region.w++;
+					changed_region.h++;
+					_push_to_undo(computer, changed_region);
+
+					gfx_draw_ellipse(SPR_SURF(computer->ram->spritesheet.data), rect, _selected_color);
+				}
+				
+				break;
+			}
+
+			// TODO: implement
+			case (TOOL_ELLIPSEF): {
+				break;
+			}
+
+			case (TOOL_BUCKET): {
+				break;
+			}
 		}
 	}
 
@@ -449,4 +489,11 @@ void sprite_editor_draw(computer_t *computer) {
 			_selected_tool = i;
 		}
 	}
+
+	// Debugging stuff, will keep for now
+	// gfx_draw_rect(fb_surf, RECT(100, 100, 101, 21), COLOR_BLUE);
+	// gfx_draw_ellipse(fb_surf, POINT(100, 100), POINT(201, 121), COLOR_RED);
+	// gfx_draw_ellipse(fb_surf, POINT(201, 121), POINT(100, 100), COLOR_RED);
+	// gfx_draw_rect(fb_surf, RECT(100, 100, 3, 3), COLOR_BLUE);
+	// gfx_draw_ellipse(fb_surf, POINT(100, 100), 50, 200, COLOR_RED);
 }

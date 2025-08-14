@@ -129,6 +129,9 @@ int main(int argc, char *argv[]) {
 	// But there will never be an option to pause the editor since it's all GUI anyway
 	// idk
 
+	// I need to implement a popup message system
+	// for some status update like project saved or whatever
+
 	shell_init(&computer);
 
 	create_default_directories();

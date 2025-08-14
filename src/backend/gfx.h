@@ -54,6 +54,8 @@ void gfx_draw_line(surface_t surf, point_t start, point_t end, color_t color);
 
 void gfx_draw_circle(surface_t surf, point_t pos, int radius, color_t color);
 
+void gfx_draw_ellipse(surface_t surf, rect_t bound, color_t color);
+
 void gfx_flood_fill(surface_t surf, point_t start, color_t color);
 
 color_t gfx_spritesheet_get_pixel(spritesheet_t *spritesheet, point_t point);
