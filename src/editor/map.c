@@ -1,6 +1,7 @@
 #include "map.h"
 
 #include <stdio.h>
+#include <string.h>
 
 #include "menu.h"
 #include "../backend/input.h"
@@ -13,6 +14,9 @@ static const int _move_speed = 8;
 
 // Doesn't do anything yet
 static float _zoom = 1.0f;
+
+// -1 is the entity layer
+// 0 - 3 are tile layers
 static int _selected_layer = 0;
 
 // TODO: also add this in the RAM but this variable should still exist
@@ -64,6 +68,8 @@ static void _draw_grid(surface_t surf) {
 	gfx_draw_line(surf, POINT(line_x, 0), POINT(line_x, SCREEN_HEIGHT), 7);
 }
 
+// static void _spawn_entity(entities)
+
 void map_editor_init(computer_t *computer) {
 
 }
@@ -73,24 +79,52 @@ void map_editor_update(computer_t *computer) {
 
 	point_t mouse_pos = input_get_mouse_pos();
 
-	int cell_x = ((mouse_pos.x + _cam_pos.x) / currently_editing_rect.w) * currently_editing_sprites_rect.w;
-	int cell_y = ((mouse_pos.y + _cam_pos.y) / currently_editing_rect.h) * currently_editing_sprites_rect.h;
+	if (_selected_layer == -1) {
+		if (point_in_rect(mouse_pos, _layout.map_rect)) {
+			if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
+				// Kind of inefficient, should improve if it becomes problematic
+				for (size_t i = 0; i < MAX_ENTITIES; i++) {
+					if (computer->ram->entities.entities[i].id[0] == '\0') {
+						// Found empty entity
 
-	if (point_in_rect(mouse_pos, _layout.map_rect)) {
-		if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
-			for (int i = 0; i < currently_editing_sprites_rect.h; i++) {
-				for (int j = 0; j < currently_editing_sprites_rect.w; j++) {
-					// TODO: make a function for this
-					int index = (selected_spritesheet_index * SPRITES_PER_PAGE) + sprite_coords_to_index(currently_editing_sprites_rect.x + j, currently_editing_sprites_rect.y + i);
-					computer->ram->map.layers[_selected_layer].data[(cell_y + i) * MAP_WIDTH + (cell_x + j)] = (uint16_t)index;
+						strncpy((char *)computer->ram->entities.entities[i].id, "idk", 3);
+
+						point_t pos = {
+							.x = mouse_pos.x - currently_editing_rect.w / 2,
+							.y = mouse_pos.y - currently_editing_rect.h / 2,
+						};
+						computer->ram->entities.entities[i].x = pos.x + _cam_pos.x;
+						computer->ram->entities.entities[i].y = pos.y + _cam_pos.y;
+						
+						computer->ram->entities.entities[i].sprite = get_selected_sprite_index();
+						computer->ram->entities.entities[i].w = currently_editing_sprites_rect.w;
+						computer->ram->entities.entities[i].h = currently_editing_sprites_rect.h;
+
+						break;
+					}
 				}
 			}
 		}
-	
-		if (input_mouse_button_held(MOUSE_BUTTON_RIGHT)) {
-			for (int i = 0; i < currently_editing_sprites_rect.h; i++) {
-				for (int j = 0; j < currently_editing_sprites_rect.w; j++) {
-					computer->ram->map.layers[_selected_layer].data[(cell_y + i) * MAP_WIDTH + (cell_x + j)] = 0;
+	} else {
+		int cell_x = ((mouse_pos.x + _cam_pos.x) / currently_editing_rect.w) * currently_editing_sprites_rect.w;
+		int cell_y = ((mouse_pos.y + _cam_pos.y) / currently_editing_rect.h) * currently_editing_sprites_rect.h;
+		
+		if (point_in_rect(mouse_pos, _layout.map_rect)) {
+			if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+				for (int i = 0; i < currently_editing_sprites_rect.h; i++) {
+					for (int j = 0; j < currently_editing_sprites_rect.w; j++) {
+						// TODO: make a function for this
+						int index = (selected_spritesheet_index * SPRITES_PER_PAGE) + sprite_coords_to_index(currently_editing_sprites_rect.x + j, currently_editing_sprites_rect.y + i);
+						computer->ram->map.layers[_selected_layer].data[(cell_y + i) * MAP_WIDTH + (cell_x + j)] = (uint16_t)index;
+					}
+				}
+			}
+		
+			if (input_mouse_button_held(MOUSE_BUTTON_RIGHT)) {
+				for (int i = 0; i < currently_editing_sprites_rect.h; i++) {
+					for (int j = 0; j < currently_editing_sprites_rect.w; j++) {
+						computer->ram->map.layers[_selected_layer].data[(cell_y + i) * MAP_WIDTH + (cell_x + j)] = 0;
+					}
 				}
 			}
 		}
@@ -134,6 +168,17 @@ void map_editor_draw(computer_t *computer) {
 		}
 	}
 
+	// Draw entities
+	for (size_t i = 0; i < MAX_ENTITIES; i++) {
+		if (computer->ram->entities.entities[i].id[0] == '\0') {
+			break;
+		}
+
+		point_t pos = POINT(computer->ram->entities.entities[i].x - _cam_pos.x, computer->ram->entities.entities[i].y - _cam_pos.y);
+		rect_t rect = sprite_index_to_spritesheet_rect(computer->ram->entities.entities[i].sprite, computer->ram->entities.entities[i].w, computer->ram->entities.entities[i].h);
+		gfx_draw_spritesheet_rect(computer->ram, pos, rect, COLOR_BLACK);
+	}
+
 	_draw_grid(fb_surf);
 
 	// Draw skin again because currently I don't have a way to clip the gfx_draw_map function
@@ -143,19 +188,30 @@ void map_editor_draw(computer_t *computer) {
 	// Draw rect where mouse is
 	point_t mouse_pos = input_get_mouse_pos();
 
-	if (point_in_rect(mouse_pos, _layout.map_rect)) {
-		point_t rect_pos = {
-			.x = ((mouse_pos.x + _cam_pos.x) / currently_editing_rect.w) * currently_editing_rect.w - _cam_pos.x,
-			.y =  ((mouse_pos.y + _cam_pos.y) / currently_editing_rect.h) * currently_editing_rect.h - _cam_pos.y,
+	if (_selected_layer == -1) {
+		point_t pos = {
+			.x = mouse_pos.x - currently_editing_rect.w / 2,
+			.y = mouse_pos.y - currently_editing_rect.h / 2,
 		};
-
-		gfx_draw_rect(fb_surf, RECT(rect_pos.x - 1, rect_pos.y - 1, currently_editing_rect.w + 2, currently_editing_rect.h + 2), COLOR_WHITE);
+		gfx_draw_spritesheet_rect(computer->ram, pos, currently_editing_rect, COLOR_BLACK); // TODO: replace COLOR_NONE with the color key of the sprite
+	} else {
+		if (point_in_rect(mouse_pos, _layout.map_rect)) {
+			point_t rect_pos = {
+				.x = ((mouse_pos.x + _cam_pos.x) / currently_editing_rect.w) * currently_editing_rect.w - _cam_pos.x,
+				.y =  ((mouse_pos.y + _cam_pos.y) / currently_editing_rect.h) * currently_editing_rect.h - _cam_pos.y,
+			};
+	
+			gfx_draw_rect(fb_surf, RECT(rect_pos.x - 1, rect_pos.y - 1, currently_editing_rect.w + 2, currently_editing_rect.h + 2), COLOR_WHITE);
+		}
 	}
 
 	sprite_selector_draw(computer, _layout.spritesheet_rect, _layout.spritesheet_pages_start_pos);
 
 	// Entity layer
-	gui_button(computer->ram, _layout.entity_layer_pos, skin_layout.map_entity_layer_button, false);
+	if (gui_button(computer->ram, _layout.entity_layer_pos, skin_layout.map_entity_layer_button, _selected_layer == -1)) {
+		_selected_layer = -1;
+	}
+
 	// Entity layer visible
 	_entity_layer_hidden = gui_toggle_button(computer->ram, POINT(_layout.entity_layer_pos.x + skin_layout.map_entity_layer_button.pressed_rect.w, _layout.entity_layer_pos.y), skin_layout.toggle_layer_button, _entity_layer_hidden);
 

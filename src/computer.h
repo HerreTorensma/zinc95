@@ -89,6 +89,8 @@ Memory layout, global constants
 
 #define FILES_AMOUNT 32
 
+#define MAX_ENTITIES 32768
+
 typedef uint8_t color_t;
 
 typedef struct rgb_color {
@@ -202,13 +204,30 @@ typedef struct terminal {
 	uint8_t cursor_y;
 } terminal_t;
 
-// TODO: make this not part of ram
+// TODO: make this not part of ram but probably computer
 typedef struct shell {
 	char line_buffer[SHELL_LINE_BUFFER_SIZE];
 	uint8_t line_len;
 	string_t_array_t command_history;
 	int32_t command_history_index;
 } shell_t;
+
+typedef struct entity {
+	uint8_t id[32]; // Unique
+	uint8_t tag[32]; // Not unique, can query
+	
+	int32_t x;
+	int32_t y;
+
+	uint16_t sprite;
+	uint8_t w;
+	uint8_t h;
+} entity_t;
+
+typedef struct entities {
+	entity_t entities[MAX_ENTITIES];
+	uint64_t amount;
+} entities_t;
 
 // TODO: Manually align this stuff
 typedef union ram {
@@ -229,6 +248,7 @@ typedef union ram {
 		skin_t skin;
 		color_t border_color;
 		text_mode_font_t text_mode_font;
+		entities_t entities;
 
 		terminal_t terminal;
 		shell_t shell;

@@ -8,6 +8,8 @@
 #include "../backend/gfx.h"
 #include "../backend/gui.h"
 
+// TODO: refactor this because this is perhaps the worst code in the project
+
 // TODO: look into making these static or something
 rect_t visible_rect = {0};
 

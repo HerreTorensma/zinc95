@@ -277,6 +277,44 @@ static int _lua_load_from_slot(lua_State *lua) {
 	return luaL_error(lua, "Expected 1 argument");
 }
 
+static int _lua_get_entities(lua_State *lua) {
+	computer_t *computer = get_global_computer();
+	
+
+	int size = 0;
+	for (size_t i = 0; i < MAX_ENTITIES; i++) {
+		if (computer->ram->entities.entities[i].id[0] == '\0') {
+			size = i;
+			break;
+		}
+	}
+
+	lua_createtable(lua, size, 0);
+
+	for (size_t i = 0; i < size; i++) {
+		lua_createtable(lua, 0, 5);
+
+		lua_pushinteger(lua, computer->ram->entities.entities[i].x);
+		lua_setfield(lua, -2, "x");
+
+		lua_pushinteger(lua, computer->ram->entities.entities[i].y);
+		lua_setfield(lua, -2, "y");
+
+		lua_pushinteger(lua, computer->ram->entities.entities[i].sprite);
+		lua_setfield(lua, -2, "sprite");
+
+		lua_pushinteger(lua, computer->ram->entities.entities[i].w);
+		lua_setfield(lua, -2, "w");
+
+		lua_pushinteger(lua, computer->ram->entities.entities[i].h);
+		lua_setfield(lua, -2, "h");
+
+		lua_rawseti(lua, -2, i + 1);
+	}
+
+	return 1;
+}
+
 // The following is copy-pasted and edited from the Lua docs and has some parts of the standard library commented out
 // so that the game cannot do dangerous things to the host system
 static const luaL_Reg loadedlibs[] = {
@@ -326,6 +364,7 @@ int lua_init(computer_t *computer) {
 	lua_register(_lua, api_metas[API_FUNC_KEY].name, _lua_key);
 	lua_register(_lua, api_metas[API_FUNC_SAVE_TO_SLOT].name, _lua_save_to_slot);
 	lua_register(_lua, api_metas[API_FUNC_LOAD_FROM_SLOT].name, _lua_load_from_slot);
+	lua_register(_lua, "get_entities", _lua_get_entities);
 
 	for (size_t i = 0; i < computer->active_files_amount; i++) {
 		string_t file_string = file_to_string(&computer->files[i], get_heap_allocator());

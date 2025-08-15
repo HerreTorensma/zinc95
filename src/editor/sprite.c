@@ -232,6 +232,7 @@ void sprite_editor_update(computer_t *computer) {
 					_max_reached_point.x = MAX(_max_reached_point.x, local_coord.x);
 					_max_reached_point.y = MAX(_max_reached_point.y, local_coord.y);
 
+					// TODO: make this work with any tool
 					if (input_key_held(KEY_LALT) || input_key_held(KEY_RALT)) {
 						_selected_color = computer->ram->spritesheet.data[(visible_rect.y + currently_editing_rect.y + local_coord.y) * SPRITESHEET_WIDTH + (visible_rect.x + currently_editing_rect.x + local_coord.x)];
 					}
