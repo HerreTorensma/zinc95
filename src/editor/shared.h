@@ -7,14 +7,6 @@ Shared components among editors
 #include "../computer.h"
 #include "../common/math2d.h"
 
-extern rect_t spritesheet_rect;
-extern rect_t visible_rect;
-extern rect_t currently_editing_rect;
-extern rect_t currently_editing_sprites_rect;
-
-extern int selected_sprite_index_offset;
-extern int selected_spritesheet_index;
-
 typedef enum sprite_select_snap_mode {
 	SNAP_MODE_SPRITE,
 	SNAP_MODE_ZOOM,
@@ -23,10 +15,25 @@ typedef enum sprite_select_snap_mode {
 
 void sprite_selector_init(computer_t *computer);
 
-void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap_mode, rect_t spritesheet_rect);
+void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap_mode, point_t pos);
 
-void sprite_selector_draw(computer_t *computer, rect_t spritesheet_rect, point_t page_buttons_pos);
+void sprite_selector_draw(computer_t *computer, point_t pos, point_t page_buttons_pos);
 
-int get_selected_sprite_index();
+// Get the stuff that needs to be gotten
+rect_t get_page_rect();
+
+rect_t get_in_frame_rect();
+
+// Selected rect in number of sprites, like for example 
+rect_t get_in_frame_rect_in_sprites();
+
+int get_page_index();
+
+int get_relative_sprite_index();
+
+int get_absolute_sprite_index();
 
 int sprite_coords_to_index(int x, int y);
+
+// Translates point within selected rect of sprite selector to point within spritesheet
+point_t editor_to_spritesheet_pos(point_t point);

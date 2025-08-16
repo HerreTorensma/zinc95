@@ -27,8 +27,8 @@ typedef struct layout {
 
 	point_t sprite_flags_start_pos;
 
-	rect_t spritesheet_rect;
-	point_t spritesheet_pages_start_pos;
+	point_t sprite_selector_pos;
+	point_t sprite_selector_buttons_start_pos;
 
 	point_t tools_start_pos;
 } layout_t;
@@ -52,8 +52,8 @@ static const layout_t _layout = {
 
 	.sprite_flags_start_pos = {200, 332},
 
-	.spritesheet_rect = {{200, 348, 384, 128}},
-	.spritesheet_pages_start_pos = {588, 348},
+	.sprite_selector_pos = {200, 348},
+	.sprite_selector_buttons_start_pos = {588, 348},
 
 	.tools_start_pos = {264, 38},
 };
@@ -65,6 +65,9 @@ static point_t _change_end = {0};
 
 static point_t _min_reached_point = {0};
 static point_t _max_reached_point = {0};
+
+static point_t _selection_start = {0};
+static point_t _selection_end = {0};
 
 typedef struct change {
 	rect_t region;
@@ -86,6 +89,7 @@ typedef struct change {
 // the affected rect should get updated while drawing instead
 
 typedef enum tool {
+	TOOL_SELECT,
 	TOOL_PENCIL,
 	TOOL_LINE,
 	TOOL_RECT,
@@ -165,10 +169,6 @@ static uint8_t _pos_to_color_index(point_t pos) {
 	}
 }
 
-static point_t _editor_to_spritesheet_pos(point_t point) {
-	return POINT(visible_rect.x + currently_editing_rect.x + point.x, visible_rect.y + currently_editing_rect.y + point.y);
-}
-
 static void _push_to_undo(computer_t *computer, rect_t region) {
 	// Create the change
 	change_t change = {0};
@@ -197,8 +197,10 @@ static void _undo(computer_t *computer) {
 
 void sprite_editor_update(computer_t *computer) {
 	point_t mouse_pos = input_get_mouse_pos();
+	rect_t page_rect = get_page_rect();
+	rect_t in_frame_rect = get_in_frame_rect();
 	
-	sprite_selector_update(computer, SNAP_MODE_ZOOM, _layout.spritesheet_rect);
+	sprite_selector_update(computer, SNAP_MODE_SPRITE, _layout.sprite_selector_pos);
 
 	if (point_in_rect(mouse_pos, _layout.color_picker_rect)) {
 		if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
@@ -214,9 +216,11 @@ void sprite_editor_update(computer_t *computer) {
 	}
 
 	if (point_in_rect(mouse_pos, _layout.sprite_editor_rect)) {
+
+		// Mouse position translated to position within the selected rect of the sprite selector
 		point_t local_coord = {
-			.x = (mouse_pos.x - _layout.sprite_editor_rect.x) / (_layout.sprite_editor_rect.w / currently_editing_rect.w),
-			.y = (mouse_pos.y - _layout.sprite_editor_rect.y) / (_layout.sprite_editor_rect.h / currently_editing_rect.h),
+			.x = (mouse_pos.x - _layout.sprite_editor_rect.x) / (_layout.sprite_editor_rect.w / in_frame_rect.w),
+			.y = (mouse_pos.y - _layout.sprite_editor_rect.y) / (_layout.sprite_editor_rect.h / in_frame_rect.h),
 		};
 
 		if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
@@ -225,6 +229,14 @@ void sprite_editor_update(computer_t *computer) {
 
 		// TODO: Maybe remove the overlay and dynamic tracking of changes and just render previews to framebuffer and copy the currently editing rect region to a change object
 		switch (_selected_tool) {
+			case (TOOL_SELECT): {
+				if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
+
+				}
+				
+				break;
+			}
+
 			case (TOOL_PENCIL): {
 				if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
 					_min_reached_point.x = MIN(_min_reached_point.x, local_coord.x);
@@ -234,7 +246,7 @@ void sprite_editor_update(computer_t *computer) {
 
 					// TODO: make this work with any tool
 					if (input_key_held(KEY_LALT) || input_key_held(KEY_RALT)) {
-						_selected_color = computer->ram->spritesheet.data[(visible_rect.y + currently_editing_rect.y + local_coord.y) * SPRITESHEET_WIDTH + (visible_rect.x + currently_editing_rect.x + local_coord.x)];
+						_selected_color = computer->ram->spritesheet.data[(page_rect.y + in_frame_rect.y + local_coord.y) * SPRITESHEET_WIDTH + (page_rect.x + in_frame_rect.x + local_coord.x)];
 					}
 		
 					surf_set_pixel(_overlay, local_coord.x, local_coord.y, _selected_color);
@@ -247,13 +259,13 @@ void sprite_editor_update(computer_t *computer) {
 
 				if (input_mouse_button_released(MOUSE_BUTTON_LEFT) || input_mouse_button_released(MOUSE_BUTTON_RIGHT)) {
 					// Copy the affected part of the overlay to the undo stack and spritesheet
-					rect_t changed_region = rect_from_2_points(_editor_to_spritesheet_pos(_min_reached_point), _editor_to_spritesheet_pos(_max_reached_point));
+					rect_t changed_region = rect_from_2_points(editor_to_spritesheet_pos(_min_reached_point), editor_to_spritesheet_pos(_max_reached_point));
 					changed_region.w++;
 					changed_region.h++;
 					_push_to_undo(computer, changed_region);
 
 					// Copy overlay to spritesheet
-					gfx_copy_surface_rect(SPR_SURF(computer->ram->spritesheet.data), _overlay, POINT(visible_rect.x + currently_editing_rect.x, visible_rect.y + currently_editing_rect.y), RECT(0, 0, currently_editing_rect.w, currently_editing_rect.h), COLOR_NONE);
+					gfx_copy_surface_rect(SPR_SURF(computer->ram->spritesheet.data), _overlay, POINT(page_rect.x + in_frame_rect.x, page_rect.y + in_frame_rect.y), RECT(0, 0, in_frame_rect.w, in_frame_rect.h), COLOR_NONE);
 
 					gfx_clear(_overlay, COLOR_NONE);
 				}
@@ -271,13 +283,13 @@ void sprite_editor_update(computer_t *computer) {
 				}
 
 				if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
-					rect_t changed_region = rect_from_2_points(_editor_to_spritesheet_pos(_change_start), _editor_to_spritesheet_pos(_change_end));
+					rect_t changed_region = rect_from_2_points(editor_to_spritesheet_pos(_change_start), editor_to_spritesheet_pos(_change_end));
 					changed_region.w++;
 					changed_region.h++;
 					_push_to_undo(computer, changed_region);
 
 					// Actually commit the change
-					gfx_draw_line(SPR_SURF(computer->ram->spritesheet.data), _editor_to_spritesheet_pos(_change_start), _editor_to_spritesheet_pos(_change_end), _selected_color);
+					gfx_draw_line(SPR_SURF(computer->ram->spritesheet.data), editor_to_spritesheet_pos(_change_start), editor_to_spritesheet_pos(_change_end), _selected_color);
 				}
 
 				break;
@@ -297,13 +309,13 @@ void sprite_editor_update(computer_t *computer) {
 				if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
 					rect_t raw_rect = rect_from_2_points(_change_start, _change_end);
 					rect_t rect = {
-						.x = visible_rect.x + currently_editing_rect.x + raw_rect.x,
-						.y = visible_rect.y + currently_editing_rect.y + raw_rect.y,
+						.x = page_rect.x + in_frame_rect.x + raw_rect.x,
+						.y = page_rect.y + in_frame_rect.y + raw_rect.y,
 						.w = raw_rect.w + 1,
 						.h = raw_rect.h + 1,
 					};
 
-					rect_t changed_region = rect_from_2_points(_editor_to_spritesheet_pos(_change_start), _editor_to_spritesheet_pos(_change_end));
+					rect_t changed_region = rect_from_2_points(editor_to_spritesheet_pos(_change_start), editor_to_spritesheet_pos(_change_end));
 					changed_region.w++;
 					changed_region.h++;
 					_push_to_undo(computer, changed_region);
@@ -328,13 +340,13 @@ void sprite_editor_update(computer_t *computer) {
 				if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
 					rect_t raw_rect = rect_from_2_points(_change_start, _change_end);
 					rect_t rect = {
-						.x = visible_rect.x + currently_editing_rect.x + raw_rect.x,
-						.y = visible_rect.y + currently_editing_rect.y + raw_rect.y,
+						.x = page_rect.x + in_frame_rect.x + raw_rect.x,
+						.y = page_rect.y + in_frame_rect.y + raw_rect.y,
 						.w = raw_rect.w + 1,
 						.h = raw_rect.h + 1,
 					};
 
-					rect_t changed_region = rect_from_2_points(_editor_to_spritesheet_pos(_change_start), _editor_to_spritesheet_pos(_change_end));
+					rect_t changed_region = rect_from_2_points(editor_to_spritesheet_pos(_change_start), editor_to_spritesheet_pos(_change_end));
 					changed_region.w++;
 					changed_region.h++;
 					_push_to_undo(computer, changed_region);
@@ -359,13 +371,13 @@ void sprite_editor_update(computer_t *computer) {
 				if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
 					rect_t raw_rect = rect_from_2_points(_change_start, _change_end);
 					rect_t rect = {
-						.x = visible_rect.x + currently_editing_rect.x + raw_rect.x,
-						.y = visible_rect.y + currently_editing_rect.y + raw_rect.y,
+						.x = page_rect.x + in_frame_rect.x + raw_rect.x,
+						.y = page_rect.y + in_frame_rect.y + raw_rect.y,
 						.w = raw_rect.w + 1,
 						.h = raw_rect.h + 1,
 					};
 
-					rect_t changed_region = rect_from_2_points(_editor_to_spritesheet_pos(_change_start), _editor_to_spritesheet_pos(_change_end));
+					rect_t changed_region = rect_from_2_points(editor_to_spritesheet_pos(_change_start), editor_to_spritesheet_pos(_change_end));
 					changed_region.w++;
 					changed_region.h++;
 					_push_to_undo(computer, changed_region);
@@ -390,24 +402,26 @@ void sprite_editor_update(computer_t *computer) {
 	// Delete sprite
 	if (input_key_pressed(KEY_DELETE)) {
 		// TODO: add visible rect stuff
-		for (int y = currently_editing_rect.y; y < currently_editing_rect.y + currently_editing_rect.h; y++) {
-			for (int x = currently_editing_rect.x; x < currently_editing_rect.x + currently_editing_rect.w; x++) {
+		for (int y = in_frame_rect.y; y < in_frame_rect.y + in_frame_rect.h; y++) {
+			for (int x = in_frame_rect.x; x < in_frame_rect.x + in_frame_rect.w; x++) {
 				computer->ram->spritesheet.data[y * SPRITESHEET_WIDTH + x] = 0;
 			}
 		}
 
 		// TODO: clear this stuff for every sprite in the selection
-		computer->ram->sprites[get_selected_sprite_index()].color_key = 0;
-		computer->ram->sprites[get_selected_sprite_index()].flags = 0U;
+		computer->ram->sprites[get_absolute_sprite_index()].color_key = 0;
+		computer->ram->sprites[get_absolute_sprite_index()].flags = 0U;
 	}
 }
 
 void sprite_editor_draw(computer_t *computer) {
 	framebuffer_t *fb = &computer->ram->framebuffer;
 	surface_t fb_surf = FB_SURF(fb->data);
+	rect_t page_rect = get_page_rect();
+	rect_t in_frame_rect = get_in_frame_rect();
 
 	// Spritesheet / sprite selector
-	sprite_selector_draw(computer, _layout.spritesheet_rect, _layout.spritesheet_pages_start_pos);
+	sprite_selector_draw(computer, _layout.sprite_selector_pos, _layout.sprite_selector_buttons_start_pos);
 
 	// Color picker frame
 	gfx_draw_filled_rect(fb_surf, _layout.color_picker_rect, 0);
@@ -424,24 +438,24 @@ void sprite_editor_draw(computer_t *computer) {
 
 	// Sprite editor
 	rect_t sprite_editing_rect = {
-		.x = visible_rect.x + currently_editing_rect.x,
-		.y = visible_rect.y + currently_editing_rect.y,
-		.w = currently_editing_rect.w,
-		.h = currently_editing_rect.h,
+		.x = page_rect.x + in_frame_rect.x,
+		.y = page_rect.y + in_frame_rect.y,
+		.w = in_frame_rect.w,
+		.h = in_frame_rect.h,
 	};
 
-	int scale = _layout.sprite_editor_rect.w / currently_editing_rect.w;
+	int scale = _layout.sprite_editor_rect.w / in_frame_rect.w;
 	rect_t real_editor_rect = {
 		.x = _layout.sprite_editor_rect.x,
 		.y = _layout.sprite_editor_rect.y,
-		.w = currently_editing_rect.w * scale,
-		.h = currently_editing_rect.h * scale,
+		.w = in_frame_rect.w * scale,
+		.h = in_frame_rect.h * scale,
 	};
-	gfx_draw_filled_rect(fb_surf, _layout.sprite_editor_rect, 151);
+	// gfx_draw_filled_rect(fb_surf, _layout.sprite_editor_rect, 151);
 	gfx_draw_spritesheet_pro(computer->ram, sprite_editing_rect, real_editor_rect, COLOR_NONE);
 
 	// Draw the overlay
-	gfx_draw_surface_pro(fb, _overlay, RECT(0, 0, currently_editing_rect.w, currently_editing_rect.h), real_editor_rect, COLOR_NONE);
+	gfx_draw_surface_pro(fb, _overlay, RECT(0, 0, in_frame_rect.w, in_frame_rect.h), real_editor_rect, COLOR_NONE);
 
 	// Selected color
 	char buffer[32];
@@ -452,12 +466,12 @@ void sprite_editor_draw(computer_t *computer) {
 	// gui_draw_text(computer->ram, 2, buffer, _layout.selected_color_label_pos, COLOR_NONE); // Testing not passing a color
 	
 	// Selected sprite preview
-	gfx_draw_spritesheet_pro(computer->ram, currently_editing_rect, _layout.selected_sprite_rect, COLOR_NONE); // TODO: fix so it adds the other rects to currently_editing_rect
-	sprintf(buffer, "#%04d\n", get_selected_sprite_index());
+	gfx_draw_spritesheet_pro(computer->ram, in_frame_rect, _layout.selected_sprite_rect, COLOR_NONE); // TODO: fix so it adds the other rects to currently_editing_rect
+	sprintf(buffer, "#%04d\n", get_absolute_sprite_index());
 	gui_draw_text(computer->ram, GUI_FONT_INDEX, buffer, _layout.selected_sprite_label_pos, computer->ram->skin.font_color);
 
 	// Sprite flags and color key
-	sprite_t *selected_sprite = &computer->ram->sprites[get_selected_sprite_index()];
+	sprite_t *selected_sprite = &computer->ram->sprites[get_absolute_sprite_index()];
 
 	// Still using the macro because it is probably safer
 	for (int i = 0; i < SPRITE_FLAGS_SIZE; i++) {

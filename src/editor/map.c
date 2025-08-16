@@ -35,8 +35,8 @@ typedef struct layout {
 	// Will remove after I've got skins implemented
 	rect_t gui_rect;
 
-	rect_t spritesheet_rect;
-	point_t spritesheet_pages_start_pos;
+	point_t sprite_selector_pos;
+	point_t sprite_selector_buttons_start_pos;
 } layout_t;
 
 static const layout_t _layout = {
@@ -46,8 +46,8 @@ static const layout_t _layout = {
 	.entity_layer_pos = {4, 394},
 	.layer_buttons_start_pos = {4, 412},
 	
-	.spritesheet_rect = {{200, 348, 384, 128}},
-	.spritesheet_pages_start_pos = {588, 348},
+	.sprite_selector_pos = {200, 348},
+	.sprite_selector_buttons_start_pos = {588, 348},
 };
 
 // TODO: i need some kind of function to translate world coords to screen coords and grid coords or whatever
@@ -75,11 +75,13 @@ void map_editor_init(computer_t *computer) {
 }
 
 void map_editor_update(computer_t *computer) {
-	sprite_selector_update(computer, SNAP_MODE_ZOOM, _layout.spritesheet_rect);
+	sprite_selector_update(computer, SNAP_MODE_ZOOM, _layout.sprite_selector_pos);
 
 	point_t mouse_pos = input_get_mouse_pos();
+	rect_t in_frame_rect = get_in_frame_rect();
+	rect_t in_frame_rect_in_sprites = get_in_frame_rect_in_sprites();
 
-	if (_selected_layer == -1) {
+	if (_selected_layer == -1) { // Entities layer
 		if (point_in_rect(mouse_pos, _layout.map_rect)) {
 			if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
 				// Kind of inefficient, should improve if it becomes problematic
@@ -87,42 +89,43 @@ void map_editor_update(computer_t *computer) {
 					if (computer->ram->entities.entities[i].id[0] == '\0') {
 						// Found empty entity
 
-						strncpy((char *)computer->ram->entities.entities[i].id, "idk", 3);
+						// strncpy((char *)computer->ram->entities.entities[i].id, "idk", 3);
+						computer->ram->entities.entities[i].id[0] = 'e';
 
 						point_t pos = {
-							.x = mouse_pos.x - currently_editing_rect.w / 2,
-							.y = mouse_pos.y - currently_editing_rect.h / 2,
+							.x = mouse_pos.x - in_frame_rect.w / 2,
+							.y = mouse_pos.y - in_frame_rect.h / 2,
 						};
 						computer->ram->entities.entities[i].x = pos.x + _cam_pos.x;
 						computer->ram->entities.entities[i].y = pos.y + _cam_pos.y;
 						
-						computer->ram->entities.entities[i].sprite = get_selected_sprite_index();
-						computer->ram->entities.entities[i].w = currently_editing_sprites_rect.w;
-						computer->ram->entities.entities[i].h = currently_editing_sprites_rect.h;
+						computer->ram->entities.entities[i].sprite = get_absolute_sprite_index();
+						computer->ram->entities.entities[i].w = in_frame_rect_in_sprites.w;
+						computer->ram->entities.entities[i].h = in_frame_rect_in_sprites.h;
 
 						break;
 					}
 				}
 			}
 		}
-	} else {
-		int cell_x = ((mouse_pos.x + _cam_pos.x) / currently_editing_rect.w) * currently_editing_sprites_rect.w;
-		int cell_y = ((mouse_pos.y + _cam_pos.y) / currently_editing_rect.h) * currently_editing_sprites_rect.h;
+	} else { // Tile layers
+		int cell_x = ((mouse_pos.x + _cam_pos.x) / in_frame_rect.w) * in_frame_rect_in_sprites.w;
+		int cell_y = ((mouse_pos.y + _cam_pos.y) / in_frame_rect.h) * in_frame_rect_in_sprites.h;
 		
 		if (point_in_rect(mouse_pos, _layout.map_rect)) {
 			if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
-				for (int i = 0; i < currently_editing_sprites_rect.h; i++) {
-					for (int j = 0; j < currently_editing_sprites_rect.w; j++) {
+				for (int i = 0; i < in_frame_rect_in_sprites.h; i++) {
+					for (int j = 0; j < in_frame_rect_in_sprites.w; j++) {
 						// TODO: make a function for this
-						int index = (selected_spritesheet_index * SPRITES_PER_PAGE) + sprite_coords_to_index(currently_editing_sprites_rect.x + j, currently_editing_sprites_rect.y + i);
+						int index = (get_page_index() * SPRITES_PER_PAGE) + sprite_coords_to_index(in_frame_rect_in_sprites.x + j, in_frame_rect_in_sprites.y + i);
 						computer->ram->map.layers[_selected_layer].data[(cell_y + i) * MAP_WIDTH + (cell_x + j)] = (uint16_t)index;
 					}
 				}
 			}
 		
 			if (input_mouse_button_held(MOUSE_BUTTON_RIGHT)) {
-				for (int i = 0; i < currently_editing_sprites_rect.h; i++) {
-					for (int j = 0; j < currently_editing_sprites_rect.w; j++) {
+				for (int i = 0; i < in_frame_rect_in_sprites.h; i++) {
+					for (int j = 0; j < in_frame_rect_in_sprites.w; j++) {
 						computer->ram->map.layers[_selected_layer].data[(cell_y + i) * MAP_WIDTH + (cell_x + j)] = 0;
 					}
 				}
@@ -187,25 +190,27 @@ void map_editor_draw(computer_t *computer) {
 
 	// Draw rect where mouse is
 	point_t mouse_pos = input_get_mouse_pos();
+	rect_t in_frame_rect = get_in_frame_rect();
+	rect_t in_frame_rect_in_sprites = get_in_frame_rect_in_sprites();
 
 	if (_selected_layer == -1) {
 		point_t pos = {
-			.x = mouse_pos.x - currently_editing_rect.w / 2,
-			.y = mouse_pos.y - currently_editing_rect.h / 2,
+			.x = mouse_pos.x - in_frame_rect.w / 2,
+			.y = mouse_pos.y - in_frame_rect.h / 2,
 		};
-		gfx_draw_spritesheet_rect(computer->ram, pos, currently_editing_rect, COLOR_BLACK); // TODO: replace COLOR_NONE with the color key of the sprite
+		gfx_draw_spritesheet_rect(computer->ram, pos, in_frame_rect, COLOR_BLACK); // TODO: replace COLOR_NONE with the color key of the sprite
 	} else {
 		if (point_in_rect(mouse_pos, _layout.map_rect)) {
 			point_t rect_pos = {
-				.x = ((mouse_pos.x + _cam_pos.x) / currently_editing_rect.w) * currently_editing_rect.w - _cam_pos.x,
-				.y =  ((mouse_pos.y + _cam_pos.y) / currently_editing_rect.h) * currently_editing_rect.h - _cam_pos.y,
+				.x = ((mouse_pos.x + _cam_pos.x) / in_frame_rect.w) * in_frame_rect.w - _cam_pos.x,
+				.y =  ((mouse_pos.y + _cam_pos.y) / in_frame_rect.h) * in_frame_rect.h - _cam_pos.y,
 			};
 	
-			gfx_draw_rect(fb_surf, RECT(rect_pos.x - 1, rect_pos.y - 1, currently_editing_rect.w + 2, currently_editing_rect.h + 2), COLOR_WHITE);
+			gfx_draw_rect(fb_surf, RECT(rect_pos.x - 1, rect_pos.y - 1, in_frame_rect.w + 2, in_frame_rect.h + 2), COLOR_WHITE);
 		}
 	}
 
-	sprite_selector_draw(computer, _layout.spritesheet_rect, _layout.spritesheet_pages_start_pos);
+	sprite_selector_draw(computer, _layout.sprite_selector_pos, _layout.sprite_selector_buttons_start_pos);
 
 	// Entity layer
 	if (gui_button(computer->ram, _layout.entity_layer_pos, skin_layout.map_entity_layer_button, _selected_layer == -1)) {
