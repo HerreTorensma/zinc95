@@ -172,14 +172,16 @@ void map_editor_draw(computer_t *computer) {
 	}
 
 	// Draw entities
-	for (size_t i = 0; i < MAX_ENTITIES; i++) {
-		if (computer->ram->entities.entities[i].id[0] == '\0') {
-			break;
+	if (!_entity_layer_hidden) {
+		for (size_t i = 0; i < MAX_ENTITIES; i++) {
+			if (computer->ram->entities.entities[i].id[0] == '\0') {
+				break;
+			}
+	
+			point_t pos = POINT(computer->ram->entities.entities[i].x - _cam_pos.x, computer->ram->entities.entities[i].y - _cam_pos.y);
+			rect_t rect = sprite_index_to_spritesheet_rect(computer->ram->entities.entities[i].sprite, computer->ram->entities.entities[i].w, computer->ram->entities.entities[i].h);
+			gfx_draw_spritesheet_rect(computer->ram, pos, rect, COLOR_BLACK);
 		}
-
-		point_t pos = POINT(computer->ram->entities.entities[i].x - _cam_pos.x, computer->ram->entities.entities[i].y - _cam_pos.y);
-		rect_t rect = sprite_index_to_spritesheet_rect(computer->ram->entities.entities[i].sprite, computer->ram->entities.entities[i].w, computer->ram->entities.entities[i].h);
-		gfx_draw_spritesheet_rect(computer->ram, pos, rect, COLOR_BLACK);
 	}
 
 	_draw_grid(fb_surf);

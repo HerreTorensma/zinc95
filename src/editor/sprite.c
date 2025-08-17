@@ -303,6 +303,12 @@ void sprite_editor_update(computer_t *computer) {
 				if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
 					_selection_end = spritesheet_coord_under_mouse;
 
+					// Commit if it was already active so there is a clean slate
+					if (_selection_active) {
+						gfx_copy_surface_rect(SPR_SURF(computer->ram->spritesheet.data), _overlay_surf, POINT(0, 0), RECT(0, 0, SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT), COLOR_NONE);
+						gfx_clear(_overlay_surf, COLOR_NONE);
+					}
+
 					_selection_active = true;
 					if (_selection_start.x == _selection_end.x && _selection_start.y == _selection_end.y) {
 						_selection_active = false;
@@ -466,8 +472,29 @@ void sprite_editor_update(computer_t *computer) {
 			}
 		}
 	}
+}
 
-	// printf("selection active: %d\n", _selection_active);
+static void _draw_selection_rect(uint64_t ticks, surface_t surf, rect_t rect) {
+	int thing = ticks % 30 < 15;
+	for (int j = rect.x; j < rect.x+rect.w; j++) {
+		color_t color = j % 3 == thing ? COLOR_BLACK : COLOR_WHITE;
+		surf_set_pixel(surf, j, rect.y, color);
+	}
+
+	for (int j = rect.x; j < rect.x+rect.w; j++) {
+		color_t color = j % 3 == thing ? COLOR_BLACK : COLOR_WHITE;
+		surf_set_pixel(surf, j, rect.y+rect.h-1, color);
+	}
+
+	for (int i = rect.y; i < rect.y+rect.h; i++) {
+		color_t color = i % 3 == thing ? COLOR_BLACK : COLOR_WHITE;
+		surf_set_pixel(surf, rect.x, i, color);
+	}
+
+	for (int i = rect.y; i < rect.y+rect.h; i++) {
+		color_t color = i % 3 == thing ? COLOR_BLACK : COLOR_WHITE;
+		surf_set_pixel(surf, rect.x+rect.w - 1, i, color);
+	}
 }
 
 void sprite_editor_draw(computer_t *computer) {
@@ -499,13 +526,12 @@ void sprite_editor_draw(computer_t *computer) {
 		.w = in_frame_rect.w * scale,
 		.h = in_frame_rect.h * scale,
 	};
-	// gfx_draw_filled_rect(fb_surf, _layout.sprite_editor_rect, 151);
 	gfx_draw_spritesheet_pro(computer->ram, in_frame_rect, real_editor_rect, COLOR_NONE);
 
 	// Draw the overlay
-	// gfx_draw_surface_pro(fb, _overlay, RECT(0, 0, in_frame_rect.w, in_frame_rect.h), real_editor_rect, COLOR_NONE);
-	// gfx_draw_surface_pro(fb, _overlay, in_frame_rect, real_editor_rect, COLOR_NONE);
 	gfx_draw_surface_pro(fb, _overlay_surf, in_frame_rect, real_editor_rect, COLOR_NONE);
+	// Draw the overlay on sprite selector as well
+	gfx_draw_surface_rect(fb, _overlay_surf, _layout.sprite_selector_pos, get_page_rect(), COLOR_NONE);
 
 	// Draw the selection outline
 	if (!(_selection_start.x == _selection_end.x && _selection_start.y == _selection_end.y)) {
@@ -523,7 +549,8 @@ void sprite_editor_draw(computer_t *computer) {
 		selection.x += _layout.sprite_editor_rect.x;
 		selection.y += _layout.sprite_editor_rect.y;
 		
-		gfx_draw_rect(fb_surf, selection, COLOR_LIGHTGRAY);
+		// gfx_draw_rect(fb_surf, selection, COLOR_LIGHTGRAY);
+		_draw_selection_rect(computer->ram->ticks, fb_surf, selection);
 	}
 
 	// Selected color

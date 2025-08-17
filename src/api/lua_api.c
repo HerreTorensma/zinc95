@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include <lua.h>
 #include <lauxlib.h>
@@ -315,6 +316,32 @@ static int _lua_get_entities(lua_State *lua) {
 	return 1;
 }
 
+// TODO: use internal functions, but rn I can't be bothered yet
+static int _lua_normalize(lua_State *lua) {
+	if (lua_gettop(lua) == 2) {
+		float x = lua_tonumber(lua, 1);
+		float y = lua_tonumber(lua, 2);
+
+		// Get magnitude
+		float magnitude = sqrtf(x * x + y * y);
+		if (magnitude == 0.0f) {
+			lua_pushnumber(lua, 0.0f);
+			lua_pushnumber(lua, 0.0f);
+			return 2;
+		}
+
+		x /= magnitude;
+		y /= magnitude;
+
+		lua_pushnumber(lua, x);
+		lua_pushnumber(lua, y);
+	} else {
+		return luaL_error(lua, "Expected 2 arguments");
+	}
+	
+	return 2;
+}
+
 // The following is copy-pasted and edited from the Lua docs and has some parts of the standard library commented out
 // so that the game cannot do dangerous things to the host system
 static const luaL_Reg loadedlibs[] = {
@@ -365,6 +392,7 @@ int lua_init(computer_t *computer) {
 	lua_register(_lua, api_metas[API_FUNC_SAVE_TO_SLOT].name, _lua_save_to_slot);
 	lua_register(_lua, api_metas[API_FUNC_LOAD_FROM_SLOT].name, _lua_load_from_slot);
 	lua_register(_lua, "get_entities", _lua_get_entities);
+	lua_register(_lua, "normalize", _lua_normalize);
 
 	for (size_t i = 0; i < computer->active_files_amount; i++) {
 		string_t file_string = file_to_string(&computer->files[i], get_heap_allocator());

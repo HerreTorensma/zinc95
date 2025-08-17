@@ -167,6 +167,10 @@ void sprite_selector_draw(computer_t *computer, point_t pos, point_t page_button
 	gfx_draw_rect(FB_SURF(computer->ram->framebuffer.data), RECT(pos.x + _in_frame_rect.x - 1, pos.y + _in_frame_rect.y - 1, _in_frame_rect.w + 2, _in_frame_rect.h + 2), 15);
 }
 
+rect_t get_page_rect() {
+	return _page_rect;
+}
+
 // The coordinates of _page_rect first needs to be added to account for the pages
 rect_t get_in_frame_rect() {
 	return (rect_t){
