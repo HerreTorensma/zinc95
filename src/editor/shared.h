@@ -19,9 +19,7 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 
 void sprite_selector_draw(computer_t *computer, point_t pos, point_t page_buttons_pos);
 
-// Get the stuff that needs to be gotten
-rect_t get_page_rect();
-
+// Selected rect
 rect_t get_in_frame_rect();
 
 // Selected rect in number of sprites, like for example 

@@ -233,6 +233,7 @@ void code_editor_update(computer_t *computer) {
 
 	// TODO: move this to backend
 	if (input_key_pressed(KEY_RIGHT)) {
+		// TODO: move to next token instead of 'word'
 		if (input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL)) {
 			file_move_cursor_to_next_word(file);
 		} else {

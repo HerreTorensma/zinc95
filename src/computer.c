@@ -242,6 +242,9 @@ void quit_game(computer_t *computer) {
 	lua_quit();
 }
 
+// TODO: resume_game function that calls an equivalent Lua global
+// for debugging
+
 // TODO: reimplement this for the new sprite system, when I need it
 /*
 int sprite_x_to_sprite_sheet_x(ram_t *ram, int sprite_sheet_index, int sprite_index, int x) {

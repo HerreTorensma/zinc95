@@ -72,8 +72,8 @@ color_t gfx_get_pixel(framebuffer_t *fb, int x, int y) {
 }
 
 void gfx_clear(surface_t surface, color_t color) {
-	for (int y = 0; y < SCREEN_HEIGHT; y++) {
-		for (int x = 0; x < SCREEN_WIDTH; x++) {
+	for (int y = 0; y < surface.height; y++) {
+		for (int x = 0; x < surface.width; x++) {
 			surf_set_pixel(surface, x, y, color);
 		}
 	}
