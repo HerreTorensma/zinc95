@@ -117,6 +117,8 @@ typedef enum zinc_key {
 	KEY_NUMDIVIDE,
 	KEY_NUMENTER,
 	KEY_NUMPERIOD,
+
+	KEY_COUNT,
 } zinc_key_t;
 
 typedef enum mouse_button {
