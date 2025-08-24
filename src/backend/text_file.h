@@ -31,6 +31,12 @@ typedef struct line {
 	lua_token_t_array_t tokens;
 } line_t;
 
+// TODO: use this
+typedef struct file_pos {
+	size_t line;
+	size_t pos;
+} file_pos_t;
+
 // Datastructure to represent a text file in the text editor
 // though they get compiled into one string
 // It's just for organizational purposes 
@@ -41,6 +47,12 @@ typedef struct file {
 	size_t cursor_line;
 	size_t cursor_pos;
 	size_t target_pos; // TODO: I don't think this belongs on the data structure, should be moved to the editor
+
+	size_t selection_start_line;
+	size_t selection_start_pos;
+	size_t selection_end_line;
+	size_t selection_end_pos;
+	bool selection_active;
 } file_t;
 
 // Get the indent level of the given string

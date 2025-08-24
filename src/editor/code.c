@@ -34,13 +34,11 @@ static const layout_t _layout = {
 
 static size_t _current_file_index = 0;
 
-static void _move_cursor_to_mouse(ram_t *ram, file_t *code) {
+static void _screen_pos_to_file_pos(ram_t *ram, file_t *code, point_t screen_pos, size_t *mouse_line, size_t *mouse_pos) {
 	font_t *font = &ram->fonts[CODE_EDITOR_FONT_INDEX];
 
-	point_t mouse_pos = input_get_mouse_pos();
-
-	int corrected_x = mouse_pos.x - (_layout.code_rect.x + 5 * (font->widths[0] + font->horizontal_space));
-	int corrected_y = mouse_pos.y - _layout.code_rect.y + (_scroll_amount * (font->height + font->vertical_space));
+	int corrected_x = screen_pos.x - (_layout.code_rect.x + 5 * (font->widths[0] + font->horizontal_space));
+	int corrected_y = screen_pos.y - _layout.code_rect.y + (_scroll_amount * (font->height + font->vertical_space));
 
 	size_t line = corrected_y / (font->height + font->vertical_space);
 	if (line < 0) {
@@ -60,8 +58,12 @@ static void _move_cursor_to_mouse(ram_t *ram, file_t *code) {
 		pos = line_len;
 	}
 
-	code->cursor_line = line;
-	code->cursor_pos = pos;
+	*mouse_line = line;
+	*mouse_pos = pos;
+}
+
+static void _move_cursor_to_mouse(ram_t *ram, file_t *code) {
+	_screen_pos_to_file_pos(ram, code, input_get_mouse_pos(), &code->cursor_line, &code->cursor_pos);
 }
 
 static void _unblink_cursor() {
@@ -233,7 +235,19 @@ void code_editor_update(computer_t *computer) {
 	if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
 		_move_cursor_to_mouse(computer->ram, file);
 		_unblink_cursor();
+
+		file->selection_start_line = file->cursor_line;
+		file->selection_start_pos = file->cursor_pos;
 	}
+	if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+		_move_cursor_to_mouse(computer->ram, file);
+		_unblink_cursor();
+
+		file->selection_end_line = file->cursor_line;
+		file->selection_end_pos = file->cursor_pos;
+	}
+
+	printf("selection: (%d %d), (%d %d)\n", file->selection_start_line, file->selection_start_pos, file->selection_end_line, file->selection_end_pos);
 
 	// Scrolling
 	if (input_mouse_scrolled(SCROLL_DIR_DOWN)) {
@@ -314,6 +328,57 @@ void code_editor_draw(computer_t *computer) {
 	// TODO: replace with temp alloc (maybe)
 	char line_number_buffer[8];
 
+	// Base x position of where every line is drawn on the screen
+	const size_t line_x = _layout.code_rect.x + 2 + 5 * (font->widths[0] + font->horizontal_space);
+
+	// Draw selection rect
+	// This code looks like shit but it works for now
+	file_t *file = &computer->files[_current_file_index];
+	if (file->selection_start_line == file->selection_end_line) {
+		string_t string = computer->files[_current_file_index].lines[file->selection_start_line].string;
+
+		rect_t rect = {
+			.x = line_x + gui_get_string_width(font, string_view(string, 0, file->selection_start_pos), string.len),
+			.y = _layout.code_rect.y + 2 + (file->selection_start_line - _scroll_amount) * (font->height + font->vertical_space),
+			.w = gui_get_string_width(font, string_view(string, file->selection_start_pos, file->selection_end_pos - file->selection_start_pos), string.len),
+			.h = font->height,
+		};
+
+		gfx_draw_filled_rect(fb_surf, rect, COLOR_CYAN);
+
+	} else {
+		for (size_t i = file->selection_start_line; i <= file->selection_end_line; i++) {
+			string_t string = computer->files[_current_file_index].lines[i].string;
+
+			if (i == file->selection_start_line) {
+				rect_t rect = {
+					.x = line_x + gui_get_string_width(font, string_view(string, 0, file->selection_start_pos), string.len),
+					.y = _layout.code_rect.y + 2 + (i - _scroll_amount) * (font->height + font->vertical_space),
+					.w = gui_get_string_width(font, string_view(string, file->selection_start_pos, string.len - file->selection_start_pos), string.len),
+					.h = font->height,
+				};
+				gfx_draw_filled_rect(fb_surf, rect, COLOR_CYAN);
+
+			} else if (i == file->selection_end_line) {
+				rect_t rect = {
+					.x = line_x,
+					.y = _layout.code_rect.y + 2 + (i - _scroll_amount) * (font->height + font->vertical_space),
+					.w = gui_get_string_width(font, string_view(string, 0, file->selection_end_pos), file->selection_end_pos),
+					.h = font->height,
+				};
+				gfx_draw_filled_rect(fb_surf, rect, COLOR_CYAN);
+			} else {
+				rect_t rect = {
+					.x = line_x,
+					.y = _layout.code_rect.y + 2 + (i - _scroll_amount) * (font->height + font->vertical_space),
+					.w = gui_get_string_width(font, string, string.len),
+					.h = font->height,
+				};
+				gfx_draw_filled_rect(fb_surf, rect, COLOR_CYAN);
+			}
+		}
+	}
+
 	// TODO: fix font so I can refactor this hardcoded mess
 	for (int i = 0; i < _lines_on_screen; i++) {
 		if (i + _scroll_amount >= computer->files[_current_file_index].line_amount) {
@@ -330,8 +395,7 @@ void code_editor_draw(computer_t *computer) {
 		
 		// Line itself using tokens for syntax highlighting
 		line_t *current_line = &computer->files[_current_file_index].lines[i + _scroll_amount];
-		size_t current_x = _layout.code_rect.x + 2 + 5 * (font->widths[0] + font->horizontal_space);
-		// printf("font width: %d\n", font->widths[0]);
+		size_t current_x = line_x;
 
 		for (size_t j = 0; j < current_line->tokens.len; j++) {
 			color_t color = computer->ram->code_editor_config.token_colors[current_line->tokens.data[j].type];
