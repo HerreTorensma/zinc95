@@ -18,6 +18,7 @@ void window_tick_end(computer_t *computer);
 
 bool window_is_open();
 
-void get_mouse_pos(int *x, int *y);
-
 void window_quit();
+
+// Assumes string is also null terminated
+void set_clipboard_text(string_t string);

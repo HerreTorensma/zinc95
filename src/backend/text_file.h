@@ -44,15 +44,11 @@ typedef struct file {
 	line_t *lines;
 	size_t line_amount;
 	
-	size_t cursor_line;
-	size_t cursor_pos;
+	file_pos_t cursor;
 	size_t target_pos; // TODO: I don't think this belongs on the data structure, should be moved to the editor
 
-	size_t selection_start_line;
-	size_t selection_start_pos;
-	size_t selection_end_line;
-	size_t selection_end_pos;
-	bool selection_active;
+	file_pos_t selection_start;
+	file_pos_t selection_end;
 } file_t;
 
 // Get the indent level of the given string
@@ -104,3 +100,5 @@ void file_move_cursor_to_next_word(file_t *file);
 void file_move_cursor_to_prev_word(file_t *file);
 
 string_t file_get_name(file_t *file);
+
+string_t file_put_selection_in_clipboard(file_t *file);

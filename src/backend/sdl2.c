@@ -418,3 +418,7 @@ void sdl2_audio_init(computer_t *computer) {
 
 	SDL_PauseAudio(0);
 }
+
+void sdl2_set_clipboard_text(char *text) {
+	SDL_SetClipboardText(text);
+}

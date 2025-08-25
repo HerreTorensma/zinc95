@@ -497,6 +497,7 @@ static void _draw_selection_rect(uint64_t ticks, surface_t surf, rect_t rect) {
 	}
 }
 
+// TODO: overlay is drawn over selected sprites, need to fix
 void sprite_editor_draw(computer_t *computer) {
 	framebuffer_t *fb = &computer->ram->framebuffer;
 	surface_t fb_surf = FB_SURF(fb->data);

@@ -8,6 +8,7 @@
 #include <assert.h>
 
 #include "../api/api.h"
+#include "window.h"
 
 // TODO: investigate why stuff doesn't work when I have asserts after allocations
 // because yes it works but it's also bad code and I should make it good
@@ -410,68 +411,68 @@ void file_deinit(file_t *file) {
 
 	file->line_amount = 0;
 
-	file->cursor_line = 0;
-	file->cursor_pos = 0;
+	file->cursor.line = 0;
+	file->cursor.pos = 0;
 }
 
 void file_insert_char_at_cursor(file_t *file, char c) {
-	file_insert_char_at(file, file->cursor_line, file->cursor_pos, c);
-	file->cursor_pos++;
+	file_insert_char_at(file, file->cursor.line, file->cursor.pos, c);
+	file->cursor.pos++;
 }
 
 void file_remove_char_at_cursor(file_t *file) {
-	if (file->cursor_pos > 0) {
-		file_remove_char_at(file, file->cursor_line, file->cursor_pos);
-		file->cursor_pos--;
+	if (file->cursor.pos > 0) {
+		file_remove_char_at(file, file->cursor.line, file->cursor.pos);
+		file->cursor.pos--;
 	} else {
-		if (file->cursor_line > 0) {
-			file->cursor_pos = file_merge_line_up(file, file->cursor_line);
-			file->cursor_line--;
+		if (file->cursor.line > 0) {
+			file->cursor.pos = file_merge_line_up(file, file->cursor.line);
+			file->cursor.line--;
 		}
 	}
 }
 
 void file_move_cursor_up(file_t *file) {
-	if (file->cursor_line > 0) {
-		file->cursor_line--;
+	if (file->cursor.line > 0) {
+		file->cursor.line--;
 
-		size_t len = file->lines[file->cursor_line].string.len;
-		if (file->cursor_pos > len) {
-			file->cursor_pos = len;
+		size_t len = file->lines[file->cursor.line].string.len;
+		if (file->cursor.pos > len) {
+			file->cursor.pos = len;
 		}
 	}
 }
 
 void file_move_cursor_down(file_t *file) {
-	if (file->cursor_line < file->line_amount - 1) {
-		file->cursor_line++;
+	if (file->cursor.line < file->line_amount - 1) {
+		file->cursor.line++;
 	}
 
-	size_t len = file->lines[file->cursor_line].string.len;
-	if (file->cursor_pos > len) {
-		file->cursor_pos = len;
+	size_t len = file->lines[file->cursor.line].string.len;
+	if (file->cursor.pos > len) {
+		file->cursor.pos = len;
 	}
 }
 
 void file_move_cursor_left(file_t *file) {
-	if (file->cursor_pos > 0) {
-		file->cursor_pos--;
+	if (file->cursor.pos > 0) {
+		file->cursor.pos--;
 	} else {
-		if (file->cursor_line > 0) {
-			file->cursor_line--;
-			file->cursor_pos = file->lines[file->cursor_line].string.len;
+		if (file->cursor.line > 0) {
+			file->cursor.line--;
+			file->cursor.pos = file->lines[file->cursor.line].string.len;
 		}
 	}
 }
 
 void file_move_cursor_right(file_t *file) {
-	size_t len = file->lines[file->cursor_line].string.len;
-	if (file->cursor_pos < len) {
-		file->cursor_pos++;
+	size_t len = file->lines[file->cursor.line].string.len;
+	if (file->cursor.pos < len) {
+		file->cursor.pos++;
 	} else {
-		if (file->cursor_line < file->line_amount - 1) {
-			file->cursor_line++;
-			file->cursor_pos = 0;
+		if (file->cursor.line < file->line_amount - 1) {
+			file->cursor.line++;
+			file->cursor.pos = 0;
 		}
 	}
 }
@@ -500,20 +501,20 @@ static bool _char_in_divider_chars(char c) {
 }
 
 void file_move_cursor_to_next_word(file_t *file) {
-	int len = file->lines[file->cursor_line].string.len;
+	int len = file->lines[file->cursor.line].string.len;
 			
-	for (size_t i = file->cursor_pos + 1; i < len + 1; i++) {
-		if (file->lines[file->cursor_line].string.data[i] == ' ' || file->lines[file->cursor_line].string.data[i] == '.' || i == len) {
-			file->cursor_pos = i;
+	for (size_t i = file->cursor.pos + 1; i < len + 1; i++) {
+		if (file->lines[file->cursor.line].string.data[i] == ' ' || file->lines[file->cursor.line].string.data[i] == '.' || i == len) {
+			file->cursor.pos = i;
 			break;
 		}
 	}
 }
 
 void file_move_cursor_to_prev_word(file_t *file) {
-	for (size_t i = file->cursor_pos - 1; i >= 0; i--) {
-		if (file->lines[file->cursor_line].string.data[i] == ' ' || file->lines[file->cursor_line].string.data[i] == '.' || i == 0) {
-			file->cursor_pos = i;
+	for (size_t i = file->cursor.pos - 1; i >= 0; i--) {
+		if (file->lines[file->cursor.line].string.data[i] == ' ' || file->lines[file->cursor.line].string.data[i] == '.' || i == 0) {
+			file->cursor.pos = i;
 			break;
 		}
 	}
@@ -531,4 +532,33 @@ string_t file_get_name(file_t *file) {
 	}
 
 	return string;
+}
+
+string_t file_put_selection_in_clipboard(file_t *file) {
+	string_builder_t builder = {0};
+	// TODO: hope this doesnt crash bc of temp allocator
+	string_builder_init(&builder, get_temp_allocator(), 8);
+
+	if (file->selection_start.line == file->selection_end.line) {
+		string_t string = file->lines[file->selection_start.line].string;
+		string_builder_append(&builder, string_view(string, file->selection_start.pos, file->selection_end.pos - file->selection_start.pos));
+	} else {
+		for (size_t i = file->selection_start.line; i <= file->selection_end.line; i++) {
+			string_t string = file->lines[i].string;
+
+			if (i == file->selection_start.line) {
+				string_builder_append(&builder, string_view(string, file->selection_start.pos, string.len - file->selection_start.pos));
+				string_builder_append(&builder, STR("\n"));
+			} else if (i == file->selection_end.line) {
+				string_builder_append(&builder, string_view(string, 0, file->selection_end.pos));
+			} else {
+				string_builder_append(&builder, string);
+				string_builder_append(&builder, STR("\n"));
+			}
+		}
+	}
+
+	string_builder_append(&builder, STR("\0"));
+
+	set_clipboard_text(builder.string);
 }

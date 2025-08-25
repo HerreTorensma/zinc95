@@ -55,3 +55,7 @@ void window_quit() {
 	sdl2_quit();
 	#endif
 }
+
+void set_clipboard_text(string_t string) {
+	sdl2_set_clipboard_text(string.data);
+}

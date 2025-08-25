@@ -63,7 +63,7 @@ static void _screen_pos_to_file_pos(ram_t *ram, file_t *code, point_t screen_pos
 }
 
 static void _move_cursor_to_mouse(ram_t *ram, file_t *code) {
-	_screen_pos_to_file_pos(ram, code, input_get_mouse_pos(), &code->cursor_line, &code->cursor_pos);
+	_screen_pos_to_file_pos(ram, code, input_get_mouse_pos(), &code->cursor.line, &code->cursor.pos);
 }
 
 static void _unblink_cursor() {
@@ -72,7 +72,7 @@ static void _unblink_cursor() {
 
 static int _get_real_cursor_pos(computer_t *computer) {
 	if (computer->files[_current_file_index].line_amount > 0) {
-		return gui_get_string_width(&computer->ram->fonts[CODE_EDITOR_FONT_INDEX], computer->files[_current_file_index].lines[computer->files[_current_file_index].cursor_line].string, computer->files[_current_file_index].cursor_pos);
+		return gui_get_string_width(&computer->ram->fonts[CODE_EDITOR_FONT_INDEX], computer->files[_current_file_index].lines[computer->files[_current_file_index].cursor.line].string, computer->files[_current_file_index].cursor.pos);
 	}
 
 	return 0;
@@ -102,6 +102,10 @@ void code_editor_init(computer_t *computer) {
 
 // Handle all the character inputs
 static void _handle_char_input(computer_t *computer, file_t *code) {
+	if (input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL)) {
+		return;
+	}
+
 	// Letters
 	if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
 		for (int i = KEY_A; i <= KEY_Z; i++) {
@@ -183,32 +187,50 @@ void code_editor_update(computer_t *computer) {
 		KEY_PRESSED_OR_LONG_PRESSED(KEY_LEFT, {
 			file_move_cursor_to_prev_word(file);
 			_unblink_cursor();
+
+			file->selection_start = file->cursor;
+			file->selection_end = file->cursor;
 		});
 
 		KEY_PRESSED_OR_LONG_PRESSED(KEY_RIGHT, {
 			file_move_cursor_to_next_word(file);
 			_unblink_cursor();
+
+			file->selection_start = file->cursor;
+			file->selection_end = file->cursor;
 		});
 	} else {
 		KEY_PRESSED_OR_LONG_PRESSED(KEY_LEFT, {
 			file_move_cursor_left(file);
 			_unblink_cursor();
+
+			file->selection_start = file->cursor;
+			file->selection_end = file->cursor;
 		});
 
 		KEY_PRESSED_OR_LONG_PRESSED(KEY_RIGHT, {
 			file_move_cursor_right(file);
 			_unblink_cursor();
+
+			file->selection_start = file->cursor;
+			file->selection_end = file->cursor;
 		});
 	}
 
 	KEY_PRESSED_OR_LONG_PRESSED(KEY_UP, {
 		file_move_cursor_up(file);
 		_unblink_cursor();
+
+		file->selection_start = file->cursor;
+		file->selection_end = file->cursor;
 	});
 
 	KEY_PRESSED_OR_LONG_PRESSED(KEY_DOWN, {
 		file_move_cursor_down(file);
 		_unblink_cursor();
+
+		file->selection_start = file->cursor;
+		file->selection_end = file->cursor;
 	});
 
 	// TODO: page up, page down, home, end
@@ -219,14 +241,14 @@ void code_editor_update(computer_t *computer) {
 
 	// Handle return
 	KEY_PRESSED_OR_LONG_PRESSED(KEY_RETURN, {
-		file_split_line_down(file, file->cursor_line, file->cursor_pos, 0);
-		file->cursor_line++;
-		file->cursor_pos = 0;
+		file_split_line_down(file, file->cursor.line, file->cursor.pos, 0);
+		file->cursor.line++;
+		file->cursor.pos = 0;
 	});
 	KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMENTER, {
-		file_split_line_down(file, file->cursor_line, file->cursor_pos, 0);
-		file->cursor_line++;
-		file->cursor_pos = 0;
+		file_split_line_down(file, file->cursor.line, file->cursor.pos, 0);
+		file->cursor.line++;
+		file->cursor.pos = 0;
 	});
 
 	_handle_char_input(computer, file);
@@ -236,18 +258,30 @@ void code_editor_update(computer_t *computer) {
 		_move_cursor_to_mouse(computer->ram, file);
 		_unblink_cursor();
 
-		file->selection_start_line = file->cursor_line;
-		file->selection_start_pos = file->cursor_pos;
+		file->selection_start = file->cursor;
 	}
 	if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
 		_move_cursor_to_mouse(computer->ram, file);
 		_unblink_cursor();
 
-		file->selection_end_line = file->cursor_line;
-		file->selection_end_pos = file->cursor_pos;
+		file->selection_end = file->cursor;
+	}
+	
+	if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
+		// Make start and end proper
+		if (file->selection_end.line < file->selection_start.line || (file->selection_end.line == file->selection_start.line && file->selection_end.pos < file->selection_start.pos)) {
+			file_pos_t temp = file->selection_start;
+			file->selection_start = file->selection_end;
+			file->selection_end = temp;
+		}
 	}
 
-	printf("selection: (%d %d), (%d %d)\n", file->selection_start_line, file->selection_start_pos, file->selection_end_line, file->selection_end_pos);
+	// TODO: don't insert c into file
+	if ((input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL)) && input_key_pressed(KEY_C)) {
+		file_put_selection_in_clipboard(file);
+	}
+
+	// printf("selection: (%d %d), (%d %d)\n", file->selection_start.line, file->selection_start.pos, file->selection_end.line, file->selection_end.pos);
 
 	// Scrolling
 	if (input_mouse_scrolled(SCROLL_DIR_DOWN)) {
@@ -273,6 +307,7 @@ void code_editor_draw(computer_t *computer) {
 		
 		if (gui_button(computer->ram, pos, skin_layout.code_file_button, _current_file_index == i)) {
 			if (_current_file_index == i) {
+				// TODO: see if I can't just replace this with a break statement
 				goto ignore_current_file;
 			}
 
@@ -334,47 +369,59 @@ void code_editor_draw(computer_t *computer) {
 	// Draw selection rect
 	// This code looks like shit but it works for now
 	file_t *file = &computer->files[_current_file_index];
-	if (file->selection_start_line == file->selection_end_line) {
-		string_t string = computer->files[_current_file_index].lines[file->selection_start_line].string;
+	{
+		file_pos_t start = file->selection_start;
+		file_pos_t end = file->selection_end;
 
-		rect_t rect = {
-			.x = line_x + gui_get_string_width(font, string_view(string, 0, file->selection_start_pos), string.len),
-			.y = _layout.code_rect.y + 2 + (file->selection_start_line - _scroll_amount) * (font->height + font->vertical_space),
-			.w = gui_get_string_width(font, string_view(string, file->selection_start_pos, file->selection_end_pos - file->selection_start_pos), string.len),
-			.h = font->height,
-		};
+		// Make start and end proper
+		if (end.line < start.line || (end.line == start.line && end.pos < start.pos)) {
+			file_pos_t temp = start;
+			start = end;
+			end = temp;
+		}
 
-		gfx_draw_filled_rect(fb_surf, rect, COLOR_CYAN);
-
-	} else {
-		for (size_t i = file->selection_start_line; i <= file->selection_end_line; i++) {
-			string_t string = computer->files[_current_file_index].lines[i].string;
-
-			if (i == file->selection_start_line) {
-				rect_t rect = {
-					.x = line_x + gui_get_string_width(font, string_view(string, 0, file->selection_start_pos), string.len),
-					.y = _layout.code_rect.y + 2 + (i - _scroll_amount) * (font->height + font->vertical_space),
-					.w = gui_get_string_width(font, string_view(string, file->selection_start_pos, string.len - file->selection_start_pos), string.len),
-					.h = font->height,
-				};
-				gfx_draw_filled_rect(fb_surf, rect, COLOR_CYAN);
-
-			} else if (i == file->selection_end_line) {
-				rect_t rect = {
-					.x = line_x,
-					.y = _layout.code_rect.y + 2 + (i - _scroll_amount) * (font->height + font->vertical_space),
-					.w = gui_get_string_width(font, string_view(string, 0, file->selection_end_pos), file->selection_end_pos),
-					.h = font->height,
-				};
-				gfx_draw_filled_rect(fb_surf, rect, COLOR_CYAN);
-			} else {
-				rect_t rect = {
-					.x = line_x,
-					.y = _layout.code_rect.y + 2 + (i - _scroll_amount) * (font->height + font->vertical_space),
-					.w = gui_get_string_width(font, string, string.len),
-					.h = font->height,
-				};
-				gfx_draw_filled_rect(fb_surf, rect, COLOR_CYAN);
+		if (start.line == end.line) {
+			string_t string = computer->files[_current_file_index].lines[start.line].string;
+	
+			rect_t rect = {
+				.x = line_x + gui_get_string_width(font, string_view(string, 0, start.pos), string.len),
+				.y = _layout.code_rect.y + 2 + (start.line - _scroll_amount) * (font->height + font->vertical_space),
+				.w = gui_get_string_width(font, string_view(string, start.pos, end.pos - start.pos), string.len),
+				.h = font->height,
+			};
+	
+			gfx_draw_filled_rect(fb_surf, rect, COLOR_CYAN);
+	
+		} else {
+			for (size_t i = start.line; i <= end.line; i++) {
+				string_t string = computer->files[_current_file_index].lines[i].string;
+	
+				if (i == start.line) {
+					rect_t rect = {
+						.x = line_x + gui_get_string_width(font, string_view(string, 0, start.pos), string.len),
+						.y = _layout.code_rect.y + 2 + (i - _scroll_amount) * (font->height + font->vertical_space),
+						.w = gui_get_string_width(font, string_view(string, start.pos, string.len - start.pos), string.len),
+						.h = font->height,
+					};
+					gfx_draw_filled_rect(fb_surf, rect, COLOR_CYAN);
+	
+				} else if (i == end.line) {
+					rect_t rect = {
+						.x = line_x,
+						.y = _layout.code_rect.y + 2 + (i - _scroll_amount) * (font->height + font->vertical_space),
+						.w = gui_get_string_width(font, string_view(string, 0, end.pos), end.pos),
+						.h = font->height,
+					};
+					gfx_draw_filled_rect(fb_surf, rect, COLOR_CYAN);
+				} else {
+					rect_t rect = {
+						.x = line_x,
+						.y = _layout.code_rect.y + 2 + (i - _scroll_amount) * (font->height + font->vertical_space),
+						.w = gui_get_string_width(font, string, string.len),
+						.h = font->height,
+					};
+					gfx_draw_filled_rect(fb_surf, rect, COLOR_CYAN);
+				}
 			}
 		}
 	}
@@ -407,7 +454,7 @@ void code_editor_draw(computer_t *computer) {
 	// Draw cursor
 	if (_cursor_timer >= _cursor_blink_speed / 2) {
 		int cursor_x = _layout.code_rect.x + 2 + 5 * (font->widths[0] + font->horizontal_space) + _get_real_cursor_pos(computer) - 1;
-		int cursor_y = _layout.code_rect.y + 2 + computer->files[_current_file_index].cursor_line * (font->height + font->vertical_space) - _scroll_amount * (font->height + font->vertical_space);
+		int cursor_y = _layout.code_rect.y + 2 + computer->files[_current_file_index].cursor.line * (font->height + font->vertical_space) - _scroll_amount * (font->height + font->vertical_space);
 		gfx_draw_line(fb_surf, POINT(cursor_x, cursor_y), POINT(cursor_x, cursor_y + font->height - 1), 3);
 	}
 	
