@@ -346,6 +346,9 @@ void shell_init(computer_t *computer) {
 	_print_intro(computer->ram);
 	array_init(&computer->ram->shell.command_history, get_heap_allocator());
 	shell_new_command(computer);
+
+	// TODO: remove eventually, it's just so I don't have to type it manually
+	_execute_command(computer, STR("load fucking"));
 }
 
 void shell_update(computer_t *computer) {

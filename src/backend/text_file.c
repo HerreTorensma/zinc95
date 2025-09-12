@@ -321,18 +321,35 @@ void file_split_line_down(file_t *file, size_t line, size_t pos, size_t indent_l
 	_tokenize_line(file, line + 1ULL);
 }
 
-// Moves the lines below up by one, do the current line gets deleted
-static void _move_lines_up(file_t *file, size_t line) {
-	if (line < file->line_amount - 1) {
+// // Moves the lines below up by one, so the current line gets deleted
+// // Does not free any individual lines
+// static void _move_lines_up(file_t *file, size_t line) {
+// 	if (line < file->line_amount - 1) {
+// 		// Move the lines up
+// 		memmove(&file->lines[line], &file->lines[line + 1], (file->line_amount - line - 1ULL) * sizeof(line_t));
+// 		// Realloc lines
+// 		file->lines = heap_realloc(file->lines, (file->line_amount - 1ULL) * sizeof(line_t));
+// 		// assert(file->lines != NULL && "Realloc failed");
+// 	}
+
+// 	// Decrement line amount
+// 	file->line_amount--;
+// }
+
+// Moves the lines below up by one, so the current line gets deleted
+// Does not free any individual lines
+static void _move_lines_up(file_t *file, size_t line, size_t amount) {
+	if (line + amount < file->line_amount) {
 		// Move the lines up
-		memmove(&file->lines[line], &file->lines[line + 1], (file->line_amount - line - 1ULL) * sizeof(line_t));
-		// Realloc lines
-		file->lines = heap_realloc(file->lines, (file->line_amount - 1ULL) * sizeof(line_t));
-		// assert(file->lines != NULL && "Realloc failed");
+		memmove(&file->lines[line], &file->lines[line + amount], (file->line_amount - line - amount) * sizeof(line_t));
 	}
 
 	// Decrement line amount
-	file->line_amount--;
+	file->line_amount -= amount;
+		
+	// Realloc lines
+	file->lines = heap_realloc(file->lines, file->line_amount * sizeof(line_t));
+	// assert(file->lines != NULL && "Realloc failed");
 }
 
 size_t file_merge_line_up(file_t *file, size_t line) {
@@ -355,7 +372,7 @@ size_t file_merge_line_up(file_t *file, size_t line) {
 	// Free old tokens
 	array_deinit(&file->lines[line].tokens);
 
-	_move_lines_up(file, line);
+	_move_lines_up(file, line, 1ULL);
 
 	_tokenize_line(file, line - 1);
 
@@ -542,23 +559,68 @@ string_t file_put_selection_in_clipboard(file_t *file) {
 	if (file->selection_start.line == file->selection_end.line) {
 		string_t string = file->lines[file->selection_start.line].string;
 		string_builder_append(&builder, string_view(string, file->selection_start.pos, file->selection_end.pos - file->selection_start.pos));
-	} else {
-		for (size_t i = file->selection_start.line; i <= file->selection_end.line; i++) {
-			string_t string = file->lines[i].string;
+		
+		string_builder_append(&builder, STR("\0"));
+		set_clipboard_text(builder.string);
+		return;
+	}
 
-			if (i == file->selection_start.line) {
-				string_builder_append(&builder, string_view(string, file->selection_start.pos, string.len - file->selection_start.pos));
-				string_builder_append(&builder, STR("\n"));
-			} else if (i == file->selection_end.line) {
-				string_builder_append(&builder, string_view(string, 0, file->selection_end.pos));
-			} else {
-				string_builder_append(&builder, string);
-				string_builder_append(&builder, STR("\n"));
-			}
+	for (size_t i = file->selection_start.line; i <= file->selection_end.line; i++) {
+		string_t string = file->lines[i].string;
+
+		if (i == file->selection_start.line) {
+			string_builder_append(&builder, string_view(string, file->selection_start.pos, string.len - file->selection_start.pos));
+			string_builder_append(&builder, STR("\n"));
+		} else if (i == file->selection_end.line) {
+			string_builder_append(&builder, string_view(string, 0, file->selection_end.pos));
+		} else {
+			string_builder_append(&builder, string);
+			string_builder_append(&builder, STR("\n"));
 		}
 	}
 
 	string_builder_append(&builder, STR("\0"));
-
 	set_clipboard_text(builder.string);
+}
+
+void file_remove_selection(file_t *file) {
+	if (file->selection_start.line == file->selection_end.line && file->selection_start.pos == file->selection_end.pos) {
+		return;
+	}
+
+	if (file->selection_start.line == file->selection_end.line) {
+		for (size_t i = 0; i < file->selection_end.pos - file->selection_start.pos; i++) {
+			file_remove_char_at(file, file->selection_start.line, file->selection_start.pos + 1);
+		}
+
+		file->cursor.pos = file->selection_start.pos;
+
+		return;
+	}
+
+	string_t start_string = file->lines[file->selection_start.line].string;
+	string_t end_string = file->lines[file->selection_end.line].string;
+
+	// Multiple lines
+	string_t before = string_view(start_string, 0, file->selection_start.pos);
+	string_t after = string_view(end_string, file->selection_end.pos, end_string.len - file->selection_end.pos);
+
+	string_t new_string = string_concat(get_heap_allocator(), before, after);
+
+	dealloc(get_heap_allocator(), start_string.data);
+
+	file->lines[file->selection_start.line].string = new_string;
+
+	for (size_t i = file->selection_start.line + 1; i <= file->selection_end.line; i++) {
+		dealloc(get_heap_allocator(), file->lines[i].string.data);
+	}
+	
+	size_t remove_count = file->selection_end.line - file->selection_start.line;
+	_move_lines_up(file, file->selection_start.line + 1, remove_count);
+
+	file->cursor = file->selection_start;
+	file->selection_end = file->cursor;
+	
+	// Recompute tokens
+	_tokenize_line(file, file->cursor.line);
 }

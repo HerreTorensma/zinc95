@@ -102,3 +102,5 @@ void file_move_cursor_to_prev_word(file_t *file);
 string_t file_get_name(file_t *file);
 
 string_t file_put_selection_in_clipboard(file_t *file);
+
+void file_remove_selection(file_t *file);

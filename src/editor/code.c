@@ -9,6 +9,22 @@
 #include "../backend/gui.h"
 #include "../backend/text_file.h"
 
+#define KEY_PRESSED_OR_LONG_PRESSED(key, action) do { \
+	if (input_key_pressed(key)) { \
+		file_remove_selection(file); \
+		action; \
+		_key_timers[key] = 30; \
+	} \
+	if (!input_key_held(key)) { \
+		_key_timers[key] = 0; \
+	} \
+	if (_key_timers[key] == 1) { \
+		file_remove_selection(file); \
+		action; \
+		_key_timers[key] = 4; \
+	} \
+} while (0);
+
 // TODO: These 3 should be configurable thus stored in RAM
 static const int _cursor_blink_speed = 45;
 
@@ -34,7 +50,7 @@ static const layout_t _layout = {
 
 static size_t _current_file_index = 0;
 
-static void _screen_pos_to_file_pos(ram_t *ram, file_t *code, point_t screen_pos, size_t *mouse_line, size_t *mouse_pos) {
+static void _screen_pos_to_file_pos(ram_t *ram, file_t *file, point_t screen_pos, size_t *mouse_line, size_t *mouse_pos) {
 	font_t *font = &ram->fonts[CODE_EDITOR_FONT_INDEX];
 
 	int corrected_x = screen_pos.x - (_layout.code_rect.x + 5 * (font->widths[0] + font->horizontal_space));
@@ -44,16 +60,16 @@ static void _screen_pos_to_file_pos(ram_t *ram, file_t *code, point_t screen_pos
 	if (line < 0) {
 		return;
 	}
-	if (line >= code->line_amount) {
-		line = code->line_amount - 1;
+	if (line >= file->line_amount) {
+		line = file->line_amount - 1;
 	}
 
- 	// int pos = gui_x_to_text_index(font, code->lines[line].text, corrected_x);
-	int pos = gui_x_to_string_index(font, code->lines[line].string, corrected_x);
+ 	// int pos = gui_x_to_text_index(font, file->lines[line].text, corrected_x);
+	int pos = gui_x_to_string_index(font, file->lines[line].string, corrected_x);
 	if (pos < 0) {
 		return;
 	}
-	int line_len = code->lines[line].string.len;
+	int line_len = file->lines[line].string.len;
 	if (line_len < pos) {
 		pos = line_len;
 	}
@@ -62,8 +78,8 @@ static void _screen_pos_to_file_pos(ram_t *ram, file_t *code, point_t screen_pos
 	*mouse_pos = pos;
 }
 
-static void _move_cursor_to_mouse(ram_t *ram, file_t *code) {
-	_screen_pos_to_file_pos(ram, code, input_get_mouse_pos(), &code->cursor.line, &code->cursor.pos);
+static void _move_cursor_to_mouse(ram_t *ram, file_t *file) {
+	_screen_pos_to_file_pos(ram, file, input_get_mouse_pos(), &file->cursor.line, &file->cursor.pos);
 }
 
 static void _unblink_cursor() {
@@ -86,22 +102,8 @@ void code_editor_init(computer_t *computer) {
 	// file_load(&computer->file, computer->code_buffer);
 }
 
-#define KEY_PRESSED_OR_LONG_PRESSED(key, action) { \
-	if (input_key_pressed(key)) { \
-		action; \
-		_key_timers[key] = 30; \
-	} \
-	if (!input_key_held(key)) { \
-		_key_timers[key] = 0; \
-	} \
-	if (_key_timers[key] == 1) { \
-		action; \
-		_key_timers[key] = 4; \
-	} \
-}
-
 // Handle all the character inputs
-static void _handle_char_input(computer_t *computer, file_t *code) {
+static void _handle_char_input(computer_t *computer, file_t *file) {
 	if (input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL)) {
 		return;
 	}
@@ -109,67 +111,67 @@ static void _handle_char_input(computer_t *computer, file_t *code) {
 	// Letters
 	if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
 		for (int i = KEY_A; i <= KEY_Z; i++) {
-			KEY_PRESSED_OR_LONG_PRESSED(i, file_insert_char_at_cursor(code, 'A' + (i - KEY_A)));
+			KEY_PRESSED_OR_LONG_PRESSED(i, file_insert_char_at_cursor(file, 'A' + (i - KEY_A)));
 		}
 	} else {
 		for (int i = KEY_A; i <= KEY_Z; i++) {
-			KEY_PRESSED_OR_LONG_PRESSED(i, file_insert_char_at_cursor(code, 'a' + (i - KEY_A)));
+			KEY_PRESSED_OR_LONG_PRESSED(i, file_insert_char_at_cursor(file, 'a' + (i - KEY_A)));
 		}
 	}
 
 	// Number row
 	if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_1, file_insert_char_at_cursor(code, '!'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_2, file_insert_char_at_cursor(code, '@'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_3, file_insert_char_at_cursor(code, '#'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_4, file_insert_char_at_cursor(code, '$'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_5, file_insert_char_at_cursor(code, '%'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_6, file_insert_char_at_cursor(code, '^'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_7, file_insert_char_at_cursor(code, '&'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_8, file_insert_char_at_cursor(code, '*'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_9, file_insert_char_at_cursor(code, '('));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_0, file_insert_char_at_cursor(code, ')'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_1, file_insert_char_at_cursor(file, '!'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_2, file_insert_char_at_cursor(file, '@'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_3, file_insert_char_at_cursor(file, '#'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_4, file_insert_char_at_cursor(file, '$'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_5, file_insert_char_at_cursor(file, '%'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_6, file_insert_char_at_cursor(file, '^'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_7, file_insert_char_at_cursor(file, '&'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_8, file_insert_char_at_cursor(file, '*'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_9, file_insert_char_at_cursor(file, '('));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_0, file_insert_char_at_cursor(file, ')'));
 	} else {
 		for (int i = 0; i <= 9; i++) {
-			KEY_PRESSED_OR_LONG_PRESSED(KEY_0 + i, file_insert_char_at_cursor(code, '0' + i));
-			KEY_PRESSED_OR_LONG_PRESSED(KEY_NUM0 + i, file_insert_char_at_cursor(code, '0' + i));
+			KEY_PRESSED_OR_LONG_PRESSED(KEY_0 + i, file_insert_char_at_cursor(file, '0' + i));
+			KEY_PRESSED_OR_LONG_PRESSED(KEY_NUM0 + i, file_insert_char_at_cursor(file, '0' + i));
 		}
 	}
 
 	// Other characters
 	if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_MINUS, file_insert_char_at_cursor(code, '_'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_EQUALS, file_insert_char_at_cursor(code, '+'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_LEFTBRACKET, file_insert_char_at_cursor(code, '{'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_RIGHTBRACKET, file_insert_char_at_cursor(code, '}'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_BACKSLASH, file_insert_char_at_cursor(code, '|'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_SEMICOLON, file_insert_char_at_cursor(code, ':'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_APOSTROPHE, file_insert_char_at_cursor(code, '\"'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_COMMA, file_insert_char_at_cursor(code, '<'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_PERIOD, file_insert_char_at_cursor(code, '>'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_SLASH, file_insert_char_at_cursor(code, '?'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_GRAVE, file_insert_char_at_cursor(code, '~'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_MINUS, file_insert_char_at_cursor(file, '_'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_EQUALS, file_insert_char_at_cursor(file, '+'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_LEFTBRACKET, file_insert_char_at_cursor(file, '{'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_RIGHTBRACKET, file_insert_char_at_cursor(file, '}'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_BACKSLASH, file_insert_char_at_cursor(file, '|'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_SEMICOLON, file_insert_char_at_cursor(file, ':'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_APOSTROPHE, file_insert_char_at_cursor(file, '\"'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_COMMA, file_insert_char_at_cursor(file, '<'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_PERIOD, file_insert_char_at_cursor(file, '>'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_SLASH, file_insert_char_at_cursor(file, '?'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_GRAVE, file_insert_char_at_cursor(file, '~'));
 	} else {
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_MINUS, file_insert_char_at_cursor(code, '-'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_EQUALS, file_insert_char_at_cursor(code, '='));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_LEFTBRACKET, file_insert_char_at_cursor(code, '['));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_RIGHTBRACKET, file_insert_char_at_cursor(code, ']'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_BACKSLASH, file_insert_char_at_cursor(code, '\\'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_SEMICOLON, file_insert_char_at_cursor(code, ';'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_APOSTROPHE, file_insert_char_at_cursor(code, '\''));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_COMMA, file_insert_char_at_cursor(code, ','));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_PERIOD, file_insert_char_at_cursor(code, '.'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_SLASH, file_insert_char_at_cursor(code, '/'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_GRAVE, file_insert_char_at_cursor(code, '`'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_MINUS, file_insert_char_at_cursor(file, '-'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_EQUALS, file_insert_char_at_cursor(file, '='));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_LEFTBRACKET, file_insert_char_at_cursor(file, '['));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_RIGHTBRACKET, file_insert_char_at_cursor(file, ']'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_BACKSLASH, file_insert_char_at_cursor(file, '\\'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_SEMICOLON, file_insert_char_at_cursor(file, ';'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_APOSTROPHE, file_insert_char_at_cursor(file, '\''));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_COMMA, file_insert_char_at_cursor(file, ','));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_PERIOD, file_insert_char_at_cursor(file, '.'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_SLASH, file_insert_char_at_cursor(file, '/'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_GRAVE, file_insert_char_at_cursor(file, '`'));
 	
 		// Some numpad stuff
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMDIVIDE, file_insert_char_at_cursor(code, '/'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMMULTIPLY, file_insert_char_at_cursor(code, '*'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMPLUS, file_insert_char_at_cursor(code, '+'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMMINUS, file_insert_char_at_cursor(code, '-'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMPERIOD, file_insert_char_at_cursor(code, '.'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMDIVIDE, file_insert_char_at_cursor(file, '/'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMMULTIPLY, file_insert_char_at_cursor(file, '*'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMPLUS, file_insert_char_at_cursor(file, '+'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMMINUS, file_insert_char_at_cursor(file, '-'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMPERIOD, file_insert_char_at_cursor(file, '.'));
 
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_TAB, file_insert_char_at_cursor(code, '\t'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_TAB, file_insert_char_at_cursor(file, '\t'));
 	}
 }
 
@@ -237,7 +239,12 @@ void code_editor_update(computer_t *computer) {
 
 	// Handle space
 	KEY_PRESSED_OR_LONG_PRESSED(KEY_SPACE, file_insert_char_at_cursor(file, ' '));
-	KEY_PRESSED_OR_LONG_PRESSED(KEY_BACKSPACE, file_remove_char_at_cursor(file));
+
+	if (file->selection_start.line == file->selection_end.line && file->selection_start.pos == file->selection_end.pos) {
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_BACKSPACE, file_remove_char_at_cursor(file));
+	} else {
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_BACKSPACE, file_remove_selection(file));
+	}
 
 	// Handle return
 	KEY_PRESSED_OR_LONG_PRESSED(KEY_RETURN, {
@@ -301,7 +308,7 @@ void code_editor_draw(computer_t *computer) {
 	font_t *font = &computer->ram->fonts[CODE_EDITOR_FONT_INDEX];
 	surface_t fb_surf = FB_SURF(computer->ram->framebuffer.data);
 
-	// Draw buttons for files (this code is kinda dirty but it works)
+	// Draw buttons for files (this file is kinda dirty but it works)
 	for (size_t i = 0; i < computer->active_files_amount; i++) {
 		point_t pos = POINT(_layout.file_buttons_pos.x, _layout.file_buttons_pos.y + i * skin_layout.code_file_button.pressed_rect.h);
 		
@@ -367,7 +374,7 @@ void code_editor_draw(computer_t *computer) {
 	const size_t line_x = _layout.code_rect.x + 2 + 5 * (font->widths[0] + font->horizontal_space);
 
 	// Draw selection rect
-	// This code looks like shit but it works for now
+	// This file looks like shit but it works for now
 	file_t *file = &computer->files[_current_file_index];
 	{
 		file_pos_t start = file->selection_start;
