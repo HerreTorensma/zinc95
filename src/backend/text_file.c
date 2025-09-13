@@ -264,6 +264,7 @@ static size_t _len_at_pos(string_t *string, size_t pos) {
 	return string->len - pos;
 }
 
+// Makes the passed line index empty
 static void _move_lines_down(file_t *file, size_t line) {
 	// Realloc lines
 	line_t *temp = heap_realloc(file->lines, (file->line_amount + 1ULL) * sizeof(line_t));
@@ -272,8 +273,8 @@ static void _move_lines_down(file_t *file, size_t line) {
 
 	// Move the memory up
 	size_t amount = file->line_amount - (size_t)line;
-	memmove(&file->lines[line + 1ULL], &file->lines[line], amount * sizeof(line_t));
-	// memcpy(&file->lines[line + 1ULL], &file->lines[line], amount * sizeof(line_t));
+	// memmove(&file->lines[line + 1ULL], &file->lines[line], amount * sizeof(line_t));
+	memcpy(&file->lines[line + 1ULL], &file->lines[line], amount * sizeof(line_t));
 
 	// Zero-initialize the new line
 	memset(&file->lines[line + 1ULL], 0, sizeof(line_t));
@@ -282,6 +283,7 @@ static void _move_lines_down(file_t *file, size_t line) {
 	file->line_amount++;
 }
 
+// TODO: replace with the function in my string library
 // Edits the passed string and returns the new one
 static string_t _string_split(string_t *origin, size_t pos) {
 	string_t second = {0};
@@ -310,9 +312,6 @@ static string_t _string_split(string_t *origin, size_t pos) {
 void file_split_line_down(file_t *file, size_t line, size_t pos, size_t indent_level) {
 	// Make space for the new line
 	_move_lines_down(file, line);
-	
-	// Zero initialize the new line
-	memset(&file->lines[line + 1ULL], 0, sizeof(line_t));
 
 	file->lines[line + 1ULL].string = _string_split(&file->lines[line].string, pos);
 
@@ -557,7 +556,9 @@ string_t file_get_name(file_t *file) {
 	return string;
 }
 
-string_t file_put_selection_in_clipboard(file_t *file) {
+// TODO: change this so it returns a string
+// Then the clipboard part will be handled by the code editor frontend
+void file_put_selection_in_clipboard(file_t *file) {
 	string_builder_t builder = {0};
 	// TODO: hope this doesnt crash bc of temp allocator
 	string_builder_init(&builder, get_temp_allocator(), 8);
@@ -645,24 +646,23 @@ static void _format_string(string_t *string) {
 	}
 }
 
-
 void file_insert_clipboard_content_at_cursor(file_t *file) {
 	string_t clipboard = get_clipboard_text(get_temp_allocator());
 	_format_string(&clipboard);
 
 	// Split clipboard into lines
 	string_t_array_t lines = string_split(get_temp_allocator(), clipboard, '\n');
-	printf("lines len: %d\n", lines.len);
 
 	if (lines.len == 0) {
 		return;
 	}
 
-	string_t cursor_line_string = file->lines[file->cursor.line].string;
+	string_t string_under_cursor = file->lines[file->cursor.line].string;
+
 	if (lines.len == 1) {
-		string_t temp = string_concat(get_temp_allocator(), string_view(cursor_line_string, 0, file->cursor.pos), lines.data[0]);
-		string_t new_line = string_concat(get_heap_allocator(), temp, string_view(cursor_line_string, file->cursor.pos, cursor_line_string.len - file->cursor.pos));
-		heap_dealloc(cursor_line_string.data);
+		string_t temp = string_concat(get_temp_allocator(), string_view(string_under_cursor, 0, file->cursor.pos), lines.data[0]);
+		string_t new_line = string_concat(get_heap_allocator(), temp, string_view(string_under_cursor, file->cursor.pos, string_under_cursor.len - file->cursor.pos));
+		heap_dealloc(string_under_cursor.data);
 
 		file->lines[file->cursor.line].string = new_line;
 		_tokenize_line(file, file->cursor.line);
@@ -672,40 +672,26 @@ void file_insert_clipboard_content_at_cursor(file_t *file) {
 		return;
 	}
 
-	// This is pretty broken rn
-	// First line
-	string_t new_start = string_concat(get_heap_allocator(), string_view(cursor_line_string, 0, file->cursor.pos), lines.data[0]);
-	_tokenize_line(file, file->cursor.line);
+	// 2 or more lines
+	string_t new_start = string_concat(get_heap_allocator(), string_view(string_under_cursor, 0, file->cursor.pos), lines.data[0]);
+	string_t new_end = string_concat(get_heap_allocator(), lines.data[lines.len - 1], string_view(string_under_cursor, file->cursor.pos, string_under_cursor.len - file->cursor.pos));
+	
+	_move_lines_down(file, file->cursor.line);
 	file->lines[file->cursor.line].string = new_start;
+	
+	_tokenize_line(file, file->cursor.line);
 
-	// Middle
+	// This loop only gets executed if there are 3 or more lines
 	for (size_t i = 1; i < lines.len - 1; i++) {
-		// Should not be moved down from cursor line
-		_move_lines_down(file, file->cursor.line);
-		
-		memset(&file->lines[file->cursor.line + 1ULL], 0, sizeof(line_t));
-
-		file->lines[file->cursor.line + 1ULL].string = lines.data[i];
-
-		_tokenize_line(file, file->cursor.line);
-		_tokenize_line(file, file->cursor.line + 1ULL);
+		_move_lines_down(file, file->cursor.line + i);
+		file->lines[file->cursor.line + i].string = string_copy(get_heap_allocator(), lines.data[i]);
+		_tokenize_line(file, file->cursor.line + i);
 	}
 
-	// Last line
-	string_t new_end = string_concat(get_heap_allocator(), lines.data[lines.len - 1], string_view(cursor_line_string, file->cursor.pos, cursor_line_string.len - file->cursor.pos));
-	{
-		_move_lines_down(file, file->cursor.line + lines.len - 1);
-		
-		memset(&file->lines[file->cursor.line + lines.len - 1], 0, sizeof(line_t));
+	file->lines[file->cursor.line + (lines.len - 1)].string = new_end;
+	_tokenize_line(file, file->cursor.line + (lines.len - 1));
+	heap_dealloc(string_under_cursor.data);
 
-		file->lines[file->cursor.line + lines.len - 1].string = new_end;
-
-		_tokenize_line(file, file->cursor.line);
-		_tokenize_line(file, file->cursor.line + 1ULL);
-	}
-
-	heap_dealloc(cursor_line_string.data);
-
-	file->cursor.line += lines.len;
-	file->cursor.pos += lines.data[lines.len - 1].len;
+	file->cursor.line += lines.len - 1;
+	file->cursor.pos = lines.data[lines.len - 1].len;
 }

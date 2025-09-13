@@ -9,6 +9,7 @@
 #include "../backend/gui.h"
 #include "../backend/text_file.h"
 
+// TODO: file_remove_selection should not be be called if the key is not a character
 #define KEY_PRESSED_OR_LONG_PRESSED(key, action) do { \
 	if (input_key_pressed(key)) { \
 		file_remove_selection(file); \
