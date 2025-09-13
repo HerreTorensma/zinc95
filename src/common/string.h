@@ -52,6 +52,7 @@ void string_place(string_t *base, string_t new_string);
 
 bool string_is_empty(string_t string);
 
+// Returns an array of string views
 string_t_array_t string_split(allocator_t allocator, string_t string, char seperator);
 
 

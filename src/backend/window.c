@@ -59,3 +59,7 @@ void window_quit() {
 void set_clipboard_text(string_t string) {
 	sdl2_set_clipboard_text(string.data);
 }
+
+string_t get_clipboard_text(allocator_t allocator) {
+	return sdl2_get_clipboard_text(allocator);
+}

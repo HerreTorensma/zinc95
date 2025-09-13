@@ -422,3 +422,9 @@ void sdl2_audio_init(computer_t *computer) {
 void sdl2_set_clipboard_text(char *text) {
 	SDL_SetClipboardText(text);
 }
+
+string_t sdl2_get_clipboard_text(allocator_t allocator) {
+	char *text = SDL_GetClipboardText();
+	string_t string = STR(text);
+	return string_copy(allocator, string);
+}

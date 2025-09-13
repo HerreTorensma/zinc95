@@ -104,3 +104,5 @@ string_t file_get_name(file_t *file);
 string_t file_put_selection_in_clipboard(file_t *file);
 
 void file_remove_selection(file_t *file);
+
+void file_insert_clipboard_content_at_cursor(file_t *file);

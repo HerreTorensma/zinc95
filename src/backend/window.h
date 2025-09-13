@@ -22,3 +22,5 @@ void window_quit();
 
 // Assumes string is also null terminated
 void set_clipboard_text(string_t string);
+
+string_t get_clipboard_text(allocator_t allocator);

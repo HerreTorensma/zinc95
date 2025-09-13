@@ -283,9 +283,14 @@ void code_editor_update(computer_t *computer) {
 		}
 	}
 
-	// TODO: don't insert c into file
+	// Copy
 	if ((input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL)) && input_key_pressed(KEY_C)) {
 		file_put_selection_in_clipboard(file);
+	}
+
+	// Paste
+	if ((input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL)) && input_key_pressed(KEY_V)) {
+		file_insert_clipboard_content_at_cursor(file);
 	}
 
 	// printf("selection: (%d %d), (%d %d)\n", file->selection_start.line, file->selection_start.pos, file->selection_end.line, file->selection_end.pos);

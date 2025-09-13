@@ -107,6 +107,12 @@ static void _print_token_list(line_t *line) {
 
 // Update the token list on a given line
 static void _tokenize_line(file_t *file, size_t line_index) {
+	// TODO: investigate why no tokens are generated when this is uncommented
+	// that seems very bad
+	// if (line_index >= file->line_amount) {
+	// 	return;
+	// }
+
 	line_t *line = &file->lines[line_index];
 	string_t *string = &line->string;
 	size_t i = 0;
@@ -593,7 +599,8 @@ void file_remove_selection(file_t *file) {
 			file_remove_char_at(file, file->selection_start.line, file->selection_start.pos + 1);
 		}
 
-		file->cursor.pos = file->selection_start.pos;
+		file->cursor = file->selection_start;
+		file->selection_end = file->cursor;
 
 		return;
 	}
@@ -623,4 +630,82 @@ void file_remove_selection(file_t *file) {
 	
 	// Recompute tokens
 	_tokenize_line(file, file->cursor.line);
+}
+
+// Convert windows line endings r\n\ to Unix \n and removes unicode
+static void _format_string(string_t *string) {
+	size_t i = 0;
+	while (i < string->len) {
+		if (string->data[i] == '\r' || (uint8_t)string->data[i] >= 128) {
+			memmove(string->data + i, string->data + i + 1, string->len - i - 1);
+			string->len--;
+		} else {
+			i++;
+		}
+	}
+}
+
+
+void file_insert_clipboard_content_at_cursor(file_t *file) {
+	string_t clipboard = get_clipboard_text(get_temp_allocator());
+	_format_string(&clipboard);
+
+	// Split clipboard into lines
+	string_t_array_t lines = string_split(get_temp_allocator(), clipboard, '\n');
+	printf("lines len: %d\n", lines.len);
+
+	if (lines.len == 0) {
+		return;
+	}
+
+	string_t cursor_line_string = file->lines[file->cursor.line].string;
+	if (lines.len == 1) {
+		string_t temp = string_concat(get_temp_allocator(), string_view(cursor_line_string, 0, file->cursor.pos), lines.data[0]);
+		string_t new_line = string_concat(get_heap_allocator(), temp, string_view(cursor_line_string, file->cursor.pos, cursor_line_string.len - file->cursor.pos));
+		heap_dealloc(cursor_line_string.data);
+
+		file->lines[file->cursor.line].string = new_line;
+		_tokenize_line(file, file->cursor.line);
+
+		file->cursor.pos += lines.data[0].len;
+
+		return;
+	}
+
+	// This is pretty broken rn
+	// First line
+	string_t new_start = string_concat(get_heap_allocator(), string_view(cursor_line_string, 0, file->cursor.pos), lines.data[0]);
+	_tokenize_line(file, file->cursor.line);
+	file->lines[file->cursor.line].string = new_start;
+
+	// Middle
+	for (size_t i = 1; i < lines.len - 1; i++) {
+		// Should not be moved down from cursor line
+		_move_lines_down(file, file->cursor.line);
+		
+		memset(&file->lines[file->cursor.line + 1ULL], 0, sizeof(line_t));
+
+		file->lines[file->cursor.line + 1ULL].string = lines.data[i];
+
+		_tokenize_line(file, file->cursor.line);
+		_tokenize_line(file, file->cursor.line + 1ULL);
+	}
+
+	// Last line
+	string_t new_end = string_concat(get_heap_allocator(), lines.data[lines.len - 1], string_view(cursor_line_string, file->cursor.pos, cursor_line_string.len - file->cursor.pos));
+	{
+		_move_lines_down(file, file->cursor.line + lines.len - 1);
+		
+		memset(&file->lines[file->cursor.line + lines.len - 1], 0, sizeof(line_t));
+
+		file->lines[file->cursor.line + lines.len - 1].string = new_end;
+
+		_tokenize_line(file, file->cursor.line);
+		_tokenize_line(file, file->cursor.line + 1ULL);
+	}
+
+	heap_dealloc(cursor_line_string.data);
+
+	file->cursor.line += lines.len;
+	file->cursor.pos += lines.data[lines.len - 1].len;
 }
