@@ -101,8 +101,9 @@ void file_move_cursor_to_prev_word(file_t *file);
 
 string_t file_get_name(file_t *file);
 
-void file_put_selection_in_clipboard(file_t *file);
+// Returned string is also null terminated so it can be fed into the clipboard
+string_t file_get_selection_as_string(file_t *file, allocator_t allocator);
 
 void file_remove_selection(file_t *file);
 
-void file_insert_clipboard_content_at_cursor(file_t *file);
+void file_insert_string_at_cursor(file_t *file, string_t string);

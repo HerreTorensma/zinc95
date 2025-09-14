@@ -542,20 +542,16 @@ string_t file_get_name(file_t *file) {
 	return string;
 }
 
-// TODO: change this so it returns a string
-// Then the clipboard part will be handled by the code editor frontend
-void file_put_selection_in_clipboard(file_t *file) {
+string_t file_get_selection_as_string(file_t *file, allocator_t allocator) {
 	string_builder_t builder = {0};
-	// TODO: hope this doesnt crash bc of temp allocator
-	string_builder_init(&builder, get_temp_allocator(), 8);
+	string_builder_init(&builder, allocator, 8);
 
 	if (file->selection_start.line == file->selection_end.line) {
 		string_t string = file->lines[file->selection_start.line].string;
 		string_builder_append(&builder, string_view(string, file->selection_start.pos, file->selection_end.pos - file->selection_start.pos));
 		
 		string_builder_append(&builder, STR("\0"));
-		set_clipboard_text(builder.string);
-		return;
+		return builder.string;
 	}
 
 	for (size_t i = file->selection_start.line; i <= file->selection_end.line; i++) {
@@ -573,7 +569,7 @@ void file_put_selection_in_clipboard(file_t *file) {
 	}
 
 	string_builder_append(&builder, STR("\0"));
-	set_clipboard_text(builder.string);
+	return builder.string;
 }
 
 void file_remove_selection(file_t *file) {
@@ -632,12 +628,11 @@ static void _format_string(string_t *string) {
 	}
 }
 
-void file_insert_clipboard_content_at_cursor(file_t *file) {
-	string_t clipboard = get_clipboard_text(get_temp_allocator());
-	_format_string(&clipboard);
+void file_insert_string_at_cursor(file_t *file, string_t string) {
+	_format_string(&string);
 
 	// Split clipboard into lines
-	string_t_array_t lines = string_split(get_temp_allocator(), clipboard, '\n');
+	string_t_array_t lines = string_split(get_temp_allocator(), string, '\n');
 
 	if (lines.len == 0) {
 		return;
