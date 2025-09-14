@@ -326,23 +326,8 @@ void file_split_line_down(file_t *file, size_t line, size_t pos, size_t indent_l
 	_tokenize_line(file, line + 1ULL);
 }
 
-// // Moves the lines below up by one, so the current line gets deleted
-// // Does not free any individual lines
-// static void _move_lines_up(file_t *file, size_t line) {
-// 	if (line < file->line_amount - 1) {
-// 		// Move the lines up
-// 		memmove(&file->lines[line], &file->lines[line + 1], (file->line_amount - line - 1ULL) * sizeof(line_t));
-// 		// Realloc lines
-// 		file->lines = heap_realloc(file->lines, (file->line_amount - 1ULL) * sizeof(line_t));
-// 		// assert(file->lines != NULL && "Realloc failed");
-// 	}
-
-// 	// Decrement line amount
-// 	file->line_amount--;
-// }
-
-// Moves the lines below up by one, so the current line gets deleted
-// Does not free any individual lines
+// Moves the lines below up by amount, so the current line gets deleted
+// Does not free any strings
 static void _move_lines_up(file_t *file, size_t line, size_t amount) {
 	if (line + amount < file->line_amount) {
 		// Move the lines up
@@ -522,6 +507,7 @@ static bool _char_in_divider_chars(char c) {
 	return false;
 }
 
+// TODO: move to next token
 void file_move_cursor_to_next_word(file_t *file) {
 	int len = file->lines[file->cursor.line].string.len;
 			

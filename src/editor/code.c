@@ -9,10 +9,8 @@
 #include "../backend/gui.h"
 #include "../backend/text_file.h"
 
-// TODO: file_remove_selection should not be be called if the key is not a character
 #define KEY_PRESSED_OR_LONG_PRESSED(key, action) do { \
 	if (input_key_pressed(key)) { \
-		file_remove_selection(file); \
 		action; \
 		_key_timers[key] = 30; \
 	} \
@@ -20,7 +18,6 @@
 		_key_timers[key] = 0; \
 	} \
 	if (_key_timers[key] == 1) { \
-		file_remove_selection(file); \
 		action; \
 		_key_timers[key] = 4; \
 	} \
@@ -112,67 +109,69 @@ static void _handle_char_input(computer_t *computer, file_t *file) {
 	// Letters
 	if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
 		for (int i = KEY_A; i <= KEY_Z; i++) {
-			KEY_PRESSED_OR_LONG_PRESSED(i, file_insert_char_at_cursor(file, 'A' + (i - KEY_A)));
+			KEY_PRESSED_OR_LONG_PRESSED(i, file_remove_selection(file); file_insert_char_at_cursor(file, 'A' + (i - KEY_A)));
 		}
 	} else {
 		for (int i = KEY_A; i <= KEY_Z; i++) {
-			KEY_PRESSED_OR_LONG_PRESSED(i, file_insert_char_at_cursor(file, 'a' + (i - KEY_A)));
+			KEY_PRESSED_OR_LONG_PRESSED(i, file_remove_selection(file); file_insert_char_at_cursor(file, 'a' + (i - KEY_A)));
 		}
 	}
 
 	// Number row
 	if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_1, file_insert_char_at_cursor(file, '!'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_2, file_insert_char_at_cursor(file, '@'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_3, file_insert_char_at_cursor(file, '#'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_4, file_insert_char_at_cursor(file, '$'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_5, file_insert_char_at_cursor(file, '%'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_6, file_insert_char_at_cursor(file, '^'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_7, file_insert_char_at_cursor(file, '&'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_8, file_insert_char_at_cursor(file, '*'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_9, file_insert_char_at_cursor(file, '('));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_0, file_insert_char_at_cursor(file, ')'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_1, file_remove_selection(file); file_insert_char_at_cursor(file, '!'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_2, file_remove_selection(file); file_insert_char_at_cursor(file, '@'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_3, file_remove_selection(file); file_insert_char_at_cursor(file, '#'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_4, file_remove_selection(file); file_insert_char_at_cursor(file, '$'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_5, file_remove_selection(file); file_insert_char_at_cursor(file, '%'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_6, file_remove_selection(file); file_insert_char_at_cursor(file, '^'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_7, file_remove_selection(file); file_insert_char_at_cursor(file, '&'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_8, file_remove_selection(file); file_insert_char_at_cursor(file, '*'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_9, file_remove_selection(file); file_insert_char_at_cursor(file, '('));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_0, file_remove_selection(file); file_insert_char_at_cursor(file, ')'));
 	} else {
 		for (int i = 0; i <= 9; i++) {
-			KEY_PRESSED_OR_LONG_PRESSED(KEY_0 + i, file_insert_char_at_cursor(file, '0' + i));
-			KEY_PRESSED_OR_LONG_PRESSED(KEY_NUM0 + i, file_insert_char_at_cursor(file, '0' + i));
+			KEY_PRESSED_OR_LONG_PRESSED(KEY_0 + i, file_remove_selection(file); file_insert_char_at_cursor(file, '0' + i));
+			KEY_PRESSED_OR_LONG_PRESSED(KEY_NUM0 + i, file_remove_selection(file); file_insert_char_at_cursor(file, '0' + i));
 		}
 	}
 
 	// Other characters
 	if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_MINUS, file_insert_char_at_cursor(file, '_'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_EQUALS, file_insert_char_at_cursor(file, '+'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_LEFTBRACKET, file_insert_char_at_cursor(file, '{'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_RIGHTBRACKET, file_insert_char_at_cursor(file, '}'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_BACKSLASH, file_insert_char_at_cursor(file, '|'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_SEMICOLON, file_insert_char_at_cursor(file, ':'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_APOSTROPHE, file_insert_char_at_cursor(file, '\"'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_COMMA, file_insert_char_at_cursor(file, '<'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_PERIOD, file_insert_char_at_cursor(file, '>'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_SLASH, file_insert_char_at_cursor(file, '?'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_GRAVE, file_insert_char_at_cursor(file, '~'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_MINUS, file_remove_selection(file); file_insert_char_at_cursor(file, '_'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_EQUALS, file_remove_selection(file); file_insert_char_at_cursor(file, '+'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_LEFTBRACKET, file_remove_selection(file); file_insert_char_at_cursor(file, '{'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_RIGHTBRACKET, file_remove_selection(file); file_insert_char_at_cursor(file, '}'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_BACKSLASH, file_remove_selection(file); file_insert_char_at_cursor(file, '|'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_SEMICOLON, file_remove_selection(file); file_insert_char_at_cursor(file, ':'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_APOSTROPHE, file_remove_selection(file); file_insert_char_at_cursor(file, '\"'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_COMMA, file_remove_selection(file); file_insert_char_at_cursor(file, '<'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_PERIOD, file_remove_selection(file); file_insert_char_at_cursor(file, '>'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_SLASH, file_remove_selection(file); file_insert_char_at_cursor(file, '?'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_GRAVE, file_remove_selection(file); file_insert_char_at_cursor(file, '~'));
 	} else {
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_MINUS, file_insert_char_at_cursor(file, '-'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_EQUALS, file_insert_char_at_cursor(file, '='));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_LEFTBRACKET, file_insert_char_at_cursor(file, '['));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_RIGHTBRACKET, file_insert_char_at_cursor(file, ']'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_BACKSLASH, file_insert_char_at_cursor(file, '\\'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_SEMICOLON, file_insert_char_at_cursor(file, ';'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_APOSTROPHE, file_insert_char_at_cursor(file, '\''));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_COMMA, file_insert_char_at_cursor(file, ','));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_PERIOD, file_insert_char_at_cursor(file, '.'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_SLASH, file_insert_char_at_cursor(file, '/'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_GRAVE, file_insert_char_at_cursor(file, '`'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_MINUS, file_remove_selection(file); file_insert_char_at_cursor(file, '-'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_EQUALS, file_remove_selection(file); file_insert_char_at_cursor(file, '='));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_LEFTBRACKET, file_remove_selection(file); file_insert_char_at_cursor(file, '['));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_RIGHTBRACKET, file_remove_selection(file); file_insert_char_at_cursor(file, ']'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_BACKSLASH, file_remove_selection(file); file_insert_char_at_cursor(file, '\\'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_SEMICOLON, file_remove_selection(file); file_insert_char_at_cursor(file, ';'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_APOSTROPHE, file_remove_selection(file); file_insert_char_at_cursor(file, '\''));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_COMMA, file_remove_selection(file); file_insert_char_at_cursor(file, ','));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_PERIOD, file_remove_selection(file); file_insert_char_at_cursor(file, '.'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_SLASH, file_remove_selection(file); file_insert_char_at_cursor(file, '/'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_GRAVE, file_remove_selection(file); file_insert_char_at_cursor(file, '`'));
 	
 		// Some numpad stuff
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMDIVIDE, file_insert_char_at_cursor(file, '/'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMMULTIPLY, file_insert_char_at_cursor(file, '*'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMPLUS, file_insert_char_at_cursor(file, '+'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMMINUS, file_insert_char_at_cursor(file, '-'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMPERIOD, file_insert_char_at_cursor(file, '.'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMDIVIDE, file_remove_selection(file); file_insert_char_at_cursor(file, '/'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMMULTIPLY, file_remove_selection(file); file_insert_char_at_cursor(file, '*'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMPLUS, file_remove_selection(file); file_insert_char_at_cursor(file, '+'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMMINUS, file_remove_selection(file); file_insert_char_at_cursor(file, '-'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMPERIOD, file_remove_selection(file); file_insert_char_at_cursor(file, '.'));
 
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_TAB, file_insert_char_at_cursor(file, '\t'));
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_TAB, file_remove_selection(file); file_insert_char_at_cursor(file, '\t'));
+
+		KEY_PRESSED_OR_LONG_PRESSED(KEY_SPACE, file_remove_selection(file); file_insert_char_at_cursor(file, ' '));
 	}
 }
 
@@ -204,7 +203,14 @@ void code_editor_update(computer_t *computer) {
 		});
 	} else {
 		KEY_PRESSED_OR_LONG_PRESSED(KEY_LEFT, {
-			file_move_cursor_left(file);
+			if (file->selection_start.line == file->selection_end.line && file->selection_start.pos == file->selection_end.pos) {
+				// There is no selection
+				file_move_cursor_left(file);
+			} else {
+				// Move cursor to selection start
+				file->cursor = file->selection_start;
+			}
+
 			_unblink_cursor();
 
 			file->selection_start = file->cursor;
@@ -212,7 +218,14 @@ void code_editor_update(computer_t *computer) {
 		});
 
 		KEY_PRESSED_OR_LONG_PRESSED(KEY_RIGHT, {
-			file_move_cursor_right(file);
+			if (file->selection_start.line == file->selection_end.line && file->selection_start.pos == file->selection_end.pos) {
+				// There is no selection
+				file_move_cursor_right(file);
+			} else {
+				// Move cursor to selection end
+				file->cursor = file->selection_end;
+			}
+
 			_unblink_cursor();
 
 			file->selection_start = file->cursor;
@@ -238,9 +251,6 @@ void code_editor_update(computer_t *computer) {
 
 	// TODO: page up, page down, home, end
 
-	// Handle space
-	KEY_PRESSED_OR_LONG_PRESSED(KEY_SPACE, file_insert_char_at_cursor(file, ' '));
-
 	if (file->selection_start.line == file->selection_end.line && file->selection_start.pos == file->selection_end.pos) {
 		KEY_PRESSED_OR_LONG_PRESSED(KEY_BACKSPACE, file_remove_char_at_cursor(file));
 	} else {
@@ -249,11 +259,15 @@ void code_editor_update(computer_t *computer) {
 
 	// Handle return
 	KEY_PRESSED_OR_LONG_PRESSED(KEY_RETURN, {
+		file_remove_selection(file);
+
 		file_split_line_down(file, file->cursor.line, file->cursor.pos, 0);
 		file->cursor.line++;
 		file->cursor.pos = 0;
 	});
 	KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMENTER, {
+		file_remove_selection(file);
+		
 		file_split_line_down(file, file->cursor.line, file->cursor.pos, 0);
 		file->cursor.line++;
 		file->cursor.pos = 0;
