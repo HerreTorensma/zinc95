@@ -60,7 +60,7 @@ void sound_editor_update(computer_t *computer) {
 			voice->oscillator = (oscillator_t){
 				.freq = note_to_freq_tet12(i, _current_octave),
 				.phase = 0.0f,
-				.waveform = WAVEFORM_SQUARE,
+				.waveform = WAVEFORM_SINE,
 			};
 			voice->amplitude = 0.5f;
 

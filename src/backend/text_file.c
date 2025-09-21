@@ -507,24 +507,78 @@ static bool _char_in_divider_chars(char c) {
 	return false;
 }
 
-// TODO: move to next token
-void file_move_cursor_to_next_word(file_t *file) {
-	int len = file->lines[file->cursor.line].string.len;
+// TODO: refactor with while loop instead of recursion
+void file_move_cursor_to_next_token(file_t *file, bool first_call) {
+	// printf("tokens: %d\n", file->lines[file->cursor.line].tokens.len);
+	// printf("string: %d\n", file->lines[file->cursor.line].string.len);
+
+	if (file->lines[file->cursor.line].tokens.len == 0 && first_call) {
+		if (file->cursor.line < file->line_amount - 1) {
+			file->cursor.line++;
+			file->cursor.pos = 0;
+
+			file_move_cursor_to_next_token(file, false);
 			
-	for (size_t i = file->cursor.pos + 1; i < len + 1; i++) {
-		if (file->lines[file->cursor.line].string.data[i] == ' ' || file->lines[file->cursor.line].string.data[i] == '.' || i == len) {
-			file->cursor.pos = i;
-			break;
+			return;
+		}
+	}
+
+	size_t string_index = 0;
+	for (size_t i = 0; i < file->lines[file->cursor.line].tokens.len; i++) {
+		// Damn
+		string_index += file->lines[file->cursor.line].tokens.data[i].string.len;
+
+		if (file->cursor.pos == file->lines[file->cursor.line].string.len) {
+			if (file->cursor.line < file->line_amount - 1) {
+				file->cursor.line++;
+				file->cursor.pos = 0;
+
+				// Recursion
+				file_move_cursor_to_next_token(file, false);
+				return;
+			}
+		}
+
+		if (i < file->lines[file->cursor.line].tokens.len - 1 && file->lines[file->cursor.line].tokens.data[i].type == LUA_TOKEN_WHITESPACE) {
+			continue;
+		}
+
+		if (string_index > file->cursor.pos) {
+			file->cursor.pos = string_index;
+			return;
 		}
 	}
 }
 
-void file_move_cursor_to_prev_word(file_t *file) {
-	for (size_t i = file->cursor.pos - 1; i >= 0; i--) {
-		if (file->lines[file->cursor.line].string.data[i] == ' ' || file->lines[file->cursor.line].string.data[i] == '.' || i == 0) {
-			file->cursor.pos = i;
-			break;
+// TODO: fix
+void file_move_cursor_to_prev_token(file_t *file) {
+	int64_t string_index = file->lines[file->cursor.line].string.len;
+	// for (int64_t i = file->lines[file->cursor.line].tokens.len - 1; i >= 0; i--) {
+	for (int64_t i = file->lines[file->cursor.line].tokens.len; i >= 0; i--) {
+		// Damn
+		string_index -= file->lines[file->cursor.line].tokens.data[i].string.len;
+		printf("string index: %d\n", string_index);
+		
+		if (file->cursor.pos == 0) {
+			if (file->cursor.line > 0) {
+				file->cursor.line--;
+				file->cursor.pos = file->lines[file->cursor.line].string.len - 1;
+
+				// Recursion
+				file_move_cursor_to_prev_token(file);
+				return;
+			}
 		}
+
+		if (i > 0 && file->lines[file->cursor.line].tokens.data[i].type == LUA_TOKEN_WHITESPACE) {
+			continue;
+		}
+		
+		if (string_index < file->cursor.pos) {
+			file->cursor.pos = string_index;
+			return;
+		}
+
 	}
 }
 

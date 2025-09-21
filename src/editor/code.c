@@ -188,7 +188,7 @@ void code_editor_update(computer_t *computer) {
 	// Cursor movement
 	if (input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL)) {
 		KEY_PRESSED_OR_LONG_PRESSED(KEY_LEFT, {
-			file_move_cursor_to_prev_word(file);
+			file_move_cursor_to_prev_token(file);
 			_unblink_cursor();
 
 			file->selection_start = file->cursor;
@@ -196,7 +196,7 @@ void code_editor_update(computer_t *computer) {
 		});
 
 		KEY_PRESSED_OR_LONG_PRESSED(KEY_RIGHT, {
-			file_move_cursor_to_next_word(file);
+			file_move_cursor_to_next_token(file, true);
 			_unblink_cursor();
 
 			file->selection_start = file->cursor;
@@ -301,8 +301,10 @@ void code_editor_update(computer_t *computer) {
 
 	// Copy
 	if ((input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL)) && input_key_pressed(KEY_C)) {
-		string_t selection = file_get_selection_as_string(file, get_temp_allocator());
-		set_clipboard_text(selection);
+		if (!(file->selection_start.line == file->selection_end.line && file->selection_start.pos == file->selection_end.pos)) {
+			string_t selection = file_get_selection_as_string(file, get_temp_allocator());
+			set_clipboard_text(selection);
+		}
 	}
 
 	// Paste
