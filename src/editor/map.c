@@ -26,6 +26,8 @@ static bool _hidden_layers[MAP_LAYERS_AMOUNT] = {0};
 
 static bool _entity_layer_hidden = false;
 
+// TODO: investigate perfomance hit when opening the map editor
+
 typedef struct layout {
 	rect_t map_rect;
 

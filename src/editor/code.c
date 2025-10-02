@@ -188,7 +188,7 @@ void code_editor_update(computer_t *computer) {
 	// Cursor movement
 	if (input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL)) {
 		KEY_PRESSED_OR_LONG_PRESSED(KEY_LEFT, {
-			file_move_cursor_to_prev_token(file);
+			file_move_cursor_to_prev_token(file, true);
 			_unblink_cursor();
 
 			file->selection_start = file->cursor;
