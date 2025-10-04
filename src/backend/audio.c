@@ -19,6 +19,17 @@ const char *note_to_string_map[] = {
 	[NOTE_B] = "B",
 };
 
+// TODO: put on computer struct
+// Then I read out the current_step and use that to render the progress beam in the sound editor
+typedef struct pattern_playback_info {
+	uint16_t pattern_index;
+	voice_t *voice;
+	int time_left_on_current_step;
+	int current_step;
+} pattern_playback_info_t;
+
+static pattern_playback_info_t patterns[10] = {0};
+
 voice_t *voice_alloc(voice_pool_t *pool) {
 	for (size_t i = 0; i < MAX_VOICES; i++) {
 		if (!pool->voices[i].active) {
@@ -76,10 +87,76 @@ static oscillator_t _osc2 = {
 	.waveform = WAVEFORM_SQUARE,
 };
 
+void _update_patterns(computer_t *computer) {
+	voice_t *voice = patterns[0].voice;
+	if (voice == NULL) {
+		return;
+	}
+
+	if (patterns[0].current_step == STEPS_IN_PATTERN) {
+		// if (voice->oscillator.phase > 0) {
+
+		// }
+		// if (voice->oscillator.phase > 0.001 || voice->oscillator.phase < -0.001) {
+		// 	return;
+		// }
+
+			voice->active = false;
+			memset(&patterns[0], 0, sizeof(pattern_playback_info_t));
+			// memset(voice, 0, sizeof(voice_t));
+			// return;
+		// }
+
+		// voice->amplitude *= 0.9;
+
+		// if (voice->amplitude < 0.001) {
+
+			// patterns[0].voice = NULL;
+		// }
+		// return;
+
+	}
+	
+	if (patterns[0].time_left_on_current_step > 0) {
+		patterns[0].time_left_on_current_step--;
+		return;
+	}
+
+	pattern_t *pattern = &get_global_computer()->ram->patterns[patterns[0].pattern_index];
+
+	int octave = pattern->steps[patterns[0].current_step].pitch / 12 + BASE_OCTAVE;
+	int freq = note_to_freq_tet12(pattern->steps[patterns[0].current_step].pitch, octave);
+
+	// if (voice->oscillator.phase > 0.001 || voice->oscillator.phase < -0.001) {
+	// 	return;
+	// }
+	voice->amplitude -= 0.001f;
+	// // voice->amplitude *= 0.95f;
+	if (voice->amplitude > 0.0001f) {
+		return;
+	}
+
+	voice->oscillator = (oscillator_t){
+		.freq = freq,
+		.phase = 0.0f,
+		.waveform = pattern->steps[patterns[0].current_step].waveform,
+	};
+	voice->amplitude = 0.05f;
+
+	patterns[0].time_left_on_current_step = 500;
+	patterns[0].current_step++;
+}
+
 void audio_update(float *buffer, int frames) {
+	// printf("audio update\n");
+
 	voice_pool_t *pool = &get_global_computer()->voice_pool;
 
+	
 	for (int i = 0; i < frames; i++) {
+		_update_patterns(get_global_computer());
+		// printf("frame: %d\n", i);
+
 		float left = 0.0f;
 		float right = 0.0f;
 
@@ -87,6 +164,11 @@ void audio_update(float *buffer, int frames) {
 			voice_t *voice = &pool->voices[j];
 			if (!voice->active) {
 				continue;
+				// // voice->amplitude *= 0.95f;
+				// voice->amplitude -= 0.001f;
+				// if (voice->amplitude < 0.0001f) {
+				// 	memset(voice, 0, sizeof(voice_t));
+				// }
 			}
 
 			sample_t sample = osc_next_sample(&voice->oscillator);
@@ -103,4 +185,16 @@ void audio_update(float *buffer, int frames) {
 		buffer[i * 2 + 0] = left;
 		buffer[i * 2 + 1] = right;
 	}
+}
+
+void audio_play_pattern(computer_t *computer, int pattern_index) {
+	pattern_t *pattern = &computer->ram->patterns[pattern_index];
+	// voice_t *voice = voice_alloc(&computer->voice_pool);
+	voice_t *voice = &computer->voice_pool.voices[0];
+	voice->active = true;
+
+	patterns[0].current_step = 0;
+	patterns[0].pattern_index = pattern_index;
+	patterns[0].time_left_on_current_step = 0;
+	patterns[0].voice = voice;
 }

@@ -78,7 +78,7 @@ Memory layout, global constants
 #define FRAME_DELAY 1000/FPS
 
 #define SAMPLE_RATE 44100
-#define SAMPLES 1024
+#define SAMPLES 256
 #define CHANNELS 2
 
 #define SKIN_WIDTH SCREEN_WIDTH * 5
@@ -90,6 +90,8 @@ Memory layout, global constants
 #define FILES_AMOUNT 32
 
 #define MAX_ENTITIES 32768
+
+#define BASE_OCTAVE 1
 
 typedef uint8_t color_t;
 
@@ -229,6 +231,26 @@ typedef struct entities {
 	uint64_t amount;
 } entities_t;
 
+typedef enum waveform {
+	WAVEFORM_SINE,
+	WAVEFORM_SQUARE,
+	WAVEFORM_TRIANGLE,
+} waveform_t;
+
+typedef struct pattern_step {
+	uint8_t pitch; // Ranges from 0 - 23, so 2 * 12 possibilities or 2 octaves
+	uint8_t volume;
+	waveform_t waveform;
+} pattern_step_t;
+
+#define STEPS_IN_PATTERN 32
+#define PATTERN_AMOUNT 128
+
+typedef struct pattern {
+	pattern_step_t steps[STEPS_IN_PATTERN];
+	uint8_t speed;
+} pattern_t;
+
 // TODO: Manually align this stuff
 typedef union ram {
 	struct {
@@ -249,6 +271,7 @@ typedef union ram {
 		color_t border_color;
 		text_mode_font_t text_mode_font;
 		entities_t entities;
+		pattern_t patterns[PATTERN_AMOUNT];
 
 		terminal_t terminal;
 		shell_t shell;
@@ -261,12 +284,6 @@ typedef struct sample {
 	float left;
 	float right;
 } sample_t;
-
-typedef enum waveform {
-	WAVEFORM_SINE,
-	WAVEFORM_SQUARE,
-	WAVEFORM_TRIANGLE,
-} waveform_t;
 
 typedef struct oscillator {
 	waveform_t waveform;
@@ -282,6 +299,8 @@ typedef struct voice {
 	// float time;
 	
 	bool active;
+
+	// int frames_left;
 } voice_t;
 
 #define MAX_VOICES 32

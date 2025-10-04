@@ -14,10 +14,12 @@
 
 typedef struct layout {
 	point_t piano_pos;
+	rect_t pitch_graph_rect;
 } layout_t;
 
 static const layout_t _layout = {
-	.piano_pos = {100, 100},
+	.piano_pos = {300, 100},
+	.pitch_graph_rect = {{4, 24, 256, 96}},
 };
 
 #define PIANO_KEY_WIDTH 20
@@ -26,24 +28,34 @@ static const layout_t _layout = {
 static voice_t *_voice_map[12] = {0};
 
 static const zinc_key_t _note_key_map[] = {
-	[NOTE_C] = KEY_S,
-	[NOTE_CSHARP] = KEY_E,
-	[NOTE_D] = KEY_D,
-	[NOTE_DSHARP] = KEY_R,
-	[NOTE_E] = KEY_F,
-	[NOTE_F] = KEY_G,
-	[NOTE_FSHARP] = KEY_Y,
-	[NOTE_G] = KEY_H,
-	[NOTE_GSHARP] = KEY_U,
-	[NOTE_A] = KEY_J,
-	[NOTE_ASHARP] = KEY_I,
-	[NOTE_B] = KEY_K,
+	[NOTE_C] = KEY_Z,
+	[NOTE_CSHARP] = KEY_S,
+	[NOTE_D] = KEY_X,
+	[NOTE_DSHARP] = KEY_D,
+	[NOTE_E] = KEY_C,
+	[NOTE_F] = KEY_V,
+	[NOTE_FSHARP] = KEY_G,
+	[NOTE_G] = KEY_B,
+	[NOTE_GSHARP] = KEY_H,
+	[NOTE_A] = KEY_N,
+	[NOTE_ASHARP] = KEY_J,
+	[NOTE_B] = KEY_M,
 };
 
 static int _current_octave = 4;
 
-void sound_editor_init(computer_t *computer) {
+static int _current_pattern = 0;
 
+void sound_editor_init(computer_t *computer) {
+	// Initialize the first pattern
+	// computer->ram->patterns[_current_pattern].speed = 1;
+	// for (size_t i = 0; i < STEPS_IN_PATTERN; i++) {
+	// 	computer->ram->patterns[_current_pattern].steps[i].pitch = 0;
+	// 	computer->ram->patterns[_current_pattern].steps[i].volume = 0;
+	// 	computer->ram->patterns[_current_pattern].steps[i].waveform = WAVEFORM_SINE;
+	// }
+
+	memset(computer->ram->patterns, 0, PATTERN_AMOUNT * sizeof(pattern_t));
 }
 
 void sound_editor_update(computer_t *computer) {
@@ -74,9 +86,39 @@ void sound_editor_update(computer_t *computer) {
 			_voice_map[i] = NULL;
 		}
 	}
+
+	point_t mouse_pos = input_get_mouse_pos();
+
+	if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+		if (point_in_rect(mouse_pos, _layout.pitch_graph_rect)) {
+			int step = (mouse_pos.x - _layout.pitch_graph_rect.x) / 8;
+			int pitch = 47 - (mouse_pos.y - _layout.pitch_graph_rect.y) / 2;
+			// printf("step: %d, pitch: %d\n", step, pitch);
+			computer->ram->patterns[_current_pattern].steps[step].pitch = pitch;
+		}
+	}
+
+	if (input_key_pressed(KEY_SPACE)) {
+		audio_play_pattern(computer, _current_pattern);
+	}
 }
 
 void sound_editor_draw(computer_t *computer) {
+	// memset(computer->ram->patterns, 0, PATTERN_AMOUNT * sizeof(pattern_t));
+
+	// Pitch graph
+	gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), _layout.pitch_graph_rect, COLOR_BLACK);
+
+	for (size_t i = 0; i < STEPS_IN_PATTERN; i++) {
+		gfx_draw_line(FB_SURF(computer->ram->framebuffer.data), POINT(_layout.pitch_graph_rect.x + i * 8, _layout.pitch_graph_rect.y), POINT(_layout.pitch_graph_rect.x + i * 8, _layout.pitch_graph_rect.y + _layout.pitch_graph_rect.h - 1), COLOR_DARKGRAY);
+	}
+	
+
+	for (size_t i = 0; i < STEPS_IN_PATTERN; i++) {
+		// gfx_draw_line(FB_SURF(computer->ram->framebuffer.data), POINT(i * 8, ), POINT_T, color_t color)
+		gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(_layout.pitch_graph_rect.x + i * 8 + 1, _layout.pitch_graph_rect.y + _layout.pitch_graph_rect.h - (computer->ram->patterns[_current_pattern].steps[i].pitch * 2) - 3, 7, 3), COLOR_DARKGREEN);
+	}
+
 	// Draw a piano
 	for (int i = 0; i < 12; i++) {
 		color_t color = COLOR_WHITE;
