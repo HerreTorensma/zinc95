@@ -285,3 +285,18 @@ void gui_load_skin(ram_t *ram, const char filename[], color_t color_key, color_t
 	ram->skin.color_key = color_key;
 	ram->skin.font_color = font_color;
 }
+
+int64_t gui_slider(ram_t *ram, int font_index, rect_t rect, int64_t min, int64_t max, int64_t value) {
+	gui_draw_string(ram, font_index, int_to_string(get_temp_allocator(), value), rect.pos, ram->skin.font_color);
+
+	point_t mouse_pos = input_get_mouse_pos();
+	if (point_in_rect(mouse_pos, rect)) {
+		if (value < max && input_mouse_scrolled(SCROLL_DIR_DOWN)) {
+			value++;
+		} else if (value > min && input_mouse_scrolled(SCROLL_DIR_UP)) {
+			value--;
+		}
+	}
+
+	return value;
+}

@@ -15,11 +15,19 @@
 typedef struct layout {
 	point_t piano_pos;
 	rect_t pitch_graph_rect;
+	point_t sine_wave_button_pos;
+	point_t square_wave_button_pos;
+	point_t triangle_wave_button_pos;
+	point_t sawtooth_wave_button_pos;
 } layout_t;
 
 static const layout_t _layout = {
 	.piano_pos = {300, 100},
 	.pitch_graph_rect = {{4, 24, 256, 96}},
+	.sine_wave_button_pos = {300, 24},
+	.square_wave_button_pos = {332, 24},
+	.triangle_wave_button_pos = {364, 24},
+	.sawtooth_wave_button_pos = {396, 24},
 };
 
 #define PIANO_KEY_WIDTH 20
@@ -45,17 +53,16 @@ static const zinc_key_t _note_key_map[] = {
 static int _current_octave = 4;
 
 static int _current_pattern = 0;
+static int _selected_waveform = WAVEFORM_SINE;
 
 void sound_editor_init(computer_t *computer) {
 	// Initialize the first pattern
-	// computer->ram->patterns[_current_pattern].speed = 1;
-	// for (size_t i = 0; i < STEPS_IN_PATTERN; i++) {
-	// 	computer->ram->patterns[_current_pattern].steps[i].pitch = 0;
-	// 	computer->ram->patterns[_current_pattern].steps[i].volume = 0;
-	// 	computer->ram->patterns[_current_pattern].steps[i].waveform = WAVEFORM_SINE;
-	// }
-
-	memset(computer->ram->patterns, 0, PATTERN_AMOUNT * sizeof(pattern_t));
+	for (size_t i = 0; i < STEPS_IN_PATTERN; i++) {
+		computer->ram->patterns[_current_pattern].speed = 1;
+		computer->ram->patterns[_current_pattern].steps[i].pitch = 0;
+		computer->ram->patterns[_current_pattern].steps[i].volume = 0;
+		computer->ram->patterns[_current_pattern].steps[i].waveform = WAVEFORM_SINE;
+	}
 }
 
 void sound_editor_update(computer_t *computer) {
@@ -95,6 +102,7 @@ void sound_editor_update(computer_t *computer) {
 			int pitch = 47 - (mouse_pos.y - _layout.pitch_graph_rect.y) / 2;
 			// printf("step: %d, pitch: %d\n", step, pitch);
 			computer->ram->patterns[_current_pattern].steps[step].pitch = pitch;
+			computer->ram->patterns[_current_pattern].steps[step].waveform = _selected_waveform;
 		}
 	}
 
@@ -116,7 +124,23 @@ void sound_editor_draw(computer_t *computer) {
 
 	for (size_t i = 0; i < STEPS_IN_PATTERN; i++) {
 		// gfx_draw_line(FB_SURF(computer->ram->framebuffer.data), POINT(i * 8, ), POINT_T, color_t color)
-		gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(_layout.pitch_graph_rect.x + i * 8 + 1, _layout.pitch_graph_rect.y + _layout.pitch_graph_rect.h - (computer->ram->patterns[_current_pattern].steps[i].pitch * 2) - 3, 7, 3), COLOR_DARKGREEN);
+		// gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(_layout.pitch_graph_rect.x + i * 8 + 1, _layout.pitch_graph_rect.y + _layout.pitch_graph_rect.h - (computer->ram->patterns[_current_pattern].steps[i].pitch * 2) - 3, 7, 3), COLOR_DARKGREEN);
+		gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(_layout.pitch_graph_rect.x + i * 8 + 1, _layout.pitch_graph_rect.y + _layout.pitch_graph_rect.h - (computer->ram->patterns[_current_pattern].steps[i].pitch * 2) - 3, 7, 3), COLOR_DARKRED + computer->ram->patterns[_current_pattern].steps[i].waveform);
+	}
+
+	computer->ram->patterns[_current_pattern].speed = gui_slider(computer->ram, 0, RECT(100, 200, 40, 40), 1, 16, computer->ram->patterns[_current_pattern].speed);
+
+	if (gui_button(computer->ram, _layout.sine_wave_button_pos, skin_layout.sine_wave_button, _selected_waveform == WAVEFORM_SINE)) {
+		_selected_waveform = WAVEFORM_SINE;
+	}
+	if (gui_button(computer->ram, _layout.square_wave_button_pos, skin_layout.square_wave_button, _selected_waveform == WAVEFORM_SQUARE)) {
+		_selected_waveform = WAVEFORM_SQUARE;
+	}
+	if (gui_button(computer->ram, _layout.triangle_wave_button_pos, skin_layout.triangle_wave_button, _selected_waveform == WAVEFORM_TRIANGLE)) {
+		_selected_waveform = WAVEFORM_TRIANGLE;
+	}
+	if (gui_button(computer->ram, _layout.sawtooth_wave_button_pos, skin_layout.sawtooth_wave_button, _selected_waveform == WAVEFORM_SAWTOOTH)) {
+		_selected_waveform = WAVEFORM_SAWTOOTH;
 	}
 
 	// Draw a piano

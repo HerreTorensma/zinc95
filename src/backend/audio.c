@@ -61,6 +61,16 @@ sample_t osc_next_sample(oscillator_t *osc) {
 			value = (osc->phase < 0.5f) ? 1.0f : -1.0f;
 			break;
 		}
+
+		case WAVEFORM_TRIANGLE: {
+			value = 2.0f * fabsf(2.0f * osc->phase - 1.0f) - 1.0f;
+			break;
+		}
+
+		case WAVEFORM_SAWTOOTH: {
+			value = osc->phase;
+			break;
+		}
 	}
 
 	osc->phase += osc->freq / (float)SAMPLE_RATE;
@@ -143,7 +153,8 @@ void _update_patterns(computer_t *computer) {
 	};
 	voice->amplitude = 0.05f;
 
-	patterns[0].time_left_on_current_step = 500;
+	// patterns[0].time_left_on_current_step = 500;
+	patterns[0].time_left_on_current_step = SAMPLES * pattern->speed;
 	patterns[0].current_step++;
 }
 

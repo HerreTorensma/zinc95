@@ -113,6 +113,23 @@ const skin_layout_t skin_layout = {
 		.unpressed_rect = {{2656, 236, 16, 16}},
 		.pressed_rect = {{2672, 236, 16, 16}},
 	},
+
+	.sine_wave_button = {
+		.unpressed_rect = {{2560, 350, 32, 16}},
+		.pressed_rect = {{2592, 350, 32, 16}},
+	},
+	.square_wave_button = {
+		.unpressed_rect = {{2560, 366, 32, 16}},
+		.pressed_rect = {{2592, 366, 32, 16}},
+	},
+	.triangle_wave_button = {
+		.unpressed_rect = {{2560, 382, 32, 16}},
+		.pressed_rect = {{2592, 382, 32, 16}},
+	},
+	.sawtooth_wave_button = {
+		.unpressed_rect = {{2560, 398, 32, 16}},
+		.pressed_rect = {{2592, 398, 32, 16}},
+	},
 };
 
 void set_global_computer(computer_t *computer) {

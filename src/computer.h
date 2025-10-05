@@ -235,6 +235,7 @@ typedef enum waveform {
 	WAVEFORM_SINE,
 	WAVEFORM_SQUARE,
 	WAVEFORM_TRIANGLE,
+	WAVEFORM_SAWTOOTH,
 } waveform_t;
 
 typedef struct pattern_step {
@@ -376,6 +377,11 @@ typedef struct skin_layout {
 	button_t add_file_button;
 
 	button_t toggle_layer_button;
+
+	button_t sine_wave_button;
+	button_t square_wave_button;
+	button_t triangle_wave_button;
+	button_t sawtooth_wave_button;
 } skin_layout_t;
 
 extern const skin_layout_t skin_layout;
