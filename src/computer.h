@@ -80,6 +80,9 @@ Memory layout, global constants
 #define SAMPLE_RATE 44100
 #define SAMPLES 256
 #define CHANNELS 2
+#define MAX_VOICES 8
+#define MAX_PITCH 48
+#define MAX_VOLUME 24
 
 #define SKIN_WIDTH SCREEN_WIDTH * 5
 #define SKIN_HEIGHT SCREEN_HEIGHT
@@ -303,8 +306,6 @@ typedef struct voice {
 
 	// int frames_left;
 } voice_t;
-
-#define MAX_VOICES 32
 
 typedef struct voice_pool {
 	voice_t voices[MAX_VOICES];

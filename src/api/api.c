@@ -8,6 +8,7 @@
 #include "../backend/input.h"
 #include "../backend/gfx.h"
 #include "../backend/gui.h"
+#include "../backend/audio.h"
 
 const api_meta_t api_metas[API_FUNC_COUNT] = {
 	[API_FUNC_CLS] = {
@@ -70,6 +71,11 @@ const api_meta_t api_metas[API_FUNC_COUNT] = {
 		.signature = "key(key) -> bool",
 		.desc = "Key if a key is being held",
 	},
+	[API_FUNC_KEYP] = {
+		.name = "keyp",
+		.signature = "keyp(key) -> bool",
+		.desc = "Key if a key is being pressed",
+	},
 
 	[API_FUNC_TICKS] = {
 		.name = "ticks",
@@ -97,7 +103,15 @@ void api_meta_print() {
 	}
 }
 
-
+/*
+╔═══╕                ╖                
+║                    ║    °           
+║  ╒╗ ╔══╕ ╒══╗ ╔══╗ ╠══╗ ╖ ╔══╕ ╔══╕ 
+║   ║ ║    ╔══╣ ║  ║ ║  ║ ║ ║    ╚══╗ 
+╚═══╝ ╜    ╚══╝ ╠══╝ ╜  ╙ ╙ ╚══╛ ╘══╝ 
+                ║                     
+                ╜                     
+*/
 
 void api_cls(ram_t *ram, int color) {
 	gfx_clear(FB_SURF(ram->framebuffer.data), color);
@@ -131,7 +145,15 @@ void api_map(ram_t *ram, int layer, int x, int y, int cell_x, int cell_y, int ce
 	gfx_draw_map(ram, layer, POINT(x, y), RECT(cell_x, cell_y, cell_w, cell_h));
 }
 
-
+/*
+╒═╦═╕                ╖   
+  ║                  ║   
+  ║   ╔══╗ ╔══╗ ╖  ╓ ╠═╛ 
+  ║   ║  ║ ║  ║ ║  ║ ║   
+╘═╩═╛ ╜  ╙ ╠══╝ ╚══╝ ╚═╛ 
+           ║             
+           ╜             
+*/
 
 bool api_key(ram_t *ram, int key) {
 	return input_key_held(key);
@@ -171,4 +193,8 @@ void api_text(ram_t *ram, int font_index, char text[], int x, int y, int color) 
 
 int api_ticks(ram_t *ram) {
 	return ram->ticks;
+}
+
+void api_sfx(ram_t *ram, int index) {
+	audio_play_pattern(get_global_computer(), index);
 }

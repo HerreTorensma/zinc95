@@ -49,3 +49,5 @@ void audio_init(computer_t *computer);
 void audio_update(float *buffer, int frames);
 
 void audio_play_pattern(computer_t *computer, int pattern_index);
+
+int get_current_step_of_sound_editor_pattern();

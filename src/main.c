@@ -5,6 +5,7 @@ Main
 #include <stdio.h>
 #include <string.h>
 
+#include "backend/gfx.h"
 #include "computer.h"
 #include "backend/window.h"
 #include "editor/menu.h"
@@ -191,6 +192,35 @@ int main(int argc, char *argv[]) {
 				if (lua_call_draw() != 0) {
 					abort_game(&computer);
 				}
+
+				// The code below makes the whole screen darker by one step
+				// TODO: put in its own function
+				/*
+				for (size_t y = 0; y < SCREEN_HEIGHT; y++) {
+					for (size_t x = 0; x < SCREEN_WIDTH; x++) {
+						int pixel = gfx_get_pixel(&computer.ram->framebuffer, x, y);
+			
+						int new_pixel = 0;
+
+						if (pixel < 16) {
+							new_pixel = pixel;	
+						} else if (pixel >= 16 && pixel <= 31) {
+							new_pixel = pixel - 2;
+							if (new_pixel < 16) {
+								new_pixel = 16;
+							}
+						} else {
+							new_pixel = pixel + 72;
+						}
+
+						if (new_pixel > 255) {
+							new_pixel = 0;
+						}
+
+						gfx_set_pixel(&computer.ram->framebuffer, x, y, new_pixel);
+					}
+				}
+				*/
 
 				gfx_generate_rgb_framebuffer(&computer);
 				break;

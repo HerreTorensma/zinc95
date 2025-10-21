@@ -1,9 +1,7 @@
 #include "sound.h"
-#include "menu.h"
 #include "../backend/input.h"
 #include "../backend/audio.h"
 
-#include <math.h>
 #include <stdio.h>
 #include <SDL2/SDL.h>
 
@@ -19,21 +17,28 @@ typedef struct layout {
 	point_t square_wave_button_pos;
 	point_t triangle_wave_button_pos;
 	point_t sawtooth_wave_button_pos;
+	rect_t speed_slider_rect;
+	
+	rect_t volume_graph_rect;
 } layout_t;
 
 static const layout_t _layout = {
 	.piano_pos = {300, 100},
 	.pitch_graph_rect = {{4, 24, 256, 96}},
-	.sine_wave_button_pos = {300, 24},
-	.square_wave_button_pos = {332, 24},
-	.triangle_wave_button_pos = {364, 24},
-	.sawtooth_wave_button_pos = {396, 24},
+	
+	.sine_wave_button_pos = {262, 22},
+	.square_wave_button_pos = {294, 22},
+	.triangle_wave_button_pos = {326, 22},
+	.sawtooth_wave_button_pos = {358, 22},
+	.speed_slider_rect = {{262, 38, 16, 16}},
+	
+	.volume_graph_rect = {{4, 124, 256, 48}},
 };
 
 #define PIANO_KEY_WIDTH 20
 #define PIANO_KEY_HEIGHT 80
 
-static voice_t *_voice_map[12] = {0};
+static voice_t *_piano_voices[12] = {0};
 
 static const zinc_key_t _note_key_map[] = {
 	[NOTE_C] = KEY_Z,
@@ -73,6 +78,13 @@ void sound_editor_update(computer_t *computer) {
 		_current_octave--;
 	}
 
+	/*
+	╔═══╗                  
+	║   ║ °                
+	╠═══╝ ╖ ╒══╗ ╔══╗ ╔══╗ 
+	║     ║ ╔══╣ ║  ║ ║  ║ 
+	╜     ╙ ╚══╝ ╜  ╙ ╚══╝ 
+	*/
 	for (int i = 0; i < 12; i++) {
 		if (input_key_pressed(_note_key_map[i])) {
 			voice_t *voice = voice_alloc(&computer->voice_pool);
@@ -83,14 +95,14 @@ void sound_editor_update(computer_t *computer) {
 			};
 			voice->amplitude = 0.5f;
 
-			_voice_map[i] = voice;
+			_piano_voices[i] = voice;
 		}
 	}
 
 	for (int i = 0; i < 12; i++) {
 		if (input_key_released(_note_key_map[i])) {
-			_voice_map[i]->active = false;
-			_voice_map[i] = NULL;
+			_piano_voices[i]->active = false;
+			_piano_voices[i] = NULL;
 		}
 	}
 
@@ -98,11 +110,25 @@ void sound_editor_update(computer_t *computer) {
 
 	if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
 		if (point_in_rect(mouse_pos, _layout.pitch_graph_rect)) {
-			int step = (mouse_pos.x - _layout.pitch_graph_rect.x) / 8;
-			int pitch = 47 - (mouse_pos.y - _layout.pitch_graph_rect.y) / 2;
+			point_t adjusted_mouse_pos = POINT(mouse_pos.x - _layout.pitch_graph_rect.x, mouse_pos.y - _layout.pitch_graph_rect.y);
+
+			int step = adjusted_mouse_pos.x / (_layout.pitch_graph_rect.w / STEPS_IN_PATTERN);
+			// int pitch = 47 - (mouse_pos.y - _layout.pitch_graph_rect.y) / 2;
+			int pitch = MAX_PITCH-1 - adjusted_mouse_pos.y / (_layout.pitch_graph_rect.h / MAX_PITCH);
 			// printf("step: %d, pitch: %d\n", step, pitch);
 			computer->ram->patterns[_current_pattern].steps[step].pitch = pitch;
 			computer->ram->patterns[_current_pattern].steps[step].waveform = _selected_waveform;
+		}
+	}
+
+	if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+		if (point_in_rect(mouse_pos, _layout.volume_graph_rect)) {
+			point_t adjusted_mouse_pos = POINT(mouse_pos.x - _layout.volume_graph_rect.x, mouse_pos.y - _layout.volume_graph_rect.y);
+
+			int step = adjusted_mouse_pos.x / (_layout.volume_graph_rect.w / STEPS_IN_PATTERN);
+			int volume = MAX_VOLUME-1 - adjusted_mouse_pos.y / (_layout.volume_graph_rect.h / MAX_VOLUME);
+
+			computer->ram->patterns[_current_pattern].steps[step].volume = volume;
 		}
 	}
 
@@ -117,18 +143,78 @@ void sound_editor_draw(computer_t *computer) {
 	// Pitch graph
 	gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), _layout.pitch_graph_rect, COLOR_BLACK);
 
+	// Grid
 	for (size_t i = 0; i < STEPS_IN_PATTERN; i++) {
-		gfx_draw_line(FB_SURF(computer->ram->framebuffer.data), POINT(_layout.pitch_graph_rect.x + i * 8, _layout.pitch_graph_rect.y), POINT(_layout.pitch_graph_rect.x + i * 8, _layout.pitch_graph_rect.y + _layout.pitch_graph_rect.h - 1), COLOR_DARKGRAY);
+		gfx_draw_line(
+			FB_SURF(computer->ram->framebuffer.data),
+			POINT(_layout.pitch_graph_rect.x + i * (_layout.pitch_graph_rect.w / STEPS_IN_PATTERN), _layout.pitch_graph_rect.y),
+			POINT(_layout.pitch_graph_rect.x + i * (_layout.pitch_graph_rect.w / STEPS_IN_PATTERN), _layout.pitch_graph_rect.y + _layout.pitch_graph_rect.h - 1),
+			COLOR_DARKGRAY
+		);
 	}
 	
-
+	// Notes
 	for (size_t i = 0; i < STEPS_IN_PATTERN; i++) {
 		// gfx_draw_line(FB_SURF(computer->ram->framebuffer.data), POINT(i * 8, ), POINT_T, color_t color)
 		// gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(_layout.pitch_graph_rect.x + i * 8 + 1, _layout.pitch_graph_rect.y + _layout.pitch_graph_rect.h - (computer->ram->patterns[_current_pattern].steps[i].pitch * 2) - 3, 7, 3), COLOR_DARKGREEN);
-		gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(_layout.pitch_graph_rect.x + i * 8 + 1, _layout.pitch_graph_rect.y + _layout.pitch_graph_rect.h - (computer->ram->patterns[_current_pattern].steps[i].pitch * 2) - 3, 7, 3), COLOR_DARKRED + computer->ram->patterns[_current_pattern].steps[i].waveform);
+		gfx_draw_filled_rect(
+			FB_SURF(computer->ram->framebuffer.data),
+			RECT(
+				_layout.pitch_graph_rect.x + i * (_layout.pitch_graph_rect.w / STEPS_IN_PATTERN) + 1,
+				_layout.pitch_graph_rect.y + _layout.pitch_graph_rect.h - (computer->ram->patterns[_current_pattern].steps[i].pitch * (_layout.pitch_graph_rect.h / MAX_PITCH)) - 3,
+				7,
+				3
+			),
+			9 + computer->ram->patterns[_current_pattern].steps[i].waveform
+		);
 	}
 
-	computer->ram->patterns[_current_pattern].speed = gui_slider(computer->ram, 0, RECT(100, 200, 40, 40), 1, 16, computer->ram->patterns[_current_pattern].speed);
+	// Progress beam
+	int progress = get_current_step_of_sound_editor_pattern();
+	if (progress > 0) {
+		gfx_draw_line(
+			FB_SURF(computer->ram->framebuffer.data),
+			POINT(_layout.pitch_graph_rect.x + progress * (_layout.pitch_graph_rect.w / STEPS_IN_PATTERN), _layout.pitch_graph_rect.y),
+			POINT(_layout.pitch_graph_rect.x + progress * (_layout.pitch_graph_rect.w / STEPS_IN_PATTERN), _layout.pitch_graph_rect.y + _layout.pitch_graph_rect.h),
+			COLOR_WHITE
+		);
+	}
+
+
+
+	// Volume
+	gfx_draw_filled_rect(
+		FB_SURF(computer->ram->framebuffer.data),
+		_layout.volume_graph_rect,
+		COLOR_BLACK
+	);
+
+	// Volume grid
+	for (size_t i = 0; i < STEPS_IN_PATTERN; i++) {
+		gfx_draw_line(
+			FB_SURF(computer->ram->framebuffer.data),
+			POINT(_layout.volume_graph_rect.x + i * 8, _layout.volume_graph_rect.y),
+			POINT(_layout.volume_graph_rect.x + i * 8, _layout.volume_graph_rect.y + _layout.volume_graph_rect.h - 1),
+			COLOR_DARKGRAY
+		);
+	}
+
+	// Volume points
+	for (size_t i = 0; i < STEPS_IN_PATTERN; i++) {
+		gfx_draw_filled_rect(
+			FB_SURF(computer->ram->framebuffer.data),
+			RECT(
+				_layout.volume_graph_rect.x + i * (_layout.volume_graph_rect.w / STEPS_IN_PATTERN) + 1,
+				// _layout.volume_graph_rect.y + _layout.volume_graph_rect.h - (computer->ram->patterns[_current_pattern].steps[i].volume * (_layout.volume_graph_rect.h / MAX_VOLUME)) - 3,
+				_layout.volume_graph_rect.y + _layout.volume_graph_rect.h - (computer->ram->patterns[_current_pattern].steps[i].volume * (_layout.volume_graph_rect.h / MAX_VOLUME)) - 3,
+				7,
+				3
+			),
+			14 // TODO: change shade based on volume?
+		);
+	}
+
+	computer->ram->patterns[_current_pattern].speed = gui_slider(computer->ram, 0, _layout.speed_slider_rect, 1, 64, computer->ram->patterns[_current_pattern].speed);
 
 	if (gui_button(computer->ram, _layout.sine_wave_button_pos, skin_layout.sine_wave_button, _selected_waveform == WAVEFORM_SINE)) {
 		_selected_waveform = WAVEFORM_SINE;
@@ -146,7 +232,7 @@ void sound_editor_draw(computer_t *computer) {
 	// Draw a piano
 	for (int i = 0; i < 12; i++) {
 		color_t color = COLOR_WHITE;
-		if (_voice_map[i] != NULL && _voice_map[i]->active) {
+		if (_piano_voices[i] != NULL && _piano_voices[i]->active) {
 			color = 2;
 		}
 

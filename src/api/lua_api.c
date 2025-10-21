@@ -119,6 +119,20 @@ static int _lua_key(lua_State *lua) {
 	return 1;
 }
 
+static int _lua_keyp(lua_State *lua) {
+	computer_t *computer = get_global_computer();
+	if (lua_gettop(lua) == 1) {
+		int key = (int)lua_tonumber(lua, 1);
+
+		bool pressed = api_keyp(computer->ram, key);
+		lua_pushboolean(lua, pressed);
+		return 1;
+	}
+
+	lua_pushboolean(lua, false);
+	return 1;
+}
+
 static int _lua_print(lua_State *lua) {
 	computer_t *computer = get_global_computer();
 
@@ -342,6 +356,15 @@ static int _lua_normalize(lua_State *lua) {
 	return 2;
 }
 
+static int _lua_sfx(lua_State *lua) {
+	if (lua_gettop(lua) == 1) {
+		int index = (int)lua_tonumber(lua, 1);
+		api_sfx(get_global_computer()->ram, index);
+	}
+	
+	return 0;
+}
+
 // The following is copy-pasted and edited from the Lua docs and has some parts of the standard library commented out
 // so that the game cannot do dangerous things to the host system
 static const luaL_Reg loadedlibs[] = {
@@ -388,11 +411,15 @@ int lua_init(computer_t *computer) {
 	lua_register(_lua, api_metas[API_FUNC_CIRC].name, _lua_circ);
 	lua_register(_lua, api_metas[API_FUNC_TICKS].name, _lua_ticks);
 	lua_register(_lua, api_metas[API_FUNC_MAP].name, _lua_map);
+
 	lua_register(_lua, api_metas[API_FUNC_KEY].name, _lua_key);
+	lua_register(_lua, api_metas[API_FUNC_KEYP].name, _lua_keyp);
+	
 	lua_register(_lua, api_metas[API_FUNC_SAVE_TO_SLOT].name, _lua_save_to_slot);
 	lua_register(_lua, api_metas[API_FUNC_LOAD_FROM_SLOT].name, _lua_load_from_slot);
 	lua_register(_lua, "get_entities", _lua_get_entities);
 	lua_register(_lua, "normalize", _lua_normalize);
+	lua_register(_lua, "sfx", _lua_sfx);
 
 	for (size_t i = 0; i < computer->active_files_amount; i++) {
 		string_t file_string = file_to_string(&computer->files[i], get_heap_allocator());

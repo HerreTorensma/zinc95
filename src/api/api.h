@@ -27,6 +27,7 @@ typedef enum api_func {
 	API_FUNC_MAP,
 
 	API_FUNC_KEY,
+	API_FUNC_KEYP,
 
 	API_FUNC_TICKS,
 	
@@ -138,3 +139,7 @@ uint8_t api_peek(ram_t *ram, uint64_t address);
 
 // Set a byte in ram
 void api_poke(ram_t *ram, uint64_t address, uint8_t value);
+
+
+// --- Audio ---
+void api_sfx(ram_t *ram, int index);

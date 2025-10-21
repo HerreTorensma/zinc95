@@ -28,7 +28,11 @@ typedef struct pattern_playback_info {
 	int current_step;
 } pattern_playback_info_t;
 
-static pattern_playback_info_t patterns[10] = {0};
+static pattern_playback_info_t pattern_playback_infos[10] = {0};
+
+int get_current_step_of_sound_editor_pattern() {
+	return pattern_playback_infos[0].current_step;
+}
 
 voice_t *voice_alloc(voice_pool_t *pool) {
 	for (size_t i = 0; i < MAX_VOICES; i++) {
@@ -38,7 +42,7 @@ voice_t *voice_alloc(voice_pool_t *pool) {
 		}
 	}
 
-	// Voices are full
+	// Voices are full, so no sound will be played
 	return NULL;
 }
 
@@ -98,12 +102,12 @@ static oscillator_t _osc2 = {
 };
 
 void _update_patterns(computer_t *computer) {
-	voice_t *voice = patterns[0].voice;
+	voice_t *voice = pattern_playback_infos[0].voice;
 	if (voice == NULL) {
 		return;
 	}
 
-	if (patterns[0].current_step == STEPS_IN_PATTERN) {
+	if (pattern_playback_infos[0].current_step == STEPS_IN_PATTERN) {
 		// if (voice->oscillator.phase > 0) {
 
 		// }
@@ -112,7 +116,7 @@ void _update_patterns(computer_t *computer) {
 		// }
 
 			voice->active = false;
-			memset(&patterns[0], 0, sizeof(pattern_playback_info_t));
+			memset(&pattern_playback_infos[0], 0, sizeof(pattern_playback_info_t));
 			// memset(voice, 0, sizeof(voice_t));
 			// return;
 		// }
@@ -125,37 +129,50 @@ void _update_patterns(computer_t *computer) {
 		// }
 		// return;
 
+		return;
+
 	}
 	
-	if (patterns[0].time_left_on_current_step > 0) {
-		patterns[0].time_left_on_current_step--;
+	if (pattern_playback_infos[0].time_left_on_current_step > 0) {
+		pattern_playback_infos[0].time_left_on_current_step--;
 		return;
 	}
 
-	pattern_t *pattern = &get_global_computer()->ram->patterns[patterns[0].pattern_index];
+	pattern_t *pattern = &get_global_computer()->ram->patterns[pattern_playback_infos[0].pattern_index];
 
-	int octave = pattern->steps[patterns[0].current_step].pitch / 12 + BASE_OCTAVE;
-	int freq = note_to_freq_tet12(pattern->steps[patterns[0].current_step].pitch, octave);
+	int octave = pattern->steps[pattern_playback_infos[0].current_step].pitch / 12 + BASE_OCTAVE;
+	int freq = note_to_freq_tet12(pattern->steps[pattern_playback_infos[0].current_step].pitch, octave);
 
 	// if (voice->oscillator.phase > 0.001 || voice->oscillator.phase < -0.001) {
 	// 	return;
 	// }
-	voice->amplitude -= 0.001f;
-	// // voice->amplitude *= 0.95f;
-	if (voice->amplitude > 0.0001f) {
-		return;
-	}
+	// voice->amplitude -= 0.001f;
+	// // voice->amplitude *= 0.999f;
+	// // // voice->amplitude *= 0.95f;
+	// if (voice->amplitude > 0.0001f) {
+	// 	return;
+	// }
 
-	voice->oscillator = (oscillator_t){
-		.freq = freq,
-		.phase = 0.0f,
-		.waveform = pattern->steps[patterns[0].current_step].waveform,
-	};
-	voice->amplitude = 0.05f;
+
+	// TODO: check if the generated sample is close to zero instead (???)
+	// I really have to clean up this whole system
+	// if (voice->oscillator.phase < -0.01 || voice->oscillator.phase > 0.01) {
+	// 	return;
+	// }
+
+	// voice->oscillator = (oscillator_t){
+	// 	.freq = freq,
+	// 	.phase = 0.0f,
+	// 	.waveform = pattern->steps[patterns[0].current_step].waveform,
+	// };
+	voice->oscillator.freq = freq;
+	voice->oscillator.waveform = pattern->steps[pattern_playback_infos[0].current_step].waveform;
+	// voice->amplitude = 0.05f;
+	voice->amplitude = 0.01f * (float)pattern->steps[pattern_playback_infos[0].current_step].volume;
 
 	// patterns[0].time_left_on_current_step = 500;
-	patterns[0].time_left_on_current_step = SAMPLES * pattern->speed;
-	patterns[0].current_step++;
+	pattern_playback_infos[0].time_left_on_current_step = SAMPLES * pattern->speed;
+	pattern_playback_infos[0].current_step++;
 }
 
 void audio_update(float *buffer, int frames) {
@@ -204,8 +221,8 @@ void audio_play_pattern(computer_t *computer, int pattern_index) {
 	voice_t *voice = &computer->voice_pool.voices[0];
 	voice->active = true;
 
-	patterns[0].current_step = 0;
-	patterns[0].pattern_index = pattern_index;
-	patterns[0].time_left_on_current_step = 0;
-	patterns[0].voice = voice;
+	pattern_playback_infos[0].current_step = 0;
+	pattern_playback_infos[0].pattern_index = pattern_index;
+	pattern_playback_infos[0].time_left_on_current_step = 0;
+	pattern_playback_infos[0].voice = voice;
 }
