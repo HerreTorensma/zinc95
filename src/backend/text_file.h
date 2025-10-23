@@ -45,7 +45,8 @@ typedef struct file {
 	size_t line_amount;
 	
 	file_pos_t cursor;
-	size_t target_pos; // TODO: I don't think this belongs on the data structure, should be moved to the editor
+	size_t target_pos; // TODO: I don't think this belongs on the data structure, should be moved to the editor (or maybe not)
+	int64_t scroll_amount;
 
 	file_pos_t selection_start;
 	file_pos_t selection_end;

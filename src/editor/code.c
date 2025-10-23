@@ -31,7 +31,7 @@ static const int _cursor_blink_speed = 45;
 // static const int CODE_EDITOR_FONT_INDEX = 2;
 static const int _scroll_speed = 3;
 
-static int _scroll_amount = 0;
+// static int _scroll_amount = 0;
 static int _lines_on_screen = 0;
 static int _cursor_timer = _cursor_blink_speed;
 
@@ -53,7 +53,7 @@ static void _screen_pos_to_file_pos(ram_t *ram, file_t *file, point_t screen_pos
 	font_t *font = &ram->fonts[CODE_EDITOR_FONT_INDEX];
 
 	int corrected_x = screen_pos.x - (_layout.code_rect.x + 5 * (font->widths[0] + font->horizontal_space));
-	int corrected_y = screen_pos.y - _layout.code_rect.y + (_scroll_amount * (font->height + font->vertical_space));
+	int corrected_y = screen_pos.y - _layout.code_rect.y + (file->scroll_amount * (font->height + font->vertical_space));
 
 	size_t line = corrected_y / (font->height + font->vertical_space);
 	if (line < 0) {
@@ -325,14 +325,14 @@ void code_editor_update(computer_t *computer) {
 
 	// Scrolling
 	if (input_mouse_scrolled(SCROLL_DIR_DOWN)) {
-		_scroll_amount += _scroll_speed;
-		if (_scroll_amount >= file->line_amount) {
-			_scroll_amount = file->line_amount - 1;
+		file->scroll_amount += _scroll_speed;
+		if (file->scroll_amount >= file->line_amount) {
+			file->scroll_amount = file->line_amount - 1;
 		}
 	} else if (input_mouse_scrolled(SCROLL_DIR_UP)) {
-		_scroll_amount -= _scroll_speed;
-		if (_scroll_amount < 0) {
-			_scroll_amount = 0;
+		file->scroll_amount -= _scroll_speed;
+		if (file->scroll_amount < 0) {
+			file->scroll_amount = 0;
 		}
 	}
 }
@@ -425,7 +425,7 @@ void code_editor_draw(computer_t *computer) {
 	
 			rect_t rect = {
 				.x = line_x + gui_get_string_width(font, string_view(string, 0, start.pos), string.len),
-				.y = _layout.code_rect.y + 2 + (start.line - _scroll_amount) * (font->height + font->vertical_space),
+				.y = _layout.code_rect.y + 2 + (start.line - file->scroll_amount) * (font->height + font->vertical_space),
 				.w = gui_get_string_width(font, string_view(string, start.pos, end.pos - start.pos), string.len),
 				.h = font->height,
 			};
@@ -439,7 +439,7 @@ void code_editor_draw(computer_t *computer) {
 				if (i == start.line) {
 					rect_t rect = {
 						.x = line_x + gui_get_string_width(font, string_view(string, 0, start.pos), string.len),
-						.y = _layout.code_rect.y + 2 + (i - _scroll_amount) * (font->height + font->vertical_space),
+						.y = _layout.code_rect.y + 2 + (i - file->scroll_amount) * (font->height + font->vertical_space),
 						.w = gui_get_string_width(font, string_view(string, start.pos, string.len - start.pos), string.len),
 						.h = font->height,
 					};
@@ -448,7 +448,7 @@ void code_editor_draw(computer_t *computer) {
 				} else if (i == end.line) {
 					rect_t rect = {
 						.x = line_x,
-						.y = _layout.code_rect.y + 2 + (i - _scroll_amount) * (font->height + font->vertical_space),
+						.y = _layout.code_rect.y + 2 + (i - file->scroll_amount) * (font->height + font->vertical_space),
 						.w = gui_get_string_width(font, string_view(string, 0, end.pos), end.pos),
 						.h = font->height,
 					};
@@ -456,7 +456,7 @@ void code_editor_draw(computer_t *computer) {
 				} else {
 					rect_t rect = {
 						.x = line_x,
-						.y = _layout.code_rect.y + 2 + (i - _scroll_amount) * (font->height + font->vertical_space),
+						.y = _layout.code_rect.y + 2 + (i - file->scroll_amount) * (font->height + font->vertical_space),
 						.w = gui_get_string_width(font, string, string.len),
 						.h = font->height,
 					};
@@ -468,20 +468,20 @@ void code_editor_draw(computer_t *computer) {
 
 	// TODO: fix font so I can refactor this hardcoded mess
 	for (int i = 0; i < _lines_on_screen; i++) {
-		if (i + _scroll_amount >= computer->files[_current_file_index].line_amount) {
+		if (i + file->scroll_amount >= computer->files[_current_file_index].line_amount) {
 			break;
 		}
 
 		// Commented out: version with leading zeroes
 		// sprintf(line_number_buffer, "%04d", i + _scroll_amount + 1);
-		sprintf(line_number_buffer, "% 4d", i + _scroll_amount + 1);
+		sprintf(line_number_buffer, "% 4d", i + file->scroll_amount + 1);
 
 		// Line number
 		// TODO: don't hardcode color
 		gui_draw_text(computer->ram, CODE_EDITOR_FONT_INDEX, line_number_buffer, POINT(_layout.code_rect.x + 2, _layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), 8);
 		
 		// Line itself using tokens for syntax highlighting
-		line_t *current_line = &computer->files[_current_file_index].lines[i + _scroll_amount];
+		line_t *current_line = &computer->files[_current_file_index].lines[i + file->scroll_amount];
 		size_t current_x = line_x;
 
 		for (size_t j = 0; j < current_line->tokens.len; j++) {
@@ -494,7 +494,7 @@ void code_editor_draw(computer_t *computer) {
 	// Draw cursor
 	if (_cursor_timer >= _cursor_blink_speed / 2) {
 		int cursor_x = _layout.code_rect.x + 2 + 5 * (font->widths[0] + font->horizontal_space) + _get_real_cursor_pos(computer) - 1;
-		int cursor_y = _layout.code_rect.y + 2 + computer->files[_current_file_index].cursor.line * (font->height + font->vertical_space) - _scroll_amount * (font->height + font->vertical_space);
+		int cursor_y = _layout.code_rect.y + 2 + computer->files[_current_file_index].cursor.line * (font->height + font->vertical_space) - file->scroll_amount * (font->height + font->vertical_space);
 		gfx_draw_line(fb_surf, POINT(cursor_x, cursor_y), POINT(cursor_x, cursor_y + font->height - 1), 3);
 	}
 	
