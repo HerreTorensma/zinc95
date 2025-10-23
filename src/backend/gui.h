@@ -41,6 +41,6 @@ button_t button_array_get(button_array_t *array, int index);
 
 point_t button_array_get_pos(button_array_t *array, point_t base_pos, int index);
 
-void gui_load_skin(ram_t *ram, const char filename[], color_t color_key, color_t font_color);
+void gui_load_skin(ram_t *ram, string_t path, color_t color_key, color_t font_color);
 
 int64_t gui_slider(ram_t *ram, int font_index, rect_t rect, int64_t min, int64_t max, int64_t value);

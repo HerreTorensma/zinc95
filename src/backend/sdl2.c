@@ -1,6 +1,8 @@
+#include <SDL2/SDL_pixels.h>
 #include <stdio.h>
 
 #include "sdl2.h"
+#include "gfx.h"
 
 static bool _running = true;
 static int _scale = 1;
@@ -427,4 +429,30 @@ string_t sdl2_get_clipboard_text(allocator_t allocator) {
 	char *text = SDL_GetClipboardText();
 	string_t string = STR(text);
 	return string_copy(allocator, string);
+}
+
+void sdl2_load_bmp_to_surface(palette_t *palette, surface_t surface, string_t path) {
+	SDL_Surface *sdl_surface = SDL_LoadBMP(string_to_c_string(get_temp_allocator(), path));
+
+	if (sdl_surface == NULL) {
+		printf("Failed to load BMP: ");
+		print_string(path);
+		printf("\n");
+		return;
+	}
+
+	for (int y = 0; y < sdl_surface->h; y++) {
+		for (int x = 0; x < sdl_surface->w; x++) {
+			uint32_t color_as_uint32 = *((uint32_t *)((uint8_t *)sdl_surface->pixels + (y * sdl_surface->pitch + x * sdl_surface->format->BytesPerPixel)));
+
+			rgb_color_t rgb_color = {0};
+			SDL_GetRGB(color_as_uint32, sdl_surface->format, &rgb_color.r, &rgb_color.g, &rgb_color.b);
+			
+			// Convert to pallete pixel
+			color_t color = gfx_rgb_color_to_color(palette, rgb_color, COLOR_BLACK);
+			surface.data[y * sdl_surface->w + x] = color;
+		}
+	}
+
+	SDL_FreeSurface(sdl_surface);
 }

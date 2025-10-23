@@ -103,10 +103,14 @@ int main(int argc, char *argv[]) {
 	// game_load(&computer, STR("game.zinc95"));
 	// game_load_old(&computer, "game.zinc95");
 	
-	gui_load_skin(computer.ram, "res/skin.png", 1, 0);
+	gui_load_skin(computer.ram, STR("res/skin.bmp"), 1, 0);
 	computer_load_resouces(&computer);
 	// gui_load_skin(computer.ram, "res/skin2.png", 1, 40);
-	gfx_load_surface(&computer.ram->palette, (surface_t){.data = computer.ram->text_mode_font.data, .width = TEXT_MODE_FONT_BITMAP_WIDTH, .height = TEXT_MODE_FONT_BITMAP_HEIGHT}, "res/font.png");
+	gfx_load_surface(
+		&computer.ram->palette,
+		(surface_t){.data = computer.ram->text_mode_font.data, .width = TEXT_MODE_FONT_BITMAP_WIDTH, .height = TEXT_MODE_FONT_BITMAP_HEIGHT},
+		STR("res/font.bmp")
+	);
 
 	if (argc > 1) {
 		game_load(&computer, STR(argv[1]));
@@ -132,6 +136,9 @@ int main(int argc, char *argv[]) {
 
 	// I need to implement a popup message system
 	// for some status update like project saved or whatever
+
+	// TODO:
+	// Make tiles 16x16?
 
 	shell_init(&computer);
 

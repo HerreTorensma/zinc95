@@ -9,6 +9,7 @@ SDL2 wrapper
 
 #include "../computer.h"
 #include "input.h"
+#include "gfx.h"
 
 void sdl2_init(char title[], int initial_scale);
 
@@ -46,3 +47,5 @@ void sdl2_audio_init(computer_t *computer);
 void sdl2_set_clipboard_text(char *text);
 
 string_t sdl2_get_clipboard_text(allocator_t allocator);
+
+void sdl2_load_bmp_to_surface(palette_t *palette, surface_t surface, string_t path);

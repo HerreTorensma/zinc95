@@ -13,7 +13,7 @@ void txt_generate_rgb_framebuffer(computer_t *computer) {
 		for (int x = 0; x < TEXTBUFFER_WIDTH; x++) {
 			char_t character = computer->ram->textbuffer.data[y * TEXTBUFFER_WIDTH + x];
 
-			point_t font_cell = POINT(character.c % 16, character.c / 16); // TODO: not hardcode
+			point_t font_cell = POINT(character.c % 16, character.c / 16); // TODO: not hardcode size
 
 			point_t pos_in_font = POINT(font_cell.x * TEXTBUFFER_CHAR_WIDTH, font_cell.y * TEXTBUFFER_CHAR_HEIGHT);
 			point_t pos_on_screen = POINT(x * TEXTBUFFER_CHAR_WIDTH, y * TEXTBUFFER_CHAR_HEIGHT);

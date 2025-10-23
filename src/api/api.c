@@ -198,3 +198,8 @@ int api_ticks(ram_t *ram) {
 void api_sfx(ram_t *ram, int index) {
 	audio_play_pattern(get_global_computer(), index);
 }
+
+// TODO: sprite_get_flags, sprite_set_flags
+// also think about how that should work with multiple sprites selected
+
+// TODO: AABBB and circle collision functions

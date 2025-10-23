@@ -91,7 +91,7 @@ void gfx_draw_sprite_mask(ram_t *ram, int index, color_t color_key, color_t draw
 
 void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section);
 
-// Load bmp, might just use stb image actually
-void load_bmp(surface_t *surface, const char filename[]);
-
-void gfx_load_surface(palette_t *palette, surface_t surface, const char filename[]);
+// Expects surface to be the same dimension as the image at the filename
+// Because it's only really used to load the skin which has a static size
+// Only BMP is supported
+void gfx_load_surface(palette_t *palette, surface_t surface, string_t path);

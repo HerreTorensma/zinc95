@@ -93,6 +93,7 @@ static int _get_real_cursor_pos(computer_t *computer) {
 	return 0;
 }
 
+// TODO: investigate why upon switching to the code editor from another editor (sprite?) all text is selected
 void code_editor_init(computer_t *computer) {
 	// TODO: Changed workspace_rect.h to layout.code_rect.h without knowing the implications, might wanna check that later
 	_lines_on_screen = _layout.code_rect.h / (computer->ram->fonts[CODE_EDITOR_FONT_INDEX].height + computer->ram->fonts[CODE_EDITOR_FONT_INDEX].vertical_space);
