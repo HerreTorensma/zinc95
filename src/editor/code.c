@@ -49,42 +49,44 @@ static const layout_t _layout = {
 
 static size_t _current_file_index = 0;
 
-static void _screen_pos_to_file_pos(ram_t *ram, file_t *file, point_t screen_pos, size_t *mouse_line, size_t *mouse_pos) {
+static file_pos_t _screen_pos_to_file_pos(ram_t *ram, file_t *file, point_t screen_pos) {
 	font_t *font = &ram->fonts[CODE_EDITOR_FONT_INDEX];
+
+	file_pos_t file_pos = {0};
 
 	int corrected_x = screen_pos.x - (_layout.code_rect.x + 5 * (font->widths[0] + font->horizontal_space));
 	int corrected_y = screen_pos.y - _layout.code_rect.y + (file->scroll_amount * (font->height + font->vertical_space));
 
-	size_t line = corrected_y / (font->height + font->vertical_space);
-	if (line < 0) {
-		return;
+	file_pos.line = corrected_y / (font->height + font->vertical_space);
+	if (file_pos.line < 0) {
+		return file_pos;
 	}
-	if (line >= file->line_amount) {
-		line = file->line_amount - 1;
-	}
-
- 	// int pos = gui_x_to_text_index(font, file->lines[line].text, corrected_x);
-	int pos = gui_x_to_string_index(font, file->lines[line].string, corrected_x);
-	if (pos < 0) {
-		return;
-	}
-	int line_len = file->lines[line].string.len;
-	if (line_len < pos) {
-		pos = line_len;
+	if (file_pos.line >= file->line_amount) {
+		file_pos.line = file->line_amount - 1;
 	}
 
-	*mouse_line = line;
-	*mouse_pos = pos;
+	file_pos.pos = gui_x_to_string_index(font, file->lines[file_pos.line].string, corrected_x);
+	if (file_pos.pos < 0) {
+		return file_pos;
+	}
+	int line_len = file->lines[file_pos.line].string.len;
+	if (line_len < file_pos.pos) {
+		file_pos.pos = line_len;
+	}
+
+	return file_pos;
 }
 
 static void _move_cursor_to_mouse(ram_t *ram, file_t *file) {
-	_screen_pos_to_file_pos(ram, file, input_get_mouse_pos(), &file->cursor.line, &file->cursor.pos);
+	file->cursor = _screen_pos_to_file_pos(ram, file, input_get_mouse_pos());
+	file->target_pos = string_real_pos_to_pos_with_tabs_counted_as_spaces(file->lines[file->cursor.line].string, file->cursor.pos);;
 }
 
 static void _unblink_cursor() {
 	_cursor_timer = _cursor_blink_speed;
 }
 
+// Returns what??? (TODO: document)
 static int _get_real_cursor_pos(computer_t *computer) {
 	if (computer->files[_current_file_index].line_amount > 0) {
 		return gui_get_string_width(&computer->ram->fonts[CODE_EDITOR_FONT_INDEX], computer->files[_current_file_index].lines[computer->files[_current_file_index].cursor.line].string, computer->files[_current_file_index].cursor.pos);

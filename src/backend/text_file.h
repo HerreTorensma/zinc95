@@ -86,6 +86,11 @@ void file_insert_char_at_cursor(file_t *file, char c);
 // Removes the character at the cursor and merges with the above line if necessary cursor pos is 0
 void file_remove_char_at_cursor(file_t *file);
 
+// Very verbose but I don't know how else to name it
+size_t string_real_pos_to_pos_with_tabs_counted_as_spaces(string_t string, size_t pos);
+
+size_t string_pos_with_tabs_counted_as_spaces_to_real_pos(string_t string, size_t pos);
+
 // These are self descriptory or something
 // yk what I mean
 void file_move_cursor_up(file_t *file);

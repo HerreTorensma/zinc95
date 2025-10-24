@@ -1,7 +1,5 @@
 #include "menu.h"
 
-#include <stdio.h>
-
 #include "../backend/input.h"
 #include "../backend/gui.h"
 #include "../backend/gfx.h"
@@ -22,7 +20,7 @@ typedef enum workspace_type {
 	WORKSPACE_SOUND,
 } workspace_type_t;
 
-static workspace_type_t _active_workspace = WORKSPACE_SOUND;
+static workspace_type_t _active_workspace = WORKSPACE_CODE;
 
 typedef struct layout {
 	point_t code_editor_button_pos;

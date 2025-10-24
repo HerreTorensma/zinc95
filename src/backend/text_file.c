@@ -8,7 +8,6 @@
 #include <assert.h>
 
 #include "../api/api.h"
-#include "window.h"
 
 // TODO: investigate why stuff doesn't work when I have asserts after allocations
 // because yes it works but it's also bad code and I should make it good
@@ -439,13 +438,45 @@ void file_remove_char_at_cursor(file_t *file) {
 	}
 }
 
+// Very verbose but I don't know how else to name it
+size_t string_real_pos_to_pos_with_tabs_counted_as_spaces(string_t string, size_t pos) {
+	size_t new_pos = pos;
+	
+	for (size_t i = 0; i < new_pos && i < string.len; i++) {
+	// for (size_t i = 0; i < pos && i < string.len; i++) {
+	// for (size_t i = 0; i < pos; i++) {
+		if (string.data[i] == '\t') {
+			new_pos += TAB_SIZE - 1;
+		}
+	}
+
+	return new_pos;
+}
+
+size_t string_pos_with_tabs_counted_as_spaces_to_real_pos(string_t string, size_t pos) {
+	size_t new_pos = pos;
+	
+	for (size_t i = 0; i < new_pos && i < string.len; i++) {
+	// for (size_t i = 0; i < pos && i < string.len; i++) {
+	// for (size_t i = 0; i < pos; i++) {
+		if (string.data[i] == '\t') {
+			// I kinda broke my head over this but it should be -1 because that gets evaluated before the rest obviously
+			new_pos -= TAB_SIZE - 1;
+		}
+	}
+
+	return new_pos;
+}
+
 void file_move_cursor_up(file_t *file) {
 	if (file->cursor.line > 0) {
 		file->cursor.line--;
 
-		size_t len = file->lines[file->cursor.line].string.len;
-		if (file->cursor.pos > len) {
-			file->cursor.pos = len;
+		string_t string = file->lines[file->cursor.line].string;
+		if (file->target_pos < string_real_pos_to_pos_with_tabs_counted_as_spaces(string, string.len)) {
+			file->cursor.pos = string_pos_with_tabs_counted_as_spaces_to_real_pos(string, file->target_pos);
+		} else {
+			file->cursor.pos = string.len;
 		}
 	}
 }
@@ -453,11 +484,13 @@ void file_move_cursor_up(file_t *file) {
 void file_move_cursor_down(file_t *file) {
 	if (file->cursor.line < file->line_amount - 1) {
 		file->cursor.line++;
-	}
 
-	size_t len = file->lines[file->cursor.line].string.len;
-	if (file->cursor.pos > len) {
-		file->cursor.pos = len;
+		string_t string = file->lines[file->cursor.line].string;
+		if (file->target_pos < string_real_pos_to_pos_with_tabs_counted_as_spaces(string, string.len)) {
+			file->cursor.pos = string_pos_with_tabs_counted_as_spaces_to_real_pos(string, file->target_pos);
+		} else {
+			file->cursor.pos = string.len;
+		}
 	}
 }
 
@@ -470,6 +503,8 @@ void file_move_cursor_left(file_t *file) {
 			file->cursor.pos = file->lines[file->cursor.line].string.len;
 		}
 	}
+
+	file->target_pos = string_real_pos_to_pos_with_tabs_counted_as_spaces(file->lines[file->cursor.line].string, file->cursor.pos);
 }
 
 void file_move_cursor_right(file_t *file) {
@@ -482,6 +517,8 @@ void file_move_cursor_right(file_t *file) {
 			file->cursor.pos = 0;
 		}
 	}
+
+	file->target_pos = string_real_pos_to_pos_with_tabs_counted_as_spaces(file->lines[file->cursor.line].string, file->cursor.pos);
 }
 
 static const char _divider_chars[] = {
