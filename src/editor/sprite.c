@@ -1,13 +1,11 @@
 #include "sprite.h"
 
 #include <stdio.h>
-#include <string.h>
 
 #include "../backend/input.h"
 #include "../backend/gfx.h"
 #include "../backend/gui.h"
 #include "../common/mem.h"
-#include "menu.h"
 #include "shared.h"
 
 #define COLOR_SQUARE_SIZE 8
@@ -19,6 +17,7 @@ typedef struct layout {
 
 	rect_t selected_color_rect;
 	point_t selected_color_label_pos;
+	rect_t secondary_selected_color_rect;
 
 	rect_t selected_sprite_rect;
 	point_t selected_sprite_label_pos;
@@ -43,6 +42,7 @@ static const layout_t _layout = {
 
 	.selected_color_rect = {{4, 368, 16, 16}},
 	.selected_color_label_pos = {24, 372},
+	.secondary_selected_color_rect = {{180, 368, 16, 16}},
 
 	.selected_sprite_rect = {{4, 348, 16, 16}},
 	.selected_sprite_label_pos = {24, 351},
@@ -59,7 +59,8 @@ static const layout_t _layout = {
 	.tools_start_pos = {264, 38},
 };
 
-static uint8_t _selected_color = 0;
+static color_t _selected_color = 0;
+static color_t _secondary_selected_color = 0;
 
 static point_t _change_start = {0};
 static point_t _change_end = {0};
@@ -242,6 +243,13 @@ void sprite_editor_update(computer_t *computer) {
 		}
 	}
 
+	// Swap primary and secondary selected color
+	if (input_key_pressed(KEY_X)) {
+		color_t temp = _selected_color;
+		_selected_color = _secondary_selected_color;
+		_secondary_selected_color = temp;
+	}
+
 	if (point_in_rect(mouse_pos, _layout.sprite_editor_rect)) {
 		// Mouse position translated to position within the selected rect of the sprite selector
 		// point_t local_coord = {
@@ -347,8 +355,7 @@ void sprite_editor_update(computer_t *computer) {
 				}
 
 				if (input_mouse_button_held(MOUSE_BUTTON_RIGHT)) {
-					// TODO: implement secondary color and use here instead of black
-					surf_set_pixel(_overlay_surf, spritesheet_coord_under_mouse.x, spritesheet_coord_under_mouse.y, COLOR_BLACK);
+					surf_set_pixel(_overlay_surf, spritesheet_coord_under_mouse.x, spritesheet_coord_under_mouse.y, _secondary_selected_color);
 				}
 
 				if (input_mouse_button_released(MOUSE_BUTTON_LEFT) || input_mouse_button_released(MOUSE_BUTTON_RIGHT)) {
@@ -559,6 +566,9 @@ void sprite_editor_draw(computer_t *computer) {
 	gfx_draw_filled_rect(fb_surf, _layout.selected_color_rect, _selected_color);
 	sprintf(buffer, "#%03d\n", _selected_color);
 	gui_draw_text(computer->ram, GUI_FONT_INDEX, buffer, _layout.selected_color_label_pos, computer->ram->skin.font_color);
+
+	// Secondary selected color
+	gfx_draw_filled_rect(fb_surf, _layout.secondary_selected_color_rect, _secondary_selected_color);
 
 	// gui_draw_text(computer->ram, 2, buffer, _layout.selected_color_label_pos, COLOR_NONE); // Testing not passing a color
 	
