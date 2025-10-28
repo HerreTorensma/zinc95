@@ -191,49 +191,72 @@ void code_editor_update(computer_t *computer) {
 	// Cursor movement
 	if (input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL)) {
 		KEY_PRESSED_OR_LONG_PRESSED(KEY_LEFT, {
+			size_t old_cursor_pos = file->cursor.pos;
 			file_move_cursor_to_prev_token(file, true);
 			_unblink_cursor();
 
-			file->selection_start = file->cursor;
-			file->selection_end = file->cursor;
+			if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
+				if (old_cursor_pos == file->selection_end.pos) {
+					file->selection_end = file->cursor;
+				} else {
+					file->selection_start = file->cursor;
+				}
+			} else {
+				file->selection_start = file->cursor;
+				file->selection_end = file->cursor;
+			}
 		});
 
 		KEY_PRESSED_OR_LONG_PRESSED(KEY_RIGHT, {
+			size_t old_cursor_pos = file->cursor.pos;
 			file_move_cursor_to_next_token(file, true);
 			_unblink_cursor();
 
-			file->selection_start = file->cursor;
-			file->selection_end = file->cursor;
+			if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
+				if (old_cursor_pos == file->selection_end.pos) {
+					file->selection_end = file->cursor;
+				} else {
+					file->selection_start = file->cursor;
+				}
+			} else {
+				file->selection_start = file->cursor;
+				file->selection_end = file->cursor;
+			}
 		});
 	} else {
 		KEY_PRESSED_OR_LONG_PRESSED(KEY_LEFT, {
-			if (file->selection_start.line == file->selection_end.line && file->selection_start.pos == file->selection_end.pos) {
-				// There is no selection
-				file_move_cursor_left(file);
+			size_t old_cursor_pos = file->cursor.pos;
+			file_move_cursor_left(file);
+			if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
+				if (old_cursor_pos == file->selection_end.pos) {
+					file->selection_end = file->cursor;
+				} else {
+					file->selection_start = file->cursor;
+				}
 			} else {
-				// Move cursor to selection start
-				file->cursor = file->selection_start;
+				// TODO: _reset_selection function
+				file->selection_start = file->cursor;
+				file->selection_end = file->cursor;
 			}
 
 			_unblink_cursor();
-
-			file->selection_start = file->cursor;
-			file->selection_end = file->cursor;
 		});
 
 		KEY_PRESSED_OR_LONG_PRESSED(KEY_RIGHT, {
-			if (file->selection_start.line == file->selection_end.line && file->selection_start.pos == file->selection_end.pos) {
-				// There is no selection
-				file_move_cursor_right(file);
+			size_t old_cursor_pos = file->cursor.pos;
+			file_move_cursor_right(file);
+			if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
+				if (old_cursor_pos == file->selection_end.pos) {
+					file->selection_end = file->cursor;
+				} else {
+					file->selection_start = file->cursor;
+				}
 			} else {
-				// Move cursor to selection end
-				file->cursor = file->selection_end;
+				file->selection_start = file->cursor;
+				file->selection_end = file->cursor;
 			}
 
 			_unblink_cursor();
-
-			file->selection_start = file->cursor;
-			file->selection_end = file->cursor;
 		});
 	}
 
@@ -313,6 +336,8 @@ void code_editor_update(computer_t *computer) {
 	// Paste
 	if ((input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL)) && input_key_pressed(KEY_V)) {
 		file_insert_string_at_cursor(file, get_clipboard_text(get_temp_allocator()));
+		file->selection_start = file->cursor;
+		file->selection_end = file->cursor;
 	}
 
 	// Cut

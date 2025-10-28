@@ -355,6 +355,8 @@ void sprite_editor_update(computer_t *computer) {
 				}
 
 				if (input_mouse_button_held(MOUSE_BUTTON_RIGHT)) {
+					// TODO: implement this secondary selected color for the other tools as well
+					// TODO: should this also affect the change region and all that? yes probably
 					surf_set_pixel(_overlay_surf, spritesheet_coord_under_mouse.x, spritesheet_coord_under_mouse.y, _secondary_selected_color);
 				}
 
@@ -371,7 +373,6 @@ void sprite_editor_update(computer_t *computer) {
 					gfx_clear(_overlay_surf, COLOR_NONE);
 				}
 		
-
 				break;
 			}
 
