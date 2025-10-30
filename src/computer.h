@@ -351,6 +351,8 @@ typedef struct button_array {
 } button_array_t;
 
 typedef struct skin_layout {
+	button_t zinc_button;
+
 	button_t code_button;
 	button_t sprite_button;
 	button_t map_button;

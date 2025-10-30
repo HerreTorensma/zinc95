@@ -15,6 +15,11 @@
 static computer_t *_computer;
 
 const skin_layout_t skin_layout = {
+	.zinc_button = {
+		.unpressed_rect = {{3568, 44, 16, 16}},
+		.pressed_rect = {{3568, 60, 16, 16}},
+	},
+
 	.code_button = {
 		.unpressed_rect = {{3200, 44, 64, 16}},
 		.pressed_rect = {{3200, 60, 64, 16}},

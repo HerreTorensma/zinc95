@@ -25,6 +25,7 @@ typedef enum workspace_type {
 static workspace_type_t _active_workspace = WORKSPACE_CODE;
 
 typedef struct layout {
+	point_t zinc_button_pos;
 	point_t code_editor_button_pos;
 	point_t sprite_editor_button_pos;
 	point_t map_editor_button_pos;
@@ -36,6 +37,7 @@ typedef struct layout {
 } layout_t;
 
 static const layout_t _layout = {
+	.zinc_button_pos = {2, 2},
 	.code_editor_button_pos = {160, 2},
 	.sprite_editor_button_pos = {224, 2},
 	.map_editor_button_pos = {288, 2},
@@ -133,6 +135,15 @@ void workspace_menu_draw(computer_t *computer) {
 	// Menu bar
 	// TODO: not hardcode
 	gfx_draw_surface_rect(&computer->ram->framebuffer, SKIN_SURF(computer->ram->skin.data), POINT(0, 0), RECT(SCREEN_WIDTH * 5, 0, SCREEN_WIDTH, 20), COLOR_NONE);
+
+	if (gui_button(
+		computer->ram,
+		_layout.zinc_button_pos,
+		skin_layout.zinc_button,
+		false
+	)) {
+		
+	}
 
 	// Editors
 	if (gui_button(computer->ram, _layout.code_editor_button_pos, skin_layout.code_button, _active_workspace == WORKSPACE_CODE)) {
