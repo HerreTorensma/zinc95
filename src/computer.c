@@ -16,58 +16,63 @@ static computer_t *_computer;
 
 const skin_layout_t skin_layout = {
 	.code_button = {
-		.unpressed_rect = {{2560, 44, 64, 16}},
-		.pressed_rect = {{2560, 60, 64, 16}},
+		.unpressed_rect = {{3200, 44, 64, 16}},
+		.pressed_rect = {{3200, 60, 64, 16}},
 	},
 
 	.sprite_button = {
-		.unpressed_rect = {{2624, 44, 64, 16}},
-		.pressed_rect = {{2624, 60, 64, 16}},
+		.unpressed_rect = {{3264, 44, 64, 16}},
+		.pressed_rect = {{3264, 60, 64, 16}},
 	},
 
 	.map_button = {
-		.unpressed_rect = {{2688, 44, 64, 16}},
-		.pressed_rect = {{2688, 60, 64, 16}},
+		.unpressed_rect = {{3328, 44, 64, 16}},
+		.pressed_rect = {{3328, 60, 64, 16}},
 	},
 
 	.sound_button = {
-		.unpressed_rect = {{2752, 44, 64, 16}},
-		.pressed_rect = {{2752, 60, 64, 16}},
+		.unpressed_rect = {{3392, 44, 64, 16}},
+		.pressed_rect = {{3392, 60, 64, 16}},
+	},
+
+	.music_button = {
+		.unpressed_rect = {{3456, 44, 64, 16}},
+		.pressed_rect = {{3456, 60, 64, 16}},
 	},
 
 	.save_button = {
-		.unpressed_rect = {{2816, 44, 16, 16}},
-		.pressed_rect = {{2816, 60, 16, 16}},
+		.unpressed_rect = {{3520, 44, 16, 16}},
+		.pressed_rect = {{3520, 60, 16, 16}},
 	},
 
 	.play_button = {
-		.unpressed_rect = {{2832, 44, 16, 16}},
-		.pressed_rect = {{2832, 60, 16, 16}},
+		.unpressed_rect = {{3536, 44, 16, 16}},
+		.pressed_rect = {{3536, 60, 16, 16}},
 	},
 
 	.stop_button = {
-		.unpressed_rect = {{2848, 44, 16, 16}},
-		.pressed_rect = {{2848, 60, 16, 16}},
+		.unpressed_rect = {{3552, 44, 16, 16}},
+		.pressed_rect = {{3552, 60, 16, 16}},
 	},
 
 	.sprite_flag_buttons = {
 		.base = {
-			.unpressed_rect = {{2560, 20, 12, 12}},
-			.pressed_rect = {{2560, 32, 12, 12}},
+			.unpressed_rect = {{3200, 20, 12, 12}},
+			.pressed_rect = {{3200, 32, 12, 12}},
 		},
 		.increase = {12, 0},
 		.amount = 32,
 	},
 
 	.color_key_button = {
-		.unpressed_rect = {{2944, 20, 12, 12}},
-		.pressed_rect = {{2944, 32, 12, 12}},
+		.unpressed_rect = {{3584, 20, 12, 12}},
+		.pressed_rect = {{3584, 32, 12, 12}},
 	},
 
 	.spritesheet_page_buttons = {
 		.base = {
-			.unpressed_rect = {{2560, 76, 48, 16}},
-			.pressed_rect = {{2608, 76, 48, 16}},
+			.unpressed_rect = {{3200, 76, 48, 16}},
+			.pressed_rect = {{3248, 76, 48, 16}},
 		},
 		.increase = {0, 16},
 		.amount = 8,
@@ -75,22 +80,22 @@ const skin_layout_t skin_layout = {
 
 	.sprite_tool_buttons = {
 		.base = {
-			.unpressed_rect = {{2560, 204, 16, 16}},
-			.pressed_rect = {{2560, 220, 16, 16}},
+			.unpressed_rect = {{3200, 204, 16, 16}},
+			.pressed_rect = {{3200, 220, 16, 16}},
 		},
 		.increase = {16, 0},
 		.amount = 7,
 	},
 
 	.map_entity_layer_button = {
-		.unpressed_rect = {{2560, 236, 48, 16}},
-		.pressed_rect = {{2608, 236, 48, 16}},
+		.unpressed_rect = {{3200, 236, 48, 16}},
+		.pressed_rect = {{3248, 236, 48, 16}},
 	},
 
 	.map_layer_buttons = {
 		.base = {
-			.unpressed_rect = {{2560, 252, 48, 16}},
-			.pressed_rect = {{2608, 252, 48, 16}},
+			.unpressed_rect = {{3200, 252, 48, 16}},
+			.pressed_rect = {{3248, 252, 48, 16}},
 		},
 		.increase = {0, 16},
 		.amount = 4,
@@ -100,35 +105,35 @@ const skin_layout_t skin_layout = {
 	.code_editor_font_rect = {{2560, 464, 384, 16}},
 
 	.code_file_button = {
-		.unpressed_rect = {{2560, 316, 64, 13}},
-		.pressed_rect = {{2624, 316, 64, 13}},
+		.unpressed_rect = {{3200, 316, 64, 13}},
+		.pressed_rect = {{3264, 316, 64, 13}},
 	},
 
 	.add_file_button = {
-		.unpressed_rect = {{2560, 329, 13, 13}},
-		.pressed_rect = {{2573, 329, 13, 13}},
+		.unpressed_rect = {{3200, 329, 13, 13}},
+		.pressed_rect = {{3213, 329, 13, 13}},
 	},
 
 	.toggle_layer_button = {
-		.unpressed_rect = {{2656, 236, 16, 16}},
-		.pressed_rect = {{2672, 236, 16, 16}},
+		.unpressed_rect = {{3296, 236, 16, 16}},
+		.pressed_rect = {{3312, 236, 16, 16}},
 	},
 
 	.sine_wave_button = {
-		.unpressed_rect = {{2560, 350, 32, 16}},
-		.pressed_rect = {{2592, 350, 32, 16}},
+		.unpressed_rect = {{3200, 350, 32, 16}},
+		.pressed_rect = {{3232, 350, 32, 16}},
 	},
 	.square_wave_button = {
-		.unpressed_rect = {{2560, 366, 32, 16}},
-		.pressed_rect = {{2592, 366, 32, 16}},
+		.unpressed_rect = {{3200, 366, 32, 16}},
+		.pressed_rect = {{3232, 366, 32, 16}},
 	},
 	.triangle_wave_button = {
-		.unpressed_rect = {{2560, 382, 32, 16}},
-		.pressed_rect = {{2592, 382, 32, 16}},
+		.unpressed_rect = {{3200, 382, 32, 16}},
+		.pressed_rect = {{3232, 382, 32, 16}},
 	},
 	.sawtooth_wave_button = {
-		.unpressed_rect = {{2560, 398, 32, 16}},
-		.pressed_rect = {{2592, 398, 32, 16}},
+		.unpressed_rect = {{3200, 398, 32, 16}},
+		.pressed_rect = {{3232, 398, 32, 16}},
 	},
 };
 

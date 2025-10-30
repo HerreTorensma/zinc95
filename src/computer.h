@@ -84,7 +84,7 @@ Memory layout, global constants
 #define MAX_PITCH 48
 #define MAX_VOLUME 24
 
-#define SKIN_WIDTH SCREEN_WIDTH * 5
+#define SKIN_WIDTH SCREEN_WIDTH * 6
 #define SKIN_HEIGHT SCREEN_HEIGHT
 
 #define GUI_FONT_INDEX 0
@@ -355,6 +355,7 @@ typedef struct skin_layout {
 	button_t sprite_button;
 	button_t map_button;
 	button_t sound_button;
+	button_t music_button;
 
 	button_t save_button;
 	button_t play_button;

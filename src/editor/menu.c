@@ -8,6 +8,7 @@
 #include "sprite.h"
 #include "map.h"
 #include "sound.h"
+#include "music.h"
 #include "shared.h"
 
 #define SAVE_ICON_INDEX 5858
@@ -18,6 +19,7 @@ typedef enum workspace_type {
 	WORKSPACE_SPRITE,
 	WORKSPACE_MAP,
 	WORKSPACE_SOUND,
+	WORKSPACE_MUSIC,
 } workspace_type_t;
 
 static workspace_type_t _active_workspace = WORKSPACE_CODE;
@@ -27,16 +29,18 @@ typedef struct layout {
 	point_t sprite_editor_button_pos;
 	point_t map_editor_button_pos;
 	point_t sound_editor_button_pos;
+	point_t music_editor_button_pos;
 
 	point_t save_button_pos;
 	point_t play_button_pos;
 } layout_t;
 
 static const layout_t _layout = {
-	.code_editor_button_pos = {192, 2},
-	.sprite_editor_button_pos = {256, 2},
-	.map_editor_button_pos = {320, 2},
-	.sound_editor_button_pos = {384, 2},
+	.code_editor_button_pos = {160, 2},
+	.sprite_editor_button_pos = {224, 2},
+	.map_editor_button_pos = {288, 2},
+	.sound_editor_button_pos = {352, 2},
+	.music_editor_button_pos = {416, 2},
 
 	.save_button_pos = {606, 2},
 	.play_button_pos = {622, 2},
@@ -118,13 +122,17 @@ void workspace_menu_draw(computer_t *computer) {
 			sound_editor_draw(computer);
 			break;
 
+		case WORKSPACE_MUSIC:
+			music_editor_draw(computer);
+			break;
+
 		default:
 			break;
 	}
 
 	// Menu bar
 	// TODO: not hardcode
-	gfx_draw_surface_rect(&computer->ram->framebuffer, SKIN_SURF(computer->ram->skin.data), POINT(0, 0), RECT(SCREEN_WIDTH * 4, 0, SCREEN_WIDTH, 20), COLOR_NONE);
+	gfx_draw_surface_rect(&computer->ram->framebuffer, SKIN_SURF(computer->ram->skin.data), POINT(0, 0), RECT(SCREEN_WIDTH * 5, 0, SCREEN_WIDTH, 20), COLOR_NONE);
 
 	// Editors
 	if (gui_button(computer->ram, _layout.code_editor_button_pos, skin_layout.code_button, _active_workspace == WORKSPACE_CODE)) {
@@ -141,6 +149,10 @@ void workspace_menu_draw(computer_t *computer) {
 	
 	if (gui_button(computer->ram, _layout.sound_editor_button_pos, skin_layout.sound_button, _active_workspace == WORKSPACE_SOUND)) {
 		_active_workspace = WORKSPACE_SOUND;
+	}
+
+	if (gui_button(computer->ram, _layout.music_editor_button_pos, skin_layout.music_button, _active_workspace == WORKSPACE_MUSIC)) {
+		_active_workspace = WORKSPACE_MUSIC;
 	}
 
 	// Save and load
