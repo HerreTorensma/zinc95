@@ -17,12 +17,14 @@ bool point_in_rect(point_t point, rect_t rect) {
 // TODO: make CLAMP macro and use it here
 rect_t rect_clip(rect_t container, rect_t rect) {
 	if (rect.x < container.x) {
+		int delta = container.x - rect.x;
 		rect.x = container.x;
-		rect.w -= container.x - rect.x;
+		rect.w -= delta;
 	}
 	if (rect.y < container.y) {
+		int delta = container.y - rect.y;
 		rect.y = container.y;
-		rect.h -= container.y - rect.y;
+		rect.h -= delta;
 	}
 
 	int rect_right = rect.x + rect.w;

@@ -3,42 +3,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 #ifdef BACKEND_SDL2
 #include "sdl2.h"
 #endif
-
-static bool _point_in_screen(int x, int y) {
-	if (x < 0) return false;
-	if (x >= SCREEN_WIDTH) return false;
-	if (y < 0) return false;
-	if (y >= SCREEN_HEIGHT) return false;
-
-	return true;
-}
-
-static bool _point_in_bounds(surface_t surf, int x, int y) {
-	if (x < 0) return false;
-	if (x >= surf.width) return false;
-	if (y < 0) return false;
-	if (y >= surf.height) return false;
-
-	return true;
-}
-
-void surf_set_pixel(surface_t surf, int x, int y, int color) {
-	if (_point_in_bounds(surf, x, y)) {
-		surf.data[y * surf.width + x] = color;
-	}
-}
-
-color_t surf_get_pixel(surface_t surf, int x, int y) {
-	if (_point_in_bounds(surf, x, y)) {
-		return surf.data[y * surf.width + x];
-	}
-	return COLOR_NONE;
-}
 
 void gfx_generate_rgb_framebuffer(computer_t *computer) {
 	for (int y = 0; y < SCREEN_HEIGHT; y++) {
@@ -60,19 +28,6 @@ color_t gfx_rgb_color_to_color(palette_t *palette, rgb_color_t rgb_color, color_
 
 	printf("Color not found\n");
 	return undefined_color;
-}
-
-void gfx_set_pixel(framebuffer_t *fb, int x, int y, int color) {
-	if (_point_in_screen(x, y)) {
-		fb->data[y * SCREEN_WIDTH + x] = color;
-	}
-}
-
-color_t gfx_get_pixel(framebuffer_t *fb, int x, int y) {
-	if (_point_in_screen(x, y)) {
-		return fb->data[y * SCREEN_WIDTH + x];
-	}
-	return COLOR_NONE;
 }
 
 void gfx_clear(surface_t surface, color_t color) {
@@ -282,7 +237,7 @@ rect_t sprite_index_to_spritesheet_rect(int sprite_index, int w, int h) {
 void gfx_copy_surface_rect(surface_t dest, surface_t src, point_t pos, rect_t rect, color_t color_key) {
 	for (int i = 0; i < rect.h; i++) {
 		for (int j = 0; j < rect.w; j++) {
-			uint8_t color = surf_get_pixel(src, rect.x + j, rect.y + i);
+			color_t color = surf_get_pixel(src, rect.x + j, rect.y + i);
 			if (color != color_key) {
 				surf_set_pixel(dest, pos.x + j, pos.y + i, color);
 			}
@@ -293,7 +248,7 @@ void gfx_copy_surface_rect(surface_t dest, surface_t src, point_t pos, rect_t re
 void gfx_draw_surface_rect(framebuffer_t *fb, surface_t surf, point_t pos, rect_t rect, color_t color_key) {
 	for (int i = 0; i < rect.h; i++) {
 		for (int j = 0; j < rect.w; j++) {
-			uint8_t color = surf_get_pixel(surf, rect.x + j, rect.y + i);
+			color_t color = surf_get_pixel(surf, rect.x + j, rect.y + i);
 			if (color != color_key) {
 				gfx_set_pixel(fb, pos.x + j, pos.y + i, color);
 			}
@@ -318,11 +273,12 @@ void gfx_draw_surface_pro(framebuffer_t *fb, surface_t surf, rect_t source_rect,
 
 			// TODO: look at this again later
 			// It's the same concept but only integer math so it scales less flexibally but also does not have incorrect pixels
+			// and it's faster
+			// I should also look into fixed point arithmatic, the 2 lines below are just integer math but that's probably not sufficient
 			// int source_x = source_rect.x + (x * source_rect.w) / dest_rect.w;
 			// int source_y = source_rect.y + (y * source_rect.h) / dest_rect.h;
 
-			// uint8_t color = gfx_spritesheet_get_pixel(&ram->spritesheet, (point_t){source_x, source_y});
-			uint8_t color = surf_get_pixel(surf, source_x, source_y);
+			color_t color = surf_get_pixel(surf, source_x, source_y);
 			
 			if (color != color_key) {
 				gfx_set_pixel(fb, dest_rect.x + x, dest_rect.y + y, color);
@@ -350,13 +306,27 @@ void gfx_draw_sprites_page(ram_t *ram, int page_index, int relative_index, point
 	gfx_draw_spritesheet_rect(ram, pos, rect, ram->sprites[absolute_index].color_key);
 }
 
-void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section) {
+void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section, float scale, color_t color_key) {
 	section = rect_clip(RECT(0, 0, MAP_WIDTH, MAP_HEIGHT), section);
 
 	for (int i = section.y; i < section.y + section.h; i++) {
 		for (int j = section.x; j < section.x + section.w; j++) {
+
 			int sprite_index = ram->map.layers[layer_index].data[i * MAP_WIDTH + j];
-			gfx_draw_sprites(ram, sprite_index, POINT(pos.x + j * SPRITE_WIDTH, pos.y + i * SPRITE_HEIGHT), 1, 1);
+
+			rect_t source_rect = sprite_index_to_spritesheet_rect(sprite_index, 1, 1);
+
+			int scaled_sprite_width = (int)(SPRITE_WIDTH * scale);
+			int scaled_sprite_height = (int)(SPRITE_HEIGHT * scale);
+			
+			rect_t dest_rect = RECT(
+				pos.x + j * scaled_sprite_width,
+				pos.y + i * scaled_sprite_height,
+				scaled_sprite_width,
+				scaled_sprite_height
+			);
+
+			gfx_draw_spritesheet_pro(ram, source_rect, dest_rect, color_key);
 		}
 	}
 }

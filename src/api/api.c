@@ -142,7 +142,7 @@ void api_sspr(ram_t *ram, int dst_x, int dst_y, int dst_w, int dst_h, int src_x,
 }
 
 void api_map(ram_t *ram, int layer, int x, int y, int cell_x, int cell_y, int cell_w, int cell_h) {
-	gfx_draw_map(ram, layer, POINT(x, y), RECT(cell_x, cell_y, cell_w, cell_h));
+	gfx_draw_map(ram, layer, POINT(x, y), RECT(cell_x, cell_y, cell_w, cell_h), 1.0f, COLOR_BLACK);
 }
 
 /*

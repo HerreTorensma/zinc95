@@ -22,7 +22,7 @@ typedef enum workspace_type {
 	WORKSPACE_MUSIC,
 } workspace_type_t;
 
-static workspace_type_t _active_workspace = WORKSPACE_CODE;
+static workspace_type_t _active_workspace = WORKSPACE_MAP;
 
 typedef struct layout {
 	point_t zinc_button_pos;
@@ -134,6 +134,7 @@ void workspace_menu_draw(computer_t *computer) {
 
 	// Menu bar
 	// TODO: not hardcode
+	// TODO: remove this alltogether and let each editor workspace have its own menu bar background 
 	gfx_draw_surface_rect(&computer->ram->framebuffer, SKIN_SURF(computer->ram->skin.data), POINT(0, 0), RECT(SCREEN_WIDTH * 5, 0, SCREEN_WIDTH, 20), COLOR_NONE);
 
 	if (gui_button(

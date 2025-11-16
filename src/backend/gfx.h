@@ -29,20 +29,61 @@ typedef struct surface {
 // Skin
 #define SKIN_SURF(_data) ((surface_t){.data = (color_t *)_data, .width = SKIN_WIDTH, .height = SKIN_HEIGHT})
 
-void surf_set_pixel(surface_t surf, int x, int y, int color);
+// void surf_set_pixel(surface_t surf, int x, int y, int color);
 
-color_t surf_get_pixel(surface_t surf, int x, int y);
+// color_t surf_get_pixel(surface_t surf, int x, int y);
 
 // Generate a buffer of rgb_color_t using palette so it can be rendered by a backend later
 void gfx_generate_rgb_framebuffer(computer_t *computer);
 
 color_t gfx_rgb_color_to_color(palette_t *palette, rgb_color_t rgb_color, color_t undefined_color);
 
+static inline bool point_in_bounds(surface_t surf, int x, int y) {
+	if (x < 0) return false;
+	if (x >= surf.width) return false;
+	if (y < 0) return false;
+	if (y >= surf.height) return false;
+
+	return true;
+}
+
+static inline void surf_set_pixel(surface_t surf, int x, int y, int color) {
+	if (point_in_bounds(surf, x, y)) {
+		surf.data[y * surf.width + x] = color;
+	}
+}
+
+static inline color_t surf_get_pixel(surface_t surf, int x, int y) {
+	if (point_in_bounds(surf, x, y)) {
+		return surf.data[y * surf.width + x];
+	}
+	return COLOR_NONE;
+}
+
+// Check if the given point is on the screen bounds
+static inline bool point_in_screen(int x, int y) {
+	if (x < 0) return false;
+	if (x >= SCREEN_WIDTH) return false;
+	if (y < 0) return false;
+	if (y >= SCREEN_HEIGHT) return false;
+	
+	return true;
+}
+
 // Set a pixel on the framebuffer
-void gfx_set_pixel(framebuffer_t *fb, int x, int y, int color);
+static inline void gfx_set_pixel(framebuffer_t *fb, int x, int y, int color) {
+	if (point_in_screen(x, y)) {
+		fb->data[y * SCREEN_WIDTH + x] = color;
+	}
+}
 
 // Get a pixel from the framebuffer
-color_t gfx_get_pixel(framebuffer_t *fb, int x, int y);
+static inline color_t gfx_get_pixel(framebuffer_t *fb, int x, int y) {
+	if (point_in_screen(x, y)) {
+		return fb->data[y * SCREEN_WIDTH + x];
+	}
+	return COLOR_NONE;
+}
 
 void gfx_clear(surface_t surf, color_t color);
 
@@ -74,6 +115,7 @@ void gfx_draw_surface_rect(framebuffer_t *fb, surface_t surf, point_t pos, rect_
 // Draw portion of spritesheet at position
 void gfx_draw_spritesheet_rect(ram_t *ram, point_t pos, rect_t rect, color_t color_key);
 
+// TODO: rename to blit?
 void gfx_draw_surface_pro(framebuffer_t *fb, surface_t surf, rect_t source_rect, rect_t dest_rect, color_t color_key);
 
 // Draw portion of spritesheet and stretch it to the destination rect
@@ -89,7 +131,8 @@ void gfx_draw_sprites_page(ram_t *ram, int page_index, int relative_index, point
 // TODO: add to source file and fill in
 void gfx_draw_sprite_mask(ram_t *ram, int index, color_t color_key, color_t drawn_color);
 
-void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section);
+// Draw the a map layer
+void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section, float scale, color_t color_key);
 
 // Expects surface to be the same dimension as the image at the filename
 // Because it's only really used to load the skin which has a static size
