@@ -132,11 +132,6 @@ void workspace_menu_draw(computer_t *computer) {
 			break;
 	}
 
-	// Menu bar
-	// TODO: not hardcode
-	// TODO: remove this alltogether and let each editor workspace have its own menu bar background 
-	gfx_draw_surface_rect(&computer->ram->framebuffer, SKIN_SURF(computer->ram->skin.data), POINT(0, 0), RECT(SCREEN_WIDTH * 5, 0, SCREEN_WIDTH, 20), COLOR_NONE);
-
 	if (gui_button(
 		computer->ram,
 		_layout.zinc_button_pos,

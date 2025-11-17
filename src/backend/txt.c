@@ -334,8 +334,33 @@ void shell_new_command(computer_t *computer) {
 }
 
 static void _print_intro(ram_t *ram) {
-	term_printc(ram, STR("Zinc"), 0, 7);
-	term_printc(ram, STR("95\n"), 0, 12);
+// 	term_printc(ram, STR("      _            ___  _____  \n\
+//      (_)          / _ \\| ____| \n\
+//   _____ _ __   __| (_) | |__   \n\
+//  |_  / | '_ \\ / __\\__, |___ \\  \n\
+//   / /| | | | | (__  / / ___) | \n\
+//  /___|_|_| |_|\\___|/_/ |____/  \n\
+//                               \n\
+//                               \n"), 0, 12);
+
+	term_printc(ram, STR("\
+                                _..._         .----.     .----------. \n\
+                             .-'_..._''.    .   _   \\   /          /  \n\
+          .--.   _..._     .' .'      '.\\  /  .' )   | /   ______.'   \n\
+          |__| .'     '.  / .'            |   (_.    //   /_          \n\
+          .--..   .-.   .. '               \\     ,  //      '''--.    \n\
+          |  ||  '   '  || |                `'-'/  /'___          `.  \n\
+.--------.|  ||  |   |  || |            .-.    /  /     `'.         | \n\
+|____    ||  ||  |   |  |. '            \\  '--'  /         )        | \n\
+    /   / |  ||  |   |  | \\ '.          .'-....-'  ......-'        /  \n\
+  .'   /  |__||  |   |  |  '. `._____.-'/          \\          _..'`   \n\
+ /    /___    |  |   |  |    `-.______ /            '------'''        \n\
+|         |   |  |   |  |             `                               \n\
+|_________|   '--'   '--'                                             \n\
+	\n"), 0, 9);
+
+	// term_printc(ram, STR("Zinc"), 0, 7);
+	// term_printc(ram, STR("95\n"), 0, 12);
 	term_printc(ram, STR("Enter help for help\n"), 0, 15);
 	term_putchar(ram, '\n', 0, 0);
 }
@@ -349,6 +374,7 @@ void shell_init(computer_t *computer) {
 
 	// TODO: remove eventually, it's just so I don't have to type it manually
 	_execute_command(computer, STR("load fucking"));
+	shell_new_command(computer);
 }
 
 void shell_update(computer_t *computer) {
