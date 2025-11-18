@@ -51,3 +51,24 @@ typedef union vec2 {
 
 // TODO: put in lua api
 rect_t rect_from_2_points(point_t start, point_t end);
+
+typedef struct camera {
+	point_t pos;
+	float zoom;
+	point_t screen_origin; // Screen space coordinate that the camera contents are drawn at
+} camera_t;
+
+// Convert world coordinates to screen coordinates
+point_t cam_world_to_screen(camera_t *camera, point_t world);
+
+// Convert screen coordinates to world coordinates
+point_t cam_screen_to_world(camera_t *camera, point_t screen);
+
+// Snap a world point to the grid (cell size in pixels)
+point_t snap_to_grid(point_t world, int cell_w, int cell_h);
+
+// Converts screen coordinates to tile indices in a layer (rect_in_tiles is in tiles)
+point_t cam_screen_to_tile(camera_t *camera, point_t screen, rect_t rect_in_tiles, int cell_w, int cell_h);
+
+// Converts tile coordinates back to screen coordinates (rect_in_tiles is in tiles)
+point_t cam_tile_to_screen(camera_t *camera, point_t tile, rect_t rect_in_tiles, int cell_w, int cell_h);

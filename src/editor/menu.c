@@ -22,7 +22,7 @@ typedef enum workspace_type {
 	WORKSPACE_MUSIC,
 } workspace_type_t;
 
-static workspace_type_t _active_workspace = WORKSPACE_MAP;
+static workspace_type_t _active_workspace = WORKSPACE_SPRITE;
 
 typedef struct layout {
 	point_t zinc_button_pos;

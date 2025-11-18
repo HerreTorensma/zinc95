@@ -234,6 +234,11 @@ rect_t sprite_index_to_spritesheet_rect(int sprite_index, int w, int h) {
 	return rect;
 }
 
+// TODO: make everything take a bounds rect, anything outside of it will get clipped
+// either that or it's state-based, where by default the clip rect is the screen and you can set it
+// but who likes unnecessary state machines
+// I can actually just make a macro or wrapper function for clip bounds being the screen
+
 void gfx_copy_surface_rect(surface_t dest, surface_t src, point_t pos, rect_t rect, color_t color_key) {
 	for (int i = 0; i < rect.h; i++) {
 		for (int j = 0; j < rect.w; j++) {
@@ -260,9 +265,18 @@ void gfx_draw_spritesheet_rect(ram_t *ram, point_t pos, rect_t rect, color_t col
 	gfx_draw_surface_rect(&ram->framebuffer, SPR_SURF(ram->spritesheet.data), pos, rect, color_key);
 }
 
+// TODO: implement proper clipping
 void gfx_draw_surface_pro(framebuffer_t *fb, surface_t surf, rect_t source_rect, rect_t dest_rect, color_t color_key) {
 	for (int y = 0; y < dest_rect.h; y++) {
+		if (dest_rect.y + y > SCREEN_HEIGHT - 1) {
+			continue; // Early escape for optimization TODO: implement for other drawing functions
+		}
+
 		for (int x = 0; x < dest_rect.w; x++) {
+			if (dest_rect.x + x > SCREEN_WIDTH - 1) {
+				break; // Early escape for optimization TODO: implement for other drawing functions
+			}
+
 			// Calculate normalized coords
 			float u = (float)x / (float)dest_rect.w;
 			float v = (float)y / (float)dest_rect.h;

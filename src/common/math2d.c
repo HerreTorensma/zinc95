@@ -73,3 +73,47 @@ rect_t rect_from_2_points(point_t start, point_t end) {
 
 	return rect;
 }
+
+point_t cam_world_to_screen(camera_t *camera, point_t world) {
+	return (point_t){
+		.x = (int)((world.x - camera->pos.x + camera->screen_origin.x / camera->zoom) * camera->zoom),
+		.y = (int)((world.y - camera->pos.y + camera->screen_origin.y / camera->zoom) * camera->zoom),
+	};
+}
+
+// Convert screen coordinates to world coordinates
+point_t cam_screen_to_world(camera_t *camera, point_t screen) {
+	return (point_t){
+		.x = (int)((screen.x / camera->zoom) + camera->pos.x - camera->screen_origin.x / camera->zoom),
+		.y = (int)((screen.y / camera->zoom) + camera->pos.y - camera->screen_origin.y / camera->zoom),
+	};
+}
+
+// Snap a world point to the grid (cell size in pixels)
+point_t snap_to_grid(point_t world, int cell_w, int cell_h) {
+	if (cell_w == 0) cell_w = 1;
+	if (cell_h == 0) cell_h = 1;
+
+	return (point_t){
+		.x = (world.x / cell_w) * cell_w,
+		.y = (world.y / cell_h) * cell_h,
+	};
+}
+
+// Converts screen coordinates to tile indices in a layer (rect_in_tiles is in tiles)
+point_t cam_screen_to_tile(camera_t *camera, point_t screen, rect_t rect_in_tiles, int cell_w, int cell_h) {
+	point_t world = cam_screen_to_world(camera, screen);
+	return (point_t){
+		.x = (world.x / (rect_in_tiles.w * cell_w)) * rect_in_tiles.w,
+		.y = (world.y / (rect_in_tiles.h * cell_h)) * rect_in_tiles.h,
+	};
+}
+
+// Converts tile coordinates back to screen coordinates (rect_in_tiles is in tiles)
+point_t cam_tile_to_screen(camera_t *camera, point_t tile, rect_t rect_in_tiles, int cell_w, int cell_h) {
+	point_t world = (point_t){
+		.x = ((tile.x * rect_in_tiles.w * cell_w)) / rect_in_tiles.w,
+		.y = ((tile.y * rect_in_tiles.h * cell_h)) / rect_in_tiles.h,
+	};
+	return cam_world_to_screen(camera, world);
+}

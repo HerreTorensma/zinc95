@@ -3,22 +3,25 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "menu.h"
 #include "../backend/input.h"
 #include "../backend/gui.h"
 #include "../backend/gfx.h"
 #include "shared.h"
 
-// TODO: wrap into camera struct
-// Put camera at the center of the screen
-static point_t _cam_pos = {
-	.x = SCREEN_WIDTH / 2,
-	.y = SCREEN_HEIGHT / 2,
+static camera_t _camera = {
+	// Put camera at the center of the screen
+	.pos = (point_t){
+		.x = SCREEN_WIDTH / 2,
+		.y = SCREEN_HEIGHT / 2,
+	},
+	.zoom = 1.0f,
+	.screen_origin = (point_t){
+		.x = SCREEN_WIDTH / 2,
+		.y = SCREEN_HEIGHT / 2,
+	},
 };
-static float _zoom = 1.0f;
 
 static const int _move_speed = 8;
-
 
 // -1 is the entity layer
 // 0 - 3 are tile layers
@@ -57,56 +60,6 @@ static const layout_t _layout = {
 	.sprite_selector_buttons_start_pos = {588, 348},
 };
 
-// TODO: use
-typedef struct camera {
-	point_t pos;
-	float scale;
-} camera_t;
-
-static point_t _point_world_to_screen(point_t world) {
-	return (point_t){
-		.x = (int)((world.x - _cam_pos.x + (SCREEN_WIDTH / (2.0f * _zoom))) * _zoom),
-		.y = (int)((world.y - _cam_pos.y + (SCREEN_HEIGHT / (2.0f * _zoom))) * _zoom),
-	};
-}
-
-// Convert screen coordinates to world coordinates
-static point_t _point_screen_to_world(point_t screen) {
-	return (point_t){
-		.x = (int)((screen.x / _zoom) + _cam_pos.x - (SCREEN_WIDTH / (2.0f * _zoom))),
-		.y = (int)((screen.y / _zoom) + _cam_pos.y - (SCREEN_HEIGHT / (2.0f * _zoom))),
-	};
-}
-
-// Snap a world point to the grid (cell size in pixels)
-static point_t _point_snap_to_grid(point_t world, int cell_w, int cell_h) {
-	if (cell_w == 0) cell_w = 1;
-	if (cell_h == 0) cell_h = 1;
-
-	return (point_t){
-		.x = (world.x / cell_w) * cell_w,
-		.y = (world.y / cell_h) * cell_h,
-	};
-}
-
-// Converts screen coordinates to tile indices in a layer (rect_in_tiles is in tiles)
-static point_t _point_screen_to_tile(point_t screen, rect_t rect_in_tiles, int cell_w, int cell_h) {
-	point_t world = _point_screen_to_world(screen);
-	return (point_t){
-		.x = (world.x / (rect_in_tiles.w * cell_w)) * rect_in_tiles.w,
-		.y = (world.y / (rect_in_tiles.h * cell_h)) * rect_in_tiles.h,
-	};
-}
-
-// Converts tile coordinates back to screen coordinates (rect_in_tiles is in tiles)
-static point_t _point_tile_to_screen(point_t tile, rect_t rect_in_tiles, int cell_w, int cell_h) {
-	point_t world = (point_t){
-		.x = ((tile.x * rect_in_tiles.w * cell_w)) / rect_in_tiles.w,
-		.y = ((tile.y * rect_in_tiles.h * cell_h)) / rect_in_tiles.h,
-	};
-	return _point_world_to_screen(world);
-}
-
 static void _draw_grid(surface_t surf) {
 	// TODO: make color part of skin
 	// TODO: Don't hardcode the 16, I should make a macro for that as well
@@ -117,7 +70,7 @@ static void _draw_grid(surface_t surf) {
 		point_t start = POINT(0, i * SCREEN_HEIGHT);
 		point_t end = POINT(16 * SCREEN_WIDTH, i * SCREEN_HEIGHT);
 
-		gfx_draw_line(surf, _point_world_to_screen(start), _point_world_to_screen(end), 7);
+		gfx_draw_line(surf, cam_world_to_screen(&_camera, start), cam_world_to_screen(&_camera, end), 7);
 	}
 
 	// Vertical
@@ -125,7 +78,7 @@ static void _draw_grid(surface_t surf) {
 		point_t start = POINT(i * SCREEN_WIDTH, 0);
 		point_t end = POINT(i * SCREEN_WIDTH, 16 * SCREEN_HEIGHT);
 
-		gfx_draw_line(surf, _point_world_to_screen(start), _point_world_to_screen(end), 7);
+		gfx_draw_line(surf, cam_world_to_screen(&_camera, start), cam_world_to_screen(&_camera, end), 7);
 	}
 }
 
@@ -151,7 +104,7 @@ void map_editor_update(computer_t *computer) {
 						// strncpy((char *)computer->ram->entities.entities[i].id, "idk", 3);
 						computer->ram->entities.entities[i].id[0] = 'e';
 
-						point_t pos = _point_screen_to_world(POINT(mouse_pos.x - (in_frame_rect.w * _zoom) / 2, mouse_pos.y - (in_frame_rect.h * _zoom) / 2));
+						point_t pos = cam_screen_to_world(&_camera, POINT(mouse_pos.x - (in_frame_rect.w * _camera.zoom) / 2, mouse_pos.y - (in_frame_rect.h * _camera.zoom) / 2));
 						computer->ram->entities.entities[i].x = pos.x;
 						computer->ram->entities.entities[i].y = pos.y;
 						
@@ -165,7 +118,7 @@ void map_editor_update(computer_t *computer) {
 			}
 		}
 	} else { // Tile layers
-		point_t cell_mouse_pos = _point_screen_to_tile(mouse_pos, in_frame_rect_in_sprites, SPRITE_WIDTH, SPRITE_HEIGHT);
+		point_t cell_mouse_pos = cam_screen_to_tile(&_camera, mouse_pos, in_frame_rect_in_sprites, SPRITE_WIDTH, SPRITE_HEIGHT);
 
 		if (point_in_rect(mouse_pos, _layout.map_rect)) {
 			if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
@@ -189,19 +142,19 @@ void map_editor_update(computer_t *computer) {
 	}
 
 	if (input_key_held(KEY_A)) {
-		_cam_pos.x -= _move_speed;
+		_camera.pos.x -= _move_speed;
 	}
 	if (input_key_held(KEY_D)) {
-		_cam_pos.x += _move_speed;
+		_camera.pos.x += _move_speed;
 	}
 	if (input_key_held(KEY_W)) {
-		_cam_pos.y -= _move_speed;
+		_camera.pos.y -= _move_speed;
 	}
 	if (input_key_held(KEY_S)) {
-		_cam_pos.y += _move_speed;
+		_camera.pos.y += _move_speed;
 	}
 
-	point_t mouse_in_world = _point_screen_to_world(mouse_pos);
+	point_t mouse_in_world = cam_screen_to_world(&_camera, mouse_pos);
 	
 	if (input_mouse_button_held(MOUSE_BUTTON_MIDDLE)) {
 		point_t diff = {
@@ -209,27 +162,27 @@ void map_editor_update(computer_t *computer) {
 			.y = mouse_pos.y - _last_frame_mouse_pos.y,
 		};
 
-		_cam_pos.x -= diff.x / _zoom;
-		_cam_pos.y -= diff.y / _zoom;
+		_camera.pos.x -= diff.x / _camera.zoom;
+		_camera.pos.y -= diff.y / _camera.zoom;
 	}
 
 	if (point_in_rect(mouse_pos, _layout.map_rect)) {
-		if (input_mouse_scrolled(SCROLL_DIR_UP) && _zoom < 4.0f) {
-			float new_zoom = _zoom * 2.0f;
+		if (input_mouse_scrolled(SCROLL_DIR_UP) && _camera.zoom < 4.0f) {
+			float new_zoom = _camera.zoom * 2.0f;
 			
-			_cam_pos.x += (mouse_in_world.x - _cam_pos.x) * (1 - _zoom / new_zoom);
-			_cam_pos.y += (mouse_in_world.y - _cam_pos.y) * (1 - _zoom / new_zoom);
+			_camera.pos.x += (mouse_in_world.x - _camera.pos.x) * (1 - _camera.zoom / new_zoom);
+			_camera.pos.y += (mouse_in_world.y - _camera.pos.y) * (1 - _camera.zoom / new_zoom);
 			
-			_zoom = new_zoom;
+			_camera.zoom = new_zoom;
 		}
 
-		if (input_mouse_scrolled(SCROLL_DIR_DOWN) && _zoom >= 0.25f) {
-			float new_zoom = _zoom * 0.5f;
+		if (input_mouse_scrolled(SCROLL_DIR_DOWN) && _camera.zoom >= 0.25f) {
+			float new_zoom = _camera.zoom * 0.5f;
 			
-			_cam_pos.x += (mouse_in_world.x - _cam_pos.x) * (1 - _zoom / new_zoom);
-			_cam_pos.y += (mouse_in_world.y - _cam_pos.y) * (1 - _zoom / new_zoom);
+			_camera.pos.x += (mouse_in_world.x - _camera.pos.x) * (1 - _camera.zoom / new_zoom);
+			_camera.pos.y += (mouse_in_world.y - _camera.pos.y) * (1 - _camera.zoom / new_zoom);
 			
-			_zoom = new_zoom;
+			_camera.zoom = new_zoom;
 		}
 	}
 
@@ -262,17 +215,17 @@ void map_editor_draw(computer_t *computer) {
 	// Section of the map that's visible
 	// So the map drawing is O(1)
 	rect_t section = {
-		.w = (int)(SCREEN_WIDTH / (SPRITE_WIDTH * _zoom)) + 1,
-		.h = (int)(SCREEN_HEIGHT / (SPRITE_HEIGHT * _zoom)) + 1,
+		.w = (int)(SCREEN_WIDTH / (SPRITE_WIDTH * _camera.zoom)) + 1,
+		.h = (int)(SCREEN_HEIGHT / (SPRITE_HEIGHT * _camera.zoom)) + 1,
 	};
 
-	section.pos = _point_screen_to_world((point_t){0});
+	section.pos = cam_screen_to_world(&_camera, (point_t){0});
 	section.pos.x /= SPRITE_WIDTH;
 	section.pos.y /= SPRITE_HEIGHT;
 
 	{
-		point_t top_left = _point_world_to_screen(POINT(0, 0));
-		point_t bottom_right = _point_world_to_screen(POINT(MAP_WIDTH * SPRITE_WIDTH, MAP_HEIGHT * SPRITE_HEIGHT));
+		point_t top_left = cam_world_to_screen(&_camera, POINT(0, 0));
+		point_t bottom_right = cam_world_to_screen(&_camera, POINT(MAP_WIDTH * SPRITE_WIDTH, MAP_HEIGHT * SPRITE_HEIGHT));
 		
 		rect_t section_in_pixels = {0};
 		section_in_pixels.pos = top_left;
@@ -290,9 +243,9 @@ void map_editor_draw(computer_t *computer) {
 			gfx_draw_map(
 				computer->ram,
 				i,
-				_point_world_to_screen((point_t){0}),
+				cam_world_to_screen(&_camera, (point_t){0}),
 				section,
-				_zoom,
+				_camera.zoom,
 				COLOR_BLACK
 			);
 		}
@@ -307,13 +260,13 @@ void map_editor_draw(computer_t *computer) {
 	
 			rect_t source_rect = sprite_index_to_spritesheet_rect(computer->ram->entities.entities[i].sprite, computer->ram->entities.entities[i].w, computer->ram->entities.entities[i].h);
 			
-			point_t pos = _point_world_to_screen(POINT(computer->ram->entities.entities[i].x, computer->ram->entities.entities[i].y));
+			point_t pos = cam_world_to_screen(&_camera, POINT(computer->ram->entities.entities[i].x, computer->ram->entities.entities[i].y));
 
 			rect_t dest_rect = {
 				.x = pos.x,
 				.y = pos.y,
-				.w = source_rect.w * _zoom,
-				.h = source_rect.h * _zoom,
+				.w = source_rect.w * _camera.zoom,
+				.h = source_rect.h * _camera.zoom,
 			};
 
 			// TODO: change color key to that of the sprite?
@@ -329,29 +282,30 @@ void map_editor_draw(computer_t *computer) {
 
 	_draw_grid(fb_surf);
 
-	// Draw skin again because currently I don't have a way to clip the gfx_draw_map function
+	// Draw skin again because currently I don't have a way to clip the gfx_draw_map function (yet)
+	// TODO: make a better solution for this
 	surface_t skin_surface = (surface_t){.data = computer->ram->skin.data, .width = SKIN_WIDTH, .height = SKIN_HEIGHT};
 	gfx_draw_surface_rect(&computer->ram->framebuffer, skin_surface, POINT(0, 0), RECT(SCREEN_WIDTH * 2, 0, SCREEN_WIDTH, SCREEN_HEIGHT), computer->ram->skin.color_key);
 
 	if (_selected_layer == -1) {
 		rect_t dest_rect = {
-			.x = mouse_pos.x - (in_frame_rect.w * _zoom) / 2,
-			.y = mouse_pos.y - (in_frame_rect.h * _zoom) / 2,
-			.w = in_frame_rect.w * _zoom,
-			.h = in_frame_rect.h * _zoom,
+			.x = mouse_pos.x - (in_frame_rect.w * _camera.zoom) / 2,
+			.y = mouse_pos.y - (in_frame_rect.h * _camera.zoom) / 2,
+			.w = in_frame_rect.w * _camera.zoom,
+			.h = in_frame_rect.h * _camera.zoom,
 		};
 
-		dest_rect.pos = _point_snap_to_grid(dest_rect.pos, (int)_zoom, (int)_zoom);
+		dest_rect.pos = snap_to_grid(dest_rect.pos, (int)_camera.zoom, (int)_camera.zoom);
 
 		gfx_draw_spritesheet_pro(computer->ram, in_frame_rect, dest_rect, COLOR_BLACK); // TODO: replace COLOR_NONE with the color key of the sprite
 
 	} else {
 		if (point_in_rect(mouse_pos, _layout.map_rect)) {
-			point_t tile = _point_screen_to_tile(mouse_pos, in_frame_rect_in_sprites, SPRITE_WIDTH, SPRITE_HEIGHT);
-			point_t rect_pos = _point_tile_to_screen(tile, in_frame_rect_in_sprites, SPRITE_WIDTH, SPRITE_HEIGHT);
+			point_t tile = cam_screen_to_tile(&_camera, mouse_pos, in_frame_rect_in_sprites, SPRITE_WIDTH, SPRITE_HEIGHT);
+			point_t rect_pos = cam_tile_to_screen(&_camera, tile, in_frame_rect_in_sprites, SPRITE_WIDTH, SPRITE_HEIGHT);
 			rect_pos.x -= 1;
 			rect_pos.y -= 1;
-			gfx_draw_rect(fb_surf, RECT(rect_pos.x, rect_pos.y, in_frame_rect.w * _zoom + 2, in_frame_rect.h * _zoom + 2), COLOR_WHITE);
+			gfx_draw_rect(fb_surf, RECT(rect_pos.x, rect_pos.y, in_frame_rect.w * _camera.zoom + 2, in_frame_rect.h * _camera.zoom + 2), COLOR_WHITE);
 		}
 	}
 

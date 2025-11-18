@@ -85,11 +85,11 @@ const skin_layout_t skin_layout = {
 
 	.sprite_tool_buttons = {
 		.base = {
-			.unpressed_rect = {{3200, 204, 16, 16}},
-			.pressed_rect = {{3200, 220, 16, 16}},
+			.unpressed_rect = {{3296, 76, 16, 16}},
+			.pressed_rect = {{3312, 76, 16, 16}},
 		},
-		.increase = {16, 0},
-		.amount = 7,
+		.increase = {0, 16},
+		.amount = 8,
 	},
 
 	.map_entity_layer_button = {

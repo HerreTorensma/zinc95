@@ -35,6 +35,3 @@ int get_relative_sprite_index();
 int get_absolute_sprite_index();
 
 int sprite_coords_to_index(int x, int y);
-
-// Translates point within selected rect of sprite selector to point within spritesheet
-point_t editor_to_spritesheet_pos(point_t point);

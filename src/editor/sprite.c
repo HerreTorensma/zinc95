@@ -1,3 +1,7 @@
+// Thoughts
+// If no user made selection is active should the selection just be the in_frame_rect ???
+// I also want to allow free movement like the map editor, like two modes of movement
+
 #include "sprite.h"
 
 #include <stdio.h>
@@ -13,7 +17,8 @@
 // All GUI element rects and positions in one place
 typedef struct layout {
 	rect_t color_picker_rect;
-	rect_t sprite_editor_rect;
+	rect_t sprite_editor_focus_rect;
+	rect_t sprite_editor_full_rect;
 
 	rect_t selected_color_rect;
 	point_t selected_color_label_pos;
@@ -38,7 +43,8 @@ typedef struct layout {
 
 static const layout_t _layout = {
 	.color_picker_rect = {{4, 388, 192, 88}},
-	.sprite_editor_rect = {{192, 56, SPRITE_EDITOR_WIDTH, SPRITE_EDITOR_HEIGHT}},
+	.sprite_editor_focus_rect = {{192, 46, SPRITE_EDITOR_WIDTH, SPRITE_EDITOR_HEIGHT}},
+	.sprite_editor_full_rect = {{0, 20, 620, 308}},
 
 	.selected_color_rect = {{4, 368, 16, 16}},
 	.selected_color_label_pos = {24, 372},
@@ -56,7 +62,7 @@ static const layout_t _layout = {
 	.sprite_selector_pos = {200, 348},
 	.sprite_selector_buttons_start_pos = {588, 348},
 
-	.tools_start_pos = {264, 38},
+	.tools_start_pos = {622, 34},
 };
 
 static color_t _selected_color = 0;
@@ -71,6 +77,16 @@ static point_t _max_reached_point = {0};
 static point_t _selection_start = {0};
 static point_t _selection_end = {0};
 static bool _selection_active = false;
+
+static camera_t _camera = {
+	// Put camera at the center of the screen
+	.pos = (point_t){
+		.x = 0,
+		.y = 0,
+	},
+	.zoom = 1.0f,
+	.screen_origin = POINT(192, 46), // sprite_editor_focus_rect.pos
+};
 
 typedef struct change {
 	rect_t region;
@@ -250,17 +266,8 @@ void sprite_editor_update(computer_t *computer) {
 		_secondary_selected_color = temp;
 	}
 
-	if (point_in_rect(mouse_pos, _layout.sprite_editor_rect)) {
-		// Mouse position translated to position within the selected rect of the sprite selector
-		// point_t local_coord = {
-		// 	.x = (mouse_pos.x - _layout.sprite_editor_rect.x) / (_layout.sprite_editor_rect.w / in_frame_rect.w),
-		// 	.y = (mouse_pos.y - _layout.sprite_editor_rect.y) / (_layout.sprite_editor_rect.h / in_frame_rect.h),
-		// };
-
-		point_t spritesheet_coord_under_mouse = editor_to_spritesheet_pos(POINT(
-			(mouse_pos.x - _layout.sprite_editor_rect.x) / (_layout.sprite_editor_rect.w / in_frame_rect.w),
-			(mouse_pos.y - _layout.sprite_editor_rect.y) / (_layout.sprite_editor_rect.h / in_frame_rect.h)
-		));
+	if (point_in_rect(mouse_pos, _layout.sprite_editor_full_rect)) {
+		point_t spritesheet_coord_under_mouse = cam_screen_to_world(&_camera, mouse_pos);
 
 		if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
 			_change_start = spritesheet_coord_under_mouse;
@@ -271,6 +278,13 @@ void sprite_editor_update(computer_t *computer) {
 			// Behavior: if a selection exists apply any copy, paste cut actions to it
 			// otherwise do it in the sprite selector
 			// maybe just don't call the sprite selector as long as a selection exists
+			
+			// TODO: for selection copy it to another buffer seperate from the overlay
+			// so part of it doesn't disappear when you move it outside of bounds
+
+			// TODO: when selection active, you can only draw inside of the selection
+
+			// TODO: seperate function for each tool
 			case (TOOL_SELECT): {
 				if (_selection_active) {
 					rect_t selection = _get_selection();
@@ -340,6 +354,8 @@ void sprite_editor_update(computer_t *computer) {
 			}
 
 			case (TOOL_PENCIL): {
+				// TODO: interpolate between points (draw line) so you don't get gaps between pixels when you draw really fast
+
 				if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
 					_min_reached_point.x = MIN(_min_reached_point.x, spritesheet_coord_under_mouse.x);
 					_min_reached_point.y = MIN(_min_reached_point.y, spritesheet_coord_under_mouse.y);
@@ -482,6 +498,7 @@ void sprite_editor_update(computer_t *computer) {
 	}
 }
 
+// TODO: probably move this to GUI
 static void _draw_selection_rect(uint64_t ticks, surface_t surf, rect_t rect) {
 	int thing = ticks % 30 < 15;
 	for (int j = rect.x; j < rect.x+rect.w; j++) {
@@ -511,6 +528,30 @@ void sprite_editor_draw(computer_t *computer) {
 	surface_t fb_surf = FB_SURF(fb->data);
 	rect_t in_frame_rect = get_in_frame_rect();
 	rect_t in_frame_rect_in_sprites = get_in_frame_rect_in_sprites();
+	
+	int scale = _layout.sprite_editor_focus_rect.w / in_frame_rect.w;
+
+	// TODO: also update sprite selector in frame rect when scrolling anywhere, just in the sprite editor
+
+	// Draw spritesheet
+	{
+		_camera.pos = in_frame_rect.pos;
+		_camera.zoom = scale;
+
+		// Source rect is the entire spritesheet
+		// TODO: make a global const or macro or something
+		rect_t source_rect = RECT(0, 0, SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT);
+
+		rect_t dest_rect = {0};
+		dest_rect.pos = cam_world_to_screen(&_camera, (point_t){0});
+
+		dest_rect.w = source_rect.w * _camera.zoom;
+		dest_rect.h = source_rect.h * _camera.zoom;
+
+		gfx_draw_spritesheet_pro(computer->ram, source_rect, dest_rect, COLOR_NONE);
+
+		gfx_draw_rect(fb_surf, RECT(_layout.sprite_editor_focus_rect.x - 1, _layout.sprite_editor_focus_rect.y - 1, _layout.sprite_editor_focus_rect.w + 2, _layout.sprite_editor_focus_rect.h + 2), COLOR_WHITE);
+	}
 
 	// Spritesheet / sprite selector
 	sprite_selector_draw(computer, _layout.sprite_selector_pos, _layout.sprite_selector_buttons_start_pos);
@@ -528,17 +569,19 @@ void sprite_editor_draw(computer_t *computer) {
 	point_t selected_color_cell_pos = _color_index_to_pos(_selected_color);
 	gfx_draw_rect(fb_surf, RECT(selected_color_cell_pos.x - 1, selected_color_cell_pos.y - 1, COLOR_SQUARE_SIZE + 2, COLOR_SQUARE_SIZE + 2), 15);
 
-	int scale = _layout.sprite_editor_rect.w / in_frame_rect.w;
-	rect_t real_editor_rect = {
-		.x = _layout.sprite_editor_rect.x,
-		.y = _layout.sprite_editor_rect.y,
-		.w = in_frame_rect.w * scale,
-		.h = in_frame_rect.h * scale,
-	};
-	gfx_draw_spritesheet_pro(computer->ram, in_frame_rect, real_editor_rect, COLOR_NONE);
-
 	// Draw the overlay
-	gfx_draw_surface_pro(fb, _overlay_surf, in_frame_rect, real_editor_rect, COLOR_NONE);
+	{
+		rect_t source_rect = RECT(0, 0, SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT);
+
+		rect_t dest_rect = {0};
+		dest_rect.pos = cam_world_to_screen(&_camera, (point_t){0});
+
+		dest_rect.w = source_rect.w * _camera.zoom;
+		dest_rect.h = source_rect.h * _camera.zoom;
+
+		gfx_draw_surface_pro(fb, _overlay_surf, source_rect, dest_rect, COLOR_NONE);
+	}
+	
 	// Draw the overlay on sprite selector as well
 	gfx_draw_surface_rect(fb, _overlay_surf, _layout.sprite_selector_pos, get_page_rect(), COLOR_NONE);
 
@@ -546,6 +589,7 @@ void sprite_editor_draw(computer_t *computer) {
 	if (!(_selection_start.x == _selection_end.x && _selection_start.y == _selection_end.y)) {
 		rect_t selection = _get_selection();
 
+		// TODO: use world_to_screen for this
 		selection.x -= in_frame_rect.x;
 		selection.y -= in_frame_rect.y;
 	
@@ -555,12 +599,17 @@ void sprite_editor_draw(computer_t *computer) {
 		selection.w *= scale;
 		selection.h *= scale;
 		
-		selection.x += _layout.sprite_editor_rect.x;
-		selection.y += _layout.sprite_editor_rect.y;
+		selection.x += _layout.sprite_editor_focus_rect.x;
+		selection.y += _layout.sprite_editor_focus_rect.y;
 		
 		// gfx_draw_rect(fb_surf, selection, COLOR_LIGHTGRAY);
 		_draw_selection_rect(computer->ram->ticks, fb_surf, selection);
 	}
+
+	// Draw skin again because currently I don't have a way to clip the gfx_draw_map function (yet)
+	// TODO: make a better solution for this
+	surface_t skin_surface = (surface_t){.data = computer->ram->skin.data, .width = SKIN_WIDTH, .height = SKIN_HEIGHT};
+	gfx_draw_surface_rect(&computer->ram->framebuffer, skin_surface, POINT(0, 0), RECT(SCREEN_WIDTH * 1, 0, SCREEN_WIDTH, SCREEN_HEIGHT), computer->ram->skin.color_key);
 
 	// Selected color
 	char buffer[32];
@@ -590,6 +639,7 @@ void sprite_editor_draw(computer_t *computer) {
 		
 		set = gui_toggle_button(computer->ram, pos, button, set);
 
+		// TODO: set for all selected sprites
 		if (set) {
 			selected_sprite->flags |= (1U << i);
 		} else {

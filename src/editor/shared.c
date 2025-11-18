@@ -128,6 +128,9 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 			}
 		}
 
+		// TODO: implement
+		// first I need a spritesheet_section_to_text kind of function
+		// and its inverse
 		if (input_key_held(KEY_LCTRL) && input_key_pressed(KEY_C)) {
 			// Copy
 		}
@@ -208,8 +211,4 @@ int get_absolute_sprite_index() {
 
 int sprite_coords_to_index(int x, int y) {
 	return y * (SPRITESHEET_WIDTH / SPRITE_WIDTH) + x;
-}
-
-point_t editor_to_spritesheet_pos(point_t point) {
-	return POINT(_page_rect.x + _in_frame_rect.x + point.x, _page_rect.y + _in_frame_rect.y + point.y);
 }
