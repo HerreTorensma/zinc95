@@ -265,21 +265,14 @@ void gfx_draw_spritesheet_rect(ram_t *ram, point_t pos, rect_t rect, color_t col
 	gfx_draw_surface_rect(&ram->framebuffer, SPR_SURF(ram->spritesheet.data), pos, rect, color_key);
 }
 
-// TODO: implement proper clipping
-void gfx_draw_surface_pro(framebuffer_t *fb, surface_t surf, rect_t source_rect, rect_t dest_rect, color_t color_key) {
-	for (int y = 0; y < dest_rect.h; y++) {
-		if (dest_rect.y + y > SCREEN_HEIGHT - 1) {
-			continue; // Early escape for optimization TODO: implement for other drawing functions
-		}
+void gfx_draw_surface_pro(framebuffer_t *fb, surface_t surf, rect_t source_rect, rect_t dest_rect, color_t color_key, rect_t clip_rect) {
+	rect_t clipped_dest_rect = rect_clip(clip_rect, dest_rect);
 
-		for (int x = 0; x < dest_rect.w; x++) {
-			if (dest_rect.x + x > SCREEN_WIDTH - 1) {
-				break; // Early escape for optimization TODO: implement for other drawing functions
-			}
-
+	for (int y = 0; y < clipped_dest_rect.h; y++) {
+		for (int x = 0; x < clipped_dest_rect.w; x++) {
 			// Calculate normalized coords
-			float u = (float)x / (float)dest_rect.w;
-			float v = (float)y / (float)dest_rect.h;
+			float u = (float)(x + clipped_dest_rect.x - dest_rect.x) / (float)dest_rect.w;
+			float v = (float)(y + clipped_dest_rect.y - dest_rect.y) / (float)dest_rect.h;
 
 			// Then convert to source coords
 			int source_x = source_rect.x + u * source_rect.w;
@@ -295,14 +288,14 @@ void gfx_draw_surface_pro(framebuffer_t *fb, surface_t surf, rect_t source_rect,
 			color_t color = surf_get_pixel(surf, source_x, source_y);
 			
 			if (color != color_key) {
-				gfx_set_pixel(fb, dest_rect.x + x, dest_rect.y + y, color);
+				gfx_set_pixel(fb, clipped_dest_rect.x + x, clipped_dest_rect.y + y, color);
 			}
 		}
 	}
 }
 
-void gfx_draw_spritesheet_pro(ram_t *ram, rect_t source_rect, rect_t dest_rect, color_t color_key) {
-	gfx_draw_surface_pro(&ram->framebuffer, SPR_SURF(ram->spritesheet.data), source_rect, dest_rect, color_key);
+void gfx_draw_spritesheet_pro(ram_t *ram, rect_t source_rect, rect_t dest_rect, color_t color_key, rect_t clip_rect) {
+	gfx_draw_surface_pro(&ram->framebuffer, SPR_SURF(ram->spritesheet.data), source_rect, dest_rect, color_key, clip_rect);
 }
 
 // TODO: implement flip_x, flip_y
@@ -340,7 +333,7 @@ void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section, floa
 				scaled_sprite_height
 			);
 
-			gfx_draw_spritesheet_pro(ram, source_rect, dest_rect, color_key);
+			gfx_draw_spritesheet_pro(ram, source_rect, dest_rect, color_key, RECT(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)); // TODO: pass argument for clip rect
 		}
 	}
 }

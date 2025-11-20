@@ -271,7 +271,7 @@ void map_editor_draw(computer_t *computer) {
 
 			// TODO: change color key to that of the sprite?
 			// but which sprite
-			gfx_draw_spritesheet_pro(computer->ram, source_rect, dest_rect, COLOR_BLACK);
+			gfx_draw_spritesheet_pro(computer->ram, source_rect, dest_rect, COLOR_BLACK, _layout.map_rect);
 		}
 	}
 
@@ -297,7 +297,7 @@ void map_editor_draw(computer_t *computer) {
 
 		dest_rect.pos = snap_to_grid(dest_rect.pos, (int)_camera.zoom, (int)_camera.zoom);
 
-		gfx_draw_spritesheet_pro(computer->ram, in_frame_rect, dest_rect, COLOR_BLACK); // TODO: replace COLOR_NONE with the color key of the sprite
+		gfx_draw_spritesheet_pro(computer->ram, in_frame_rect, dest_rect, COLOR_BLACK, _layout.map_rect); // TODO: replace COLOR_NONE with the color key of the sprite
 
 	} else {
 		if (point_in_rect(mouse_pos, _layout.map_rect)) {

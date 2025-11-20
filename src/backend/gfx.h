@@ -116,10 +116,10 @@ void gfx_draw_surface_rect(framebuffer_t *fb, surface_t surf, point_t pos, rect_
 void gfx_draw_spritesheet_rect(ram_t *ram, point_t pos, rect_t rect, color_t color_key);
 
 // TODO: rename to blit?
-void gfx_draw_surface_pro(framebuffer_t *fb, surface_t surf, rect_t source_rect, rect_t dest_rect, color_t color_key);
+void gfx_draw_surface_pro(framebuffer_t *fb, surface_t surf, rect_t source_rect, rect_t dest_rect, color_t color_key, rect_t clip_rect);
 
 // Draw portion of spritesheet and stretch it to the destination rect
-void gfx_draw_spritesheet_pro(ram_t *ram, rect_t source_rect, rect_t dest_rect, color_t color_key);
+void gfx_draw_spritesheet_pro(ram_t *ram, rect_t source_rect, rect_t dest_rect, color_t color_key, rect_t clip_rect);
 
 // Draw a number of sprites by index
 void gfx_draw_sprites(ram_t *ram, int index, point_t pos, int width, int height);

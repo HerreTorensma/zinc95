@@ -548,7 +548,7 @@ void sprite_editor_draw(computer_t *computer) {
 		dest_rect.w = source_rect.w * _camera.zoom;
 		dest_rect.h = source_rect.h * _camera.zoom;
 
-		gfx_draw_spritesheet_pro(computer->ram, source_rect, dest_rect, COLOR_NONE);
+		gfx_draw_spritesheet_pro(computer->ram, source_rect, dest_rect, COLOR_NONE, _layout.sprite_editor_full_rect);
 
 		gfx_draw_rect(fb_surf, RECT(_layout.sprite_editor_focus_rect.x - 1, _layout.sprite_editor_focus_rect.y - 1, _layout.sprite_editor_focus_rect.w + 2, _layout.sprite_editor_focus_rect.h + 2), COLOR_WHITE);
 	}
@@ -579,7 +579,7 @@ void sprite_editor_draw(computer_t *computer) {
 		dest_rect.w = source_rect.w * _camera.zoom;
 		dest_rect.h = source_rect.h * _camera.zoom;
 
-		gfx_draw_surface_pro(fb, _overlay_surf, source_rect, dest_rect, COLOR_NONE);
+		gfx_draw_surface_pro(fb, _overlay_surf, source_rect, dest_rect, COLOR_NONE, _layout.sprite_editor_full_rect);
 	}
 	
 	// Draw the overlay on sprite selector as well
@@ -606,11 +606,6 @@ void sprite_editor_draw(computer_t *computer) {
 		_draw_selection_rect(computer->ram->ticks, fb_surf, selection);
 	}
 
-	// Draw skin again because currently I don't have a way to clip the gfx_draw_map function (yet)
-	// TODO: make a better solution for this
-	surface_t skin_surface = (surface_t){.data = computer->ram->skin.data, .width = SKIN_WIDTH, .height = SKIN_HEIGHT};
-	gfx_draw_surface_rect(&computer->ram->framebuffer, skin_surface, POINT(0, 0), RECT(SCREEN_WIDTH * 1, 0, SCREEN_WIDTH, SCREEN_HEIGHT), computer->ram->skin.color_key);
-
 	// Selected color
 	char buffer[32];
 	gfx_draw_filled_rect(fb_surf, _layout.selected_color_rect, _selected_color);
@@ -623,7 +618,7 @@ void sprite_editor_draw(computer_t *computer) {
 	// gui_draw_text(computer->ram, 2, buffer, _layout.selected_color_label_pos, COLOR_NONE); // Testing not passing a color
 	
 	// Selected sprite preview
-	gfx_draw_spritesheet_pro(computer->ram, in_frame_rect, _layout.selected_sprite_rect, COLOR_NONE); // TODO: fix so it adds the other rects to currently_editing_rect
+	gfx_draw_spritesheet_pro(computer->ram, in_frame_rect, _layout.selected_sprite_rect, COLOR_NONE, RECT(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)); // TODO: fix so it adds the other rects to currently_editing_rect
 	sprintf(buffer, "#%04d\n", get_absolute_sprite_index());
 	gui_draw_text(computer->ram, GUI_FONT_INDEX, buffer, _layout.selected_sprite_label_pos, computer->ram->skin.font_color);
 
