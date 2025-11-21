@@ -476,6 +476,15 @@ void sprite_editor_update(computer_t *computer) {
 		_secondary_selected_color = temp;
 	}
 
+	// Zoom for sprite selector
+	if (input_key_pressed(KEY_MINUS) || input_mouse_scrolled(SCROLL_DIR_UP)) {
+		sprite_selector_zoom_in();
+	}
+
+	if (input_key_pressed(KEY_EQUALS) || input_mouse_scrolled(SCROLL_DIR_DOWN)) {
+		sprite_selector_zoom_out();
+	}
+
 	if (point_in_rect(mouse_pos, _layout.sprite_editor_full_rect)) {
 		point_t spritesheet_coord_under_mouse = cam_screen_to_world(&_camera, mouse_pos);
 
@@ -621,6 +630,23 @@ void sprite_editor_draw(computer_t *computer) {
 	// Draw the overlay on sprite selector as well
 	gfx_draw_surface_rect(fb, _overlay_surf, _layout.sprite_selector_pos, get_page_rect(), COLOR_NONE);
 
+	// Draw cursor
+	{
+		if (_selected_tool >= TOOL_PENCIL && _selected_tool <= TOOL_BUCKET) {
+			if (point_in_rect(input_get_mouse_pos(), _layout.sprite_editor_full_rect)) {
+				point_t spritesheet_coord_under_mouse = cam_screen_to_world(&_camera, input_get_mouse_pos());
+
+				rect_t dest_rect = {0};
+				dest_rect.pos = cam_world_to_screen(&_camera, spritesheet_coord_under_mouse);
+
+				dest_rect.w = _camera.zoom;
+				dest_rect.h = _camera.zoom;
+
+				gfx_draw_filled_rect(fb_surf, dest_rect, _selected_color);
+			}
+		}
+	}
+
 	// Draw the selection outline
 	if (!(_selection_start.x == _selection_end.x && _selection_start.y == _selection_end.y)) {
 		rect_t selection = _get_selection();
@@ -675,7 +701,6 @@ void sprite_editor_draw(computer_t *computer) {
 			continue;
 		}
 
-		// TODO: set for all selected sprites
 		for (size_t y = 0; y < in_frame_rect_in_sprites.h; y++) {
 			for (size_t x = 0; x < in_frame_rect_in_sprites.w; x++) {
 				size_t sprite_index = (get_page_index() * SPRITES_PER_PAGE) + ((in_frame_rect_in_sprites.y + y) * (SPRITESHEET_WIDTH / SPRITE_WIDTH) + (in_frame_rect_in_sprites.x + x)); // TODO: wrap in function?

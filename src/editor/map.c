@@ -141,6 +141,17 @@ void map_editor_update(computer_t *computer) {
 		}
 	}
 
+	// Zoom for sprite selector
+	if (point_in_rect(mouse_pos, RECT(_layout.sprite_selector_pos.x, _layout.sprite_selector_pos.y, SPRITESHEET_PAGE_WIDTH, SPRITESHEET_PAGE_HEIGHT))) {
+		if (input_key_pressed(KEY_MINUS) || input_mouse_scrolled(SCROLL_DIR_UP)) {
+			sprite_selector_zoom_in();
+		}
+
+		if (input_key_pressed(KEY_EQUALS) || input_mouse_scrolled(SCROLL_DIR_DOWN)) {
+			sprite_selector_zoom_out();
+		}
+	}
+
 	if (input_key_held(KEY_A)) {
 		_camera.pos.x -= _move_speed;
 	}

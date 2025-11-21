@@ -57,48 +57,48 @@ static void _delete_in_frame_sprites(ram_t *ram) {
 	}
 }
 
+void sprite_selector_zoom_in() {
+	/*
+	_in_frame_rect.w -= SPRITE_WIDTH;
+	_in_frame_rect.h -= SPRITE_HEIGHT;
+
+	if (_in_frame_rect.w <= 0) {
+		_in_frame_rect.w = SPRITE_WIDTH;
+	}
+	if (_in_frame_rect.h <= 0) {
+		_in_frame_rect.h = SPRITE_HEIGHT;
+	}
+	*/
+
+	_in_frame_rect.w /= 2;
+	_in_frame_rect.h /= 2;
+	
+	if (_in_frame_rect.w <= SPRITE_WIDTH || _in_frame_rect.h <= SPRITE_HEIGHT) {
+		_in_frame_rect.w = SPRITE_WIDTH;
+		_in_frame_rect.h = SPRITE_HEIGHT;
+	}
+}
+
+void sprite_selector_zoom_out() {
+	/*
+	_in_frame_rect.w += SPRITE_WIDTH;
+	_in_frame_rect.h += SPRITE_HEIGHT;
+	*/
+
+	_in_frame_rect.w *= 2;
+	_in_frame_rect.h *= 2;
+
+	if (_in_frame_rect.w > SPRITESHEET_WIDTH || _in_frame_rect.h > SPRITESHEET_HEIGHT) {
+		_in_frame_rect.w /= 2;
+		_in_frame_rect.h /= 2;
+	}
+}
+
 // This whole function is kind of a mess and I should probably rewrite it at some point
 void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap_mode, point_t pos) {
 	point_t mouse_pos = input_get_mouse_pos();
 
 	if (point_in_rect(mouse_pos, RECT(pos.x, pos.y, SPRITESHEET_PAGE_WIDTH, SPRITESHEET_PAGE_HEIGHT))) {
-		if (input_key_pressed(KEY_MINUS) || input_mouse_scrolled(SCROLL_DIR_UP)) {
-			/*
-			_in_frame_rect.w -= SPRITE_WIDTH;
-			_in_frame_rect.h -= SPRITE_HEIGHT;
-
-			if (_in_frame_rect.w <= 0) {
-				_in_frame_rect.w = SPRITE_WIDTH;
-			}
-			if (_in_frame_rect.h <= 0) {
-				_in_frame_rect.h = SPRITE_HEIGHT;
-			}
-			*/
-
-			_in_frame_rect.w /= 2;
-			_in_frame_rect.h /= 2;
-			
-			if (_in_frame_rect.w <= SPRITE_WIDTH || _in_frame_rect.h <= SPRITE_HEIGHT) {
-				_in_frame_rect.w = SPRITE_WIDTH;
-				_in_frame_rect.h = SPRITE_HEIGHT;
-			}
-		}
-
-		if (input_key_pressed(KEY_EQUALS) || input_mouse_scrolled(SCROLL_DIR_DOWN)) {
-			/*
-			_in_frame_rect.w += SPRITE_WIDTH;
-			_in_frame_rect.h += SPRITE_HEIGHT;
-			*/
-
-			_in_frame_rect.w *= 2;
-			_in_frame_rect.h *= 2;
-
-			if (_in_frame_rect.w > SPRITESHEET_WIDTH || _in_frame_rect.h > SPRITESHEET_HEIGHT) {
-				_in_frame_rect.w /= 2;
-				_in_frame_rect.h /= 2;
-			}
-		}
-
 		if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
 			if (snap_mode == SNAP_MODE_SPRITE) {
 				int adjusted_position_x = mouse_pos.x - pos.x;
