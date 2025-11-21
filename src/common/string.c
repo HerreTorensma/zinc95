@@ -106,7 +106,7 @@ string_t_array_t string_split(allocator_t allocator, string_t string, char seper
 		if (string.data[i] == seperator) {
 			string_t substring = string_view(string, last_index, i - last_index);
 
-			array_append(&array, substring);
+			array_push(&array, substring);
 
 			last_index = i + 1;
 		}
@@ -114,7 +114,7 @@ string_t_array_t string_split(allocator_t allocator, string_t string, char seper
 
 	if (last_index < string.len) {
 		string_t substring = string_view(string, last_index, string.len - last_index);
-		array_append(&array, substring);
+		array_push(&array, substring);
 	}
 
 	return array;

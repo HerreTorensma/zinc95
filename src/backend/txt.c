@@ -430,7 +430,7 @@ void shell_update(computer_t *computer) {
 		_execute_command(computer, input);
 
 		if (input.len > 0) {
-			array_append(command_history, string_copy(get_heap_allocator(), input));
+			array_push(command_history, string_copy(get_heap_allocator(), input));
 		}
 
 		shell_new_command(computer);

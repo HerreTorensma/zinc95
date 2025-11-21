@@ -146,7 +146,16 @@ static surface_t _overlay_surf = {
 	.height = SPRITESHEET_HEIGHT,
 };
 
+// TODO: use
+static color_t _selection_surface_data[SPRITESHEET_WIDTH * SPRITESHEET_HEIGHT];
+static surface_t _selection_surf = {
+	.data = _selection_surface_data,
+	.width = SPRITESHEET_WIDTH,
+	.height = SPRITESHEET_HEIGHT,
+};
+
 // TODO: free this
+// TODO: use my array implementation for this maybe
 static zinc_stack_t _undo_stack = {0};
 
 #define UNDO_STACK_SIZE 64
@@ -240,6 +249,207 @@ static void _move_rect(surface_t surf, rect_t rect, point_t new_pos) {
 	gfx_copy_surface_rect(surf, temp_surface, new_pos, RECT(0, 0, rect.w, rect.h), COLOR_NONE);
 }
 
+static void _commit_overlay(computer_t *computer) {
+	gfx_copy_surface_rect(SPR_SURF(computer->ram->spritesheet.data), _overlay_surf, POINT(0, 0), RECT(0, 0, SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT), COLOR_NONE);
+	gfx_clear(_overlay_surf, COLOR_NONE);
+}
+
+static void _tool_select(computer_t *computer, point_t spritesheet_coord_under_mouse) {
+	if (_selection_active) {
+		rect_t selection = _get_selection();
+		
+		// TODO: use the PRESS_OR_LONG_PRESS macro or whatever it was
+		if (input_key_pressed(KEY_LEFT)) {
+			_move_rect(_overlay_surf, selection, POINT(selection.x - 1, selection.y));
+			_selection_start.x--;
+			_selection_end.x--;
+		}
+		
+		if (input_key_pressed(KEY_RIGHT)) {
+			_move_rect(_overlay_surf, selection, POINT(selection.x + 1, selection.y));
+			_selection_start.x++;
+			_selection_end.x++;
+		}
+
+		if (input_key_pressed(KEY_UP)) {
+			_move_rect(_overlay_surf, selection, POINT(selection.x, selection.y - 1));
+			_selection_start.y--;
+			_selection_end.y--;
+		}
+		
+		if (input_key_pressed(KEY_DOWN)) {
+			_move_rect(_overlay_surf, selection, POINT(selection.x, selection.y + 1));
+			_selection_start.y++;
+			_selection_end.y++;
+		}
+	}
+
+	if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
+		_selection_start = spritesheet_coord_under_mouse;
+	}
+
+	if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+		_selection_end = spritesheet_coord_under_mouse;
+	}
+
+	if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
+		_selection_end = spritesheet_coord_under_mouse;
+
+		// Commit if it was already active so there is a clean slate
+		if (_selection_active) {
+			_commit_overlay(computer);
+		}
+
+		_selection_active = true;
+		if (_selection_start.x == _selection_end.x && _selection_start.y == _selection_end.y) {
+			_selection_active = false;
+
+			// Commit overlay to spritesheet
+			_commit_overlay(computer);
+			return;
+		}
+		
+		rect_t selection = _get_selection();
+		
+		// Copy to overlay
+		gfx_copy_surface_rect(_overlay_surf, SPR_SURF(computer->ram->spritesheet.data), selection.pos, selection, COLOR_NONE);
+		// gfx_copy_surface_rect(_selection_surf, SPR_SURF(computer->ram->spritesheet.data), selection.pos, selection, COLOR_NONE);
+
+		// Delete from spritesheet
+		gfx_draw_filled_rect(SPR_SURF(computer->ram->spritesheet.data), selection, COLOR_BLACK);
+	}
+}
+
+static void _tool_pencil(computer_t *computer, point_t spritesheet_coord_under_mouse) {
+	// TODO: interpolate between points (draw line) so you don't get gaps between pixels when you draw really fast
+
+	if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+		_min_reached_point.x = MIN(_min_reached_point.x, spritesheet_coord_under_mouse.x);
+		_min_reached_point.y = MIN(_min_reached_point.y, spritesheet_coord_under_mouse.y);
+		_max_reached_point.x = MAX(_max_reached_point.x, spritesheet_coord_under_mouse.x);
+		_max_reached_point.y = MAX(_max_reached_point.y, spritesheet_coord_under_mouse.y);
+
+		surf_set_pixel(_overlay_surf, spritesheet_coord_under_mouse.x, spritesheet_coord_under_mouse.y, _selected_color);
+	}
+
+	if (input_mouse_button_held(MOUSE_BUTTON_RIGHT)) {
+		// TODO: implement this secondary selected color for the other tools as well
+		// TODO: should this also affect the change region and all that? yes probably
+		surf_set_pixel(_overlay_surf, spritesheet_coord_under_mouse.x, spritesheet_coord_under_mouse.y, _secondary_selected_color);
+	}
+
+	if (input_mouse_button_released(MOUSE_BUTTON_LEFT) || input_mouse_button_released(MOUSE_BUTTON_RIGHT)) {
+		// Copy the affected part of the overlay to the undo stack and spritesheet
+		rect_t changed_region = rect_from_2_points(_min_reached_point, _max_reached_point);
+		changed_region.w++;
+		changed_region.h++;
+		_push_to_undo(computer, changed_region);
+
+		// Copy entire overlay instead
+		_commit_overlay(computer);
+	}
+}
+
+static void _tool_line(computer_t *computer, point_t spritesheet_coord_under_mouse) {
+	gfx_clear(_overlay_surf, COLOR_NONE);
+
+	if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+		_change_end = spritesheet_coord_under_mouse;
+		gfx_draw_line(_overlay_surf, _change_start, _change_end, _selected_color);
+	}
+
+	if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
+		rect_t changed_region = rect_from_2_points(_change_start, _change_end);
+		changed_region.w++;
+		changed_region.h++;
+		_push_to_undo(computer, changed_region);
+
+		// Actually commit the change
+		gfx_draw_line(SPR_SURF(computer->ram->spritesheet.data), _change_start, _change_end, _selected_color);
+	}
+}
+
+static void _tool_rect(computer_t *computer, point_t spritesheet_coord_under_mouse) {
+	gfx_clear(_overlay_surf, COLOR_NONE);
+
+	if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+		_change_end = spritesheet_coord_under_mouse;
+		rect_t rect = rect_from_2_points(_change_start, _change_end);
+		rect.w++;
+		rect.h++;
+		gfx_draw_rect(_overlay_surf, rect, _selected_color);
+	}
+
+	if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
+		rect_t changed_region = rect_from_2_points(_change_start, _change_end);
+		changed_region.w++;
+		changed_region.h++;
+		_push_to_undo(computer, changed_region);
+
+		gfx_draw_rect(SPR_SURF(computer->ram->spritesheet.data), changed_region, _selected_color);
+	}
+}
+
+static void _tool_rectf(computer_t *computer, point_t spritesheet_coord_under_mouse) {
+	gfx_clear(_overlay_surf, COLOR_NONE);
+
+	if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+		_change_end = spritesheet_coord_under_mouse;
+		rect_t rect = rect_from_2_points(_change_start, _change_end);
+
+		rect.w++;
+		rect.h++;
+		gfx_draw_filled_rect(_overlay_surf, rect, _selected_color);
+	}
+
+	if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
+		rect_t changed_region = rect_from_2_points(_change_start, _change_end);
+		changed_region.w++;
+		changed_region.h++;
+		_push_to_undo(computer, changed_region);
+
+		gfx_draw_filled_rect(SPR_SURF(computer->ram->spritesheet.data), changed_region, _selected_color);
+	}
+}
+
+static void _tool_ellipse(computer_t *computer, point_t spritesheet_coord_under_mouse) {
+	gfx_clear(_overlay_surf, COLOR_NONE);
+	
+	if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+		_change_end = spritesheet_coord_under_mouse;
+		rect_t rect = rect_from_2_points(_change_start, _change_end);
+		rect.w++;
+		rect.h++;
+		gfx_draw_ellipse(_overlay_surf, rect, _selected_color);
+	}
+
+	if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
+		rect_t changed_region = rect_from_2_points(_change_start, _change_end);
+		
+		changed_region.w++;
+		changed_region.h++;
+		
+		// TODO: fix bug where the whole area is properly commited to the undo stack
+		_push_to_undo(computer, changed_region);
+
+		gfx_draw_ellipse(SPR_SURF(computer->ram->spritesheet.data), changed_region, _selected_color);
+	}
+}
+
+static void _tool_ellipsef(computer_t *computer, point_t spritesheet_coord_under_mouse) {
+	
+}
+
+static void _tool_bucket(computer_t *computer, point_t spritesheet_coord_under_mouse, point_t mouse_pos) {
+	if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
+		rect_t limit = point_in_rect(mouse_pos, _layout.sprite_editor_focus_rect) ? get_in_frame_rect() : RECT(0, 0, SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT);
+		
+		_push_to_undo(computer, limit);
+		
+		gfx_flood_fill(SPR_SURF(computer->ram->spritesheet.data), spritesheet_coord_under_mouse, _selected_color, limit);
+	}
+}
+
 void sprite_editor_update(computer_t *computer) {
 	point_t mouse_pos = input_get_mouse_pos();
 	rect_t in_frame_rect = get_in_frame_rect();
@@ -273,6 +483,15 @@ void sprite_editor_update(computer_t *computer) {
 			_change_start = spritesheet_coord_under_mouse;
 		}
 
+		// Eyedropper
+		// TODO: make seperate tool? with button and stuff and then switch to it while alt is held
+		if ((input_key_held(KEY_LALT) || input_key_held(KEY_RALT))) {
+			if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+				_selected_color = computer->ram->spritesheet.data[spritesheet_coord_under_mouse.y * SPRITESHEET_WIDTH + spritesheet_coord_under_mouse.x];
+			}
+			return;
+		}
+
 		// TODO: Maybe remove the overlay and dynamic tracking of changes and just render previews to framebuffer and copy the currently editing rect region to a change object
 		switch (_selected_tool) {
 			// Behavior: if a selection exists apply any copy, paste cut actions to it
@@ -285,215 +504,32 @@ void sprite_editor_update(computer_t *computer) {
 			// TODO: when selection active, you can only draw inside of the selection
 
 			// TODO: seperate function for each tool
-			case (TOOL_SELECT): {
-				if (_selection_active) {
-					rect_t selection = _get_selection();
-					
-					if (input_key_pressed(KEY_LEFT)) {
-						_move_rect(_overlay_surf, selection, POINT(selection.x - 1, selection.y));
-						_selection_start.x--;
-						_selection_end.x--;
-					}
-					
-					if (input_key_pressed(KEY_RIGHT)) {
-						_move_rect(_overlay_surf, selection, POINT(selection.x + 1, selection.y));
-						_selection_start.x++;
-						_selection_end.x++;
-					}
-
-					if (input_key_pressed(KEY_UP)) {
-						_move_rect(_overlay_surf, selection, POINT(selection.x, selection.y - 1));
-						_selection_start.y--;
-						_selection_end.y--;
-					}
-					
-					if (input_key_pressed(KEY_DOWN)) {
-						_move_rect(_overlay_surf, selection, POINT(selection.x, selection.y + 1));
-						_selection_start.y++;
-						_selection_end.y++;
-					}
-				}
-
-				if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
-					_selection_start = spritesheet_coord_under_mouse;
-				}
-
-				if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
-					_selection_end = spritesheet_coord_under_mouse;
-				}
-
-				if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
-					_selection_end = spritesheet_coord_under_mouse;
-
-					// Commit if it was already active so there is a clean slate
-					if (_selection_active) {
-						gfx_copy_surface_rect(SPR_SURF(computer->ram->spritesheet.data), _overlay_surf, POINT(0, 0), RECT(0, 0, SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT), COLOR_NONE);
-						gfx_clear(_overlay_surf, COLOR_NONE);
-					}
-
-					_selection_active = true;
-					if (_selection_start.x == _selection_end.x && _selection_start.y == _selection_end.y) {
-						_selection_active = false;
-
-						// Commit overlay to spritesheet
-						gfx_copy_surface_rect(SPR_SURF(computer->ram->spritesheet.data), _overlay_surf, POINT(0, 0), RECT(0, 0, SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT), COLOR_NONE);
-						gfx_clear(_overlay_surf, COLOR_NONE);
-						break;
-					}
-					
-					rect_t selection = _get_selection();
-					
-					// Copy to overlay
-					gfx_copy_surface_rect(_overlay_surf, SPR_SURF(computer->ram->spritesheet.data), selection.pos, selection, COLOR_NONE);
-
-					// Delete from spritesheet
-					gfx_draw_filled_rect(SPR_SURF(computer->ram->spritesheet.data), selection, COLOR_BLACK);
-				}
-				
+			case (TOOL_SELECT):
+				_tool_select(computer, spritesheet_coord_under_mouse);
 				break;
-			}
-
-			case (TOOL_PENCIL): {
-				// TODO: interpolate between points (draw line) so you don't get gaps between pixels when you draw really fast
-
-				if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
-					_min_reached_point.x = MIN(_min_reached_point.x, spritesheet_coord_under_mouse.x);
-					_min_reached_point.y = MIN(_min_reached_point.y, spritesheet_coord_under_mouse.y);
-					_max_reached_point.x = MAX(_max_reached_point.x, spritesheet_coord_under_mouse.x);
-					_max_reached_point.y = MAX(_max_reached_point.y, spritesheet_coord_under_mouse.y);
-
-					// TODO: make this work with any tool
-					if (input_key_held(KEY_LALT) || input_key_held(KEY_RALT)) {
-						_selected_color = computer->ram->spritesheet.data[spritesheet_coord_under_mouse.y * SPRITESHEET_WIDTH + spritesheet_coord_under_mouse.x];
-					}
-		
-					surf_set_pixel(_overlay_surf, spritesheet_coord_under_mouse.x, spritesheet_coord_under_mouse.y, _selected_color);
-				}
-
-				if (input_mouse_button_held(MOUSE_BUTTON_RIGHT)) {
-					// TODO: implement this secondary selected color for the other tools as well
-					// TODO: should this also affect the change region and all that? yes probably
-					surf_set_pixel(_overlay_surf, spritesheet_coord_under_mouse.x, spritesheet_coord_under_mouse.y, _secondary_selected_color);
-				}
-
-				if (input_mouse_button_released(MOUSE_BUTTON_LEFT) || input_mouse_button_released(MOUSE_BUTTON_RIGHT)) {
-					// Copy the affected part of the overlay to the undo stack and spritesheet
-					rect_t changed_region = rect_from_2_points(_min_reached_point, _max_reached_point);
-					changed_region.w++;
-					changed_region.h++;
-					_push_to_undo(computer, changed_region);
-
-					// Copy entire overlay instead
-					gfx_copy_surface_rect(SPR_SURF(computer->ram->spritesheet.data), _overlay_surf, POINT(0, 0), RECT(0, 0, SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT), COLOR_NONE);
-
-					gfx_clear(_overlay_surf, COLOR_NONE);
-				}
-		
+			case (TOOL_PENCIL):
+				_tool_pencil(computer, spritesheet_coord_under_mouse);
 				break;
-			}
-
-			case (TOOL_LINE): {
-				gfx_clear(_overlay_surf, COLOR_NONE);
-
-				if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
-					_change_end = spritesheet_coord_under_mouse;
-					gfx_draw_line(_overlay_surf, _change_start, _change_end, _selected_color);
-				}
-
-				if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
-					rect_t changed_region = rect_from_2_points(_change_start, _change_end);
-					changed_region.w++;
-					changed_region.h++;
-					_push_to_undo(computer, changed_region);
-
-					// Actually commit the change
-					gfx_draw_line(SPR_SURF(computer->ram->spritesheet.data), _change_start, _change_end, _selected_color);
-				}
-
+			case (TOOL_LINE):
+				_tool_line(computer, spritesheet_coord_under_mouse);
 				break;
-			}
-
-			case (TOOL_RECT): {
-				gfx_clear(_overlay_surf, COLOR_NONE);
-
-				if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
-					_change_end = spritesheet_coord_under_mouse;
-					rect_t rect = rect_from_2_points(_change_start, _change_end);
-					rect.w++;
-					rect.h++;
-					gfx_draw_rect(_overlay_surf, rect, _selected_color);
-				}
-
-				if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
-					rect_t changed_region = rect_from_2_points(_change_start, _change_end);
-					changed_region.w++;
-					changed_region.h++;
-					_push_to_undo(computer, changed_region);
-
-					gfx_draw_rect(SPR_SURF(computer->ram->spritesheet.data), changed_region, _selected_color);
-				}
-
+			case (TOOL_RECT):
+				_tool_rect(computer, spritesheet_coord_under_mouse);
 				break;
-			}
-
-			case (TOOL_RECTF): {
-				gfx_clear(_overlay_surf, COLOR_NONE);
-
-				if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
-					_change_end = spritesheet_coord_under_mouse;
-					rect_t rect = rect_from_2_points(_change_start, _change_end);
-
-					rect.w++;
-					rect.h++;
-					gfx_draw_filled_rect(_overlay_surf, rect, _selected_color);
-				}
-
-				if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
-					rect_t changed_region = rect_from_2_points(_change_start, _change_end);
-					changed_region.w++;
-					changed_region.h++;
-					_push_to_undo(computer, changed_region);
-
-					gfx_draw_filled_rect(SPR_SURF(computer->ram->spritesheet.data), changed_region, _selected_color);
-				}
-
+			case (TOOL_RECTF):
+				_tool_rectf(computer, spritesheet_coord_under_mouse);
 				break;
-			}
-
-			case (TOOL_ELLIPSE): {
-				gfx_clear(_overlay_surf, COLOR_NONE);
-				
-				if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
-					_change_end = spritesheet_coord_under_mouse;
-					rect_t rect = rect_from_2_points(_change_start, _change_end);
-					rect.w++;
-					rect.h++;
-					gfx_draw_ellipse(_overlay_surf, rect, _selected_color);
-				}
-
-				if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
-					rect_t changed_region = rect_from_2_points(_change_start, _change_end);
-					
-					changed_region.w++;
-					changed_region.h++;
-					
-					// TODO: fix bug where the whole area is properly commited to the undo stack
-					_push_to_undo(computer, changed_region);
-
-					gfx_draw_ellipse(SPR_SURF(computer->ram->spritesheet.data), changed_region, _selected_color);
-				}
-				
+			case (TOOL_ELLIPSE):
+				_tool_ellipse(computer, spritesheet_coord_under_mouse);
 				break;
-			}
-
-			// TODO: implement
-			case (TOOL_ELLIPSEF): {
+			case (TOOL_ELLIPSEF):
+				_tool_ellipsef(computer, spritesheet_coord_under_mouse);
 				break;
-			}
-
-			case (TOOL_BUCKET): {
+			case (TOOL_BUCKET):
+				_tool_bucket(computer, spritesheet_coord_under_mouse, mouse_pos);
 				break;
-			}
+			default:
+				break;
 		}
 	}
 }

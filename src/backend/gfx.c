@@ -1,5 +1,6 @@
 #include "gfx.h"
 
+#include <SDL2/SDL_video.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -203,11 +204,6 @@ void gfx_draw_ellipse(surface_t surf, rect_t bound, color_t color) {
 	}
 }
 
-// TODO: implement
-void gfx_flood_fill(surface_t surf, point_t start, color_t color) {
-
-}
-
 color_t gfx_spritesheet_get_pixel(spritesheet_t *spritesheet, point_t point) {
 	// TODO: clip the wanted rect instead of this check ???
 	if (point_in_rect(point, RECT(0, 0, SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT))) {
@@ -342,4 +338,44 @@ void gfx_load_surface(palette_t *palette, surface_t surface, string_t path) {
 	#ifdef BACKEND_SDL2
 	sdl2_load_bmp_to_surface(palette, surface, path);
 	#endif
+}
+
+ARRAY_DEFINE(point_t);
+void gfx_flood_fill(surface_t surface, point_t point, color_t color, rect_t limit) {
+	color_t start_color = surf_get_pixel(surface, point.x, point.y);
+
+	if (color == start_color) {
+		return;
+	}
+
+	point_t directions[] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+
+	point_t_array_t stack = {0};
+	array_init(&stack, get_heap_allocator());
+
+	array_push(&stack, point);
+
+	while (stack.len > 0) {
+		point_t current = array_pop(&stack);
+
+		if (point_in_rect(current, limit)) {
+			surf_set_pixel(surface, current.x, current.y, color);
+		}
+
+		// Iterate directions
+		for (int i = 0; i < 4; i++) {
+			point_t new_point = {
+				current.x + directions[i].x,
+				current.y + directions[i].y,
+			};
+
+			if (point_in_rect(new_point, limit) && surf_get_pixel(surface, new_point.x, new_point.y) == start_color) {
+				surf_set_pixel(surface, new_point.x, new_point.y, color);
+				
+				array_push(&stack, new_point);
+			}
+		}
+	}
+
+	array_deinit(&stack);
 }

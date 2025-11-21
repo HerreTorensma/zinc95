@@ -97,8 +97,6 @@ void gfx_draw_circle(surface_t surf, point_t pos, int radius, color_t color);
 
 void gfx_draw_ellipse(surface_t surf, rect_t bound, color_t color);
 
-void gfx_flood_fill(surface_t surf, point_t start, color_t color);
-
 color_t gfx_spritesheet_get_pixel(spritesheet_t *spritesheet, point_t point);
 
 void gfx_spritesheet_set_pixel(spritesheet_t *spritesheet, point_t point, color_t color);
@@ -138,3 +136,5 @@ void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section, floa
 // Because it's only really used to load the skin which has a static size
 // Only BMP is supported
 void gfx_load_surface(palette_t *palette, surface_t surface, string_t path);
+
+void gfx_flood_fill(surface_t surface, point_t point, color_t color, rect_t limit);

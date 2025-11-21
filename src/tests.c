@@ -19,15 +19,15 @@ static void _test_array(void) {
 	// printf("array capacity: %d\n", array.capacity);
 	assert(array.capacity == 8 && "Array does not have the right capacity of 8");
 	
-	array_append(&array, 4);
-	array_append(&array, 6);
-	array_append(&array, 12);
-	array_append(&array, 12);
-	array_append(&array, 12);
-	array_append(&array, 12);
-	array_append(&array, 12);
-	array_append(&array, 12);
-	array_append(&array, 12);
+	array_push(&array, 4);
+	array_push(&array, 6);
+	array_push(&array, 12);
+	array_push(&array, 12);
+	array_push(&array, 12);
+	array_push(&array, 12);
+	array_push(&array, 12);
+	array_push(&array, 12);
+	array_push(&array, 12);
 	
 	// printf("after array capacity: %d\n", array.capacity);
 	assert(array.capacity == 16 && "Array does not have the right capacity of 16");
@@ -39,6 +39,13 @@ static void _test_array(void) {
 	array_clear(&array);
 
 	assert(array.len == 0 && "Array should have been cleared but wasn't");
+
+	// Test pop
+	array_push(&array, 1);
+	array_push(&array, 2);
+	array_push(&array, 3);
+	int third = array_pop(&array);
+	assert(array.len == 2 && third == 3);
 
 	array_deinit(&array);
 	assert(array.data == NULL && "Array memory was not cleared after deinitialization");

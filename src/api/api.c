@@ -138,7 +138,7 @@ void api_spr(ram_t *ram, int idx, int x, int y, int width, int height) {
 }
 
 void api_sspr(ram_t *ram, int dst_x, int dst_y, int dst_w, int dst_h, int src_x, int src_y, int src_w, int src_h, int color_key){
-	gfx_draw_spritesheet_pro(ram, RECT(src_x, src_y, src_w, src_h), RECT(dst_x, dst_y, dst_w, dst_h), color_key);
+	gfx_draw_spritesheet_pro(ram, RECT(src_x, src_y, src_w, src_h), RECT(dst_x, dst_y, dst_w, dst_h), color_key, RECT(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT));
 }
 
 void api_map(ram_t *ram, int layer, int x, int y, int cell_x, int cell_y, int cell_w, int cell_h) {

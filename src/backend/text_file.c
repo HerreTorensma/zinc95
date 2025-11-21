@@ -54,7 +54,7 @@ static void _token_push(line_t *line, lua_token_type_t type, string_t string) {
 		.string = string,
 	};
 
-	array_append(&line->tokens, token);
+	array_push(&line->tokens, token);
 }
 
 static void _print_token_list(line_t *line) {

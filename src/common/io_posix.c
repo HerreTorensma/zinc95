@@ -81,13 +81,13 @@ static string_t_array_t _get_files_or_directories_in_path(allocator_t allocator,
 			if (stat(string_to_c_string(get_temp_allocator(), full_path), &st) == 0 && S_ISDIR(st.st_mode)) {
 				if (!string_eq(STR(entry->d_name), STR(".")) && !string_eq(STR(entry->d_name), STR(".."))) {
 					string_t copy = string_copy(get_temp_allocator(), STR(entry->d_name));
-					array_append(&array, copy);
+					array_push(&array, copy);
 				}
 			}
 		} else {
 			if (stat(string_to_c_string(get_temp_allocator(), full_path), &st) == 0 && S_ISREG(st.st_mode)) {
 				string_t copy = string_copy(get_temp_allocator(), STR(entry->d_name));
-				array_append(&array, copy);
+				array_push(&array, copy);
 			}
 		}
 	}

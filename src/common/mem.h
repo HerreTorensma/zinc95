@@ -114,7 +114,7 @@ void _array_reserve(allocator_t allocator, void **data, size_t *capacity, size_t
 		_array_reserve((array)->allocator, (void **)&(array)->data, &(array)->capacity, sizeof(*((array)->data)), ARRAY_INITIAL_CAPACITY); \
 	} while (0);
 
-#define array_append(array, item)  \
+#define array_push(array, item)  \
 	do { \
 		_array_reserve((array)->allocator, (void **)&(array)->data, &(array)->capacity, sizeof(*((array)->data)), (array)->len + 1); \
 		(array)->data[(array)->len] = item; \
@@ -135,3 +135,8 @@ void _array_reserve(allocator_t allocator, void **data, size_t *capacity, size_t
 		(array)->capacity = 0; \
 		(array)->len = 0; \
 	} while (0);
+
+#define array_pop(array) \
+	(array)->data[(array)->len - 1]; \
+	(array)->len--; \
+	_array_reserve((array)->allocator, (void **)&(array)->data, &(array)->capacity, sizeof(*((array)->data)), (array)->len);
