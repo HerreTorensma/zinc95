@@ -663,18 +663,30 @@ void sprite_editor_draw(computer_t *computer) {
 
 	// Still using the macro because it is probably safer
 	for (int i = 0; i < SPRITE_FLAGS_SIZE; i++) {
-		bool set = selected_sprite->flags & (1U << i);
+		uint32_t mask = 1U << i;
+
+		bool old_val = (selected_sprite->flags & mask) != 0;
 
 		point_t pos = button_array_get_pos(&skin_layout.sprite_flag_buttons, _layout.sprite_flags_start_pos, i);
 		button_t button = button_array_get(&skin_layout.sprite_flag_buttons, i);
 		
-		set = gui_toggle_button(computer->ram, pos, button, set);
+		bool new_val = gui_toggle_button(computer->ram, pos, button, old_val);
+		if (new_val == old_val) {
+			continue;
+		}
 
 		// TODO: set for all selected sprites
-		if (set) {
-			selected_sprite->flags |= (1U << i);
-		} else {
-			selected_sprite->flags &= ~(1U << i);
+		for (size_t y = 0; y < in_frame_rect_in_sprites.h; y++) {
+			for (size_t x = 0; x < in_frame_rect_in_sprites.w; x++) {
+				size_t sprite_index = (get_page_index() * SPRITES_PER_PAGE) + ((in_frame_rect_in_sprites.y + y) * (SPRITESHEET_WIDTH / SPRITE_WIDTH) + (in_frame_rect_in_sprites.x + x)); // TODO: wrap in function?
+				sprite_t *sprite = &computer->ram->sprites[sprite_index];
+				
+				if (new_val) {
+					sprite->flags |= mask;
+				} else {
+					sprite->flags &= ~mask;
+				}
+			}
 		}
 	}
 
