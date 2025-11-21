@@ -10,7 +10,7 @@
 
 
 static rect_t _page_rect = {0};
-static rect_t _in_frame_rect = {0}; // Relative to the page rect
+static rect_t _in_frame_rect = {0};
 
 static int _page_index = 0;
 
@@ -51,8 +51,8 @@ static void _delete_in_frame_sprites(ram_t *ram) {
 	for (int y = in_frame_rect_in_sprites.y; y < in_frame_rect_in_sprites.y + in_frame_rect_in_sprites.h; y++) {
 		for (int x = in_frame_rect_in_sprites.x; x < in_frame_rect_in_sprites.x + in_frame_rect_in_sprites.w; x++) {
 			// TODO: actually clear this stuff for every sprite in the selection
-			ram->sprites[get_absolute_sprite_index()].color_key = 0;
-			ram->sprites[get_absolute_sprite_index()].flags = 0U;
+			ram->sprites[get_sprite_index()].color_key = 0;
+			ram->sprites[get_sprite_index()].flags = 0U;
 		}
 	}
 }
@@ -98,6 +98,31 @@ void sprite_selector_zoom_out() {
 void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap_mode, point_t pos) {
 	point_t mouse_pos = input_get_mouse_pos();
 
+	{
+		point_t old_pos = _in_frame_rect.pos;
+
+		if (input_key_pressed(KEY_A)) {
+			_in_frame_rect.x -= _in_frame_rect.w;
+		}
+		if (input_key_pressed(KEY_D)) {
+			_in_frame_rect.x += _in_frame_rect.w;
+		}
+		if (input_key_pressed(KEY_W)) {
+			_in_frame_rect.y -= _in_frame_rect.h;
+		}
+		if (input_key_pressed(KEY_S)) {
+			_in_frame_rect.y += _in_frame_rect.h;
+		}
+
+		if (_in_frame_rect.x < 0 || _in_frame_rect.y < 0 || _in_frame_rect.x >= SPRITESHEET_WIDTH || _in_frame_rect.y >= SPRITESHEET_HEIGHT) {
+			_in_frame_rect.pos = old_pos;
+		}
+
+		if (_in_frame_rect.pos.x != old_pos.x || _in_frame_rect.pos.y != old_pos.y) {
+			_set_page_index(_in_frame_rect.y / SPRITESHEET_PAGE_HEIGHT);
+		}
+	}
+
 	if (point_in_rect(mouse_pos, RECT(pos.x, pos.y, SPRITESHEET_PAGE_WIDTH, SPRITESHEET_PAGE_HEIGHT))) {
 		if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
 			if (snap_mode == SNAP_MODE_SPRITE) {
@@ -125,12 +150,16 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 	
 				_in_frame_rect.x = cell_x * _in_frame_rect.w;
 				_in_frame_rect.y = cell_y * _in_frame_rect.h;
+
+				_in_frame_rect.x += _page_rect.x;
+				_in_frame_rect.y += _page_rect.y;
 			}
 		}
 
 		// TODO: implement
 		// first I need a spritesheet_section_to_text kind of function
 		// and its inverse
+		// Also make undo work for this
 		if (input_key_held(KEY_LCTRL) && input_key_pressed(KEY_C)) {
 			// Copy
 		}
@@ -163,31 +192,26 @@ void sprite_selector_draw(computer_t *computer, point_t pos, point_t page_button
 		button_t button = button_array_get(&skin_layout.spritesheet_page_buttons, i);
 
 		if (gui_button(computer->ram, pos, button, _page_index == i)) {
+			rect_t old_page_rect = _page_rect;
 			_set_page_index(i);
+			_in_frame_rect.x += (_page_rect.x - old_page_rect.x);
+			_in_frame_rect.y += (_page_rect.y - old_page_rect.y);
 		}
 	}
 
-	gfx_draw_rect(FB_SURF(computer->ram->framebuffer.data), RECT(pos.x + _in_frame_rect.x - 1, pos.y + _in_frame_rect.y - 1, _in_frame_rect.w + 2, _in_frame_rect.h + 2), 15);
+	gfx_draw_rect(FB_SURF(computer->ram->framebuffer.data), RECT(pos.x + _in_frame_rect.x - 1, pos.y + (_in_frame_rect.y % SPRITESHEET_PAGE_HEIGHT) - 1, _in_frame_rect.w + 2, _in_frame_rect.h + 2), 15);
 }
 
 rect_t get_page_rect() {
 	return _page_rect;
 }
 
-// The coordinates of _page_rect first needs to be added to account for the pages
 rect_t get_in_frame_rect() {
-	return (rect_t){
-		.x = _page_rect.x + _in_frame_rect.x,
-		.y = _page_rect.y + _in_frame_rect.y,
-		.w = _in_frame_rect.w,
-		.h = _in_frame_rect.h,
-	};
+	return _in_frame_rect;
 }
 
 rect_t get_in_frame_rect_in_sprites() {
 	return (rect_t) {
-		// .x = (_selected_rect.x / _selected_rect.w) * _selected_rect.w,
-		// .y = (_selected_rect.y / _selected_rect.h) * _selected_rect.h,
 		.x = _in_frame_rect.x / SPRITE_WIDTH,
 		.y = _in_frame_rect.y / SPRITE_HEIGHT,
 		.w = _in_frame_rect.w / SPRITE_WIDTH,
@@ -199,14 +223,9 @@ int get_page_index() {
 	return _page_index;
 }
 
-int get_relative_sprite_index() {
+int get_sprite_index() {
 	rect_t rect = get_in_frame_rect_in_sprites();
-
 	return rect.y * (SPRITESHEET_WIDTH / SPRITE_WIDTH) + rect.x;
-}
-
-int get_absolute_sprite_index() {
-	return (_page_index * SPRITES_PER_PAGE) + get_relative_sprite_index();
 }
 
 int sprite_coords_to_index(int x, int y) {

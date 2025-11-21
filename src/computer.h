@@ -34,6 +34,14 @@ Memory layout, global constants
 #define SPRITESHEET_PAGE_AMOUNT 8
 #define SPRITESHEET_HEIGHT (SPRITESHEET_PAGE_HEIGHT * SPRITESHEET_PAGE_AMOUNT)
 
+// // These are in pixels
+// // TODO: put them in terms of sprite width and height
+// #define SPRITESHEET_PAGE_WIDTH 384
+// #define SPRITESHEET_PAGE_HEIGHT 128
+// #define SPRITESHEET_WIDTH 1536
+// #define SPRITESHEET_PAGE_AMOUNT 8
+// #define SPRITESHEET_HEIGHT 1024
+
 #define SPRITE_WIDTH 8
 #define SPRITE_HEIGHT 8
 #define SPRITES_PER_ROW (SPRITESHEET_WIDTH / SPRITE_WIDTH)

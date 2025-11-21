@@ -681,11 +681,11 @@ void sprite_editor_draw(computer_t *computer) {
 	
 	// Selected sprite preview
 	gfx_draw_spritesheet_pro(computer->ram, in_frame_rect, _layout.selected_sprite_rect, COLOR_NONE, RECT(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)); // TODO: fix so it adds the other rects to currently_editing_rect
-	sprintf(buffer, "#%04d\n", get_absolute_sprite_index());
+	sprintf(buffer, "#%04d\n", get_sprite_index());
 	gui_draw_text(computer->ram, GUI_FONT_INDEX, buffer, _layout.selected_sprite_label_pos, computer->ram->skin.font_color);
 
 	// Sprite flags and color key
-	sprite_t *selected_sprite = &computer->ram->sprites[get_absolute_sprite_index()];
+	sprite_t *selected_sprite = &computer->ram->sprites[get_sprite_index()];
 
 	// Still using the macro because it is probably safer
 	for (int i = 0; i < SPRITE_FLAGS_SIZE; i++) {
@@ -703,7 +703,7 @@ void sprite_editor_draw(computer_t *computer) {
 
 		for (size_t y = 0; y < in_frame_rect_in_sprites.h; y++) {
 			for (size_t x = 0; x < in_frame_rect_in_sprites.w; x++) {
-				size_t sprite_index = (get_page_index() * SPRITES_PER_PAGE) + ((in_frame_rect_in_sprites.y + y) * (SPRITESHEET_WIDTH / SPRITE_WIDTH) + (in_frame_rect_in_sprites.x + x)); // TODO: wrap in function?
+				size_t sprite_index = sprite_coords_to_index(in_frame_rect_in_sprites.x + x, in_frame_rect_in_sprites.y + y);
 				sprite_t *sprite = &computer->ram->sprites[sprite_index];
 				
 				if (new_val) {

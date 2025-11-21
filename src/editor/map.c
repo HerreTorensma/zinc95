@@ -21,7 +21,7 @@ static camera_t _camera = {
 	},
 };
 
-static const int _move_speed = 8;
+// static const int _move_speed = 8;
 
 // -1 is the entity layer
 // 0 - 3 are tile layers
@@ -108,7 +108,7 @@ void map_editor_update(computer_t *computer) {
 						computer->ram->entities.entities[i].x = pos.x;
 						computer->ram->entities.entities[i].y = pos.y;
 						
-						computer->ram->entities.entities[i].sprite = get_absolute_sprite_index();
+						computer->ram->entities.entities[i].sprite = get_sprite_index();
 						computer->ram->entities.entities[i].w = in_frame_rect_in_sprites.w;
 						computer->ram->entities.entities[i].h = in_frame_rect_in_sprites.h;
 
@@ -152,18 +152,18 @@ void map_editor_update(computer_t *computer) {
 		}
 	}
 
-	if (input_key_held(KEY_A)) {
-		_camera.pos.x -= _move_speed;
-	}
-	if (input_key_held(KEY_D)) {
-		_camera.pos.x += _move_speed;
-	}
-	if (input_key_held(KEY_W)) {
-		_camera.pos.y -= _move_speed;
-	}
-	if (input_key_held(KEY_S)) {
-		_camera.pos.y += _move_speed;
-	}
+	// if (input_key_held(KEY_A)) {
+	// 	_camera.pos.x -= _move_speed;
+	// }
+	// if (input_key_held(KEY_D)) {
+	// 	_camera.pos.x += _move_speed;
+	// }
+	// if (input_key_held(KEY_W)) {
+	// 	_camera.pos.y -= _move_speed;
+	// }
+	// if (input_key_held(KEY_S)) {
+	// 	_camera.pos.y += _move_speed;
+	// }
 
 	point_t mouse_in_world = cam_screen_to_world(&_camera, mouse_pos);
 	
