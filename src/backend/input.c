@@ -226,3 +226,9 @@ char input_get_as_char() {
 
 	return '\0';
 }
+
+void input_set_cursor_style(cursor_style_t style) {
+	#ifdef BACKEND_SDL2
+	return sdl2_set_cursor_style(style);
+	#endif
+}

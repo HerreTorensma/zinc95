@@ -1,8 +1,10 @@
+#include <SDL2/SDL_mouse.h>
 #include <SDL2/SDL_pixels.h>
 #include <stdio.h>
 
 #include "sdl2.h"
 #include "gfx.h"
+#include "input.h"
 
 static bool _running = true;
 static int _scale = 1;
@@ -29,6 +31,8 @@ typedef struct sdl2_input {
 } sdl2_input_t;
 
 static sdl2_input_t _sdl2_input = {0};
+
+static SDL_Cursor *_cursors[CURSOR_STYLE_COUNT];
 
 static void _resize_window() {
 	int window_width, window_height;
@@ -122,6 +126,11 @@ void sdl2_init(char title[], int initial_scale) {
 
 	// Create screen texture
 	_create_screen_texture();
+
+	_cursors[CURSOR_STYLE_ARROW] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW); 
+	_cursors[CURSOR_STYLE_TEXT] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_IBEAM); 
+	_cursors[CURSOR_STYLE_MOVE] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEALL); 
+	_cursors[CURSOR_STYLE_HAND] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND); 
 }
 
 bool sdl2_window_is_open() {
@@ -455,4 +464,8 @@ void sdl2_load_bmp_to_surface(palette_t *palette, surface_t surface, string_t pa
 	}
 
 	SDL_FreeSurface(sdl_surface);
+}
+
+void sdl2_set_cursor_style(cursor_style_t style) {
+	SDL_SetCursor(_cursors[style]);
 }

@@ -23,6 +23,7 @@ void window_tick_start(computer_t *computer) {
 	#ifdef BACKEND_SDL2
 	sdl2_tick_start(computer);
 	input_update();
+	input_set_cursor_style(CURSOR_STYLE_ARROW);
 	#endif
 }
 

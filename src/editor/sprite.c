@@ -249,7 +249,12 @@ static void _tool_select(computer_t *computer, point_t spritesheet_coord_under_m
 	if (_selection_active) {
 		rect_t selection = _get_selection_rect();
 
-		if (input_key_pressed(KEY_RETURN)) {
+		if (point_in_rect(spritesheet_coord_under_mouse, selection)) {
+			// printf("yes\n");
+			input_set_cursor_style(CURSOR_STYLE_MOVE);
+		}
+
+		if (input_key_pressed(KEY_RETURN) || input_key_pressed(KEY_NUMENTER)) {
 			_selection_active = false;
 
 			// Commit

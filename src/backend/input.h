@@ -11,6 +11,15 @@ Input
 #define LONG_PRESS_TRIGGER_TIME 30
 #define LONG_PRESS_REPEAT_TIME 4 // If changed it should be larger than 1
 
+typedef enum cursor_style {
+	CURSOR_STYLE_ARROW,
+	CURSOR_STYLE_TEXT,
+	CURSOR_STYLE_MOVE,
+	CURSOR_STYLE_HAND,
+
+	CURSOR_STYLE_COUNT,
+} cursor_style_t;
+
 // TODO: manually number these (maybe)
 // Also write them to RAM
 typedef enum zinc_key {
@@ -160,3 +169,5 @@ bool input_mouse_scrolled(scroll_dir_t direction);
 point_t input_get_mouse_pos();
 
 char input_get_as_char();
+
+void input_set_cursor_style(cursor_style_t style);

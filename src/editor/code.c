@@ -412,25 +412,29 @@ void code_editor_update(computer_t *computer) {
 	_handle_char_input(computer, file);
 
 	// Mouse
-	if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
-		_move_cursor_to_mouse(computer->ram, file);
-		_unblink_cursor();
+	if (point_in_rect(input_get_mouse_pos(), _layout.code_rect)) {
+		input_set_cursor_style(CURSOR_STYLE_TEXT);
 
-		file->selection_start = file->cursor;
-	}
-	if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
-		_move_cursor_to_mouse(computer->ram, file);
-		_unblink_cursor();
-
-		file->selection_end = file->cursor;
-	}
+		if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
+			_move_cursor_to_mouse(computer->ram, file);
+			_unblink_cursor();
 	
-	if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
-		// Make start and end proper
-		if (file->selection_end.line < file->selection_start.line || (file->selection_end.line == file->selection_start.line && file->selection_end.pos < file->selection_start.pos)) {
-			file_pos_t temp = file->selection_start;
-			file->selection_start = file->selection_end;
-			file->selection_end = temp;
+			file->selection_start = file->cursor;
+		}
+		if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+			_move_cursor_to_mouse(computer->ram, file);
+			_unblink_cursor();
+	
+			file->selection_end = file->cursor;
+		}
+		
+		if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
+			// Make start and end proper
+			if (file->selection_end.line < file->selection_start.line || (file->selection_end.line == file->selection_start.line && file->selection_end.pos < file->selection_start.pos)) {
+				file_pos_t temp = file->selection_start;
+				file->selection_start = file->selection_end;
+				file->selection_end = temp;
+			}
 		}
 	}
 
