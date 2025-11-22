@@ -160,6 +160,10 @@ static zinc_stack_t _undo_stack = {0};
 
 #define UNDO_STACK_SIZE 64
 
+static point_t _spritesheet_coord_under_mouse = {0};
+static point_t _last_frame_spritesheet_coord_under_mouse = {0};
+static bool _moving_selection = false;
+
 void sprite_editor_init(computer_t *computer) {
 	gfx_clear(_overlay_surf, COLOR_NONE);
 	gfx_clear(_selection_surf, COLOR_NONE);
@@ -249,9 +253,12 @@ static void _tool_select(computer_t *computer, point_t spritesheet_coord_under_m
 	if (_selection_active) {
 		rect_t selection = _get_selection_rect();
 
-		if (point_in_rect(spritesheet_coord_under_mouse, selection)) {
-			// printf("yes\n");
+		if (_selection_active && point_in_rect(spritesheet_coord_under_mouse, selection)) {
 			input_set_cursor_style(CURSOR_STYLE_MOVE);
+
+			if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
+				_moving_selection = true;
+			}
 		}
 
 		if (input_key_pressed(KEY_RETURN) || input_key_pressed(KEY_NUMENTER)) {
@@ -286,26 +293,42 @@ static void _tool_select(computer_t *computer, point_t spritesheet_coord_under_m
 
 	// TODO: fix undo
 	if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
-		if (_selection_active) {
-			_selection_active = false;
-
-			// Commit
-			_commit_selection(computer);
+		if (!_moving_selection) {
+			if (_selection_active) {
+				_selection_active = false;
+	
+				// Commit
+				_commit_selection(computer);
+			}
+			
+			_selection_start = spritesheet_coord_under_mouse;
 		}
-		
-		_selection_start = spritesheet_coord_under_mouse;
 	}
 
 	if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
-		_selection_end = spritesheet_coord_under_mouse;
+		if (_selection_active && _moving_selection) {
+			int xdiff = spritesheet_coord_under_mouse.x - _last_frame_spritesheet_coord_under_mouse.x;
+			int ydiff = spritesheet_coord_under_mouse.y - _last_frame_spritesheet_coord_under_mouse.y;
+
+			_selection_start.x += xdiff;
+			_selection_start.y += ydiff;
+			_selection_end.x += xdiff;
+			_selection_end.y += ydiff;
+		} else {
+			_selection_end = spritesheet_coord_under_mouse;
+		}
 	}
 
 	if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
-		_selection_end = spritesheet_coord_under_mouse;
+		if (_selection_active && _moving_selection) {
+			_moving_selection = false;
+		} else {
+			_selection_end = spritesheet_coord_under_mouse;
+			if (_selection_start.x == _selection_end.x && _selection_start.y == _selection_end.y) {
+				return;
+			}
 
-		if (!_selection_active) {
 			_selection_active = true;
-			// gfx_clear(_selection_surf, COLOR_NONE);
 
 			rect_t selection = _get_selection_rect();
 			
@@ -439,7 +462,11 @@ static void _tool_bucket(computer_t *computer, point_t spritesheet_coord_under_m
 }
 
 void sprite_editor_update(computer_t *computer) {
+	_last_frame_spritesheet_coord_under_mouse = _spritesheet_coord_under_mouse;
+
 	point_t mouse_pos = input_get_mouse_pos();
+	_spritesheet_coord_under_mouse = cam_screen_to_world(&_camera, mouse_pos);
+
 	rect_t in_frame_rect = get_in_frame_rect();
 	
 	sprite_selector_update(computer, SNAP_MODE_ZOOM, _layout.sprite_selector_pos);
@@ -474,17 +501,15 @@ void sprite_editor_update(computer_t *computer) {
 	}
 
 	if (point_in_rect(mouse_pos, _layout.sprite_editor_full_rect)) {
-		point_t spritesheet_coord_under_mouse = cam_screen_to_world(&_camera, mouse_pos);
-
 		if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
-			_change_start = spritesheet_coord_under_mouse;
+			_change_start = _spritesheet_coord_under_mouse;
 		}
 
 		// Eyedropper
 		// TODO: make seperate tool? with button and stuff and then switch to it while alt is held
 		if ((input_key_held(KEY_LALT) || input_key_held(KEY_RALT))) {
 			if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
-				_selected_color = computer->ram->spritesheet.data[spritesheet_coord_under_mouse.y * SPRITESHEET_WIDTH + spritesheet_coord_under_mouse.x];
+				_selected_color = computer->ram->spritesheet.data[_spritesheet_coord_under_mouse.y * SPRITESHEET_WIDTH + _spritesheet_coord_under_mouse.x];
 			}
 			return;
 		}
@@ -502,28 +527,28 @@ void sprite_editor_update(computer_t *computer) {
 
 			// TODO: seperate function for each tool
 			case (TOOL_SELECT):
-				_tool_select(computer, spritesheet_coord_under_mouse);
+				_tool_select(computer, _spritesheet_coord_under_mouse);
 				break;
 			case (TOOL_PENCIL):
-				_tool_pencil(computer, spritesheet_coord_under_mouse);
+				_tool_pencil(computer, _spritesheet_coord_under_mouse);
 				break;
 			case (TOOL_LINE):
-				_tool_line(computer, spritesheet_coord_under_mouse);
+				_tool_line(computer, _spritesheet_coord_under_mouse);
 				break;
 			case (TOOL_RECT):
-				_tool_rect(computer, spritesheet_coord_under_mouse);
+				_tool_rect(computer, _spritesheet_coord_under_mouse);
 				break;
 			case (TOOL_RECTF):
-				_tool_rectf(computer, spritesheet_coord_under_mouse);
+				_tool_rectf(computer, _spritesheet_coord_under_mouse);
 				break;
 			case (TOOL_ELLIPSE):
-				_tool_ellipse(computer, spritesheet_coord_under_mouse);
+				_tool_ellipse(computer, _spritesheet_coord_under_mouse);
 				break;
 			case (TOOL_ELLIPSEF):
-				_tool_ellipsef(computer, spritesheet_coord_under_mouse);
+				_tool_ellipsef(computer, _spritesheet_coord_under_mouse);
 				break;
 			case (TOOL_BUCKET):
-				_tool_bucket(computer, spritesheet_coord_under_mouse, mouse_pos);
+				_tool_bucket(computer, _spritesheet_coord_under_mouse, mouse_pos);
 				break;
 			default:
 				break;
