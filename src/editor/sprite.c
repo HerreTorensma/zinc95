@@ -162,6 +162,7 @@ static zinc_stack_t _undo_stack = {0};
 
 void sprite_editor_init(computer_t *computer) {
 	gfx_clear(_overlay_surf, COLOR_NONE);
+	gfx_clear(_selection_surf, COLOR_NONE);
 
 	stack_init(&_undo_stack, sizeof(change_t), UNDO_STACK_SIZE);
 }
@@ -220,7 +221,6 @@ static void _undo(computer_t *computer) {
 		free(change.before.data);
 		change.before.data = NULL;
 	}
-
 }
 
 // Calculate it here so I don't need to keep a selection global updated
@@ -232,26 +232,18 @@ static rect_t _get_selection() {
 	return selection;
 }
 
-// Move the rect
-static void _move_rect(surface_t surf, rect_t rect, point_t new_pos) {
-	surface_t temp_surface = {
-		.data = temp_alloc((rect.w * rect.h) * sizeof(color_t)),
-		.width = rect.w,
-		.height = rect.h,
-	};
-
-	gfx_copy_surface_rect(temp_surface, surf, POINT(0, 0), rect, COLOR_NONE);
-
-	// Erase
-	gfx_draw_filled_rect(surf, rect, COLOR_NONE);
-
-	// Copy back
-	gfx_copy_surface_rect(surf, temp_surface, new_pos, RECT(0, 0, rect.w, rect.h), COLOR_NONE);
-}
-
 static void _commit_overlay(computer_t *computer) {
 	gfx_copy_surface_rect(SPR_SURF(computer->ram->spritesheet.data), _overlay_surf, POINT(0, 0), RECT(0, 0, SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT), COLOR_NONE);
 	gfx_clear(_overlay_surf, COLOR_NONE);
+}
+
+static void _commit_selection(computer_t *computer) {
+	rect_t selection = rect_from_2_points(_selection_start, _selection_end);
+	selection.w++;
+	selection.h++;
+
+	gfx_copy_surface_rect(SPR_SURF(computer->ram->spritesheet.data), _selection_surf, selection.pos, RECT(0, 0, selection.w, selection.h), COLOR_NONE);
+	gfx_clear(_selection_surf, COLOR_NONE);
 }
 
 static void _tool_select(computer_t *computer, point_t spritesheet_coord_under_mouse) {
@@ -260,31 +252,36 @@ static void _tool_select(computer_t *computer, point_t spritesheet_coord_under_m
 		
 		// TODO: use the PRESS_OR_LONG_PRESS macro or whatever it was
 		if (input_key_pressed(KEY_LEFT)) {
-			_move_rect(_overlay_surf, selection, POINT(selection.x - 1, selection.y));
 			_selection_start.x--;
 			_selection_end.x--;
 		}
 		
 		if (input_key_pressed(KEY_RIGHT)) {
-			_move_rect(_overlay_surf, selection, POINT(selection.x + 1, selection.y));
 			_selection_start.x++;
 			_selection_end.x++;
 		}
 
 		if (input_key_pressed(KEY_UP)) {
-			_move_rect(_overlay_surf, selection, POINT(selection.x, selection.y - 1));
 			_selection_start.y--;
 			_selection_end.y--;
 		}
 		
 		if (input_key_pressed(KEY_DOWN)) {
-			_move_rect(_overlay_surf, selection, POINT(selection.x, selection.y + 1));
 			_selection_start.y++;
 			_selection_end.y++;
 		}
 	}
 
+	// TODO: fix undo
 	if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
+		if (_selection_active) {
+			_selection_active = false;
+
+			// Commit
+			_commit_selection(computer);
+			gfx_clear(_selection_surf, COLOR_NONE);
+		}
+		
 		_selection_start = spritesheet_coord_under_mouse;
 	}
 
@@ -295,28 +292,18 @@ static void _tool_select(computer_t *computer, point_t spritesheet_coord_under_m
 	if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
 		_selection_end = spritesheet_coord_under_mouse;
 
-		// Commit if it was already active so there is a clean slate
-		if (_selection_active) {
-			_commit_overlay(computer);
+		if (!_selection_active) {
+			_selection_active = true;
+			gfx_clear(_selection_surf, COLOR_NONE);
+
+			rect_t selection = _get_selection();
+			
+			// Copy to selection surface
+			gfx_copy_surface_rect(_selection_surf, SPR_SURF(computer->ram->spritesheet.data), POINT(0, 0), selection, COLOR_NONE);
+	
+			// Delete from spritesheet
+			gfx_draw_filled_rect(SPR_SURF(computer->ram->spritesheet.data), selection, COLOR_BLACK);
 		}
-
-		_selection_active = true;
-		if (_selection_start.x == _selection_end.x && _selection_start.y == _selection_end.y) {
-			_selection_active = false;
-
-			// Commit overlay to spritesheet
-			_commit_overlay(computer);
-			return;
-		}
-		
-		rect_t selection = _get_selection();
-		
-		// Copy to overlay
-		gfx_copy_surface_rect(_overlay_surf, SPR_SURF(computer->ram->spritesheet.data), selection.pos, selection, COLOR_NONE);
-		// gfx_copy_surface_rect(_selection_surf, SPR_SURF(computer->ram->spritesheet.data), selection.pos, selection, COLOR_NONE);
-
-		// Delete from spritesheet
-		gfx_draw_filled_rect(SPR_SURF(computer->ram->spritesheet.data), selection, COLOR_BLACK);
 	}
 }
 
@@ -594,8 +581,6 @@ void sprite_editor_draw(computer_t *computer) {
 		dest_rect.h = source_rect.h * _camera.zoom;
 
 		gfx_draw_spritesheet_pro(computer->ram, source_rect, dest_rect, COLOR_NONE, _layout.sprite_editor_full_rect);
-
-		gfx_draw_rect(fb_surf, RECT(_layout.sprite_editor_focus_rect.x - 1, _layout.sprite_editor_focus_rect.y - 1, _layout.sprite_editor_focus_rect.w + 2, _layout.sprite_editor_focus_rect.h + 2), COLOR_WHITE);
 	}
 
 	// Spritesheet / sprite selector
@@ -626,9 +611,48 @@ void sprite_editor_draw(computer_t *computer) {
 
 		gfx_draw_surface_pro(fb, _overlay_surf, source_rect, dest_rect, COLOR_NONE, _layout.sprite_editor_full_rect);
 	}
+
+	// Draw the selection surface
+	if (_selection_active) {
+		
+		rect_t selection = _get_selection();
+
+		_camera.pos = in_frame_rect.pos;
+		_camera.zoom = scale;
+
+		// Source rect is the entire spritesheet
+		// TODO: make a global const or macro or something
+		rect_t source_rect = RECT(0, 0, selection.w, selection.h);
+
+		rect_t dest_rect = {0};
+		dest_rect.pos = cam_world_to_screen(&_camera, selection.pos);
+
+		dest_rect.w = source_rect.w * _camera.zoom;
+		dest_rect.h = source_rect.h * _camera.zoom;
+
+		gfx_draw_surface_pro(fb, _selection_surf, source_rect, dest_rect, COLOR_NONE, _layout.sprite_editor_full_rect);
+	}
 	
 	// Draw the overlay on sprite selector as well
 	gfx_draw_surface_rect(fb, _overlay_surf, _layout.sprite_selector_pos, get_page_rect(), COLOR_NONE);
+
+	// Draw selection on sprite selector as well
+	// TODO: fix
+	{
+		rect_t selection = _get_selection();
+		point_t pos = {
+			_layout.sprite_selector_pos.x + selection.x,
+			_layout.sprite_selector_pos.y + (selection.y),
+		};
+
+		rect_t rect = {
+			0,
+			0,
+			selection.w,
+			selection.h,
+		};
+		gfx_draw_surface_rect(fb, _selection_surf, pos, rect, COLOR_NONE);
+	}
 
 	// Draw cursor
 	{
@@ -667,6 +691,9 @@ void sprite_editor_draw(computer_t *computer) {
 		// gfx_draw_rect(fb_surf, selection, COLOR_LIGHTGRAY);
 		_draw_selection_rect(computer->ram->ticks, fb_surf, selection);
 	}
+
+	// Focus rect
+	gfx_draw_rect(fb_surf, RECT(_layout.sprite_editor_focus_rect.x - 1, _layout.sprite_editor_focus_rect.y - 1, _layout.sprite_editor_focus_rect.w + 2, _layout.sprite_editor_focus_rect.h + 2), COLOR_WHITE);
 
 	// Selected color
 	char buffer[32];
@@ -730,6 +757,15 @@ void sprite_editor_draw(computer_t *computer) {
 			_selected_tool = i;
 		}
 	}
+
+	// {
+	// 	rect_t selection = _get_selection();
+	// 	rect_t source_rect = RECT(0, 0, selection.w, selection.h);
+	// 	rect_t dest_rect = source_rect;
+	// 	dest_rect.x += 100;
+	// 	dest_rect.y += 100;
+	// 	gfx_draw_surface_pro(fb, _selection_surf, source_rect, dest_rect, COLOR_NONE, _layout.sprite_editor_full_rect);
+	// }
 
 	// Debugging stuff, will keep for now
 	// gfx_draw_rect(fb_surf, RECT(100, 100, 101, 21), COLOR_BLUE);

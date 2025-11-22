@@ -105,9 +105,10 @@ void gfx_spritesheet_set_pixel(spritesheet_t *spritesheet, point_t point, color_
 // But I'm not sure if this should be in this file
 rect_t sprite_index_to_spritesheet_rect(int sprite_index, int w, int h);
 
-void gfx_copy_surface_rect(surface_t dest, surface_t src, point_t pos, rect_t rect, color_t color_key);
+void gfx_copy_surface_rect(surface_t dest, surface_t src, point_t dest_pos, rect_t source_rect, color_t color_key);
 
-void gfx_draw_surface_rect(framebuffer_t *fb, surface_t surf, point_t pos, rect_t rect, color_t color_key);
+// TODO: maybe remove this function???
+void gfx_draw_surface_rect(framebuffer_t *fb, surface_t surf, point_t dest_pos, rect_t source_rect, color_t color_key);
 
 // 4 ways to draw sprites
 // Draw portion of spritesheet at position

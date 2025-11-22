@@ -10,6 +10,9 @@
 #include "../backend/text_file.h"
 #include "../backend/window.h"
 
+// TODO: move this into input
+// also why isn't this just a function that returns a boolean?
+// what was I cooking
 #define KEY_PRESSED_OR_LONG_PRESSED(key, action) do { \
 	if (input_key_pressed(key)) { \
 		action; \

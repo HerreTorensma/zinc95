@@ -160,6 +160,8 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 		// first I need a spritesheet_section_to_text kind of function
 		// and its inverse
 		// Also make undo work for this
+		// And if you cut a sprite the map should also change
+		// so you can easily reorder your spritesheet without messing up the whole map
 		if (input_key_held(KEY_LCTRL) && input_key_pressed(KEY_C)) {
 			// Copy
 		}

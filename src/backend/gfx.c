@@ -235,23 +235,23 @@ rect_t sprite_index_to_spritesheet_rect(int sprite_index, int w, int h) {
 // but who likes unnecessary state machines
 // I can actually just make a macro or wrapper function for clip bounds being the screen
 
-void gfx_copy_surface_rect(surface_t dest, surface_t src, point_t pos, rect_t rect, color_t color_key) {
-	for (int i = 0; i < rect.h; i++) {
-		for (int j = 0; j < rect.w; j++) {
-			color_t color = surf_get_pixel(src, rect.x + j, rect.y + i);
+void gfx_copy_surface_rect(surface_t dest, surface_t src, point_t dest_pos, rect_t source_rect, color_t color_key) {
+	for (int i = 0; i < source_rect.h; i++) {
+		for (int j = 0; j < source_rect.w; j++) {
+			color_t color = surf_get_pixel(src, source_rect.x + j, source_rect.y + i);
 			if (color != color_key) {
-				surf_set_pixel(dest, pos.x + j, pos.y + i, color);
+				surf_set_pixel(dest, dest_pos.x + j, dest_pos.y + i, color);
 			}
 		}
 	}
 }
 
-void gfx_draw_surface_rect(framebuffer_t *fb, surface_t surf, point_t pos, rect_t rect, color_t color_key) {
-	for (int i = 0; i < rect.h; i++) {
-		for (int j = 0; j < rect.w; j++) {
-			color_t color = surf_get_pixel(surf, rect.x + j, rect.y + i);
+void gfx_draw_surface_rect(framebuffer_t *fb, surface_t surf, point_t dest_pos, rect_t source_rect, color_t color_key) {
+	for (int i = 0; i < source_rect.h; i++) {
+		for (int j = 0; j < source_rect.w; j++) {
+			color_t color = surf_get_pixel(surf, source_rect.x + j, source_rect.y + i);
 			if (color != color_key) {
-				gfx_set_pixel(fb, pos.x + j, pos.y + i, color);
+				gfx_set_pixel(fb, dest_pos.x + j, dest_pos.y + i, color);
 			}
 		}
 	}
@@ -314,6 +314,10 @@ void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section, floa
 
 	for (int i = section.y; i < section.y + section.h; i++) {
 		for (int j = section.x; j < section.x + section.w; j++) {
+			// TODO: if an empty sprite is drawn, one blue pixel should be drawn like in PICO-8
+			// that's to signify it's not sprite 0
+			// also erasing should be a thing
+			// or maybe placing anything in the map editor while the top left origin of the in frame rect in sprites is 0, 0 will result in all sprites placed being 0??? idk
 
 			int sprite_index = ram->map.layers[layer_index].data[i * MAP_WIDTH + j];
 
