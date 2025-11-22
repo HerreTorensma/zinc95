@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "window.h"
+#include "input.h"
 #include "sdl2.h"
 #include "gfx.h"
 #include "txt.h"
@@ -21,6 +22,7 @@ void window_init(char title[], int initial_scale) {
 void window_tick_start(computer_t *computer) {
 	#ifdef BACKEND_SDL2
 	sdl2_tick_start(computer);
+	input_update();
 	#endif
 }
 

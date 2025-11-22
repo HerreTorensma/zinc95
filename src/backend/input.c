@@ -1,11 +1,37 @@
 #include "input.h"
 #include "sdl2.h"
 
+static int _key_timers[KEY_COUNT] = {0};
+
+void input_update() {
+	for (size_t i = 0; i < KEY_COUNT; i++) {
+		if (_key_timers[i] > 0) {
+			_key_timers[i]--;
+		}
+	}
+}
+
 bool input_key_pressed(zinc_key_t key) {
 	#ifdef BACKEND_SDL2
 	return sdl2_input_key_pressed(key);
 	#endif
 }
+
+bool input_key_pressed_or_long_pressed(zinc_key_t key) {
+	if (input_key_pressed(key)) {
+		_key_timers[key] = LONG_PRESS_TRIGGER_TIME;
+		return true;
+	}
+	if (!input_key_held(key)) {
+		_key_timers[key] = 0;
+	}
+	if (_key_timers[key] == 1) {
+		_key_timers[key] = LONG_PRESS_REPEAT_TIME;
+		return true;
+	}
+	return false;
+}
+
 
 bool input_key_held(zinc_key_t key) {
 	#ifdef BACKEND_SDL2

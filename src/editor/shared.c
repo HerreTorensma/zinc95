@@ -101,16 +101,16 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 	{
 		point_t old_pos = _in_frame_rect.pos;
 
-		if (input_key_pressed(KEY_A)) {
+		if (input_key_pressed_or_long_pressed(KEY_A)) {
 			_in_frame_rect.x -= _in_frame_rect.w;
 		}
-		if (input_key_pressed(KEY_D)) {
+		if (input_key_pressed_or_long_pressed(KEY_D)) {
 			_in_frame_rect.x += _in_frame_rect.w;
 		}
-		if (input_key_pressed(KEY_W)) {
+		if (input_key_pressed_or_long_pressed(KEY_W)) {
 			_in_frame_rect.y -= _in_frame_rect.h;
 		}
-		if (input_key_pressed(KEY_S)) {
+		if (input_key_pressed_or_long_pressed(KEY_S)) {
 			_in_frame_rect.y += _in_frame_rect.h;
 		}
 

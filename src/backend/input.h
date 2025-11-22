@@ -8,6 +8,9 @@ Input
 
 #include "../common/math2d.h"
 
+#define LONG_PRESS_TRIGGER_TIME 30
+#define LONG_PRESS_REPEAT_TIME 4 // If changed it should be larger than 1
+
 // TODO: manually number these (maybe)
 // Also write them to RAM
 typedef enum zinc_key {
@@ -134,6 +137,8 @@ typedef enum scroll_dir {
 	SCROLL_DIR_DOWN = 1,
 } scroll_dir_t;
 
+void input_update();
+
 // TODO: rename this to make it more clear they're checks
 // like check_keyp or something
 bool input_key_pressed(zinc_key_t key);
@@ -143,6 +148,8 @@ bool input_key_held(zinc_key_t key);
 bool input_key_released(zinc_key_t key);
 
 bool input_mouse_button_pressed(mouse_button_t button);
+
+bool input_key_pressed_or_long_pressed(zinc_key_t key);
 
 bool input_mouse_button_released(mouse_button_t button);
 

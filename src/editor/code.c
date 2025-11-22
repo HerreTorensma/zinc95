@@ -10,23 +10,6 @@
 #include "../backend/text_file.h"
 #include "../backend/window.h"
 
-// TODO: move this into input
-// also why isn't this just a function that returns a boolean?
-// what was I cooking
-#define KEY_PRESSED_OR_LONG_PRESSED(key, action) do { \
-	if (input_key_pressed(key)) { \
-		action; \
-		_key_timers[key] = 30; \
-	} \
-	if (!input_key_held(key)) { \
-		_key_timers[key] = 0; \
-	} \
-	if (_key_timers[key] == 1) { \
-		action; \
-		_key_timers[key] = 4; \
-	} \
-} while (0);
-
 // TODO: These 3 should be configurable thus stored in RAM
 static const int _cursor_blink_speed = 45;
 
@@ -37,8 +20,6 @@ static const int _scroll_speed = 3;
 // static int _scroll_amount = 0;
 static int _lines_on_screen = 0;
 static int _cursor_timer = _cursor_blink_speed;
-
-static int _key_timers[KEY_COUNT] = {0};
 
 typedef struct layout {
 	point_t file_buttons_pos;
@@ -116,84 +97,209 @@ static void _handle_char_input(computer_t *computer, file_t *file) {
 	// Letters
 	if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
 		for (int i = KEY_A; i <= KEY_Z; i++) {
-			KEY_PRESSED_OR_LONG_PRESSED(i, file_remove_selection(file); file_insert_char_at_cursor(file, 'A' + (i - KEY_A)));
+			if (input_key_pressed_or_long_pressed(i)) {
+				file_remove_selection(file);
+				file_insert_char_at_cursor(file, 'A' + (i - KEY_A));
+			}
 		}
 	} else {
 		for (int i = KEY_A; i <= KEY_Z; i++) {
-			KEY_PRESSED_OR_LONG_PRESSED(i, file_remove_selection(file); file_insert_char_at_cursor(file, 'a' + (i - KEY_A)));
+			if (input_key_pressed_or_long_pressed(i)) {
+				file_remove_selection(file);
+				file_insert_char_at_cursor(file, 'a' + (i - KEY_A));
+			}
 		}
 	}
 
 	// Number row
 	if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_1, file_remove_selection(file); file_insert_char_at_cursor(file, '!'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_2, file_remove_selection(file); file_insert_char_at_cursor(file, '@'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_3, file_remove_selection(file); file_insert_char_at_cursor(file, '#'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_4, file_remove_selection(file); file_insert_char_at_cursor(file, '$'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_5, file_remove_selection(file); file_insert_char_at_cursor(file, '%'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_6, file_remove_selection(file); file_insert_char_at_cursor(file, '^'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_7, file_remove_selection(file); file_insert_char_at_cursor(file, '&'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_8, file_remove_selection(file); file_insert_char_at_cursor(file, '*'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_9, file_remove_selection(file); file_insert_char_at_cursor(file, '('));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_0, file_remove_selection(file); file_insert_char_at_cursor(file, ')'));
+		if (input_key_pressed_or_long_pressed(KEY_1)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '!');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_2)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '@');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_3)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '#');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_4)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '$');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_5)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '%');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_6)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '^');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_7)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '&');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_8)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '*');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_9)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '(');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_0)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, ')');
+		}
 	} else {
 		for (int i = 0; i <= 9; i++) {
-			KEY_PRESSED_OR_LONG_PRESSED(KEY_0 + i, file_remove_selection(file); file_insert_char_at_cursor(file, '0' + i));
-			KEY_PRESSED_OR_LONG_PRESSED(KEY_NUM0 + i, file_remove_selection(file); file_insert_char_at_cursor(file, '0' + i));
+			if (input_key_pressed_or_long_pressed(KEY_0 + i)) {
+				file_remove_selection(file);
+				file_insert_char_at_cursor(file, '0' + i);
+			}
+			if (input_key_pressed_or_long_pressed(KEY_NUM0 + i)) {
+				file_remove_selection(file);
+				file_insert_char_at_cursor(file, '0' + i);	
+			}
 		}
 	}
 
 	// Other characters
 	if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_MINUS, file_remove_selection(file); file_insert_char_at_cursor(file, '_'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_EQUALS, file_remove_selection(file); file_insert_char_at_cursor(file, '+'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_LEFTBRACKET, file_remove_selection(file); file_insert_char_at_cursor(file, '{'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_RIGHTBRACKET, file_remove_selection(file); file_insert_char_at_cursor(file, '}'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_BACKSLASH, file_remove_selection(file); file_insert_char_at_cursor(file, '|'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_SEMICOLON, file_remove_selection(file); file_insert_char_at_cursor(file, ':'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_APOSTROPHE, file_remove_selection(file); file_insert_char_at_cursor(file, '\"'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_COMMA, file_remove_selection(file); file_insert_char_at_cursor(file, '<'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_PERIOD, file_remove_selection(file); file_insert_char_at_cursor(file, '>'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_SLASH, file_remove_selection(file); file_insert_char_at_cursor(file, '?'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_GRAVE, file_remove_selection(file); file_insert_char_at_cursor(file, '~'));
+		if (input_key_pressed_or_long_pressed(KEY_MINUS)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '_');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_EQUALS)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '+');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_LEFTBRACKET)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '{');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_RIGHTBRACKET)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '}');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_BACKSLASH)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '|');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_SEMICOLON)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, ':');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_APOSTROPHE)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '\"');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_COMMA)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '<');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_PERIOD)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '>');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_SLASH)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '?');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_GRAVE)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '~');
+		}
 	} else {
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_MINUS, file_remove_selection(file); file_insert_char_at_cursor(file, '-'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_EQUALS, file_remove_selection(file); file_insert_char_at_cursor(file, '='));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_LEFTBRACKET, file_remove_selection(file); file_insert_char_at_cursor(file, '['));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_RIGHTBRACKET, file_remove_selection(file); file_insert_char_at_cursor(file, ']'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_BACKSLASH, file_remove_selection(file); file_insert_char_at_cursor(file, '\\'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_SEMICOLON, file_remove_selection(file); file_insert_char_at_cursor(file, ';'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_APOSTROPHE, file_remove_selection(file); file_insert_char_at_cursor(file, '\''));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_COMMA, file_remove_selection(file); file_insert_char_at_cursor(file, ','));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_PERIOD, file_remove_selection(file); file_insert_char_at_cursor(file, '.'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_SLASH, file_remove_selection(file); file_insert_char_at_cursor(file, '/'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_GRAVE, file_remove_selection(file); file_insert_char_at_cursor(file, '`'));
-	
-		// Some numpad stuff
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMDIVIDE, file_remove_selection(file); file_insert_char_at_cursor(file, '/'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMMULTIPLY, file_remove_selection(file); file_insert_char_at_cursor(file, '*'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMPLUS, file_remove_selection(file); file_insert_char_at_cursor(file, '+'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMMINUS, file_remove_selection(file); file_insert_char_at_cursor(file, '-'));
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMPERIOD, file_remove_selection(file); file_insert_char_at_cursor(file, '.'));
+		if (input_key_pressed_or_long_pressed(KEY_MINUS)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '-');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_EQUALS)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '=');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_LEFTBRACKET)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '[');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_RIGHTBRACKET)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, ']');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_BACKSLASH)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '\\');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_SEMICOLON)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, ';');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_APOSTROPHE)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '\'');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_COMMA)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, ',');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_PERIOD)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '.');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_SLASH)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '/');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_GRAVE)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '`');
+		}
 
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_TAB, file_remove_selection(file); file_insert_char_at_cursor(file, '\t'));
+		// Numpad
+		if (input_key_pressed_or_long_pressed(KEY_NUMDIVIDE)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '/');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_NUMMULTIPLY)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '*');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_NUMPLUS)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '+');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_NUMMINUS)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '-');
+		}
+		if (input_key_pressed_or_long_pressed(KEY_NUMPERIOD)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '.');
+		}
 
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_SPACE, file_remove_selection(file); file_insert_char_at_cursor(file, ' '));
+		// Tab
+		if (input_key_pressed_or_long_pressed(KEY_TAB)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, '\t');
+		}
+
+		// Space
+		if (input_key_pressed_or_long_pressed(KEY_SPACE)) {
+			file_remove_selection(file);
+			file_insert_char_at_cursor(file, ' ');
+		}
 	}
 }
 
 void code_editor_update(computer_t *computer) {
-	for (size_t i = 0; i < KEY_COUNT; i++) {
-		if (_key_timers[i] > 0) {
-			_key_timers[i]--;
-		}
-	}
-
 	file_t *file = &computer->files[_current_file_index];
 
 	// Cursor movement
 	if (input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL)) {
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_LEFT, {
+		if (input_key_pressed_or_long_pressed(KEY_LEFT)) {
 			size_t old_cursor_pos = file->cursor.pos;
 			file_move_cursor_to_prev_token(file, true);
 			_unblink_cursor();
@@ -208,9 +314,9 @@ void code_editor_update(computer_t *computer) {
 				file->selection_start = file->cursor;
 				file->selection_end = file->cursor;
 			}
-		});
+		}
 
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_RIGHT, {
+		if (input_key_pressed_or_long_pressed(KEY_RIGHT)) {
 			size_t old_cursor_pos = file->cursor.pos;
 			file_move_cursor_to_next_token(file, true);
 			_unblink_cursor();
@@ -225,9 +331,9 @@ void code_editor_update(computer_t *computer) {
 				file->selection_start = file->cursor;
 				file->selection_end = file->cursor;
 			}
-		});
+		}
 	} else {
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_LEFT, {
+		if (input_key_pressed_or_long_pressed(KEY_LEFT)) {
 			size_t old_cursor_pos = file->cursor.pos;
 			file_move_cursor_left(file);
 			if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
@@ -243,9 +349,9 @@ void code_editor_update(computer_t *computer) {
 			}
 
 			_unblink_cursor();
-		});
+		}
 
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_RIGHT, {
+		if (input_key_pressed_or_long_pressed(KEY_RIGHT)) {
 			size_t old_cursor_pos = file->cursor.pos;
 			file_move_cursor_right(file);
 			if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
@@ -260,48 +366,48 @@ void code_editor_update(computer_t *computer) {
 			}
 
 			_unblink_cursor();
-		});
+		}
 	}
 
-	KEY_PRESSED_OR_LONG_PRESSED(KEY_UP, {
+	if (input_key_pressed_or_long_pressed(KEY_UP)) {
 		file_move_cursor_up(file);
 		_unblink_cursor();
 
 		file->selection_start = file->cursor;
 		file->selection_end = file->cursor;
-	});
+	}
 
-	KEY_PRESSED_OR_LONG_PRESSED(KEY_DOWN, {
+	if (input_key_pressed_or_long_pressed(KEY_DOWN)) {
 		file_move_cursor_down(file);
 		_unblink_cursor();
 
 		file->selection_start = file->cursor;
 		file->selection_end = file->cursor;
-	});
+	}
 
 	// TODO: page up, page down, home, end
 
 	if (file->selection_start.line == file->selection_end.line && file->selection_start.pos == file->selection_end.pos) {
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_BACKSPACE, file_remove_char_at_cursor(file));
+		if (input_key_pressed_or_long_pressed(KEY_BACKSPACE)) file_remove_char_at_cursor(file);
 	} else {
-		KEY_PRESSED_OR_LONG_PRESSED(KEY_BACKSPACE, file_remove_selection(file));
+		if (input_key_pressed_or_long_pressed(KEY_BACKSPACE)) file_remove_selection(file);
 	}
 
 	// Handle return
-	KEY_PRESSED_OR_LONG_PRESSED(KEY_RETURN, {
+	if (input_key_pressed_or_long_pressed(KEY_RETURN)) {
 		file_remove_selection(file);
 
 		file_split_line_down(file, file->cursor.line, file->cursor.pos, 0);
 		file->cursor.line++;
 		file->cursor.pos = 0;
-	});
-	KEY_PRESSED_OR_LONG_PRESSED(KEY_NUMENTER, {
+	}
+	if (input_key_pressed_or_long_pressed(KEY_NUMENTER)) {
 		file_remove_selection(file);
 		
 		file_split_line_down(file, file->cursor.line, file->cursor.pos, 0);
 		file->cursor.line++;
 		file->cursor.pos = 0;
-	});
+	}
 
 	_handle_char_input(computer, file);
 

@@ -240,27 +240,40 @@ static void _commit_selection(computer_t *computer) {
 	gfx_clear(_selection_surf, COLOR_NONE);
 }
 
+static void _set_selection_inactive() {
+	_selection_start = POINT(0, 0);
+	_selection_end = POINT(0, 0);
+}
+
 static void _tool_select(computer_t *computer, point_t spritesheet_coord_under_mouse) {
 	if (_selection_active) {
 		rect_t selection = _get_selection_rect();
+
+		if (input_key_pressed(KEY_RETURN)) {
+			_selection_active = false;
+
+			// Commit
+			_commit_selection(computer);
+			_set_selection_inactive();
+		}
 		
 		// TODO: use the PRESS_OR_LONG_PRESS macro or whatever it was
-		if (input_key_pressed(KEY_LEFT)) {
+		if (input_key_pressed_or_long_pressed(KEY_LEFT)) {
 			_selection_start.x--;
 			_selection_end.x--;
 		}
 		
-		if (input_key_pressed(KEY_RIGHT)) {
+		if (input_key_pressed_or_long_pressed(KEY_RIGHT)) {
 			_selection_start.x++;
 			_selection_end.x++;
 		}
 
-		if (input_key_pressed(KEY_UP)) {
+		if (input_key_pressed_or_long_pressed(KEY_UP)) {
 			_selection_start.y--;
 			_selection_end.y--;
 		}
 		
-		if (input_key_pressed(KEY_DOWN)) {
+		if (input_key_pressed_or_long_pressed(KEY_DOWN)) {
 			_selection_start.y++;
 			_selection_end.y++;
 		}
@@ -273,7 +286,6 @@ static void _tool_select(computer_t *computer, point_t spritesheet_coord_under_m
 
 			// Commit
 			_commit_selection(computer);
-			gfx_clear(_selection_surf, COLOR_NONE);
 		}
 		
 		_selection_start = spritesheet_coord_under_mouse;
