@@ -224,12 +224,8 @@ static void _undo(computer_t *computer) {
 }
 
 // Calculate it here so I don't need to keep a selection global updated
-static rect_t _get_selection() {
-	rect_t selection = rect_from_2_points(_selection_start, _selection_end);
-	selection.w++;
-	selection.h++;
-
-	return selection;
+static rect_t _get_selection_rect() {
+	return rect_from_2_points(_selection_start, _selection_end);
 }
 
 static void _commit_overlay(computer_t *computer) {
@@ -238,9 +234,7 @@ static void _commit_overlay(computer_t *computer) {
 }
 
 static void _commit_selection(computer_t *computer) {
-	rect_t selection = rect_from_2_points(_selection_start, _selection_end);
-	selection.w++;
-	selection.h++;
+	rect_t selection = _get_selection_rect();
 
 	gfx_copy_surface_rect(SPR_SURF(computer->ram->spritesheet.data), _selection_surf, selection.pos, RECT(0, 0, selection.w, selection.h), COLOR_NONE);
 	gfx_clear(_selection_surf, COLOR_NONE);
@@ -248,7 +242,7 @@ static void _commit_selection(computer_t *computer) {
 
 static void _tool_select(computer_t *computer, point_t spritesheet_coord_under_mouse) {
 	if (_selection_active) {
-		rect_t selection = _get_selection();
+		rect_t selection = _get_selection_rect();
 		
 		// TODO: use the PRESS_OR_LONG_PRESS macro or whatever it was
 		if (input_key_pressed(KEY_LEFT)) {
@@ -294,9 +288,9 @@ static void _tool_select(computer_t *computer, point_t spritesheet_coord_under_m
 
 		if (!_selection_active) {
 			_selection_active = true;
-			gfx_clear(_selection_surf, COLOR_NONE);
+			// gfx_clear(_selection_surf, COLOR_NONE);
 
-			rect_t selection = _get_selection();
+			rect_t selection = _get_selection_rect();
 			
 			// Copy to selection surface
 			gfx_copy_surface_rect(_selection_surf, SPR_SURF(computer->ram->spritesheet.data), POINT(0, 0), selection, COLOR_NONE);
@@ -328,8 +322,7 @@ static void _tool_pencil(computer_t *computer, point_t spritesheet_coord_under_m
 	if (input_mouse_button_released(MOUSE_BUTTON_LEFT) || input_mouse_button_released(MOUSE_BUTTON_RIGHT)) {
 		// Copy the affected part of the overlay to the undo stack and spritesheet
 		rect_t changed_region = rect_from_2_points(_min_reached_point, _max_reached_point);
-		changed_region.w++;
-		changed_region.h++;
+
 		_push_to_undo(computer, changed_region);
 
 		// Copy entire overlay instead
@@ -347,8 +340,7 @@ static void _tool_line(computer_t *computer, point_t spritesheet_coord_under_mou
 
 	if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
 		rect_t changed_region = rect_from_2_points(_change_start, _change_end);
-		changed_region.w++;
-		changed_region.h++;
+
 		_push_to_undo(computer, changed_region);
 
 		// Actually commit the change
@@ -361,16 +353,15 @@ static void _tool_rect(computer_t *computer, point_t spritesheet_coord_under_mou
 
 	if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
 		_change_end = spritesheet_coord_under_mouse;
+		
 		rect_t rect = rect_from_2_points(_change_start, _change_end);
-		rect.w++;
-		rect.h++;
+
 		gfx_draw_rect(_overlay_surf, rect, _selected_color);
 	}
 
 	if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
 		rect_t changed_region = rect_from_2_points(_change_start, _change_end);
-		changed_region.w++;
-		changed_region.h++;
+
 		_push_to_undo(computer, changed_region);
 
 		gfx_draw_rect(SPR_SURF(computer->ram->spritesheet.data), changed_region, _selected_color);
@@ -384,15 +375,12 @@ static void _tool_rectf(computer_t *computer, point_t spritesheet_coord_under_mo
 		_change_end = spritesheet_coord_under_mouse;
 		rect_t rect = rect_from_2_points(_change_start, _change_end);
 
-		rect.w++;
-		rect.h++;
 		gfx_draw_filled_rect(_overlay_surf, rect, _selected_color);
 	}
 
 	if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
 		rect_t changed_region = rect_from_2_points(_change_start, _change_end);
-		changed_region.w++;
-		changed_region.h++;
+
 		_push_to_undo(computer, changed_region);
 
 		gfx_draw_filled_rect(SPR_SURF(computer->ram->spritesheet.data), changed_region, _selected_color);
@@ -405,16 +393,12 @@ static void _tool_ellipse(computer_t *computer, point_t spritesheet_coord_under_
 	if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
 		_change_end = spritesheet_coord_under_mouse;
 		rect_t rect = rect_from_2_points(_change_start, _change_end);
-		rect.w++;
-		rect.h++;
+
 		gfx_draw_ellipse(_overlay_surf, rect, _selected_color);
 	}
 
 	if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
 		rect_t changed_region = rect_from_2_points(_change_start, _change_end);
-		
-		changed_region.w++;
-		changed_region.h++;
 		
 		// TODO: fix bug where the whole area is properly commited to the undo stack
 		_push_to_undo(computer, changed_region);
@@ -615,7 +599,7 @@ void sprite_editor_draw(computer_t *computer) {
 	// Draw the selection surface
 	if (_selection_active) {
 		
-		rect_t selection = _get_selection();
+		rect_t selection = _get_selection_rect();
 
 		_camera.pos = in_frame_rect.pos;
 		_camera.zoom = scale;
@@ -639,7 +623,7 @@ void sprite_editor_draw(computer_t *computer) {
 	// Draw selection on sprite selector as well
 	// TODO: fix
 	{
-		rect_t selection = _get_selection();
+		rect_t selection = _get_selection_rect();
 		point_t pos = {
 			_layout.sprite_selector_pos.x + selection.x,
 			_layout.sprite_selector_pos.y + (selection.y),
@@ -673,7 +657,7 @@ void sprite_editor_draw(computer_t *computer) {
 
 	// Draw the selection outline
 	if (!(_selection_start.x == _selection_end.x && _selection_start.y == _selection_end.y)) {
-		rect_t selection = _get_selection();
+		rect_t selection = _get_selection_rect();
 
 		// TODO: use world_to_screen for this
 		selection.x -= in_frame_rect.x;
@@ -757,15 +741,6 @@ void sprite_editor_draw(computer_t *computer) {
 			_selected_tool = i;
 		}
 	}
-
-	// {
-	// 	rect_t selection = _get_selection();
-	// 	rect_t source_rect = RECT(0, 0, selection.w, selection.h);
-	// 	rect_t dest_rect = source_rect;
-	// 	dest_rect.x += 100;
-	// 	dest_rect.y += 100;
-	// 	gfx_draw_surface_pro(fb, _selection_surf, source_rect, dest_rect, COLOR_NONE, _layout.sprite_editor_full_rect);
-	// }
 
 	// Debugging stuff, will keep for now
 	// gfx_draw_rect(fb_surf, RECT(100, 100, 101, 21), COLOR_BLUE);

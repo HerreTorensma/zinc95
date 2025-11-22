@@ -51,7 +51,6 @@ rect_t rect_clip(rect_t container, rect_t rect) {
 	return rect;
 }
 
-// TODO: change to use MIN, MAX
 rect_t rect_from_2_points(point_t start, point_t end) {
 	rect_t rect = {0};
 	
@@ -70,6 +69,9 @@ rect_t rect_from_2_points(point_t start, point_t end) {
 		rect.y = end.y;
 		rect.h = start.y - end.y;
 	}
+
+	rect.w++;
+	rect.h++;
 
 	return rect;
 }

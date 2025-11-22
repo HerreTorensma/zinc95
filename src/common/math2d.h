@@ -50,6 +50,8 @@ typedef union vec2 {
 } vec2_t;
 
 // TODO: put in lua api
+
+// Includes the bottom left pixel
 rect_t rect_from_2_points(point_t start, point_t end);
 
 typedef struct camera {
