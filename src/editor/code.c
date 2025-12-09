@@ -7,19 +7,8 @@
 #include "../backend/gfx.h"
 #include "../backend/input.h"
 #include "../backend/gui.h"
-#include "../backend/text_file.h"
+#include "../backend/file.h"
 #include "../backend/window.h"
-
-// TODO: These 3 should be configurable thus stored in RAM
-static const int _cursor_blink_speed = 45;
-
-// TODO: use ram config thing
-// static const int CODE_EDITOR_FONT_INDEX = 2;
-static const int _scroll_speed = 3;
-
-// static int _scroll_amount = 0;
-static int _lines_on_screen = 0;
-static int _cursor_timer = _cursor_blink_speed;
 
 typedef struct layout {
 	point_t file_buttons_pos;
@@ -28,64 +17,36 @@ typedef struct layout {
 
 static const layout_t _layout = {
 	.file_buttons_pos = {2, 22},
-	.code_rect = {{68, 24, 568, 452}},
+	.code_rect = {{68 + 2, 24 + 2, 568 - 4, 452 - 4}},
+	// .code_rect = {{68 + 2 + 50, 24 + 2 + 50, 568 - 4 - 50, 452 - 4 - 50}},
 };
 
-static size_t _current_file_index = 0;
+static size_t _current_file_index = 0; 
 
-static file_pos_t _screen_pos_to_file_pos(ram_t *ram, file_t *file, point_t screen_pos) {
-	font_t *font = &ram->fonts[CODE_EDITOR_FONT_INDEX];
-
-	file_pos_t file_pos = {0};
-
-	int corrected_x = screen_pos.x - (_layout.code_rect.x + 5 * (font->widths[0] + font->horizontal_space));
-	int corrected_y = screen_pos.y - _layout.code_rect.y + (file->scroll_amount * (font->height + font->vertical_space));
-
-	file_pos.line = corrected_y / (font->height + font->vertical_space);
-	if (file_pos.line < 0) {
-		return file_pos;
-	}
-	if (file_pos.line >= file->line_amount) {
-		file_pos.line = file->line_amount - 1;
-	}
-
-	file_pos.pos = gui_x_to_string_index(font, file->lines[file_pos.line].string, corrected_x);
-	if (file_pos.pos < 0) {
-		return file_pos;
-	}
-	int line_len = file->lines[file_pos.line].string.len;
-	if (line_len < file_pos.pos) {
-		file_pos.pos = line_len;
-	}
-
-	return file_pos;
-}
-
-static void _move_cursor_to_mouse(ram_t *ram, file_t *file) {
-	file->cursor = _screen_pos_to_file_pos(ram, file, input_get_mouse_pos());
-	file->target_pos = string_real_pos_to_pos_with_tabs_counted_as_spaces(file->lines[file->cursor.line].string, file->cursor.pos);;
-}
-
-static void _unblink_cursor() {
-	_cursor_timer = _cursor_blink_speed;
-}
-
-// Returns what??? (TODO: document)
-static int _get_real_cursor_pos(computer_t *computer) {
-	if (computer->files[_current_file_index].line_amount > 0) {
-		return gui_get_string_width(&computer->ram->fonts[CODE_EDITOR_FONT_INDEX], computer->files[_current_file_index].lines[computer->files[_current_file_index].cursor.line].string, computer->files[_current_file_index].cursor.pos);
-	}
-
-	return 0;
-}
-
-// TODO: investigate why upon switching to the code editor from another editor (sprite?) all text is selected
 void code_editor_init(computer_t *computer) {
-	// TODO: Changed workspace_rect.h to layout.code_rect.h without knowing the implications, might wanna check that later
-	_lines_on_screen = _layout.code_rect.h / (computer->ram->fonts[CODE_EDITOR_FONT_INDEX].height + computer->ram->fonts[CODE_EDITOR_FONT_INDEX].vertical_space);
 
-	// Not necessary anymore but I'm still keeping it commented out just in case
-	// file_load(&computer->file, computer->code_buffer);
+}
+
+void _if_a_bigger_swap(size_t *a, size_t *b) {
+	if (*a > *b) {
+		size_t temp = *a;
+		*a = *b;
+		*b = temp;
+	}
+}
+
+// Swaps the selection_start and selection_end if necessary
+void _fix_selection(file_t *file) {
+	if (file->edit_state.selection_start > file->edit_state.selection_end) {
+		size_t temp = file->edit_state.selection_start;
+		file->edit_state.selection_start = file->edit_state.selection_end;
+		file->edit_state.selection_end = temp;
+	}
+}
+
+static void _file_deselect(file_t *file) {
+	file->edit_state.selection_start = file->edit_state.cursor_pos;
+	file->edit_state.selection_end = file->edit_state.cursor_pos;
 }
 
 // Handle all the character inputs
@@ -98,15 +59,17 @@ static void _handle_char_input(computer_t *computer, file_t *file) {
 	if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
 		for (int i = KEY_A; i <= KEY_Z; i++) {
 			if (input_key_pressed_or_long_pressed(i)) {
-				file_remove_selection(file);
-				file_insert_char_at_cursor(file, 'A' + (i - KEY_A));
+				file_insert_char_at(file, file->edit_state.cursor_pos, 'A' + (i - KEY_A));
+				_file_deselect(file);
+				file->edit_state.cursor_pos++;
 			}
 		}
 	} else {
 		for (int i = KEY_A; i <= KEY_Z; i++) {
 			if (input_key_pressed_or_long_pressed(i)) {
-				file_remove_selection(file);
-				file_insert_char_at_cursor(file, 'a' + (i - KEY_A));
+				file_insert_char_at(file, file->edit_state.cursor_pos, 'a' + (i - KEY_A));
+				_file_deselect(file);
+				file->edit_state.cursor_pos++;
 			}
 		}
 	}
@@ -114,54 +77,66 @@ static void _handle_char_input(computer_t *computer, file_t *file) {
 	// Number row
 	if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
 		if (input_key_pressed_or_long_pressed(KEY_1)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '!');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '!');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_2)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '@');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '@');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_3)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '#');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '#');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_4)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '$');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '$');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_5)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '%');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '%');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_6)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '^');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '^');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_7)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '&');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '&');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_8)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '*');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '*');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_9)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '(');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '(');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_0)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, ')');
+			file_insert_char_at(file, file->edit_state.cursor_pos, ')');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 	} else {
 		for (int i = 0; i <= 9; i++) {
 			if (input_key_pressed_or_long_pressed(KEY_0 + i)) {
-				file_remove_selection(file);
-				file_insert_char_at_cursor(file, '0' + i);
+				file_insert_char_at(file, file->edit_state.cursor_pos, '0' + i);
+				_file_deselect(file);
+				file->edit_state.cursor_pos++;
 			}
 			if (input_key_pressed_or_long_pressed(KEY_NUM0 + i)) {
-				file_remove_selection(file);
-				file_insert_char_at_cursor(file, '0' + i);	
+				file_insert_char_at(file, file->edit_state.cursor_pos, '0' + i);	
+				_file_deselect(file);
+				file->edit_state.cursor_pos++;
 			}
 		}
 	}
@@ -169,318 +144,458 @@ static void _handle_char_input(computer_t *computer, file_t *file) {
 	// Other characters
 	if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
 		if (input_key_pressed_or_long_pressed(KEY_MINUS)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '_');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '_');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_EQUALS)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '+');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '+');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_LEFTBRACKET)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '{');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '{');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_RIGHTBRACKET)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '}');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '}');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_BACKSLASH)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '|');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '|');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_SEMICOLON)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, ':');
+			file_insert_char_at(file, file->edit_state.cursor_pos, ':');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_APOSTROPHE)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '\"');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '\"');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_COMMA)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '<');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '<');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_PERIOD)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '>');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '>');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_SLASH)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '?');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '?');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_GRAVE)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '~');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '~');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 	} else {
 		if (input_key_pressed_or_long_pressed(KEY_MINUS)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '-');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '-');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_EQUALS)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '=');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '=');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_LEFTBRACKET)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '[');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '[');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_RIGHTBRACKET)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, ']');
+			file_insert_char_at(file, file->edit_state.cursor_pos, ']');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_BACKSLASH)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '\\');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '\\');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_SEMICOLON)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, ';');
+			file_insert_char_at(file, file->edit_state.cursor_pos, ';');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_APOSTROPHE)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '\'');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '\'');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_COMMA)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, ',');
+			file_insert_char_at(file, file->edit_state.cursor_pos, ',');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_PERIOD)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '.');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '.');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_SLASH)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '/');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '/');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_GRAVE)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '`');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '`');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 
 		// Numpad
 		if (input_key_pressed_or_long_pressed(KEY_NUMDIVIDE)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '/');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '/');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_NUMMULTIPLY)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '*');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '*');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_NUMPLUS)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '+');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '+');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_NUMMINUS)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '-');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '-');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 		if (input_key_pressed_or_long_pressed(KEY_NUMPERIOD)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '.');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '.');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 
 		// Tab
 		if (input_key_pressed_or_long_pressed(KEY_TAB)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, '\t');
+			file_insert_char_at(file, file->edit_state.cursor_pos, '\t');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
 		}
 
 		// Space
 		if (input_key_pressed_or_long_pressed(KEY_SPACE)) {
-			file_remove_selection(file);
-			file_insert_char_at_cursor(file, ' ');
+			file_insert_char_at(file, file->edit_state.cursor_pos, ' ');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
+		}
+		
+		// Newline
+		if (input_key_pressed_or_long_pressed(KEY_RETURN) || input_key_pressed_or_long_pressed(KEY_NUMENTER)) {
+			file_insert_char_at(file, file->edit_state.cursor_pos, '\n');
+			_file_deselect(file);
+			file->edit_state.cursor_pos++;
+		}
+	}
+}
+
+static int _screen_pos_to_file_pos(file_t *file, font_t *font, rect_t rect, point_t pos) {
+	point_t adjusted_pos = {
+		pos.x - rect.x + (font->widths[0] + font->horizontal_space) / 2,
+		pos.y - rect.y + (file->edit_state.scroll_amount * (font->height + font->vertical_space)),
+	};
+
+	int line_index = adjusted_pos.y / (font->height + font->vertical_space);
+	line_index = clamp_int(line_index, 0, file->edit_state.lines.len - 1);
+
+	line_t *line = &file->edit_state.lines.data[line_index];
+
+	int offset_from_line = adjusted_pos.x / (font->widths[0] + font->horizontal_space);
+	offset_from_line = clamp_int(offset_from_line, 0, line->len);
+
+	int final_pos = clamp_int(line->start + offset_from_line, 0, file->string.len);
+
+	return final_pos;
+}
+
+static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_editor_config_t config) {
+	point_t mouse_pos = input_get_mouse_pos();
+
+	if (point_in_rect(mouse_pos, rect)) {
+		input_set_cursor_style(CURSOR_STYLE_TEXT);
+	}
+
+	if (input_mouse_scrolled(SCROLL_DIR_DOWN)) {
+		file->edit_state.scroll_amount += config.scroll_speed;
+
+		if (file->edit_state.scroll_amount > file->edit_state.lines.len - 1) {
+			file->edit_state.scroll_amount = file->edit_state.lines.len - 1;
+		}
+	}
+	if (input_mouse_scrolled(SCROLL_DIR_UP)) {
+		file->edit_state.scroll_amount -= config.scroll_speed;
+
+		if (file->edit_state.scroll_amount < 0) {
+			file->edit_state.scroll_amount = 0;
+		}
+	}
+
+	if (input_key_pressed_or_long_pressed(KEY_LEFT)) {
+		if (input_key_held(KEY_LSHIFT)) {
+			file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos - 1, 0, file->string.len);
+			file->edit_state.selection_end = file->edit_state.cursor_pos;
+		} else {
+			if (!does_selection_exist(file)) {
+				file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos - 1, 0, file->string.len);
+			}
+			_file_deselect(file);
+		}
+		printf("cursor pos: %d\n", file->edit_state.cursor_pos);
+	}
+	if (input_key_pressed_or_long_pressed(KEY_RIGHT)) {
+		if (input_key_held(KEY_LSHIFT)) {
+			file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos + 1, 0, file->string.len);
+			file->edit_state.selection_end = file->edit_state.cursor_pos;
+		} else {
+			if (!does_selection_exist(file)) {
+				file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos + 1, 0, file->string.len);
+			}
+			_file_deselect(file);
+		}
+		printf("cursor pos: %d\n", file->edit_state.cursor_pos);
+	}
+
+	if (input_key_pressed(KEY_LSHIFT)) {
+		file->edit_state.selection_start = file->edit_state.cursor_pos;
+	}
+	if (input_key_released(KEY_LSHIFT)) {
+		_fix_selection(file);
+	}
+
+	if (input_key_pressed_or_long_pressed(KEY_UP)) {
+		file->edit_state.cursor_pos = file_move_pos_vertical(file, file->edit_state.cursor_pos, -1);
+		printf("cursor pos: %d\n", file->edit_state.cursor_pos);
+
+		if (input_key_held(KEY_LSHIFT)) {
+			file->edit_state.selection_end = file->edit_state.cursor_pos;
+		} else {
+			_file_deselect(file);
+		}
+	}
+	if (input_key_pressed_or_long_pressed(KEY_DOWN)) {
+		file->edit_state.cursor_pos = file_move_pos_vertical(file, file->edit_state.cursor_pos, 1);
+		printf("cursor pos: %d\n", file->edit_state.cursor_pos);
+
+		if (input_key_held(KEY_LSHIFT)) {
+			file->edit_state.selection_end = file->edit_state.cursor_pos;
+		} else {
+			_file_deselect(file);
+		}
+	}
+
+	if (input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL)) {
+		// Copy
+		if (input_key_pressed(KEY_C)) {
+			_fix_selection(file);
+			string_t clipboard = string_view(file->string, file->edit_state.selection_start, file->edit_state.selection_end - file->edit_state.selection_start);
+			set_clipboard_text(get_heap_allocator(), clipboard);
+		}
+		
+		// Paste
+		if (input_key_pressed(KEY_V)) {
+			string_t clipboard = get_clipboard_text(get_heap_allocator());
+			printf("clipboard len: %zu\n", clipboard.len);
+			file_insert_string_at(file, file->edit_state.cursor_pos, clipboard);
+			heap_dealloc(clipboard.data);
+			file->edit_state.cursor_pos += clipboard.len;
+		}
+
+		// Select all
+		if (input_key_pressed(KEY_A)) {
+			file->edit_state.selection_start = 0;
+			file->edit_state.selection_end = file->string.len - 1;
+			file->edit_state.cursor_pos = file->string.len - 1;
+		}
+	}
+
+	_handle_char_input(computer, file);
+
+	if (point_in_rect(input_get_mouse_pos(), rect)) {
+		if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
+			font_t *font = &computer->ram->fonts[config.font_index];
+			file->edit_state.cursor_pos = _screen_pos_to_file_pos(file, font, rect, input_get_mouse_pos());
+			file->edit_state.selection_start = file->edit_state.cursor_pos;
+		}
+	
+		if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+			font_t *font = &computer->ram->fonts[config.font_index];
+			file->edit_state.cursor_pos = _screen_pos_to_file_pos(file, font, rect, input_get_mouse_pos());
+			file->edit_state.selection_end = file->edit_state.cursor_pos;
+		}
+	
+		if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
+			_fix_selection(file);
+		}
+	}
+
+	if (input_key_pressed_or_long_pressed(KEY_BACKSPACE)) {
+		if (does_selection_exist(file)) {
+			file_remove_section(file, file->edit_state.selection_start, file->edit_state.selection_end - file->edit_state.selection_start);
+			file->edit_state.cursor_pos = file->edit_state.selection_start;
+			_file_deselect(file);
+		} else {
+			file_remove_section(file, file->edit_state.cursor_pos - 1, 1);
+			file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos - 1, 0, file->string.len);
 		}
 	}
 }
 
 void code_editor_update(computer_t *computer) {
-	file_t *file = &computer->files[_current_file_index];
+	_file_update(computer, &computer->files[_current_file_index], _layout.code_rect, computer->ram->code_editor_config);
+}
 
-	// Cursor movement
-	if (input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL)) {
-		if (input_key_pressed_or_long_pressed(KEY_LEFT)) {
-			size_t old_cursor_pos = file->cursor.pos;
-			file_move_cursor_to_prev_token(file, true);
-			_unblink_cursor();
+static point_t _file_cursor_pos_to_screen_pos(computer_t *computer, file_t *file, font_t *font, code_editor_config_t config) {
+	// point_t pos = POINT(rect.x + file->edit_state.cursor_pos * (font->widths[0] + font->horizontal_space), rect.y);
+	// point_t pos = POINT(rect.x + file->edit_state.cursor_pos * (font->widths[0] + font->horizontal_space), rect.y);
+	point_t pos = {0};
 
-			if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
-				if (old_cursor_pos == file->selection_end.pos) {
-					file->selection_end = file->cursor;
-				} else {
-					file->selection_start = file->cursor;
-				}
-			} else {
-				file->selection_start = file->cursor;
-				file->selection_end = file->cursor;
-			}
-		}
-
-		if (input_key_pressed_or_long_pressed(KEY_RIGHT)) {
-			size_t old_cursor_pos = file->cursor.pos;
-			file_move_cursor_to_next_token(file, true);
-			_unblink_cursor();
-
-			if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
-				if (old_cursor_pos == file->selection_end.pos) {
-					file->selection_end = file->cursor;
-				} else {
-					file->selection_start = file->cursor;
-				}
-			} else {
-				file->selection_start = file->cursor;
-				file->selection_end = file->cursor;
-			}
-		}
-	} else {
-		if (input_key_pressed_or_long_pressed(KEY_LEFT)) {
-			size_t old_cursor_pos = file->cursor.pos;
-			file_move_cursor_left(file);
-			if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
-				if (old_cursor_pos == file->selection_end.pos) {
-					file->selection_end = file->cursor;
-				} else {
-					file->selection_start = file->cursor;
-				}
-			} else {
-				// TODO: _reset_selection function
-				file->selection_start = file->cursor;
-				file->selection_end = file->cursor;
-			}
-
-			_unblink_cursor();
-		}
-
-		if (input_key_pressed_or_long_pressed(KEY_RIGHT)) {
-			size_t old_cursor_pos = file->cursor.pos;
-			file_move_cursor_right(file);
-			if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
-				if (old_cursor_pos == file->selection_end.pos) {
-					file->selection_end = file->cursor;
-				} else {
-					file->selection_start = file->cursor;
-				}
-			} else {
-				file->selection_start = file->cursor;
-				file->selection_end = file->cursor;
-			}
-
-			_unblink_cursor();
-		}
+	if (file->string.len == 0) {
+		return pos;
 	}
-
-	if (input_key_pressed_or_long_pressed(KEY_UP)) {
-		file_move_cursor_up(file);
-		_unblink_cursor();
-
-		file->selection_start = file->cursor;
-		file->selection_end = file->cursor;
-	}
-
-	if (input_key_pressed_or_long_pressed(KEY_DOWN)) {
-		file_move_cursor_down(file);
-		_unblink_cursor();
-
-		file->selection_start = file->cursor;
-		file->selection_end = file->cursor;
-	}
-
-	// TODO: page up, page down, home, end
-
-	if (file->selection_start.line == file->selection_end.line && file->selection_start.pos == file->selection_end.pos) {
-		if (input_key_pressed_or_long_pressed(KEY_BACKSPACE)) file_remove_char_at_cursor(file);
-	} else {
-		if (input_key_pressed_or_long_pressed(KEY_BACKSPACE)) file_remove_selection(file);
-	}
-
-	// Handle return
-	if (input_key_pressed_or_long_pressed(KEY_RETURN)) {
-		file_remove_selection(file);
-
-		file_split_line_down(file, file->cursor.line, file->cursor.pos, 0);
-		file->cursor.line++;
-		file->cursor.pos = 0;
-	}
-	if (input_key_pressed_or_long_pressed(KEY_NUMENTER)) {
-		file_remove_selection(file);
-		
-		file_split_line_down(file, file->cursor.line, file->cursor.pos, 0);
-		file->cursor.line++;
-		file->cursor.pos = 0;
-	}
-
-	_handle_char_input(computer, file);
-
-	// Mouse
-	if (point_in_rect(input_get_mouse_pos(), _layout.code_rect)) {
-		input_set_cursor_style(CURSOR_STYLE_TEXT);
-
-		if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
-			_move_cursor_to_mouse(computer->ram, file);
-			_unblink_cursor();
 	
-			file->selection_start = file->cursor;
+	for (size_t i = 0; i < file->edit_state.cursor_pos; i++) {
+		if (file->string.data[i] == '\n') {
+			pos.y += font->height + font->vertical_space;
+			pos.x = 0;
+			continue;
 		}
-		if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
-			_move_cursor_to_mouse(computer->ram, file);
-			_unblink_cursor();
-	
-			file->selection_end = file->cursor;
+
+		if (file->string.data[i] == '\t') {
+			pos.x += (font->widths[0] + font->horizontal_space) * config.tab_size;
+			continue;
 		}
-		
-		if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
-			// Make start and end proper
-			if (file->selection_end.line < file->selection_start.line || (file->selection_end.line == file->selection_start.line && file->selection_end.pos < file->selection_start.pos)) {
-				file_pos_t temp = file->selection_start;
-				file->selection_start = file->selection_end;
-				file->selection_end = temp;
+
+		pos.x += font->widths[0] + font->horizontal_space;
+	}
+
+	return pos;
+}
+
+static void _file_draw(computer_t *computer, file_t *file, rect_t rect, code_editor_config_t config) {
+	font_t *font = &computer->ram->fonts[config.font_index];
+
+	size_t lines_in_rect = rect.h / (font->height + font->vertical_space);
+
+	// Text
+	{
+		int new_x = rect.x;
+		int new_y = rect.y - (file->edit_state.scroll_amount * (font->height + font->horizontal_space));
+
+		size_t line_index = 0;
+
+		for (size_t i = 0; i < file->string.len; i++) {
+			// Commented this out for now, might add it back later not sure yet
+			if (file->string.data[i] == '\n') {
+				// Selection
+				{
+					size_t temp_selection_start = file->edit_state.selection_start;
+					size_t temp_selection_end = file->edit_state.selection_end;
+					_if_a_bigger_swap(&temp_selection_start, &temp_selection_end);
+					if (does_selection_exist(file) && i >= temp_selection_start && i < temp_selection_end) {
+						gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(new_x, new_y, font->widths[0] + font->horizontal_space, font->height + font->vertical_space), config.selection_color);
+					}
+				}
+
+				new_x = rect.x;
+				new_y += font->height + font->vertical_space;
+				line_index++;
+
+				if (i != file->edit_state.cursor_pos - 1) {
+					size_t temp_selection_start = file->edit_state.selection_start;
+					size_t temp_selection_end = file->edit_state.selection_end;
+					_if_a_bigger_swap(&temp_selection_start, &temp_selection_end);
+					if (does_selection_exist(file) && i >= temp_selection_start && i < temp_selection_end) {
+						gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(new_x, new_y, font->widths[0] + font->horizontal_space, font->height + font->vertical_space), config.selection_color);
+					}
+				}
+				continue;
 			}
+
+			// Clipping
+			if (line_index < file->edit_state.scroll_amount || line_index > file->edit_state.scroll_amount + lines_in_rect) {
+				continue;
+			}
+
+			if (file->string.data[i] == '\t') {
+				// Selection
+				{
+					size_t temp_selection_start = file->edit_state.selection_start;
+					size_t temp_selection_end = file->edit_state.selection_end;
+					_if_a_bigger_swap(&temp_selection_start, &temp_selection_end);
+					if (does_selection_exist(file) && i >= temp_selection_start && i < temp_selection_end) {
+						gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(new_x, new_y, (font->widths[0] + font->horizontal_space) * config.tab_size, font->height + font->vertical_space), config.selection_color);
+					}
+				}
+
+				new_x += (font->widths[' ' - VISIBLE_CHARACTERS_START] + font->horizontal_space) * config.tab_size;
+
+
+				continue;
+			}
+
+			// Selection
+			{
+				size_t temp_selection_start = file->edit_state.selection_start;
+				size_t temp_selection_end = file->edit_state.selection_end;
+				_if_a_bigger_swap(&temp_selection_start, &temp_selection_end);
+				if (does_selection_exist(file) && i >= temp_selection_start && i < temp_selection_end) {
+					gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(new_x, new_y, font->widths[0] + font->horizontal_space, font->height + font->vertical_space), config.selection_color);
+				}
+			}
+
+			// Get the correct sprite index keeping in mind some fonts could have multiple sprites per character (not tested for more than 1 horizontal sprite)
+			int char_index = file->string.data[i] - VISIBLE_CHARACTERS_START;
+			int x_offset = (char_index % (SPRITES_PER_ROW / font->sprite_width)) * font->sprite_width;
+			int y_offset = (char_index / (SPRITES_PER_ROW / font->sprite_width)) * font->sprite_height;
+			int sprite_index = font->sprite_index + x_offset + (y_offset * SPRITES_PER_ROW);
+
+			rect_t rect = sprite_index_to_spritesheet_rect(sprite_index, font->sprite_width, font->sprite_height);
+
+			for (int i = 0; i < rect.h; i++) {
+				for (int j = 0; j < rect.w; j++) {
+					color_t pixel_color = gfx_spritesheet_get_pixel(&computer->ram->spritesheet, (point_t){rect.x + j, rect.y + i});
+
+					if (pixel_color != font->color_key && pixel_color != font->seperator_color) {
+						gfx_set_pixel(&computer->ram->framebuffer, new_x + j, new_y + i, COLOR_BLACK);
+					}
+				}
+			}
+
+			new_x += font->widths[file->string.data[i] - VISIBLE_CHARACTERS_START] + font->horizontal_space;
 		}
 	}
 
-	// Copy
-	if ((input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL)) && input_key_pressed(KEY_C)) {
-		if (!(file->selection_start.line == file->selection_end.line && file->selection_start.pos == file->selection_end.pos)) {
-			string_t selection = file_get_selection_as_string(file, get_temp_allocator());
-			set_clipboard_text(selection);
-		}
-	}
-
-	// Paste
-	if ((input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL)) && input_key_pressed(KEY_V)) {
-		file_insert_string_at_cursor(file, get_clipboard_text(get_temp_allocator()));
-		file->selection_start = file->cursor;
-		file->selection_end = file->cursor;
-	}
-
-	// Cut
-	if ((input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL)) && input_key_pressed(KEY_X)) {
-		string_t selection = file_get_selection_as_string(file, get_temp_allocator());
-		set_clipboard_text(selection);
-
-		file_remove_selection(file);
-	}
-
-	// printf("selection: (%d %d), (%d %d)\n", file->selection_start.line, file->selection_start.pos, file->selection_end.line, file->selection_end.pos);
-
-	// Scrolling
-	if (input_mouse_scrolled(SCROLL_DIR_DOWN)) {
-		file->scroll_amount += _scroll_speed;
-		if (file->scroll_amount >= file->line_amount) {
-			file->scroll_amount = file->line_amount - 1;
-		}
-	} else if (input_mouse_scrolled(SCROLL_DIR_UP)) {
-		file->scroll_amount -= _scroll_speed;
-		if (file->scroll_amount < 0) {
-			file->scroll_amount = 0;
+	// Cursor
+	{
+		point_t start_pos = _file_cursor_pos_to_screen_pos(computer, file, font, config);
+		start_pos.x += rect.x;
+		start_pos.y += rect.y;
+		start_pos.x -= 1; // So the cursor doesnt overwrite the leftmost pixels of the character right of it
+		start_pos.y -= file->edit_state.scroll_amount * (font->height + font->vertical_space);
+		
+		if (start_pos.y >= rect.y && start_pos.y < rect.y + rect.h) { // Clipping
+			gfx_draw_line(FB_SURF(computer->ram->framebuffer.data), start_pos, POINT(start_pos.x, start_pos.y + font->height), config.cursor_color);
 		}
 	}
 }
 
-void code_editor_draw(computer_t *computer) {
-	font_t *font = &computer->ram->fonts[CODE_EDITOR_FONT_INDEX];
-	surface_t fb_surf = FB_SURF(computer->ram->framebuffer.data);
-
+static void _draw_file_buttons(computer_t *computer) {
 	// Draw buttons for files (this file is kinda dirty but it works)
 	for (size_t i = 0; i < computer->active_files_amount; i++) {
 		point_t pos = POINT(_layout.file_buttons_pos.x, _layout.file_buttons_pos.y + i * skin_layout.code_file_button.pressed_rect.h);
@@ -502,8 +617,8 @@ void code_editor_draw(computer_t *computer) {
 					break;
 				}
 
-				if (computer->files[last_index].line_amount == 0 || (computer->files[last_index].line_amount == 1 && computer->files[last_index].lines[0].string.len == 0)) {
-					file_deinit(&computer->files[last_index]);
+				if (computer->files[last_index].string.len == 0) {
+					file_clear(&computer->files[last_index]);
 					computer->active_files_amount--;
 					_current_file_index = MIN(_current_file_index, computer->active_files_amount - 1);
 				} else {
@@ -529,118 +644,16 @@ void code_editor_draw(computer_t *computer) {
 		}
 	}
 
-	// Add file button
+	// + button
 	if (computer->active_files_amount < FILES_AMOUNT) {
 		if (gui_button(computer->ram, POINT(_layout.file_buttons_pos.x, _layout.file_buttons_pos.y + computer->active_files_amount * skin_layout.code_file_button.pressed_rect.h), skin_layout.add_file_button, false)) {
-			file_append_line(&computer->files[computer->active_files_amount], STR(""));
+			file_append_string(&computer->files[computer->active_files_amount], STR(""));
 			computer->active_files_amount++;
 		}
 	}
+}
 
-	// gui_inset_frame(computer->ram, _layout.code_rect);
-	gfx_draw_filled_rect(fb_surf, _layout.code_rect, computer->ram->code_editor_config.background_color);
-
-	// TODO: replace with temp alloc (maybe)
-	char line_number_buffer[8];
-
-	// Base x position of where every line is drawn on the screen
-	const size_t line_x = _layout.code_rect.x + 2 + 5 * (font->widths[0] + font->horizontal_space);
-
-	// Draw selection rect
-	// This file looks like shit but it works for now
-	file_t *file = &computer->files[_current_file_index];
-	{
-		file_pos_t start = file->selection_start;
-		file_pos_t end = file->selection_end;
-
-		// Make start and end proper
-		if (end.line < start.line || (end.line == start.line && end.pos < start.pos)) {
-			file_pos_t temp = start;
-			start = end;
-			end = temp;
-		}
-
-		if (start.line == end.line) {
-			string_t string = computer->files[_current_file_index].lines[start.line].string;
-	
-			rect_t rect = {
-				.x = line_x + gui_get_string_width(font, string_view(string, 0, start.pos), string.len),
-				.y = _layout.code_rect.y + 2 + (start.line - file->scroll_amount) * (font->height + font->vertical_space),
-				.w = gui_get_string_width(font, string_view(string, start.pos, end.pos - start.pos), string.len),
-				.h = font->height,
-			};
-	
-			gfx_draw_filled_rect(fb_surf, rect, COLOR_CYAN);
-	
-		} else {
-			for (size_t i = start.line; i <= end.line; i++) {
-				string_t string = computer->files[_current_file_index].lines[i].string;
-	
-				if (i == start.line) {
-					rect_t rect = {
-						.x = line_x + gui_get_string_width(font, string_view(string, 0, start.pos), string.len),
-						.y = _layout.code_rect.y + 2 + (i - file->scroll_amount) * (font->height + font->vertical_space),
-						.w = gui_get_string_width(font, string_view(string, start.pos, string.len - start.pos), string.len),
-						.h = font->height,
-					};
-					gfx_draw_filled_rect(fb_surf, rect, COLOR_CYAN);
-	
-				} else if (i == end.line) {
-					rect_t rect = {
-						.x = line_x,
-						.y = _layout.code_rect.y + 2 + (i - file->scroll_amount) * (font->height + font->vertical_space),
-						.w = gui_get_string_width(font, string_view(string, 0, end.pos), end.pos),
-						.h = font->height,
-					};
-					gfx_draw_filled_rect(fb_surf, rect, COLOR_CYAN);
-				} else {
-					rect_t rect = {
-						.x = line_x,
-						.y = _layout.code_rect.y + 2 + (i - file->scroll_amount) * (font->height + font->vertical_space),
-						.w = gui_get_string_width(font, string, string.len),
-						.h = font->height,
-					};
-					gfx_draw_filled_rect(fb_surf, rect, COLOR_CYAN);
-				}
-			}
-		}
-	}
-
-	// TODO: fix font so I can refactor this hardcoded mess
-	for (int i = 0; i < _lines_on_screen; i++) {
-		if (i + file->scroll_amount >= computer->files[_current_file_index].line_amount) {
-			break;
-		}
-
-		// Commented out: version with leading zeroes
-		// sprintf(line_number_buffer, "%04d", i + _scroll_amount + 1);
-		sprintf(line_number_buffer, "% 4d", i + file->scroll_amount + 1);
-
-		// Line number
-		// TODO: don't hardcode color
-		gui_draw_text(computer->ram, CODE_EDITOR_FONT_INDEX, line_number_buffer, POINT(_layout.code_rect.x + 2, _layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), 8);
-		
-		// Line itself using tokens for syntax highlighting
-		line_t *current_line = &computer->files[_current_file_index].lines[i + file->scroll_amount];
-		size_t current_x = line_x;
-
-		for (size_t j = 0; j < current_line->tokens.len; j++) {
-			color_t color = computer->ram->code_editor_config.token_colors[current_line->tokens.data[j].type];
-			gui_draw_string(computer->ram, CODE_EDITOR_FONT_INDEX, current_line->tokens.data[j].string, POINT(current_x, _layout.code_rect.y + 2 + (i * (font->height + font->vertical_space))), color);
-			current_x += gui_get_string_width(font, current_line->tokens.data[j].string, current_line->tokens.data[j].string.len);
-		}
-	}
-
-	// Draw cursor
-	if (_cursor_timer >= _cursor_blink_speed / 2) {
-		int cursor_x = _layout.code_rect.x + 2 + 5 * (font->widths[0] + font->horizontal_space) + _get_real_cursor_pos(computer) - 1;
-		int cursor_y = _layout.code_rect.y + 2 + computer->files[_current_file_index].cursor.line * (font->height + font->vertical_space) - file->scroll_amount * (font->height + font->vertical_space);
-		gfx_draw_line(fb_surf, POINT(cursor_x, cursor_y), POINT(cursor_x, cursor_y + font->height - 1), 3);
-	}
-	
-	// Update cursor blink
-	_cursor_timer--;
-	if (_cursor_timer == 0) {
-		_unblink_cursor();
-	}
+void code_editor_draw(computer_t *computer) {
+	_file_draw(computer, &computer->files[_current_file_index], _layout.code_rect, computer->ram->code_editor_config);
+	_draw_file_buttons(computer);
 }

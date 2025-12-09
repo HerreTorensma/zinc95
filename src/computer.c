@@ -5,6 +5,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include "backend/file.h"
 #include "res.h"
 #include "api/lua_api.h"
 #include "common/mem.h"
@@ -187,8 +188,11 @@ void computer_load_resouces(computer_t *computer) {
 	gui_init_monospace_font_widths(computer->ram, 1, 5);
 
 	computer->ram->code_editor_config = (code_editor_config_t){
-		.background_color = COLOR_WHITE,
-		.font_index = 2,
+		.selection_color = COLOR_CYAN,
+		.cursor_color = COLOR_BLUE,
+		.scroll_speed = 3,
+		// .background_color = COLOR_WHITE,
+		.font_index = 1,
 		.tab_size = 4,
 		.token_colors = {
 			[LUA_TOKEN_KEYWORD] = 12,
@@ -208,7 +212,7 @@ void computer_load_resouces(computer_t *computer) {
 #endif
 
 void computer_init(computer_t *computer) {
-	computer->ram = malloc(RAM_SIZE);
+	computer->ram = heap_alloc(RAM_SIZE);
 	if (computer->ram == NULL) {
 		printf("Couldn't allocate memory for fantasy RAM.\n");
 		exit(EXIT_FAILURE);
@@ -220,7 +224,7 @@ void computer_init(computer_t *computer) {
 	computer->current_path = string_copy(get_heap_allocator(), STR("/"));
 
 	// Text files
-	file_append_line(&computer->files[0], STR(""));
+	// file_append_line(&computer->files[0], STR(""));
 
 	computer->active_files_amount = 1;
 }
@@ -228,14 +232,14 @@ void computer_init(computer_t *computer) {
 void computer_quit(computer_t *computer) {
 	// Free the code first
 	for (size_t i = 0; i < FILES_AMOUNT; i++) {
-		file_deinit(&computer->files[0]);
+		file_clear(&computer->files[0]);
 	}
 
-	free(computer->ram);
+	heap_dealloc(computer->ram);
 }
 
 // Forward declaration so I don't have cyclic dependencies
-string_t file_to_string(file_t *file, allocator_t allocator);
+// string_t file_to_string(file_t *file, allocator_t allocator);
 
 void play_game(computer_t *computer) {
 	if (lua_init(computer) == 0 && lua_call_init() == 0) {
@@ -331,22 +335,22 @@ string_t file_write_string(string_t path, string_t string) {
 // New implementation with length based strings
 void game_save(computer_t *computer, string_t path) {
 	printf("Saving game...\n");
-
+	
 	string_builder_t builder = {0};
-
+	
 	// 8MB should be enough for most games
 	// Also make it heap allocated to not overload the temporary memory
 	string_builder_init(&builder, get_heap_allocator(), MB(8));
-
+	
 	// Lua code
 	for (size_t i = 0; i < computer->active_files_amount; i++) {
 		if (i > 0) {
 			string_builder_append(&builder, STR("-->8\n"));
 		}
-
-		string_t code = file_to_string(&computer->files[i], get_heap_allocator());
+		
+		string_t code = computer->files[i].string;
 		string_builder_append(&builder, code);
-		dealloc(get_heap_allocator(), code.data);
+		string_builder_append(&builder, STR("\n"));
 	}
 
 	// Spritesheet
@@ -386,9 +390,6 @@ void game_save(computer_t *computer, string_t path) {
 	}
 
 	// Write it to disk
-	// FILE *file = fopen(string_to_c_string(get_temp_allocator(), path), "w");
-	// fwrite(builder.string.data, sizeof(char), builder.string.len, file);
-	// fclose(file);
 	file_write_string(path, builder.string);
 
 	string_builder_deinit(&builder);
@@ -467,7 +468,7 @@ int game_load(computer_t *computer, string_t path) {
 
 	// Deinit all files
 	for (size_t i = 0; i < FILES_AMOUNT; i++) {
-		file_deinit(&computer->files[i]);
+		file_clear(&computer->files[i]);
 	}
 
 	enum {
@@ -489,35 +490,46 @@ int game_load(computer_t *computer, string_t path) {
 
 	bool last_line_was_seperator = true;
 
-	for (size_t i = 0; i < lines.len; i++) {
-		string_t line = lines.data[i];
+	size_t last_file_start = 0;
 
-		if (string_eq(line, STR("__gfx__"))) {
+	for (size_t i = 0; i < lines.len; i++) {
+		string_t line_string = lines.data[i];
+
+		if (string_eq(line_string, STR("__gfx__"))) {
+			// Remove last newline
+			file_t *file = &computer->files[computer->active_files_amount];
+			file_remove_section(file, file->string.len - 1, 1);
+
 			current_section = SECTION_GFX;
 			continue;
 		}
 
-		if (string_eq(line, STR("__spr__"))) {
+		if (string_eq(line_string, STR("__spr__"))) {
 			current_section = SECTION_SPR;
 			continue;
 		}
 
-		if (string_eq(line, STR("__map__"))) {
+		if (string_eq(line_string, STR("__map__"))) {
 			current_section = SECTION_MAP;
 			continue;
 		}
 
-		if (current_section != SECTION_LUA && line.len == 0) {
+		if (current_section != SECTION_LUA && line_string.len == 0) {
 			printf("line empty?\n");
 			continue;
 		}
 
 		if (current_section == SECTION_LUA) {
-			bool is_seperator = string_eq(line, STR("-->8"));
+			bool is_seperator = string_eq(line_string, STR("-->8"));
 
 			if (is_seperator && !last_line_was_seperator) {
+				// Remove last newline
+				file_t *file = &computer->files[computer->active_files_amount];
+				file_remove_section(file, file->string.len - 1, 1);
+				
 				computer->active_files_amount++;
 				last_line_was_seperator = is_seperator;
+
 				continue;
 			}
 
@@ -527,30 +539,32 @@ int game_load(computer_t *computer, string_t path) {
 		switch (current_section) {
 			case SECTION_LUA: {
 				// Add the line directly to the text file data structure
-				file_append_line(&computer->files[computer->active_files_amount], line);
+				file_t *file = &computer->files[computer->active_files_amount];
+				file_append_string(file, line_string);
+				file_append_string(file, STR("\n"));
 				break;
 			}
 
 			case SECTION_GFX: {
-				if (_hex_string_to_raw(line, (uint8_t *)computer->ram->spritesheet.data + gfx_offset, SPRITESHEET_PAGE_WIDTH * sizeof(color_t)) > 0) {
+				if (_hex_string_to_raw(line_string, (uint8_t *)computer->ram->spritesheet.data + gfx_offset, SPRITESHEET_PAGE_WIDTH * sizeof(color_t)) > 0) {
 					printf("Line %zu in section __gfx__ does not have the correct size\n", i);
 				}
-				gfx_offset += line.len / 2;
+				gfx_offset += line_string.len / 2;
 				break;
 			}
 
 			case SECTION_SPR: {
-				if (_hex_string_to_raw(line, (uint8_t *)computer->ram->sprites, TOTAL_SPRITES * sizeof(sprite_t)) > 0) {
+				if (_hex_string_to_raw(line_string, (uint8_t *)computer->ram->sprites, TOTAL_SPRITES * sizeof(sprite_t)) > 0) {
 					printf("Line %zu in section __spr__ does not have the correct size\n", i);
 				}
 				break;
 			}
 
 			case SECTION_MAP: {
-				if (_hex_string_to_raw(line, (uint8_t *)(computer->ram->map.layers[0].data) + map_offset, MAP_WIDTH * sizeof(uint16_t)) > 0) {
+				if (_hex_string_to_raw(line_string, (uint8_t *)(computer->ram->map.layers[0].data) + map_offset, MAP_WIDTH * sizeof(uint16_t)) > 0) {
 					printf("Line %zu in section __map__ does not have the correct size\n", i);
 				}
-				map_offset += line.len / 2;
+				map_offset += line_string.len / 2;
 				break;
 			}
 		}

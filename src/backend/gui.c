@@ -1,6 +1,7 @@
 #include "gui.h"
 
 #include <string.h>
+#include <stdio.h>
 
 #include "input.h"
 #include "gfx.h"
@@ -9,6 +10,9 @@
 static void _get_char_rect(font_t *font, char c) {
 
 }
+
+// TODO: DONT USE THIS
+#define TAB_SIZE 4
 
 // TODO: for each font set a color_key and divider color so you can have funky fonts idk
 void gui_draw_string(ram_t *ram, int font_index, string_t string, point_t pos, int color) {

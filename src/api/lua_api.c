@@ -422,8 +422,7 @@ int lua_init(computer_t *computer) {
 	lua_register(_lua, "sfx", _lua_sfx);
 
 	for (size_t i = 0; i < computer->active_files_amount; i++) {
-		string_t file_string = file_to_string(&computer->files[i], get_heap_allocator());
-
+		string_t file_string = computer->files[i].string;
 		char *file_name = string_to_c_string(get_temp_allocator(), file_get_name(&computer->files[i]));
 
 		// 'file ': 5 bytes
@@ -438,12 +437,10 @@ int lua_init(computer_t *computer) {
 		if (luaL_loadbuffer(_lua, file_string.data, file_string.len, chunk_name) != LUA_OK) {
 			_print_lua_error(computer->ram, STR(lua_tostring(_lua, -1)));
 			lua_pop(_lua, 1);
-			dealloc(get_heap_allocator(), file_string.data);
 			return 1;
 		} else if (lua_pcall(_lua, 0, LUA_MULTRET, 0) != LUA_OK) {
 			_print_lua_error(computer->ram, STR(lua_tostring(_lua, -1)));
 			lua_pop(_lua, 1);
-			dealloc(get_heap_allocator(), file_string.data);
 			return 1;
 		}
 	}

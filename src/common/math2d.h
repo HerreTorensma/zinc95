@@ -11,6 +11,12 @@ Vector and rect implemention
 #define MIN(a, b) (a < b ? a : b)
 #define MAX(a, b) (a > b ? a : b)
 
+static inline int clamp_int(int value, int min, int max) {
+	if (value < min) return min;
+	if (value > max) return max;
+	return value;
+}
+
 typedef struct point {
 	int x;
 	int y;

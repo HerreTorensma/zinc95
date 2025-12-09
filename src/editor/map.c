@@ -1,3 +1,7 @@
+// TODO: fix bug where if the in_frame_rect is on another page it doesnt place it
+// also random thought, in the API you should be able to pass a bitmask into the draw_map function
+// so it only draws the tiles with those flags. That way you can do easy z sorting
+
 #include "map.h"
 
 #include <stdio.h>

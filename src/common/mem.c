@@ -21,26 +21,30 @@ void *alloc(allocator_t allocator, size_t size) {
 }
 
 void dealloc(allocator_t allocator, void *data) {
-	allocator.proc(0, data, ALLOCATOR_DEALLOCATE);
+	if (data != NULL) {
+		allocator.proc(0, data, ALLOCATOR_DEALLOCATE);
+	}
 }
 
 void *heap_alloc(size_t size) {
-	// assert(size > 0 && "You requested to allocate 0 bytes which is illegal");
+	assert(size > 0 && "You requested to allocate 0 bytes which is illegal");
 	void *ptr = malloc(size);
-	// assert(ptr != NULL && "Malloc failed");
+	assert(ptr != NULL && "Malloc failed");
 	memset(ptr, 0, size);
 	return ptr;
 }
 
 void *heap_realloc(void *data, size_t new_size) {
-	// assert(new_size > 0 && "You requested to reallocate to 0 bytes which is illegal");
+	assert(new_size > 0 && "You requested to reallocate to 0 bytes which is illegal");
 	void *ptr = realloc(data, new_size);
-	// assert(ptr != NULL && "Realloc failed");
+	assert(ptr != NULL && "Realloc failed");
 	return ptr;
 }
 
 void heap_dealloc(void *data) {
-	free(data);
+	if (data != NULL) {
+		free(data);
+	}
 }
 
 void temp_mem_init(size_t capacity) {

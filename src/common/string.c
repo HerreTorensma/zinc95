@@ -346,3 +346,18 @@ string_t path_get_filename(string_t path) {
 
 	return path;
 }
+
+size_t string_get_size_with_expanded_tabs(string_t string, size_t tab_size) {
+	size_t size = 0;
+	
+	for (size_t i = 0; i < string.len; i++) {
+		if (string.data[i] == '\t') {
+			size += tab_size;
+			continue;
+		}
+
+		size++;
+	}
+
+	return size;
+}

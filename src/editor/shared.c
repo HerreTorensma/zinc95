@@ -131,6 +131,11 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 
 				_in_frame_rect.x = (adjusted_position_x / SPRITE_WIDTH) * SPRITE_WIDTH;
 				_in_frame_rect.y = (adjusted_position_y / SPRITE_HEIGHT) * SPRITE_HEIGHT;
+				// _in_frame_rect.x = (adjusted_position_x / _in_frame_rect.w) * _in_frame_rect.w;
+				// _in_frame_rect.y = (adjusted_position_y / _in_frame_rect.h) * _in_frame_rect.h;
+
+				_in_frame_rect.x -= _in_frame_rect.w / 2;
+				_in_frame_rect.y -= _in_frame_rect.h / 2;
 			}
 			
 			else if (snap_mode == SNAP_MODE_FREE) {

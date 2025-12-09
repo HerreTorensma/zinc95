@@ -11,7 +11,7 @@ Memory layout, global constants
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include "backend/text_file.h"
+#include "backend/file.h"
 #include "common/math2d.h"
 
 // TODO: rename some stuff so it's all consistent, dont mix AMOUNT, MAX, TOTAL etc.
@@ -53,9 +53,6 @@ Memory layout, global constants
 
 #define MAX_CHARACTER_WIDTH 16
 #define MAX_CHARACTER_HEIGHT 16
-
-// TODO: use ram code editor config value instead
-#define TAB_SIZE 2
 
 #define COLOR_NONE 255
 
@@ -171,9 +168,12 @@ typedef struct font {
 typedef struct code_editor_config {
 	uint8_t font_index;
 
-	color_t background_color;
+	// color_t background_color;
 	color_t token_colors[LUA_TOKEN_COUNT];
+	color_t cursor_color;
+	color_t selection_color;
 	uint8_t tab_size; // TODO: use this instead of that #define
+	uint8_t scroll_speed;
 } code_editor_config_t;
 
 typedef struct skin {
