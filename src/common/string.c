@@ -179,7 +179,7 @@ bool is_alphanumeric(char c) {
 }
 
 bool is_whitespace(char c) {
-	return (c == ' ' || c == '\t');
+	return (c == ' ' || c == '\t' || c == '\n');
 }
 
 string_t int_to_string(allocator_t allocator, int n) {

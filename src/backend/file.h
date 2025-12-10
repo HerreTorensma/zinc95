@@ -19,19 +19,19 @@ typedef enum lua_token_type {
 	LUA_TOKEN_COUNT,
 } lua_token_type_t;
 
+typedef struct string_reference {
+	size_t start;
+	size_t len;
+} string_reference_t;
+
+ARRAY_DEFINE(string_reference_t)
+
 typedef struct lua_token {
-	string_t string_view;
+	string_reference_t string_reference;
 	lua_token_type_t type;
 } lua_token_t;
 
 ARRAY_DEFINE(lua_token_t)
-
-typedef struct line {
-	size_t start;
-	size_t len;
-} line_t;
-
-ARRAY_DEFINE(line_t)
 
 typedef struct file {
 	string_t string;
@@ -43,7 +43,7 @@ typedef struct file {
 		int selection_start;
 		int selection_end;
 		int scroll_amount; // Scroll amount in lines
-		line_t_array_t lines;
+		string_reference_t_array_t lines;
 		lua_token_t_array_t tokens;
 		bool supress_mouse_selection; // Set to true when the selection was just removed, to prevent from instantly making a new selection
 	} edit_state;

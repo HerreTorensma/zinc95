@@ -8,6 +8,7 @@
 #include <assert.h>
 
 #include "../common/math2d.h"
+#include "../api/api.h"
 
 static void _compute_lines(file_t *file) {
 	array_init(&file->edit_state.lines, get_heap_allocator());
@@ -15,7 +16,7 @@ static void _compute_lines(file_t *file) {
 
 	for (size_t i = 0; i < file->string.len; i++) {
 		if (file->string.data[i] == '\n') {
-			line_t line = {
+			string_reference_t line = {
 				.start = last_start,
 				.len = i - last_start,
 			};
@@ -25,13 +26,11 @@ static void _compute_lines(file_t *file) {
 	}
 
 	// Last one
-	{
-		line_t line = {
-			.start = last_start,
-			.len = file->string.len - last_start,
-		};
-		array_push(&file->edit_state.lines, line);
-	}
+	string_reference_t line = {
+		.start = last_start,
+		.len = file->string.len - last_start,
+	};
+	array_push(&file->edit_state.lines, line);
 	
 	// Print (for debugging)
 	/*
@@ -42,10 +41,189 @@ static void _compute_lines(file_t *file) {
 	*/
 }
 
+// Doesn't contain "true", "false" and "nil" since those should be treated as literals by the lexer
+static const char *lua_keywords[] = {
+	"and", "break", "do", "else", "elseif", "end",
+	"for", "function", "if", "in", "local",
+	"not", "or", "repeat", "return", "then", "until", "while",
+};
+
+static bool _is_keyword(string_t word) {
+	for (size_t i = 0; i < 18; i++) {
+		if (string_eq(word, STR(lua_keywords[i]))) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static bool _is_builtin_function(string_t word) {
+	for (size_t i = 0; i < API_FUNC_COUNT; i++) {
+		if (string_eq(word, STR(api_metas[i].name))) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static bool _is_literal(string_t word) {
+	return string_eq(word, STR("true")) || string_eq(word, STR("false")) || string_eq(word, STR("nil"));
+}
+
+static void _token_push(file_t *file, lua_token_type_t type, size_t start, size_t len) {
+	lua_token_t token = {
+		.type = type,
+		.string_reference = (string_reference_t){
+			.start = start,
+			.len = len,
+		},
+	};
+
+	array_push(&file->edit_state.tokens, token);
+}
+
+static void _print_token_list(file_t *file) {
+	for (size_t i = 0; i < file->edit_state.tokens.len; i++) {
+		switch (file->edit_state.tokens.data[i].type) {
+			case LUA_TOKEN_KEYWORD: {
+				printf("[KEYWORD] ");
+				break;
+			}
+			case LUA_TOKEN_BUILTIN_FUNCTION: {
+				printf("[BUILTIN_FUNCTION] ");
+				break;
+			}
+			case LUA_TOKEN_IDENTIFIER: {
+				printf("[IDENTIFIER] ");
+				break;
+			}
+			case LUA_TOKEN_LITERAL: {
+				printf("[LITERAL] ");
+				break;
+			}
+			case LUA_TOKEN_STRING: {
+				printf("[STRING] ");
+				break;
+			}
+			case LUA_TOKEN_COMMENT: {
+				printf("[COMMENT] ");
+				break;
+			}
+			case LUA_TOKEN_OPERATOR: {
+				printf("[OPERATOR] ");
+				break;
+			}
+			case LUA_TOKEN_WHITESPACE: {
+				printf("[WHITESPACE] ");
+				break;
+			}
+		}
+
+		printf("'");
+		// TODO: fix
+		// for (size_t j = 0; j < file->edit_state.tokens.data[i].string.len; j++) {
+		// 	printf("%c", file->edit_state.tokens.data[i].string.data[j]);
+		// }
+		printf("'");
+
+		printf("\n");
+	}
+
+	printf("\n");
+}
+
+// Update the token list on a given line
 static void _compute_tokens(file_t *file) {
+	size_t i = 0;
+
+	// Reset token array
 	array_init(&file->edit_state.tokens, get_heap_allocator());
 
-	
+	if (file->string.len == 0) {
+		return;
+	}
+
+	// Loop line string
+	while (i < file->string.len) {
+		char c = file->string.data[i];
+
+		// Keyword, builtin function, boolean literal, identifier
+		if (is_alphabetic(c) || c == '_') {
+			const size_t start = i;
+			while (i < file->string.len && (is_alphanumeric(file->string.data[i]) || file->string.data[i] == '_')) {
+				i++;
+			}
+
+			string_t word = string_view(file->string, start, i - start);
+
+			if (_is_keyword(word)) {
+				_token_push(file, LUA_TOKEN_KEYWORD, start, i - start);
+			} else if (_is_builtin_function(word)) {
+				_token_push(file, LUA_TOKEN_BUILTIN_FUNCTION, start, i - start);
+			} else if (_is_literal(word)) {
+				// If you think about it a bool is also a number :)
+				_token_push(file, LUA_TOKEN_LITERAL, start, i - start);
+			} else {
+				_token_push(file, LUA_TOKEN_IDENTIFIER, start, i - start);
+			}
+		
+		// Number
+		} else if (is_digit(c)) {
+			const size_t start = i;
+			while (i < file->string.len && (is_digit(file->string.data[i]) || file->string.data[i] == '.')) {
+				i++;
+			}
+
+			_token_push(file, LUA_TOKEN_LITERAL, start, i - start);
+		
+		// String
+		} else if (file->string.data[i] == '"' || file->string.data[i] == '\'') {
+			char quote_used = file->string.data[i];
+
+			const size_t start = i;
+			i++;
+
+			while (i < file->string.len && (file->string.data[i] != quote_used)) {
+				i++;
+			}
+
+			if (i < file->string.len) {
+				i++;
+			}
+
+			_token_push(file, LUA_TOKEN_STRING, start, i - start);
+		
+		// Comment
+		} else if (file->string.data[i] == '-' && (i + 1) < file->string.len && file->string.data[i + 1] == '-') {
+			const size_t start = i;
+			
+			while (i < file->string.len && file->string.data[i] != '\n') {
+				i++;
+			}
+
+			_token_push(file, LUA_TOKEN_COMMENT, start, i - start);
+
+		// Whitespace
+		} else if (is_whitespace(c)) {
+			size_t start = i;
+			while (i < file->string.len && (is_whitespace(file->string.data[i]))) {
+				i++;
+			}
+
+			_token_push(file, LUA_TOKEN_WHITESPACE, start, i - start);
+		
+		// Operator, brackets
+		} else {
+			_token_push(file, LUA_TOKEN_OPERATOR, i, 1);
+
+			i++;
+		}
+	}
+
+	// For debugging
+	// _print_token_list(file);
 }
 
 static size_t _pos_to_line_index(file_t *file, size_t pos) {
@@ -149,8 +327,8 @@ size_t file_move_pos_vertical(file_t *file, int pos, int64_t amount) {
 	size_t line_index = _pos_to_line_index(file, pos);
 	int64_t new_line_index =clamp_int(line_index + amount, 0, file->edit_state.lines.len - 1);
 	
-	line_t *line = &file->edit_state.lines.data[line_index];
-	line_t *prev_line = &file->edit_state.lines.data[new_line_index];
+	string_reference_t *line = &file->edit_state.lines.data[line_index];
+	string_reference_t *prev_line = &file->edit_state.lines.data[new_line_index];
 
 	int64_t offset = pos - line->start;
 	if (offset > prev_line->len) offset = prev_line->len;

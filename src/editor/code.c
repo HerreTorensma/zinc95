@@ -36,7 +36,7 @@ static int _screen_pos_to_file_pos(file_t *file, font_t *font, rect_t rect, poin
 	int line_index = adjusted_pos.y / (font->height + font->vertical_space);
 	line_index = clamp_int(line_index, 0, file->edit_state.lines.len - 1);
 
-	line_t *line = &file->edit_state.lines.data[line_index];
+	string_reference_t *line = &file->edit_state.lines.data[line_index];
 
 	int offset_from_line_with_tabs_expanded = adjusted_pos.x / (font->widths[0] + font->horizontal_space);
 
@@ -69,6 +69,9 @@ static void _remove_selection_if_exists(file_t *file) {
 	}
 }
 
+// TODO: split into multiple functions
+// and make sure all the things don't intefere with each other
+// So if one function returns some value that something happened the next one doesnt get executed
 static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_editor_config_t config) {
 	// --- Keyboard ---
 	char c = input_get_as_char();
@@ -243,6 +246,15 @@ static void _if_a_bigger_swap(size_t *a, size_t *b) {
 	}
 }
 
+static void _draw_selection_rect_for_char(computer_t *computer, file_t *file, font_t *font, int x, int y, int width_in_chars, color_t color, int index) {
+	size_t temp_selection_start = file->edit_state.selection_start;
+	size_t temp_selection_end = file->edit_state.selection_end;
+	_if_a_bigger_swap(&temp_selection_start, &temp_selection_end);
+	if (file_does_selection_exist(file) && index >= temp_selection_start && index < temp_selection_end) {
+		gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(x, y, (font->widths[0] + font->horizontal_space) * width_in_chars, font->height + font->vertical_space), color);
+	}
+}
+
 static void _file_draw(computer_t *computer, file_t *file, rect_t rect, code_editor_config_t config) {
 	font_t *font = &computer->ram->fonts[config.font_index];
 
@@ -252,87 +264,67 @@ static void _file_draw(computer_t *computer, file_t *file, rect_t rect, code_edi
 	{
 		int new_x = rect.x;
 		int new_y = rect.y - (file->edit_state.scroll_amount * (font->height + font->horizontal_space));
-
+	
 		size_t line_index = 0;
-
-		for (size_t i = 0; i < file->string.len; i++) {
-			// Commented this out for now, might add it back later not sure yet
-			if (file->string.data[i] == '\n') {
-				// Selection
-				{
-					size_t temp_selection_start = file->edit_state.selection_start;
-					size_t temp_selection_end = file->edit_state.selection_end;
-					_if_a_bigger_swap(&temp_selection_start, &temp_selection_end);
-					if (file_does_selection_exist(file) && i >= temp_selection_start && i < temp_selection_end) {
-						gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(new_x, new_y, font->widths[0] + font->horizontal_space, font->height + font->vertical_space), config.selection_color);
+	
+		size_t global_index = 0;
+	
+		for (size_t i = 0; i < file->edit_state.tokens.len; i++) {
+			string_reference_t string_reference = file->edit_state.tokens.data[i].string_reference;
+			string_t string = string_view(file->string, string_reference.start, string_reference.len);
+	
+			for (size_t j = 0; j < string.len; j++) {
+				// Commented this out for now, might add it back later not sure yet
+				if (string.data[j] == '\n') {
+					// Selection
+					_draw_selection_rect_for_char(computer, file, font, new_x, new_y, 1, config.selection_color, string_reference.start + j);
+	
+					new_x = rect.x;
+					new_y += font->height + font->vertical_space;
+					line_index++;
+	
+					if (j != file->edit_state.cursor_pos - 1) {
+						_draw_selection_rect_for_char(computer, file, font, new_x, new_y, 1, config.selection_color, string_reference.start + j);
+	
+					}
+					continue;
+				}
+	
+				// Clipping
+				if (line_index < file->edit_state.scroll_amount || line_index > file->edit_state.scroll_amount + lines_in_rect) {
+					continue;
+				}
+	
+				if (string.data[j] == '\t') {
+					_draw_selection_rect_for_char(computer, file, font, new_x, new_y, config.tab_size, config.selection_color, string_reference.start + j);
+	
+					new_x += (font->widths[' ' - VISIBLE_CHARACTERS_START] + font->horizontal_space) * config.tab_size;
+	
+					continue;
+				}
+	
+				_draw_selection_rect_for_char(computer, file, font, new_x, new_y, 1, config.selection_color, string_reference.start + j);
+	
+				// Get the correct sprite index keeping in mind some fonts could have multiple sprites per character (not tested for more than 1 horizontal sprite)
+				int char_index = string.data[j] - VISIBLE_CHARACTERS_START;
+				int x_offset = (char_index % (SPRITES_PER_ROW / font->sprite_width)) * font->sprite_width;
+				int y_offset = (char_index / (SPRITES_PER_ROW / font->sprite_width)) * font->sprite_height;
+				int sprite_index = font->sprite_index + x_offset + (y_offset * SPRITES_PER_ROW);
+	
+				rect_t rect = sprite_index_to_spritesheet_rect(sprite_index, font->sprite_width, font->sprite_height);
+	
+				for (int k = 0; k < rect.h; k++) {
+					for (int l = 0; l < rect.w; l++) {
+						color_t pixel_color = gfx_spritesheet_get_pixel(&computer->ram->spritesheet, (point_t){rect.x + l, rect.y + k});
+	
+						if (pixel_color != font->color_key && pixel_color != font->seperator_color) {
+							gfx_set_pixel(&computer->ram->framebuffer, new_x + l, new_y + k, config.token_colors[file->edit_state.tokens.data[i].type]);
+						}
 					}
 				}
-
-				new_x = rect.x;
-				new_y += font->height + font->vertical_space;
-				line_index++;
-
-				if (i != file->edit_state.cursor_pos - 1) {
-					size_t temp_selection_start = file->edit_state.selection_start;
-					size_t temp_selection_end = file->edit_state.selection_end;
-					_if_a_bigger_swap(&temp_selection_start, &temp_selection_end);
-					if (file_does_selection_exist(file) && i >= temp_selection_start && i < temp_selection_end) {
-						gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(new_x, new_y, font->widths[0] + font->horizontal_space, font->height + font->vertical_space), config.selection_color);
-					}
-				}
-				continue;
+	
+				new_x += font->widths[string.data[j] - VISIBLE_CHARACTERS_START] + font->horizontal_space;
 			}
-
-			// Clipping
-			if (line_index < file->edit_state.scroll_amount || line_index > file->edit_state.scroll_amount + lines_in_rect) {
-				continue;
-			}
-
-			if (file->string.data[i] == '\t') {
-				// Selection
-				{
-					size_t temp_selection_start = file->edit_state.selection_start;
-					size_t temp_selection_end = file->edit_state.selection_end;
-					_if_a_bigger_swap(&temp_selection_start, &temp_selection_end);
-					if (file_does_selection_exist(file) && i >= temp_selection_start && i < temp_selection_end) {
-						gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(new_x, new_y, (font->widths[0] + font->horizontal_space) * config.tab_size, font->height + font->vertical_space), config.selection_color);
-					}
-				}
-
-				new_x += (font->widths[' ' - VISIBLE_CHARACTERS_START] + font->horizontal_space) * config.tab_size;
-
-				continue;
-			}
-
-			// Selection
-			{
-				size_t temp_selection_start = file->edit_state.selection_start;
-				size_t temp_selection_end = file->edit_state.selection_end;
-				_if_a_bigger_swap(&temp_selection_start, &temp_selection_end);
-				if (file_does_selection_exist(file) && i >= temp_selection_start && i < temp_selection_end) {
-					gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(new_x, new_y, font->widths[0] + font->horizontal_space, font->height + font->vertical_space), config.selection_color);
-				}
-			}
-
-			// Get the correct sprite index keeping in mind some fonts could have multiple sprites per character (not tested for more than 1 horizontal sprite)
-			int char_index = file->string.data[i] - VISIBLE_CHARACTERS_START;
-			int x_offset = (char_index % (SPRITES_PER_ROW / font->sprite_width)) * font->sprite_width;
-			int y_offset = (char_index / (SPRITES_PER_ROW / font->sprite_width)) * font->sprite_height;
-			int sprite_index = font->sprite_index + x_offset + (y_offset * SPRITES_PER_ROW);
-
-			rect_t rect = sprite_index_to_spritesheet_rect(sprite_index, font->sprite_width, font->sprite_height);
-
-			for (int i = 0; i < rect.h; i++) {
-				for (int j = 0; j < rect.w; j++) {
-					color_t pixel_color = gfx_spritesheet_get_pixel(&computer->ram->spritesheet, (point_t){rect.x + j, rect.y + i});
-
-					if (pixel_color != font->color_key && pixel_color != font->seperator_color) {
-						gfx_set_pixel(&computer->ram->framebuffer, new_x + j, new_y + i, COLOR_BLACK);
-					}
-				}
-			}
-
-			new_x += font->widths[file->string.data[i] - VISIBLE_CHARACTERS_START] + font->horizontal_space;
 		}
 	}
 
