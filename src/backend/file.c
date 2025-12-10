@@ -42,6 +42,12 @@ static void _compute_lines(file_t *file) {
 	*/
 }
 
+static void _compute_tokens(file_t *file) {
+	array_init(&file->edit_state.tokens, get_heap_allocator());
+
+	
+}
+
 static size_t _pos_to_line_index(file_t *file, size_t pos) {
 	for (size_t i = 0; i < file->edit_state.lines.len; i++) {
 		if (file->edit_state.lines.data[i].start > pos) {
@@ -57,7 +63,7 @@ static size_t _pos_to_line_index(file_t *file, size_t pos) {
 
 static void _trigger_on_edit(file_t *file) {
 	_compute_lines(file);
-	// TODO: compute tokens
+	_compute_tokens(file);
 }
 
 // Resizs the string if necessary
@@ -117,10 +123,9 @@ void file_remove_section(file_t *file, int pos, size_t size) {
 		return;
 	}
 	
-	// memmove(file->string.data - size, file->string.data, file->string.len - pos);
 	memmove(file->string.data + pos, file->string.data + pos + size, file->string.len - pos);
-	file->string.len -= size;
 	_file_reserve(file, file->string.len - size);
+	file->string.len -= size;
 
 	_trigger_on_edit(file);
 }
@@ -155,7 +160,7 @@ size_t file_move_pos_vertical(file_t *file, int pos, int64_t amount) {
 	return pos;
 }
 
-bool does_selection_exist(file_t *file) {
+bool file_does_selection_exist(file_t *file) {
 	return file->edit_state.selection_start != file->edit_state.selection_end;
 }
 
@@ -171,4 +176,20 @@ string_t file_get_name(file_t *file) {
 	}
 
 	return view;
+}
+
+// Swaps the selection_start and selection_end if necessary
+void file_fix_selection(file_t *file) {
+	if (file->edit_state.selection_start > file->edit_state.selection_end) {
+		size_t temp = file->edit_state.selection_start;
+		file->edit_state.selection_start = file->edit_state.selection_end;
+		file->edit_state.selection_end = temp;
+	}
+}
+
+void file_deselect(file_t *file) {
+	file->edit_state.selection_start = file->edit_state.cursor_pos;
+	file->edit_state.selection_end = file->edit_state.cursor_pos;
+	// file->edit_state.selection_start = 0;
+	// file->edit_state.selection_end = 0;
 }

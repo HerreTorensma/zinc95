@@ -27,285 +27,7 @@ void code_editor_init(computer_t *computer) {
 
 }
 
-void _if_a_bigger_swap(size_t *a, size_t *b) {
-	if (*a > *b) {
-		size_t temp = *a;
-		*a = *b;
-		*b = temp;
-	}
-}
-
-// Swaps the selection_start and selection_end if necessary
-void _fix_selection(file_t *file) {
-	if (file->edit_state.selection_start > file->edit_state.selection_end) {
-		size_t temp = file->edit_state.selection_start;
-		file->edit_state.selection_start = file->edit_state.selection_end;
-		file->edit_state.selection_end = temp;
-	}
-}
-
-static void _file_deselect(file_t *file) {
-	file->edit_state.selection_start = file->edit_state.cursor_pos;
-	file->edit_state.selection_end = file->edit_state.cursor_pos;
-}
-
-// Handle all the character inputs
-static void _handle_char_input(computer_t *computer, file_t *file) {
-	if (input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL)) {
-		return;
-	}
-
-	// Letters
-	if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
-		for (int i = KEY_A; i <= KEY_Z; i++) {
-			if (input_key_pressed_or_long_pressed(i)) {
-				file_insert_char_at(file, file->edit_state.cursor_pos, 'A' + (i - KEY_A));
-				_file_deselect(file);
-				file->edit_state.cursor_pos++;
-			}
-		}
-	} else {
-		for (int i = KEY_A; i <= KEY_Z; i++) {
-			if (input_key_pressed_or_long_pressed(i)) {
-				file_insert_char_at(file, file->edit_state.cursor_pos, 'a' + (i - KEY_A));
-				_file_deselect(file);
-				file->edit_state.cursor_pos++;
-			}
-		}
-	}
-
-	// Number row
-	if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
-		if (input_key_pressed_or_long_pressed(KEY_1)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '!');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_2)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '@');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_3)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '#');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_4)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '$');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_5)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '%');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_6)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '^');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_7)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '&');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_8)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '*');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_9)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '(');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_0)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, ')');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-	} else {
-		for (int i = 0; i <= 9; i++) {
-			if (input_key_pressed_or_long_pressed(KEY_0 + i)) {
-				file_insert_char_at(file, file->edit_state.cursor_pos, '0' + i);
-				_file_deselect(file);
-				file->edit_state.cursor_pos++;
-			}
-			if (input_key_pressed_or_long_pressed(KEY_NUM0 + i)) {
-				file_insert_char_at(file, file->edit_state.cursor_pos, '0' + i);	
-				_file_deselect(file);
-				file->edit_state.cursor_pos++;
-			}
-		}
-	}
-
-	// Other characters
-	if (input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT)) {
-		if (input_key_pressed_or_long_pressed(KEY_MINUS)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '_');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_EQUALS)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '+');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_LEFTBRACKET)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '{');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_RIGHTBRACKET)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '}');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_BACKSLASH)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '|');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_SEMICOLON)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, ':');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_APOSTROPHE)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '\"');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_COMMA)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '<');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_PERIOD)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '>');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_SLASH)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '?');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_GRAVE)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '~');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-	} else {
-		if (input_key_pressed_or_long_pressed(KEY_MINUS)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '-');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_EQUALS)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '=');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_LEFTBRACKET)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '[');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_RIGHTBRACKET)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, ']');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_BACKSLASH)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '\\');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_SEMICOLON)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, ';');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_APOSTROPHE)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '\'');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_COMMA)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, ',');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_PERIOD)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '.');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_SLASH)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '/');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_GRAVE)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '`');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-
-		// Numpad
-		if (input_key_pressed_or_long_pressed(KEY_NUMDIVIDE)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '/');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_NUMMULTIPLY)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '*');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_NUMPLUS)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '+');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_NUMMINUS)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '-');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		if (input_key_pressed_or_long_pressed(KEY_NUMPERIOD)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '.');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-
-		// Tab
-		if (input_key_pressed_or_long_pressed(KEY_TAB)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '\t');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-
-		// Space
-		if (input_key_pressed_or_long_pressed(KEY_SPACE)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, ' ');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-		
-		// Newline
-		if (input_key_pressed_or_long_pressed(KEY_RETURN) || input_key_pressed_or_long_pressed(KEY_NUMENTER)) {
-			file_insert_char_at(file, file->edit_state.cursor_pos, '\n');
-			_file_deselect(file);
-			file->edit_state.cursor_pos++;
-		}
-	}
-}
-
-static int _screen_pos_to_file_pos(file_t *file, font_t *font, rect_t rect, point_t pos) {
+static int _screen_pos_to_file_pos(file_t *file, font_t *font, rect_t rect, point_t pos, int tab_size) {
 	point_t adjusted_pos = {
 		pos.x - rect.x + (font->widths[0] + font->horizontal_space) / 2,
 		pos.y - rect.y + (file->edit_state.scroll_amount * (font->height + font->vertical_space)),
@@ -316,34 +38,45 @@ static int _screen_pos_to_file_pos(file_t *file, font_t *font, rect_t rect, poin
 
 	line_t *line = &file->edit_state.lines.data[line_index];
 
-	int offset_from_line = adjusted_pos.x / (font->widths[0] + font->horizontal_space);
-	offset_from_line = clamp_int(offset_from_line, 0, line->len);
+	int offset_from_line_with_tabs_expanded = adjusted_pos.x / (font->widths[0] + font->horizontal_space);
+
+	int offset_from_line = offset_from_line_with_tabs_expanded;
+	{
+		string_t thing = string_view(file->string, line->start, offset_from_line);
+		
+		for (size_t i = 0; i < thing.len; i++) {
+			if (thing.data[i] == '\t') {
+				offset_from_line -= (tab_size - 1);
+			}
+		}
+		
+		offset_from_line = clamp_int(offset_from_line, 0, line->len);
+	}
 
 	int final_pos = clamp_int(line->start + offset_from_line, 0, file->string.len);
 
 	return final_pos;
 }
 
+static void _remove_selection_if_exists(file_t *file) {
+	if (file_does_selection_exist(file)) {
+		file_fix_selection(file);
+
+		file_remove_section(file, file->edit_state.selection_start, file->edit_state.selection_end - file->edit_state.selection_start);
+		file->edit_state.cursor_pos = file->edit_state.selection_start;
+		file_deselect(file);
+		file->edit_state.supress_mouse_selection = true;
+	}
+}
+
 static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_editor_config_t config) {
-	point_t mouse_pos = input_get_mouse_pos();
-
-	if (point_in_rect(mouse_pos, rect)) {
-		input_set_cursor_style(CURSOR_STYLE_TEXT);
-	}
-
-	if (input_mouse_scrolled(SCROLL_DIR_DOWN)) {
-		file->edit_state.scroll_amount += config.scroll_speed;
-
-		if (file->edit_state.scroll_amount > file->edit_state.lines.len - 1) {
-			file->edit_state.scroll_amount = file->edit_state.lines.len - 1;
-		}
-	}
-	if (input_mouse_scrolled(SCROLL_DIR_UP)) {
-		file->edit_state.scroll_amount -= config.scroll_speed;
-
-		if (file->edit_state.scroll_amount < 0) {
-			file->edit_state.scroll_amount = 0;
-		}
+	// --- Keyboard ---
+	char c = input_get_as_char();
+	if (!(c == '\0' || c == '\b')) {
+		_remove_selection_if_exists(file);
+		
+		file_insert_char_at(file, file->edit_state.cursor_pos, c);
+		file->edit_state.cursor_pos++;
 	}
 
 	if (input_key_pressed_or_long_pressed(KEY_LEFT)) {
@@ -351,10 +84,10 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 			file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos - 1, 0, file->string.len);
 			file->edit_state.selection_end = file->edit_state.cursor_pos;
 		} else {
-			if (!does_selection_exist(file)) {
+			if (!file_does_selection_exist(file)) {
 				file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos - 1, 0, file->string.len);
 			}
-			_file_deselect(file);
+			file_deselect(file);
 		}
 		printf("cursor pos: %d\n", file->edit_state.cursor_pos);
 	}
@@ -363,19 +96,20 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 			file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos + 1, 0, file->string.len);
 			file->edit_state.selection_end = file->edit_state.cursor_pos;
 		} else {
-			if (!does_selection_exist(file)) {
+			if (!file_does_selection_exist(file)) {
 				file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos + 1, 0, file->string.len);
 			}
-			_file_deselect(file);
+			file_deselect(file);
 		}
 		printf("cursor pos: %d\n", file->edit_state.cursor_pos);
 	}
 
 	if (input_key_pressed(KEY_LSHIFT)) {
 		file->edit_state.selection_start = file->edit_state.cursor_pos;
+		file->edit_state.selection_end = file->edit_state.cursor_pos;
 	}
 	if (input_key_released(KEY_LSHIFT)) {
-		_fix_selection(file);
+		file_fix_selection(file);
 	}
 
 	if (input_key_pressed_or_long_pressed(KEY_UP)) {
@@ -385,7 +119,7 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 		if (input_key_held(KEY_LSHIFT)) {
 			file->edit_state.selection_end = file->edit_state.cursor_pos;
 		} else {
-			_file_deselect(file);
+			file_deselect(file);
 		}
 	}
 	if (input_key_pressed_or_long_pressed(KEY_DOWN)) {
@@ -395,14 +129,14 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 		if (input_key_held(KEY_LSHIFT)) {
 			file->edit_state.selection_end = file->edit_state.cursor_pos;
 		} else {
-			_file_deselect(file);
+			file_deselect(file);
 		}
 	}
 
 	if (input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL)) {
 		// Copy
 		if (input_key_pressed(KEY_C)) {
-			_fix_selection(file);
+			file_fix_selection(file);
 			string_t clipboard = string_view(file->string, file->edit_state.selection_start, file->edit_state.selection_end - file->edit_state.selection_start);
 			set_clipboard_text(get_heap_allocator(), clipboard);
 		}
@@ -424,34 +158,48 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 		}
 	}
 
-	_handle_char_input(computer, file);
+	if (input_key_pressed_or_long_pressed(KEY_BACKSPACE)) {
+		printf("selection start: %d, selection end: %d\n", file->edit_state.selection_start, file->edit_state.selection_end);
+		
+		if (file_does_selection_exist(file)) {
+			_remove_selection_if_exists(file);
+		} else {
+			file_remove_section(file, file->edit_state.cursor_pos - 1, 1);
+			file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos - 1, 0, file->string.len);
+		}
+	}
+
+	// --- Mouse ---
+	point_t mouse_pos = input_get_mouse_pos();
+
+	if (point_in_rect(mouse_pos, rect)) {
+		input_set_cursor_style(CURSOR_STYLE_TEXT);
+	}
+
+	if (input_mouse_scrolled(SCROLL_DIR_DOWN)) {
+		file->edit_state.scroll_amount += config.scroll_speed;
+	}
+	if (input_mouse_scrolled(SCROLL_DIR_UP)) {
+		file->edit_state.scroll_amount -= config.scroll_speed;
+	}
+	file->edit_state.scroll_amount = clamp_int(file->edit_state.scroll_amount, 0, file->edit_state.lines.len - 1);
 
 	if (point_in_rect(input_get_mouse_pos(), rect)) {
 		if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
 			font_t *font = &computer->ram->fonts[config.font_index];
-			file->edit_state.cursor_pos = _screen_pos_to_file_pos(file, font, rect, input_get_mouse_pos());
+			file->edit_state.cursor_pos = _screen_pos_to_file_pos(file, font, rect, input_get_mouse_pos(), config.tab_size);
 			file->edit_state.selection_start = file->edit_state.cursor_pos;
 		}
 	
-		if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+		if (!file->edit_state.supress_mouse_selection && input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
 			font_t *font = &computer->ram->fonts[config.font_index];
-			file->edit_state.cursor_pos = _screen_pos_to_file_pos(file, font, rect, input_get_mouse_pos());
+			file->edit_state.cursor_pos = _screen_pos_to_file_pos(file, font, rect, input_get_mouse_pos(), config.tab_size);
 			file->edit_state.selection_end = file->edit_state.cursor_pos;
 		}
 	
 		if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
-			_fix_selection(file);
-		}
-	}
-
-	if (input_key_pressed_or_long_pressed(KEY_BACKSPACE)) {
-		if (does_selection_exist(file)) {
-			file_remove_section(file, file->edit_state.selection_start, file->edit_state.selection_end - file->edit_state.selection_start);
-			file->edit_state.cursor_pos = file->edit_state.selection_start;
-			_file_deselect(file);
-		} else {
-			file_remove_section(file, file->edit_state.cursor_pos - 1, 1);
-			file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos - 1, 0, file->string.len);
+			file_fix_selection(file);
+			file->edit_state.supress_mouse_selection = false;
 		}
 	}
 }
@@ -487,6 +235,14 @@ static point_t _file_cursor_pos_to_screen_pos(computer_t *computer, file_t *file
 	return pos;
 }
 
+static void _if_a_bigger_swap(size_t *a, size_t *b) {
+	if (*a > *b) {
+		size_t temp = *a;
+		*a = *b;
+		*b = temp;
+	}
+}
+
 static void _file_draw(computer_t *computer, file_t *file, rect_t rect, code_editor_config_t config) {
 	font_t *font = &computer->ram->fonts[config.font_index];
 
@@ -507,7 +263,7 @@ static void _file_draw(computer_t *computer, file_t *file, rect_t rect, code_edi
 					size_t temp_selection_start = file->edit_state.selection_start;
 					size_t temp_selection_end = file->edit_state.selection_end;
 					_if_a_bigger_swap(&temp_selection_start, &temp_selection_end);
-					if (does_selection_exist(file) && i >= temp_selection_start && i < temp_selection_end) {
+					if (file_does_selection_exist(file) && i >= temp_selection_start && i < temp_selection_end) {
 						gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(new_x, new_y, font->widths[0] + font->horizontal_space, font->height + font->vertical_space), config.selection_color);
 					}
 				}
@@ -520,7 +276,7 @@ static void _file_draw(computer_t *computer, file_t *file, rect_t rect, code_edi
 					size_t temp_selection_start = file->edit_state.selection_start;
 					size_t temp_selection_end = file->edit_state.selection_end;
 					_if_a_bigger_swap(&temp_selection_start, &temp_selection_end);
-					if (does_selection_exist(file) && i >= temp_selection_start && i < temp_selection_end) {
+					if (file_does_selection_exist(file) && i >= temp_selection_start && i < temp_selection_end) {
 						gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(new_x, new_y, font->widths[0] + font->horizontal_space, font->height + font->vertical_space), config.selection_color);
 					}
 				}
@@ -538,13 +294,12 @@ static void _file_draw(computer_t *computer, file_t *file, rect_t rect, code_edi
 					size_t temp_selection_start = file->edit_state.selection_start;
 					size_t temp_selection_end = file->edit_state.selection_end;
 					_if_a_bigger_swap(&temp_selection_start, &temp_selection_end);
-					if (does_selection_exist(file) && i >= temp_selection_start && i < temp_selection_end) {
+					if (file_does_selection_exist(file) && i >= temp_selection_start && i < temp_selection_end) {
 						gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(new_x, new_y, (font->widths[0] + font->horizontal_space) * config.tab_size, font->height + font->vertical_space), config.selection_color);
 					}
 				}
 
 				new_x += (font->widths[' ' - VISIBLE_CHARACTERS_START] + font->horizontal_space) * config.tab_size;
-
 
 				continue;
 			}
@@ -554,7 +309,7 @@ static void _file_draw(computer_t *computer, file_t *file, rect_t rect, code_edi
 				size_t temp_selection_start = file->edit_state.selection_start;
 				size_t temp_selection_end = file->edit_state.selection_end;
 				_if_a_bigger_swap(&temp_selection_start, &temp_selection_end);
-				if (does_selection_exist(file) && i >= temp_selection_start && i < temp_selection_end) {
+				if (file_does_selection_exist(file) && i >= temp_selection_start && i < temp_selection_end) {
 					gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(new_x, new_y, font->widths[0] + font->horizontal_space, font->height + font->vertical_space), config.selection_color);
 				}
 			}

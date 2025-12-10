@@ -24,6 +24,8 @@ typedef struct lua_token {
 	lua_token_type_t type;
 } lua_token_t;
 
+ARRAY_DEFINE(lua_token_t)
+
 typedef struct line {
 	size_t start;
 	size_t len;
@@ -42,6 +44,8 @@ typedef struct file {
 		int selection_end;
 		int scroll_amount; // Scroll amount in lines
 		line_t_array_t lines;
+		lua_token_t_array_t tokens;
+		bool supress_mouse_selection; // Set to true when the selection was just removed, to prevent from instantly making a new selection
 	} edit_state;
 } file_t;
 
@@ -66,7 +70,12 @@ size_t get_token_index_around_pos(file_t *file, int pos);
 
 size_t file_move_pos_vertical(file_t *file, int pos, int64_t amount);
 
-bool does_selection_exist(file_t *file);
+bool file_does_selection_exist(file_t *file);
 
 // Returns a string view to the first line of the file with -- and whitespace at the beginning trimmed off
 string_t file_get_name(file_t *file);
+
+// Swaps the selection_start and selection_end if necessary
+void file_fix_selection(file_t *file);
+
+void file_deselect(file_t *file);
