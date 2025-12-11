@@ -69,19 +69,10 @@ static void _remove_selection_if_exists(file_t *file) {
 	}
 }
 
-// TODO: split into multiple functions
-// and make sure all the things don't intefere with each other
-// So if one function returns some value that something happened the next one doesnt get executed
-static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_editor_config_t config) {
-	// --- Keyboard ---
-	char c = input_get_as_char();
-	if (!(c == '\0' || c == '\b')) {
-		_remove_selection_if_exists(file);
-		
-		file_insert_char_at(file, file->edit_state.cursor_pos, c);
-		file->edit_state.cursor_pos++;
-	}
-
+// Returns true if a keybind with a letter in it was activated (so the char input can be skipped)
+// Returns false otherwise
+// TODO: make keybind system
+static bool _handle_keybinds(computer_t *computer, file_t *file) {
 	if (input_key_pressed_or_long_pressed(KEY_LEFT)) {
 		if (input_key_held(KEY_LSHIFT)) {
 			file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos - 1, 0, file->string.len);
@@ -92,7 +83,6 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 			}
 			file_deselect(file);
 		}
-		printf("cursor pos: %d\n", file->edit_state.cursor_pos);
 	}
 	if (input_key_pressed_or_long_pressed(KEY_RIGHT)) {
 		if (input_key_held(KEY_LSHIFT)) {
@@ -104,7 +94,6 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 			}
 			file_deselect(file);
 		}
-		printf("cursor pos: %d\n", file->edit_state.cursor_pos);
 	}
 
 	if (input_key_pressed(KEY_LSHIFT)) {
@@ -142,6 +131,8 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 			file_fix_selection(file);
 			string_t clipboard = string_view(file->string, file->edit_state.selection_start, file->edit_state.selection_end - file->edit_state.selection_start);
 			set_clipboard_text(get_heap_allocator(), clipboard);
+
+			return true;
 		}
 		
 		// Paste
@@ -151,6 +142,8 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 			file_insert_string_at(file, file->edit_state.cursor_pos, clipboard);
 			heap_dealloc(clipboard.data);
 			file->edit_state.cursor_pos += clipboard.len;
+
+			return true;
 		}
 
 		// Select all
@@ -158,6 +151,8 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 			file->edit_state.selection_start = 0;
 			file->edit_state.selection_end = file->string.len - 1;
 			file->edit_state.cursor_pos = file->string.len - 1;
+
+			return true;
 		}
 	}
 
@@ -169,6 +164,25 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 		} else {
 			file_remove_section(file, file->edit_state.cursor_pos - 1, 1);
 			file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos - 1, 0, file->string.len);
+		}
+	}
+
+	return false;
+}
+
+// TODO: split into multiple functions
+// and make sure all the things don't intefere with each other
+// So if one function returns some value that something happened the next one doesnt get executed
+static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_editor_config_t config) {
+	// --- Keyboard ---
+
+	if (!_handle_keybinds(computer, file)) {
+		char c = input_get_as_char();
+		if (!(c == '\0' || c == '\b')) {
+			_remove_selection_if_exists(file);
+			
+			file_insert_char_at(file, file->edit_state.cursor_pos, c);
+			file->edit_state.cursor_pos++;
 		}
 	}
 
