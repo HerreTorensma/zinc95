@@ -170,6 +170,7 @@ typedef struct code_editor_config {
 	uint8_t font_index;
 
 	// color_t background_color;
+	color_t line_number_color;
 	color_t token_colors[LUA_TOKEN_COUNT];
 	color_t cursor_color;
 	color_t selection_color;

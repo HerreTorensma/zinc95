@@ -11,6 +11,8 @@
 #include "../backend/window.h"
 #include "../res.h"
 
+#define LINE_NUMBER_DIGITS_AMOUNT 4
+
 static struct {
 	point_t file_buttons_pos;
 	rect_t code_rect;
@@ -26,7 +28,7 @@ void code_editor_init(computer_t *computer) {
 
 }
 
-static int _screen_pos_to_file_pos(file_t *file, font_t *font, rect_t rect, point_t pos, int tab_size) {
+static int _screen_pos_to_file_pos(file_t *file, font_t *font, rect_t rect, point_t pos, int tab_size, int line_number_digits_amount) {
 	point_t adjusted_pos = {
 		pos.x - rect.x + (font->widths[0] + font->horizontal_space) / 2,
 		pos.y - rect.y + (file->edit_state.scroll_amount * (font->height + font->vertical_space)),
@@ -37,7 +39,8 @@ static int _screen_pos_to_file_pos(file_t *file, font_t *font, rect_t rect, poin
 
 	string_reference_t *line = &file->edit_state.lines.data[line_index];
 
-	int offset_from_line_with_tabs_expanded = adjusted_pos.x / (font->widths[0] + font->horizontal_space);
+	int offset_from_line_with_tabs_expanded = (adjusted_pos.x / (font->widths[0] + font->horizontal_space)) - (line_number_digits_amount + 1);
+	offset_from_line_with_tabs_expanded = clamp_int(offset_from_line_with_tabs_expanded, 0, line->len);
 
 	int offset_from_line = offset_from_line_with_tabs_expanded;
 	{
@@ -210,13 +213,13 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 	if (point_in_rect(input_get_mouse_pos(), rect)) {
 		if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
 			font_t *font = &computer->ram->fonts[config.font_index];
-			file->edit_state.cursor_pos = _screen_pos_to_file_pos(file, font, rect, input_get_mouse_pos(), config.tab_size);
+			file->edit_state.cursor_pos = _screen_pos_to_file_pos(file, font, rect, input_get_mouse_pos(), config.tab_size, LINE_NUMBER_DIGITS_AMOUNT);
 			file->edit_state.selection_start = file->edit_state.cursor_pos;
 		}
 	
 		if (!file->edit_state.supress_mouse_selection && input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
 			font_t *font = &computer->ram->fonts[config.font_index];
-			file->edit_state.cursor_pos = _screen_pos_to_file_pos(file, font, rect, input_get_mouse_pos(), config.tab_size);
+			file->edit_state.cursor_pos = _screen_pos_to_file_pos(file, font, rect, input_get_mouse_pos(), config.tab_size, LINE_NUMBER_DIGITS_AMOUNT);
 			file->edit_state.selection_end = file->edit_state.cursor_pos;
 		}
 	
@@ -285,14 +288,31 @@ static void _file_draw(computer_t *computer, file_t *file, rect_t rect, code_edi
 
 	size_t lines_in_rect = rect.h / (font->height + font->vertical_space);
 
+	int text_start_x = rect.x + ((LINE_NUMBER_DIGITS_AMOUNT + 1) * (font->widths[0] + font->horizontal_space));
+
+	// Line numbers
+	{
+		for (size_t i = 0; i <= lines_in_rect; i++) {
+			size_t line_index = file->edit_state.scroll_amount + i;
+			if (line_index >= file->edit_state.lines.len) {
+				break;
+			}
+
+			string_t line_number_string = temp_alloc_string(8);
+			// TODO: do another sprintf to make the format string? so the amount of digits is configurable
+			sprintf(line_number_string.data, "% 4d", (int)(line_index + 1));
+			line_number_string.len = strlen(line_number_string.data);
+
+			gui_draw_string(computer->ram, config.font_index, line_number_string, POINT(rect.x, rect.y + i * (font->height + font->vertical_space)), config.line_number_color);
+		}
+	}
+
 	// Text
 	{
-		int new_x = rect.x;
+		int new_x = text_start_x;
 		int new_y = rect.y - (file->edit_state.scroll_amount * (font->height + font->horizontal_space));
 	
 		size_t line_index = 0;
-	
-		size_t global_index = 0;
 	
 		for (size_t i = 0; i < file->edit_state.tokens.len; i++) {
 			string_reference_t string_reference = file->edit_state.tokens.data[i].string_reference;
@@ -304,7 +324,7 @@ static void _file_draw(computer_t *computer, file_t *file, rect_t rect, code_edi
 					// Selection
 					_draw_selection_rect_for_char(computer, file, font, new_x, new_y, 1, config.selection_color, string_reference.start + j, rect);
 	
-					new_x = rect.x;
+					new_x = text_start_x;
 					new_y += font->height + font->vertical_space;
 					line_index++;
 	
@@ -356,7 +376,8 @@ static void _file_draw(computer_t *computer, file_t *file, rect_t rect, code_edi
 	// Cursor
 	{
 		point_t start_pos = _file_cursor_pos_to_screen_pos(computer, file, font, config);
-		start_pos.x += rect.x;
+		// start_pos.x += rect.x;
+		start_pos.x += text_start_x;
 		start_pos.y += rect.y;
 		start_pos.x -= 1; // So the cursor doesnt overwrite the leftmost pixels of the character right of it
 		start_pos.y -= file->edit_state.scroll_amount * (font->height + font->vertical_space);

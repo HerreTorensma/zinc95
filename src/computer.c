@@ -61,6 +61,7 @@ void computer_load_resouces(computer_t *computer) {
 	gui_init_monospace_font_widths(computer->ram, 1, 5);
 
 	computer->ram->code_editor_config = (code_editor_config_t){
+		.line_number_color = COLOR_DARKGRAY,
 		.selection_color = COLOR_CYAN,
 		.cursor_color = COLOR_BLUE,
 		.scroll_speed = 3,
