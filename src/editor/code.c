@@ -9,16 +9,15 @@
 #include "../backend/gui.h"
 #include "../backend/file.h"
 #include "../backend/window.h"
+#include "../res.h"
 
-typedef struct layout {
+static struct {
 	point_t file_buttons_pos;
 	rect_t code_rect;
-} layout_t;
-
-static const layout_t _layout = {
+}
+_layout = {
 	.file_buttons_pos = {2, 22},
 	.code_rect = {{68 + 2, 24 + 2, 568 - 4, 452 - 4}},
-	// .code_rect = {{68 + 2 + 50, 24 + 2 + 50, 568 - 4 - 50, 452 - 4 - 50}},
 };
 
 static size_t _current_file_index = 0; 
@@ -69,10 +68,56 @@ static void _remove_selection_if_exists(file_t *file) {
 	}
 }
 
-// Returns true if a keybind with a letter in it was activated (so the char input can be skipped)
-// Returns false otherwise
-// TODO: make keybind system
+// Returns true if a keybind was activated (so the char input can be skipped), false otherwise
 static bool _handle_keybinds(computer_t *computer, file_t *file) {
+	if (is_keybind_pressed(g_keybinds.global.copy)) {
+		file_fix_selection(file);
+		string_t clipboard = string_view(file->string, file->edit_state.selection_start, file->edit_state.selection_end - file->edit_state.selection_start);
+		set_clipboard_text(get_heap_allocator(), clipboard);
+
+		return true;
+	}
+
+	if (is_keybind_pressed(g_keybinds.global.paste)) {
+		string_t clipboard = get_clipboard_text(get_heap_allocator());
+		file_insert_string_at(file, file->edit_state.cursor_pos, clipboard);
+		heap_dealloc(clipboard.data);
+		file->edit_state.cursor_pos += clipboard.len;
+
+		return true;
+	}
+
+	if (is_keybind_pressed(g_keybinds.global.cut)) {
+		file_fix_selection(file);
+		string_t clipboard = string_view(file->string, file->edit_state.selection_start, file->edit_state.selection_end - file->edit_state.selection_start);
+		set_clipboard_text(get_heap_allocator(), clipboard);
+
+		_remove_selection_if_exists(file);
+
+		return true;
+	}
+
+	if (is_keybind_pressed(g_keybinds.global.select_all)) {
+		file->edit_state.selection_start = 0;
+		file->edit_state.selection_end = file->string.len - 1;
+		file->edit_state.cursor_pos = file->string.len - 1;
+
+		return true;
+	}
+
+	return false;
+}
+
+// TODO: split into multiple functions
+// and make sure all the things don't intefere with each other
+// So if one function returns some value that something happened the next one doesnt get executed
+static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_editor_config_t config) {
+	bool any_keybind_executed = _handle_keybinds(computer, file);
+	if (any_keybind_executed) {
+		return;
+	}
+
+	// --- Keyboard ---
 	if (input_key_pressed_or_long_pressed(KEY_LEFT)) {
 		if (input_key_held(KEY_LSHIFT)) {
 			file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos - 1, 0, file->string.len);
@@ -125,37 +170,6 @@ static bool _handle_keybinds(computer_t *computer, file_t *file) {
 		}
 	}
 
-	if (input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL)) {
-		// Copy
-		if (input_key_pressed(KEY_C)) {
-			file_fix_selection(file);
-			string_t clipboard = string_view(file->string, file->edit_state.selection_start, file->edit_state.selection_end - file->edit_state.selection_start);
-			set_clipboard_text(get_heap_allocator(), clipboard);
-
-			return true;
-		}
-		
-		// Paste
-		if (input_key_pressed(KEY_V)) {
-			string_t clipboard = get_clipboard_text(get_heap_allocator());
-			printf("clipboard len: %zu\n", clipboard.len);
-			file_insert_string_at(file, file->edit_state.cursor_pos, clipboard);
-			heap_dealloc(clipboard.data);
-			file->edit_state.cursor_pos += clipboard.len;
-
-			return true;
-		}
-
-		// Select all
-		if (input_key_pressed(KEY_A)) {
-			file->edit_state.selection_start = 0;
-			file->edit_state.selection_end = file->string.len - 1;
-			file->edit_state.cursor_pos = file->string.len - 1;
-
-			return true;
-		}
-	}
-
 	if (input_key_pressed_or_long_pressed(KEY_BACKSPACE)) {
 		printf("selection start: %d, selection end: %d\n", file->edit_state.selection_start, file->edit_state.selection_end);
 		
@@ -167,16 +181,8 @@ static bool _handle_keybinds(computer_t *computer, file_t *file) {
 		}
 	}
 
-	return false;
-}
-
-// TODO: split into multiple functions
-// and make sure all the things don't intefere with each other
-// So if one function returns some value that something happened the next one doesnt get executed
-static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_editor_config_t config) {
-	// --- Keyboard ---
-
-	if (!_handle_keybinds(computer, file)) {
+	// --- Letters, digits, characters etc.
+	{
 		char c = input_get_as_char();
 		if (!(c == '\0' || c == '\b')) {
 			_remove_selection_if_exists(file);
@@ -260,7 +266,12 @@ static void _if_a_bigger_swap(size_t *a, size_t *b) {
 	}
 }
 
-static void _draw_selection_rect_for_char(computer_t *computer, file_t *file, font_t *font, int x, int y, int width_in_chars, color_t color, int index) {
+static void _draw_selection_rect_for_char(computer_t *computer, file_t *file, font_t *font, int x, int y, int width_in_chars, color_t color, int index, rect_t rect) {
+	// Don't draw if offscreen
+	if (y < rect.y || y >= rect.y + rect.h) {
+		return;
+	}
+	
 	size_t temp_selection_start = file->edit_state.selection_start;
 	size_t temp_selection_end = file->edit_state.selection_end;
 	_if_a_bigger_swap(&temp_selection_start, &temp_selection_end);
@@ -291,14 +302,14 @@ static void _file_draw(computer_t *computer, file_t *file, rect_t rect, code_edi
 				// Commented this out for now, might add it back later not sure yet
 				if (string.data[j] == '\n') {
 					// Selection
-					_draw_selection_rect_for_char(computer, file, font, new_x, new_y, 1, config.selection_color, string_reference.start + j);
+					_draw_selection_rect_for_char(computer, file, font, new_x, new_y, 1, config.selection_color, string_reference.start + j, rect);
 	
 					new_x = rect.x;
 					new_y += font->height + font->vertical_space;
 					line_index++;
 	
 					if (j != file->edit_state.cursor_pos - 1) {
-						_draw_selection_rect_for_char(computer, file, font, new_x, new_y, 1, config.selection_color, string_reference.start + j);
+						_draw_selection_rect_for_char(computer, file, font, new_x, new_y, 1, config.selection_color, string_reference.start + j, rect);
 	
 					}
 					continue;
@@ -310,14 +321,14 @@ static void _file_draw(computer_t *computer, file_t *file, rect_t rect, code_edi
 				}
 	
 				if (string.data[j] == '\t') {
-					_draw_selection_rect_for_char(computer, file, font, new_x, new_y, config.tab_size, config.selection_color, string_reference.start + j);
+					_draw_selection_rect_for_char(computer, file, font, new_x, new_y, config.tab_size, config.selection_color, string_reference.start + j, rect);
 	
 					new_x += (font->widths[' ' - VISIBLE_CHARACTERS_START] + font->horizontal_space) * config.tab_size;
 	
 					continue;
 				}
 	
-				_draw_selection_rect_for_char(computer, file, font, new_x, new_y, 1, config.selection_color, string_reference.start + j);
+				_draw_selection_rect_for_char(computer, file, font, new_x, new_y, 1, config.selection_color, string_reference.start + j, rect);
 	
 				// Get the correct sprite index keeping in mind some fonts could have multiple sprites per character (not tested for more than 1 horizontal sprite)
 				int char_index = string.data[j] - VISIBLE_CHARACTERS_START;
@@ -359,9 +370,9 @@ static void _file_draw(computer_t *computer, file_t *file, rect_t rect, code_edi
 static void _draw_file_buttons(computer_t *computer) {
 	// Draw buttons for files (this file is kinda dirty but it works)
 	for (size_t i = 0; i < computer->active_files_amount; i++) {
-		point_t pos = POINT(_layout.file_buttons_pos.x, _layout.file_buttons_pos.y + i * skin_layout.code_file_button.pressed_rect.h);
+		point_t pos = POINT(_layout.file_buttons_pos.x, _layout.file_buttons_pos.y + i * g_skin_layout.code_file_button.pressed_rect.h);
 		
-		if (gui_button(computer->ram, pos, skin_layout.code_file_button, _current_file_index == i)) {
+		if (gui_button(computer->ram, pos, g_skin_layout.code_file_button, _current_file_index == i)) {
 			if (_current_file_index == i) {
 				// TODO: see if I can't just replace this with a break statement
 				goto ignore_current_file;
@@ -407,7 +418,7 @@ static void _draw_file_buttons(computer_t *computer) {
 
 	// + button
 	if (computer->active_files_amount < FILES_AMOUNT) {
-		if (gui_button(computer->ram, POINT(_layout.file_buttons_pos.x, _layout.file_buttons_pos.y + computer->active_files_amount * skin_layout.code_file_button.pressed_rect.h), skin_layout.add_file_button, false)) {
+		if (gui_button(computer->ram, POINT(_layout.file_buttons_pos.x, _layout.file_buttons_pos.y + computer->active_files_amount * g_skin_layout.code_file_button.pressed_rect.h), g_skin_layout.add_file_button, false)) {
 			file_append_string(&computer->files[computer->active_files_amount], STR(""));
 			computer->active_files_amount++;
 		}

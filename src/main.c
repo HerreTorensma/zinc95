@@ -2,9 +2,6 @@
 Main
 */
 
-#include <stdio.h>
-#include <string.h>
-
 #include "backend/gfx.h"
 #include "computer.h"
 #include "backend/window.h"
@@ -17,6 +14,7 @@ Main
 #include "backend/txt.h"
 #include "common/io.h"
 #include "common/string.h"
+#include "res.h"
 
 #define SDL_MAIN_HANDLED
 
@@ -150,7 +148,7 @@ int main(int argc, char *argv[]) {
 
 		window_tick_start(&computer);
 
-		if (input_key_pressed(KEY_ESC)) {
+		if (is_keybind_pressed(g_keybinds.global.toggle_terminal)) {
 			computer.state++;
 			if (computer.state == STATE_IN_GAME + 1) {
 				computer.state = STATE_IN_SHELL;

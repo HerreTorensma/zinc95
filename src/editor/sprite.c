@@ -11,11 +11,12 @@
 #include "../backend/gui.h"
 #include "../common/mem.h"
 #include "shared.h"
+#include "../res.h"
 
 #define COLOR_SQUARE_SIZE 8
 
 // All GUI element rects and positions in one place
-typedef struct layout {
+static struct {
 	rect_t color_picker_rect;
 	rect_t sprite_editor_focus_rect;
 	rect_t sprite_editor_full_rect;
@@ -36,14 +37,10 @@ typedef struct layout {
 	point_t sprite_selector_buttons_start_pos;
 
 	point_t tools_start_pos;
-} layout_t;
-
-#define SPRITE_EDITOR_WIDTH 256
-#define SPRITE_EDITOR_HEIGHT 256
-
-static const layout_t _layout = {
+}
+_layout = {
 	.color_picker_rect = {{4, 388, 192, 88}},
-	.sprite_editor_focus_rect = {{192, 46, SPRITE_EDITOR_WIDTH, SPRITE_EDITOR_HEIGHT}},
+	.sprite_editor_focus_rect = {{192, 46, 256, 256}},
 	.sprite_editor_full_rect = {{0, 20, 620, 308}},
 
 	.selected_color_rect = {{4, 368, 16, 16}},
@@ -109,7 +106,7 @@ typedef struct change {
 
 typedef enum tool {
 	TOOL_SELECT,
-	TOOL_PENCIL,
+	TOOL_BRUSH,
 	TOOL_LINE,
 	TOOL_RECT,
 	TOOL_RECTF,
@@ -120,7 +117,7 @@ typedef enum tool {
 	TOOL_COUNT,
 } tool_t;
 
-static tool_t _selected_tool = TOOL_PENCIL;
+static tool_t _selected_tool = TOOL_BRUSH;
 
 // TODO: before i commit
 // I think that it is actually not necessary to track exactly which region to change, I can just save the currently_editing_rect to the undo stack
@@ -478,17 +475,35 @@ void sprite_editor_update(computer_t *computer) {
 	}
 
 	// Undo
-	if (input_key_held(KEY_LCTRL)) {
-		if (input_key_pressed(KEY_Z)) {
-			_undo(computer);
-		}
+	if (is_keybind_pressed(g_keybinds.global.undo)) {
+		_undo(computer);
 	}
+	// TODO: redo
 
 	// Swap primary and secondary selected color
-	if (input_key_pressed(KEY_X)) {
+	if (is_keybind_pressed(g_keybinds.sprite_editor.switch_primary_and_secondary_color)) {
 		color_t temp = _selected_color;
 		_selected_color = _secondary_selected_color;
 		_secondary_selected_color = temp;
+	}
+
+	if (is_keybind_pressed(g_keybinds.sprite_editor.select_tool)) {
+		_selected_tool = TOOL_SELECT;
+	}
+	if (is_keybind_pressed(g_keybinds.sprite_editor.brush_tool)) {
+		_selected_tool = TOOL_BRUSH;
+	}
+	if (is_keybind_pressed(g_keybinds.sprite_editor.line_tool)) {
+		_selected_tool = TOOL_LINE;
+	}
+	if (is_keybind_pressed(g_keybinds.sprite_editor.rect_tool)) {
+		_selected_tool = TOOL_RECT;
+	}
+	if (is_keybind_pressed(g_keybinds.sprite_editor.ellipse_tool)) {
+		_selected_tool = TOOL_ELLIPSE;
+	}
+	if (is_keybind_pressed(g_keybinds.sprite_editor.bucket_tool)) {
+		_selected_tool = TOOL_BUCKET;
 	}
 
 	// Zoom for sprite selector
@@ -529,7 +544,7 @@ void sprite_editor_update(computer_t *computer) {
 			case (TOOL_SELECT):
 				_tool_select(computer, _spritesheet_coord_under_mouse);
 				break;
-			case (TOOL_PENCIL):
+			case (TOOL_BRUSH):
 				_tool_pencil(computer, _spritesheet_coord_under_mouse);
 				break;
 			case (TOOL_LINE):
@@ -682,7 +697,7 @@ void sprite_editor_draw(computer_t *computer) {
 
 	// Draw cursor
 	{
-		if (_selected_tool >= TOOL_PENCIL && _selected_tool <= TOOL_BUCKET) {
+		if (_selected_tool >= TOOL_BRUSH && _selected_tool <= TOOL_BUCKET) {
 			if (point_in_rect(input_get_mouse_pos(), _layout.sprite_editor_full_rect)) {
 				point_t spritesheet_coord_under_mouse = cam_screen_to_world(&_camera, input_get_mouse_pos());
 
@@ -746,8 +761,8 @@ void sprite_editor_draw(computer_t *computer) {
 
 		bool old_val = (selected_sprite->flags & mask) != 0;
 
-		point_t pos = button_array_get_pos(&skin_layout.sprite_flag_buttons, _layout.sprite_flags_start_pos, i);
-		button_t button = button_array_get(&skin_layout.sprite_flag_buttons, i);
+		point_t pos = button_array_get_pos(&g_skin_layout.sprite_flag_buttons, _layout.sprite_flags_start_pos, i);
+		button_t button = button_array_get(&g_skin_layout.sprite_flag_buttons, i);
 		
 		bool new_val = gui_toggle_button(computer->ram, pos, button, old_val);
 		if (new_val == old_val) {
@@ -769,15 +784,15 @@ void sprite_editor_draw(computer_t *computer) {
 	}
 
 	// Color key
-	if (gui_button(computer->ram, _layout.color_key_button_pos, skin_layout.color_key_button, false)) {
+	if (gui_button(computer->ram, _layout.color_key_button_pos, g_skin_layout.color_key_button, false)) {
 		selected_sprite->color_key = _selected_color;
 	}
 	gfx_draw_filled_rect(fb_surf, _layout.color_key_rect, selected_sprite->color_key);
 
 	// Tools
-	for (int i = 0; i < skin_layout.sprite_tool_buttons.amount; i++) {
-		point_t pos = button_array_get_pos(&skin_layout.sprite_tool_buttons, _layout.tools_start_pos, i);
-		button_t button = button_array_get(&skin_layout.sprite_tool_buttons, i);
+	for (int i = 0; i < g_skin_layout.sprite_tool_buttons.amount; i++) {
+		point_t pos = button_array_get_pos(&g_skin_layout.sprite_tool_buttons, _layout.tools_start_pos, i);
+		button_t button = button_array_get(&g_skin_layout.sprite_tool_buttons, i);
 
 		if (gui_button(computer->ram, pos, button, i == _selected_tool)) {
 			_selected_tool = i;

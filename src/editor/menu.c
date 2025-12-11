@@ -3,6 +3,7 @@
 #include "../backend/input.h"
 #include "../backend/gui.h"
 #include "../backend/gfx.h"
+#include "../res.h"
 
 #include "code.h"
 #include "sprite.h"
@@ -24,7 +25,7 @@ typedef enum workspace_type {
 
 static workspace_type_t _active_workspace = WORKSPACE_SPRITE;
 
-typedef struct layout {
+static struct {
 	point_t zinc_button_pos;
 	point_t code_editor_button_pos;
 	point_t sprite_editor_button_pos;
@@ -34,9 +35,8 @@ typedef struct layout {
 
 	point_t save_button_pos;
 	point_t play_button_pos;
-} layout_t;
-
-static const layout_t _layout = {
+}
+_layout = {
 	.zinc_button_pos = {2, 2},
 	.code_editor_button_pos = {160, 2},
 	.sprite_editor_button_pos = {224, 2},
@@ -59,24 +59,50 @@ void workspace_menu_init(computer_t *computer) {
 }
 
 void workspace_menu_update(computer_t *computer) {
-	if (input_key_pressed(KEY_F1)) {
-		_active_workspace = WORKSPACE_CODE;
-	}
-	if (input_key_pressed(KEY_F2)) {
-		_active_workspace = WORKSPACE_SPRITE;
-	}
-	if (input_key_pressed(KEY_F3)) {
-		_active_workspace = WORKSPACE_MAP;
-	}
-	if (input_key_pressed(KEY_F4)) {
-		_active_workspace = WORKSPACE_SOUND;
-	}
-	if (input_key_pressed(KEY_F5)) {
+	// --- Global keybinds ---
+	if (is_keybind_pressed(g_keybinds.global.run)) {
 		if (computer->game_running) {
 			quit_game(computer);
+			play_game(computer);
 		} else {
 			play_game(computer);
 		}
+
+		return;
+	}
+
+	// TODO: I should probably check if computer.game_path exists
+	// Maybe it already fills it automatically?
+	// and only check if inside the editor
+	// But maybe for this and the run one above I'll move it into shared.h/c and call it from every editor seperately for more control
+	if (is_keybind_pressed(g_keybinds.global.save)) {
+		game_save(computer, computer->game_path);
+		return;
+	}
+
+	// TODO: I think that if you have one keybind that's Ctrl + R and one thats R
+	// then Ctrl + R should take priority and not execute the R
+	// like filter candidates based on amount of modifiers or something
+	// but thats a bit complicated for now, I'll look into it later
+	if (is_keybind_pressed(g_keybinds.global.switch_to_code_editor)) {
+		_active_workspace = WORKSPACE_CODE;
+		return;
+	}
+	if (is_keybind_pressed(g_keybinds.global.switch_to_sprite_editor)) {
+		_active_workspace = WORKSPACE_SPRITE;
+		return;
+	}
+	if (is_keybind_pressed(g_keybinds.global.switch_to_map_editor)) {
+		_active_workspace = WORKSPACE_MAP;
+		return;
+	}
+	if (is_keybind_pressed(g_keybinds.global.switch_to_sound_editor)) {
+		_active_workspace = WORKSPACE_SOUND;
+		return;
+	}
+	if (is_keybind_pressed(g_keybinds.global.switch_to_music_editor)) {
+		_active_workspace = WORKSPACE_MUSIC;
+		return;
 	}
 
 	switch (_active_workspace) {
@@ -135,44 +161,44 @@ void workspace_menu_draw(computer_t *computer) {
 	if (gui_button(
 		computer->ram,
 		_layout.zinc_button_pos,
-		skin_layout.zinc_button,
+		g_skin_layout.zinc_button,
 		false
 	)) {
 		
 	}
 
 	// Editors
-	if (gui_button(computer->ram, _layout.code_editor_button_pos, skin_layout.code_button, _active_workspace == WORKSPACE_CODE)) {
+	if (gui_button(computer->ram, _layout.code_editor_button_pos, g_skin_layout.code_button, _active_workspace == WORKSPACE_CODE)) {
 		_active_workspace = WORKSPACE_CODE;
 	}
 	
-	if (gui_button(computer->ram, _layout.sprite_editor_button_pos, skin_layout.sprite_button, _active_workspace == WORKSPACE_SPRITE)) {
+	if (gui_button(computer->ram, _layout.sprite_editor_button_pos, g_skin_layout.sprite_button, _active_workspace == WORKSPACE_SPRITE)) {
 		_active_workspace = WORKSPACE_SPRITE;
 	}
 	
-	if (gui_button(computer->ram, _layout.map_editor_button_pos, skin_layout.map_button, _active_workspace == WORKSPACE_MAP)) {
+	if (gui_button(computer->ram, _layout.map_editor_button_pos, g_skin_layout.map_button, _active_workspace == WORKSPACE_MAP)) {
 		_active_workspace = WORKSPACE_MAP;
 	}
 	
-	if (gui_button(computer->ram, _layout.sound_editor_button_pos, skin_layout.sound_button, _active_workspace == WORKSPACE_SOUND)) {
+	if (gui_button(computer->ram, _layout.sound_editor_button_pos, g_skin_layout.sound_button, _active_workspace == WORKSPACE_SOUND)) {
 		_active_workspace = WORKSPACE_SOUND;
 	}
 
-	if (gui_button(computer->ram, _layout.music_editor_button_pos, skin_layout.music_button, _active_workspace == WORKSPACE_MUSIC)) {
+	if (gui_button(computer->ram, _layout.music_editor_button_pos, g_skin_layout.music_button, _active_workspace == WORKSPACE_MUSIC)) {
 		_active_workspace = WORKSPACE_MUSIC;
 	}
 
 	// Save and load
-	if (gui_press_button(computer->ram, _layout.save_button_pos, skin_layout.save_button)) {
+	if (gui_press_button(computer->ram, _layout.save_button_pos, g_skin_layout.save_button)) {
 		game_save(computer, computer->game_path);
 	}
 	
 	if (!computer->game_running) {
-		if (gui_press_button(computer->ram, _layout.play_button_pos, skin_layout.play_button)) {
+		if (gui_press_button(computer->ram, _layout.play_button_pos, g_skin_layout.play_button)) {
 			play_game(computer);
 		}
 	} else {
-		if (gui_press_button(computer->ram, _layout.play_button_pos, skin_layout.stop_button)) {
+		if (gui_press_button(computer->ram, _layout.play_button_pos, g_skin_layout.stop_button)) {
 			quit_game(computer);
 		}
 	}

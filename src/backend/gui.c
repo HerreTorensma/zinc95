@@ -5,6 +5,7 @@
 
 #include "input.h"
 #include "gfx.h"
+#include "../res.h"
 
 // Get the rect of the char in the spritesheet
 static void _get_char_rect(font_t *font, char c) {
@@ -283,8 +284,8 @@ void gui_load_skin(ram_t *ram, string_t path, color_t color_key, color_t font_co
 	gfx_load_surface(&ram->palette, SKIN_SURF(ram->skin.data), path);
 
 	// Copy fonts
-	gfx_copy_surface_rect(SPR_SURF(ram->spritesheet.data), SKIN_SURF(ram->skin.data), (point_t){0, 896}, skin_layout.gui_font_rect, COLOR_NONE);
-	gfx_copy_surface_rect(SPR_SURF(ram->spritesheet.data), SKIN_SURF(ram->skin.data), (point_t){0, 928}, skin_layout.code_editor_font_rect, COLOR_NONE);
+	gfx_copy_surface_rect(SPR_SURF(ram->spritesheet.data), SKIN_SURF(ram->skin.data), (point_t){0, 896}, g_skin_layout.gui_font_rect, COLOR_NONE);
+	gfx_copy_surface_rect(SPR_SURF(ram->spritesheet.data), SKIN_SURF(ram->skin.data), (point_t){0, 928}, g_skin_layout.code_editor_font_rect, COLOR_NONE);
 
 	ram->skin.color_key = color_key;
 	ram->skin.font_color = font_color;

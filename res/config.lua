@@ -24,7 +24,7 @@ return {
 
 	keybinds = {
 		global = {
-			run_game = {"Ctrl", "R"},
+			run = {"Ctrl", "R"},
 
 			toggle_terminal = {"Esc"},
 	
@@ -41,6 +41,8 @@ return {
 			copy = {"Ctrl", "C"},
 			paste = {"Ctrl", "V"},
 			cut = {"Ctrl", "X"},
+
+			select_all = {"Ctrl", "A"},
 	
 			prev_tool = {"Shift", "N"},
 			next_tool = {"N"},
@@ -60,16 +62,16 @@ return {
 
 			jump_to_prev_word = {"Ctrl", "Left"},
 			jump_to_next_word = {"Ctrl", "Right"},
-
-			select_all = {"Ctrl", "A"},
 		},
 	
 		sprite_editor = {
+			switch_primary_and_secondary_color = {"X"},
+
 			select_tool = {"M"},
 			brush_tool = {"B"},
 			line_tool = {"L"},
 			rect_tool = {"R"},
-			circle_tool = {"C"},
+			ellipse_tool = {"C"},
 			bucket_tool = {"G"},
 
 			move_frame_left = {"A"},

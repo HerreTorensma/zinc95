@@ -13,6 +13,7 @@ Memory layout, global constants
 
 #include "backend/file.h"
 #include "common/math2d.h"
+#include "backend/input.h"
 
 // TODO: rename some stuff so it's all consistent, dont mix AMOUNT, MAX, TOTAL etc.
 
@@ -357,46 +358,6 @@ typedef struct button_array {
 	point_t increase; // Used for both positioning in the skin and the program layout, so the skin and layout should match
 	int amount;
 } button_array_t;
-
-typedef struct skin_layout {
-	button_t zinc_button;
-
-	button_t code_button;
-	button_t sprite_button;
-	button_t map_button;
-	button_t sound_button;
-	button_t music_button;
-
-	button_t save_button;
-	button_t play_button;
-	button_t stop_button;
-
-	button_array_t sprite_flag_buttons;
-
-	button_t color_key_button;
-	
-	button_array_t spritesheet_page_buttons;
-
-	button_t map_entity_layer_button;
-	button_array_t map_layer_buttons;
-
-	button_array_t sprite_tool_buttons;
-
-	rect_t gui_font_rect;
-	rect_t code_editor_font_rect;
-
-	button_t code_file_button;
-	button_t add_file_button;
-
-	button_t toggle_layer_button;
-
-	button_t sine_wave_button;
-	button_t square_wave_button;
-	button_t triangle_wave_button;
-	button_t sawtooth_wave_button;
-} skin_layout_t;
-
-extern const skin_layout_t skin_layout;
 
 void set_global_computer(computer_t *computer);
 

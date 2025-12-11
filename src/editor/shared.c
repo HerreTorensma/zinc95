@@ -1,13 +1,9 @@
 #include "shared.h"
 
-#include <stdio.h>
-#include <math.h>
-
-#include "../api/api.h"
 #include "../backend/input.h"
 #include "../backend/gfx.h"
 #include "../backend/gui.h"
-
+#include "../res.h"
 
 static rect_t _page_rect = {0};
 static rect_t _in_frame_rect = {0};
@@ -194,9 +190,9 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 void sprite_selector_draw(computer_t *computer, point_t pos, point_t page_buttons_pos) {
 	gfx_draw_spritesheet_rect(computer->ram, pos, _page_rect, COLOR_NONE);
 
-	for (int i = 0; i < skin_layout.spritesheet_page_buttons.amount; i++) {
-		point_t pos = button_array_get_pos(&skin_layout.spritesheet_page_buttons, page_buttons_pos, i);
-		button_t button = button_array_get(&skin_layout.spritesheet_page_buttons, i);
+	for (int i = 0; i < g_skin_layout.spritesheet_page_buttons.amount; i++) {
+		point_t pos = button_array_get_pos(&g_skin_layout.spritesheet_page_buttons, page_buttons_pos, i);
+		button_t button = button_array_get(&g_skin_layout.spritesheet_page_buttons, i);
 
 		if (gui_button(computer->ram, pos, button, _page_index == i)) {
 			rect_t old_page_rect = _page_rect;

@@ -146,6 +146,18 @@ typedef enum scroll_dir {
 	SCROLL_DIR_DOWN = 1,
 } scroll_dir_t;
 
+typedef enum modifier {
+	MODIFIER_NONE  = 0,
+	MODIFIER_CTRL  = 1 << 0,
+	MODIFIER_ALT   = 1 << 1,
+	MODIFIER_SHIFT = 1 << 2,
+} modifier_t;
+
+typedef struct keybind {
+	int modifiers; // Bitmask of modifier keys
+	zinc_key_t key;
+} keybind_t;
+
 void input_update();
 
 // TODO: rename this to make it more clear they're checks
@@ -171,3 +183,5 @@ point_t input_get_mouse_pos();
 char input_get_as_char();
 
 void input_set_cursor_style(cursor_style_t style);
+
+bool is_keybind_pressed(keybind_t keybind);

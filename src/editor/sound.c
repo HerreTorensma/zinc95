@@ -9,8 +9,9 @@
 #include "../backend/gfx.h"
 #include "../backend/input.h"
 #include "../backend/gui.h"
+#include "../res.h"
 
-typedef struct layout {
+static struct {
 	point_t piano_pos;
 	rect_t pitch_graph_rect;
 	point_t sine_wave_button_pos;
@@ -20,9 +21,8 @@ typedef struct layout {
 	rect_t speed_slider_rect;
 	
 	rect_t volume_graph_rect;
-} layout_t;
-
-static const layout_t _layout = {
+}
+_layout = {
 	.piano_pos = {300, 100},
 	.pitch_graph_rect = {{4, 24, 256, 96}},
 	
@@ -216,16 +216,16 @@ void sound_editor_draw(computer_t *computer) {
 
 	computer->ram->patterns[_current_pattern].speed = gui_slider(computer->ram, 0, _layout.speed_slider_rect, 1, 64, computer->ram->patterns[_current_pattern].speed);
 
-	if (gui_button(computer->ram, _layout.sine_wave_button_pos, skin_layout.sine_wave_button, _selected_waveform == WAVEFORM_SINE)) {
+	if (gui_button(computer->ram, _layout.sine_wave_button_pos, g_skin_layout.sine_wave_button, _selected_waveform == WAVEFORM_SINE)) {
 		_selected_waveform = WAVEFORM_SINE;
 	}
-	if (gui_button(computer->ram, _layout.square_wave_button_pos, skin_layout.square_wave_button, _selected_waveform == WAVEFORM_SQUARE)) {
+	if (gui_button(computer->ram, _layout.square_wave_button_pos, g_skin_layout.square_wave_button, _selected_waveform == WAVEFORM_SQUARE)) {
 		_selected_waveform = WAVEFORM_SQUARE;
 	}
-	if (gui_button(computer->ram, _layout.triangle_wave_button_pos, skin_layout.triangle_wave_button, _selected_waveform == WAVEFORM_TRIANGLE)) {
+	if (gui_button(computer->ram, _layout.triangle_wave_button_pos, g_skin_layout.triangle_wave_button, _selected_waveform == WAVEFORM_TRIANGLE)) {
 		_selected_waveform = WAVEFORM_TRIANGLE;
 	}
-	if (gui_button(computer->ram, _layout.sawtooth_wave_button_pos, skin_layout.sawtooth_wave_button, _selected_waveform == WAVEFORM_SAWTOOTH)) {
+	if (gui_button(computer->ram, _layout.sawtooth_wave_button_pos, g_skin_layout.sawtooth_wave_button, _selected_waveform == WAVEFORM_SAWTOOTH)) {
 		_selected_waveform = WAVEFORM_SAWTOOTH;
 	}
 

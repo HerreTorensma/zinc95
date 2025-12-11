@@ -232,3 +232,27 @@ void input_set_cursor_style(cursor_style_t style) {
 	return sdl2_set_cursor_style(style);
 	#endif
 }
+
+bool is_keybind_pressed(keybind_t keybind) {
+	// TODO: detect MacOS and change to command
+	// or maybe that should be done lower level probably
+	if ((keybind.modifiers & MODIFIER_CTRL) == MODIFIER_CTRL) {
+		if (!(input_key_held(KEY_LCTRL) || input_key_held(KEY_RCTRL))) {
+			return false;
+		}
+	}
+
+	if ((keybind.modifiers & MODIFIER_ALT) == MODIFIER_ALT) {
+		if (!(input_key_held(KEY_LALT) || input_key_held(KEY_RALT))) {
+			return false;
+		}
+	}
+
+	if ((keybind.modifiers & MODIFIER_SHIFT) == MODIFIER_SHIFT) {
+		if (!(input_key_held(KEY_LSHIFT) || input_key_held(KEY_RSHIFT))) {
+			return false;
+		}
+	}
+
+	return input_key_pressed(keybind.key);
+}

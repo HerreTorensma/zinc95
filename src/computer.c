@@ -6,6 +6,7 @@
 #include <assert.h>
 
 #include "backend/file.h"
+#include "backend/input.h"
 #include "res.h"
 #include "api/lua_api.h"
 #include "common/mem.h"
@@ -14,134 +15,6 @@
 
 // This is global because the Lua API functions can't take arguments and they need the computer
 static computer_t *_computer;
-
-const skin_layout_t skin_layout = {
-	.zinc_button = {
-		.unpressed_rect = {{3568, 44, 16, 16}},
-		.pressed_rect = {{3568, 60, 16, 16}},
-	},
-
-	.code_button = {
-		.unpressed_rect = {{3200, 44, 64, 16}},
-		.pressed_rect = {{3200, 60, 64, 16}},
-	},
-
-	.sprite_button = {
-		.unpressed_rect = {{3264, 44, 64, 16}},
-		.pressed_rect = {{3264, 60, 64, 16}},
-	},
-
-	.map_button = {
-		.unpressed_rect = {{3328, 44, 64, 16}},
-		.pressed_rect = {{3328, 60, 64, 16}},
-	},
-
-	.sound_button = {
-		.unpressed_rect = {{3392, 44, 64, 16}},
-		.pressed_rect = {{3392, 60, 64, 16}},
-	},
-
-	.music_button = {
-		.unpressed_rect = {{3456, 44, 64, 16}},
-		.pressed_rect = {{3456, 60, 64, 16}},
-	},
-
-	.save_button = {
-		.unpressed_rect = {{3520, 44, 16, 16}},
-		.pressed_rect = {{3520, 60, 16, 16}},
-	},
-
-	.play_button = {
-		.unpressed_rect = {{3536, 44, 16, 16}},
-		.pressed_rect = {{3536, 60, 16, 16}},
-	},
-
-	.stop_button = {
-		.unpressed_rect = {{3552, 44, 16, 16}},
-		.pressed_rect = {{3552, 60, 16, 16}},
-	},
-
-	.sprite_flag_buttons = {
-		.base = {
-			.unpressed_rect = {{3200, 20, 12, 12}},
-			.pressed_rect = {{3200, 32, 12, 12}},
-		},
-		.increase = {12, 0},
-		.amount = 32,
-	},
-
-	.color_key_button = {
-		.unpressed_rect = {{3584, 20, 12, 12}},
-		.pressed_rect = {{3584, 32, 12, 12}},
-	},
-
-	.spritesheet_page_buttons = {
-		.base = {
-			.unpressed_rect = {{3200, 76, 48, 16}},
-			.pressed_rect = {{3248, 76, 48, 16}},
-		},
-		.increase = {0, 16},
-		.amount = 8,
-	},
-
-	.sprite_tool_buttons = {
-		.base = {
-			.unpressed_rect = {{3296, 76, 16, 16}},
-			.pressed_rect = {{3312, 76, 16, 16}},
-		},
-		.increase = {0, 16},
-		.amount = 8,
-	},
-
-	.map_entity_layer_button = {
-		.unpressed_rect = {{3200, 236, 48, 16}},
-		.pressed_rect = {{3248, 236, 48, 16}},
-	},
-
-	.map_layer_buttons = {
-		.base = {
-			.unpressed_rect = {{3200, 252, 48, 16}},
-			.pressed_rect = {{3248, 252, 48, 16}},
-		},
-		.increase = {0, 16},
-		.amount = 4,
-	},
-
-	.gui_font_rect = {{2560, 432, 384, 32}},
-	.code_editor_font_rect = {{2560, 464, 384, 16}},
-
-	.code_file_button = {
-		.unpressed_rect = {{3200, 316, 64, 13}},
-		.pressed_rect = {{3264, 316, 64, 13}},
-	},
-
-	.add_file_button = {
-		.unpressed_rect = {{3200, 329, 13, 13}},
-		.pressed_rect = {{3213, 329, 13, 13}},
-	},
-
-	.toggle_layer_button = {
-		.unpressed_rect = {{3296, 236, 16, 16}},
-		.pressed_rect = {{3312, 236, 16, 16}},
-	},
-
-	.sine_wave_button = {
-		.unpressed_rect = {{3200, 350, 32, 16}},
-		.pressed_rect = {{3232, 350, 32, 16}},
-	},
-	.square_wave_button = {
-		.unpressed_rect = {{3200, 366, 32, 16}},
-		.pressed_rect = {{3232, 366, 32, 16}},
-	},
-	.triangle_wave_button = {
-		.unpressed_rect = {{3200, 382, 32, 16}},
-		.pressed_rect = {{3232, 382, 32, 16}},
-	},
-	.sawtooth_wave_button = {
-		.unpressed_rect = {{3200, 398, 32, 16}},
-		.pressed_rect = {{3232, 398, 32, 16}},
-	},
-};
 
 void set_global_computer(computer_t *computer) {
 	_computer = computer;
@@ -219,7 +92,7 @@ void computer_init(computer_t *computer) {
 	}
 	memset(computer->ram, 0, RAM_SIZE);
 
-	computer->ram->palette = builtin_palette;
+	computer->ram->palette = g_builtin_palette;
 
 	computer->current_path = string_copy(get_heap_allocator(), STR("/"));
 
