@@ -34,25 +34,36 @@ static sdl2_input_t _sdl2_input = {0};
 
 static SDL_Cursor *_cursors[CURSOR_STYLE_COUNT];
 
+static float _dpi_scale_x = 1.0f;
+static float _dpi_scale_y = 1.0f;
+
 static void _resize_window() {
 	int window_width, window_height;
 	SDL_GetWindowSize(_window, &window_width, &window_height);
 
-	int scale_x = window_width / SCREEN_WIDTH;
-	int scale_y = window_height / SCREEN_HEIGHT;
+	int renderer_width, renderer_height;
+	SDL_GetRendererOutputSize(_renderer, &renderer_width, &renderer_height);
 
-	if (scale_x < scale_y) {
-		_scale = scale_x;
-	} else {
-		_scale = scale_y;
-	}
-	if (_scale < 1) {
-		_scale = 1;
-	}
-	SDL_RenderSetScale(_renderer, _scale, _scale);
+	_dpi_scale_x = (float)renderer_width / (float)window_width;
+	_dpi_scale_y = (float)renderer_height / (float)window_height;
 
-	_viewport_offset_x = ((window_width / _scale) / 2) - (SCREEN_WIDTH / 2);
-	_viewport_offset_y = ((window_height / _scale) / 2) - (SCREEN_HEIGHT / 2);
+	{
+		int scale_x = renderer_width / SCREEN_WIDTH;
+		int scale_y = renderer_height / SCREEN_HEIGHT;
+	
+		if (scale_x < scale_y) {
+			_scale = scale_x;
+		} else {
+			_scale = scale_y;
+		}
+		if (_scale < 1) {
+			_scale = 1;
+		}
+		SDL_RenderSetScale(_renderer, _scale, _scale);
+	}
+	
+	_viewport_offset_x = ((renderer_width / _scale) / 2) - (SCREEN_WIDTH / 2);
+	_viewport_offset_y = ((renderer_height / _scale) / 2) - (SCREEN_HEIGHT / 2);
 
 	SDL_Rect viewport_rect = (SDL_Rect){
 		.x = _viewport_offset_x,
@@ -108,7 +119,7 @@ void sdl2_init(char title[], int initial_scale) {
 		SDL_WINDOWPOS_UNDEFINED,
 		SCREEN_WIDTH * _scale,
 		SCREEN_HEIGHT * _scale,
-		SDL_WINDOW_RESIZABLE
+		SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI
 	);
 	if (_window == NULL) {
 		printf("Failed to create SDL2 window\n");
@@ -141,8 +152,11 @@ void sdl2_get_mouse_pos(int *x, int *y) {
 	int sdl_x, sdl_y;
 	SDL_GetMouseState(&sdl_x, &sdl_y);
 
-	*x = (sdl_x - _viewport_offset_x * _scale) / _scale;
-	*y = (sdl_y - _viewport_offset_y * _scale) / _scale;
+	float adjusted_x = (float)sdl_x * _dpi_scale_x;
+	float adjusted_y = (float)sdl_y * _dpi_scale_y;
+
+	*x = (adjusted_x / _scale - _viewport_offset_x);
+	*y = (adjusted_y / _scale - _viewport_offset_y);
 }
 
 void sdl2_tick_start(computer_t *computer) {
