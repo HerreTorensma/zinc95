@@ -82,6 +82,8 @@ static bool _handle_keybinds(computer_t *computer, file_t *file) {
 	}
 
 	if (is_keybind_pressed(g_keybinds.global.paste)) {
+		_remove_selection_if_exists(file);
+
 		string_t clipboard = get_clipboard_text(get_heap_allocator());
 		file_insert_string_at(file, file->edit_state.cursor_pos, clipboard);
 		heap_dealloc(clipboard.data);
@@ -121,55 +123,112 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 	}
 
 	// --- Keyboard ---
-	if (input_key_pressed_or_long_pressed(KEY_LEFT)) {
-		if (input_key_held(KEY_LSHIFT)) {
-			file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos - 1, 0, file->string.len);
-			file->edit_state.selection_end = file->edit_state.cursor_pos;
-		} else {
-			if (!file_does_selection_exist(file)) {
-				file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos - 1, 0, file->string.len);
+
+	// Cursor movement
+	{
+		bool shift_held = input_key_held(KEY_LSHIFT);
+		bool cursor_moved = false;
+
+		if (input_key_pressed_or_long_pressed(KEY_LEFT)) {
+			if (file_does_selection_exist(file) && !shift_held) {
+				file_deselect(file);
+			} else {
+				if (input_key_held(KEY_LCTRL)) {
+					// Jump to previous word
+					for (int i = file->edit_state.cursor_pos - 2; i >= 0; i--) {
+						if (file->string.data[i] == ' ' || file->string.data[i] == '\n' || file->string.data[i] == ',' || file->string.data[i] == '\t' || file->string.data[i] == '(') {
+							file->edit_state.cursor_pos = i + 1;
+							break;
+						}
+					}
+				} else {
+					file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos - 1, 0, file->string.len);
+				}
+
+				cursor_moved = true;
 			}
-			file_deselect(file);
 		}
-	}
-	if (input_key_pressed_or_long_pressed(KEY_RIGHT)) {
-		if (input_key_held(KEY_LSHIFT)) {
-			file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos + 1, 0, file->string.len);
-			file->edit_state.selection_end = file->edit_state.cursor_pos;
-		} else {
-			if (!file_does_selection_exist(file)) {
-				file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos + 1, 0, file->string.len);
+		if (input_key_pressed_or_long_pressed(KEY_RIGHT)) {
+			if (file_does_selection_exist(file) && !shift_held) {
+				file_deselect(file);
+			} else {
+				if (input_key_held(KEY_LCTRL)) {
+					// Jump to next word
+					for (int i = file->edit_state.cursor_pos + 1; i < file->string.len; i++) {
+						if (file->string.data[i] == ' ' || file->string.data[i] == '\n' || file->string.data[i] == ',' || file->string.data[i] == '\t' || file->string.data[i] == '(') {
+							file->edit_state.cursor_pos = i;
+							break;
+						}
+					}
+				} else {
+					file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos + 1, 0, file->string.len);
+				}
+
+				cursor_moved = true;
 			}
-			file_deselect(file);
 		}
-	}
 
-	if (input_key_pressed(KEY_LSHIFT)) {
-		file->edit_state.selection_start = file->edit_state.cursor_pos;
-		file->edit_state.selection_end = file->edit_state.cursor_pos;
-	}
-	if (input_key_released(KEY_LSHIFT)) {
-		file_fix_selection(file);
-	}
+		if (input_key_pressed_or_long_pressed(KEY_UP)) {
+			if (file_does_selection_exist(file) && !shift_held) {
+				file_deselect(file);
+			}
 
-	if (input_key_pressed_or_long_pressed(KEY_UP)) {
-		file->edit_state.cursor_pos = file_move_pos_vertical(file, file->edit_state.cursor_pos, -1);
-		printf("cursor pos: %d\n", file->edit_state.cursor_pos);
+			file->edit_state.cursor_pos = file_move_pos_vertical(file, file->edit_state.cursor_pos, -1);
+			if (file_get_line_index_from_pos(file, file->edit_state.cursor_pos) < file->edit_state.scroll_amount) {
+				file->edit_state.scroll_amount--;
+			}
 
-		if (input_key_held(KEY_LSHIFT)) {
-			file->edit_state.selection_end = file->edit_state.cursor_pos;
-		} else {
-			file_deselect(file);
+			cursor_moved = true;
 		}
-	}
-	if (input_key_pressed_or_long_pressed(KEY_DOWN)) {
-		file->edit_state.cursor_pos = file_move_pos_vertical(file, file->edit_state.cursor_pos, 1);
-		printf("cursor pos: %d\n", file->edit_state.cursor_pos);
+		if (input_key_pressed_or_long_pressed(KEY_DOWN)) {
+			if (file_does_selection_exist(file) && !shift_held) {
+				file_deselect(file);
+			}
 
-		if (input_key_held(KEY_LSHIFT)) {
+			file->edit_state.cursor_pos = file_move_pos_vertical(file, file->edit_state.cursor_pos, 1);
+			font_t *font = &computer->ram->fonts[config.font_index];
+			size_t lines_in_rect = rect.h / (font->height + font->vertical_space);
+			if (file_get_line_index_from_pos(file, file->edit_state.cursor_pos) > (file->edit_state.scroll_amount + lines_in_rect)) {
+				file->edit_state.scroll_amount++;
+			}
+
+			cursor_moved = true;
+		}
+	
+		if (input_key_pressed_or_long_pressed(KEY_HOME)) {
+			if (file_does_selection_exist(file) && !shift_held) {
+				file_deselect(file);
+			} else {
+				size_t line_index = file_get_line_index_from_pos(file, file->edit_state.cursor_pos);
+				file->edit_state.cursor_pos = file->edit_state.lines.data[line_index].start;
+			}
+
+			cursor_moved = true;
+		}
+	
+		if (input_key_pressed_or_long_pressed(KEY_END)) {
+			if (file_does_selection_exist(file) && !shift_held) {
+				file_deselect(file);
+			} else {
+				size_t line_index = file_get_line_index_from_pos(file, file->edit_state.cursor_pos);
+				file->edit_state.cursor_pos = file->edit_state.lines.data[line_index].start + file->edit_state.lines.data[line_index].len;
+			}
+
+			cursor_moved = true;
+		}
+	
+		if (shift_held && cursor_moved) {
 			file->edit_state.selection_end = file->edit_state.cursor_pos;
-		} else {
+		}
+	
+		if (input_key_pressed(KEY_LSHIFT)) {
 			file_deselect(file);
+			file->edit_state.selection_start = file->edit_state.cursor_pos;
+			file->edit_state.selection_end = file->edit_state.cursor_pos;
+		}
+		
+		if (input_key_released(KEY_LSHIFT)) {
+			file_fix_selection(file);
 		}
 	}
 
@@ -186,6 +245,7 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 
 	// --- Letters, digits, characters etc.
 	{
+		// TODO: caps lock
 		char c = input_get_as_char();
 		if (!(c == '\0' || c == '\b')) {
 			_remove_selection_if_exists(file);
@@ -261,7 +321,7 @@ static point_t _file_cursor_pos_to_screen_pos(computer_t *computer, file_t *file
 	return pos;
 }
 
-static void _if_a_bigger_swap(size_t *a, size_t *b) {
+static void _swap_if_a_greater_than_b(size_t *a, size_t *b) {
 	if (*a > *b) {
 		size_t temp = *a;
 		*a = *b;
@@ -277,7 +337,7 @@ static void _draw_selection_rect_for_char(computer_t *computer, file_t *file, fo
 	
 	size_t temp_selection_start = file->edit_state.selection_start;
 	size_t temp_selection_end = file->edit_state.selection_end;
-	_if_a_bigger_swap(&temp_selection_start, &temp_selection_end);
+	_swap_if_a_greater_than_b(&temp_selection_start, &temp_selection_end);
 	if (file_does_selection_exist(file) && index >= temp_selection_start && index < temp_selection_end) {
 		gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(x, y, (font->widths[0] + font->horizontal_space) * width_in_chars, font->height + font->vertical_space), color);
 	}
@@ -340,18 +400,11 @@ static void _file_draw(computer_t *computer, file_t *file, rect_t rect, code_edi
 					continue;
 				}
 	
-				if (string.data[j] == '\t') {
-					_draw_selection_rect_for_char(computer, file, font, new_x, new_y, config.tab_size, config.selection_color, string_reference.start + j, rect);
-	
-					new_x += (font->widths[' ' - VISIBLE_CHARACTERS_START] + font->horizontal_space) * config.tab_size;
-	
-					continue;
-				}
-	
-				_draw_selection_rect_for_char(computer, file, font, new_x, new_y, 1, config.selection_color, string_reference.start + j, rect);
+				_draw_selection_rect_for_char(computer, file, font, new_x, new_y, string.data[j] == '\t' ? config.tab_size : 1, config.selection_color, string_reference.start + j, rect);
 	
 				// Get the correct sprite index keeping in mind some fonts could have multiple sprites per character (not tested for more than 1 horizontal sprite)
-				int char_index = string.data[j] - VISIBLE_CHARACTERS_START;
+				// int char_index = string.data[j] == '\t' ? 127 : string.data[j] - VISIBLE_CHARACTERS_START;
+				int char_index = string.data[j] == '\t' ? 127 - VISIBLE_CHARACTERS_START : string.data[j] - VISIBLE_CHARACTERS_START;
 				int x_offset = (char_index % (SPRITES_PER_ROW / font->sprite_width)) * font->sprite_width;
 				int y_offset = (char_index / (SPRITES_PER_ROW / font->sprite_width)) * font->sprite_height;
 				int sprite_index = font->sprite_index + x_offset + (y_offset * SPRITES_PER_ROW);
@@ -368,7 +421,11 @@ static void _file_draw(computer_t *computer, file_t *file, rect_t rect, code_edi
 					}
 				}
 	
-				new_x += font->widths[string.data[j] - VISIBLE_CHARACTERS_START] + font->horizontal_space;
+				if (string.data[j] == '\t') {
+					new_x += (font->widths[0] + font->horizontal_space) * config.tab_size;
+ 				} else {
+					new_x += font->widths[0] + font->horizontal_space;
+				}
 			}
 		}
 	}
@@ -376,7 +433,6 @@ static void _file_draw(computer_t *computer, file_t *file, rect_t rect, code_edi
 	// Cursor
 	{
 		point_t start_pos = _file_cursor_pos_to_screen_pos(computer, file, font, config);
-		// start_pos.x += rect.x;
 		start_pos.x += text_start_x;
 		start_pos.y += rect.y;
 		start_pos.x -= 1; // So the cursor doesnt overwrite the leftmost pixels of the character right of it
@@ -426,16 +482,16 @@ static void _draw_file_buttons(computer_t *computer) {
 	}
 
 	// TODO: don't also move cursor
-	if (input_key_held(KEY_LALT) && input_key_pressed(KEY_UP)) {
-		if (_current_file_index > 0) {
-			_current_file_index--;
-		}
-	}
-	if (input_key_held(KEY_LALT) && input_key_pressed(KEY_DOWN)) {
-		if (_current_file_index < computer->active_files_amount - 1) {
-			_current_file_index++;
-		}
-	}
+	// if (input_key_held(KEY_LALT) && input_key_pressed(KEY_UP)) {
+	// 	if (_current_file_index > 0) {
+	// 		_current_file_index--;
+	// 	}
+	// }
+	// if (input_key_held(KEY_LALT) && input_key_pressed(KEY_DOWN)) {
+	// 	if (_current_file_index < computer->active_files_amount - 1) {
+	// 		_current_file_index++;
+	// 	}
+	// }
 
 	// + button
 	if (computer->active_files_amount < FILES_AMOUNT) {

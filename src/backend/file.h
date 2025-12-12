@@ -49,6 +49,8 @@ typedef struct file {
 	} edit_state;
 } file_t;
 
+size_t file_get_line_index_from_pos(file_t *file, size_t pos);
+
 void file_insert_string_at(file_t *file, int pos, string_t string);
 
 void file_insert_char_at(file_t *file, int pos, char c);

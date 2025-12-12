@@ -43,7 +43,7 @@ void computer_load_resouces(computer_t *computer) {
 		.sprite_height = 2,
 
 		.color_key = COLOR_BLACK,
-		.seperator_color = 10,
+		.seperator_color = COLOR_GREEN,
 	};
 	gui_init_font_widths(computer->ram, 0);
 
@@ -56,7 +56,7 @@ void computer_load_resouces(computer_t *computer) {
 		.sprite_height = 1,
 
 		.color_key = COLOR_BLACK,
-		.seperator_color = 10,
+		.seperator_color = COLOR_GREEN,
 	};
 	gui_init_monospace_font_widths(computer->ram, 1, 5);
 
@@ -76,7 +76,7 @@ void computer_load_resouces(computer_t *computer) {
 			[LUA_TOKEN_STRING] = 2,
 			[LUA_TOKEN_COMMENT] = 7,
 			[LUA_TOKEN_OPERATOR] = 9,
-			[LUA_TOKEN_WHITESPACE] = COLOR_NONE,
+			[LUA_TOKEN_WHITESPACE] = COLOR_LIGHTGRAY,
 		},
 	};
 }
@@ -329,6 +329,8 @@ static int _hex_string_to_raw(string_t hex_string, uint8_t buffer[], size_t size
 	return 0;
 }
 
+#include "backend/gfx.h"
+
 int game_load(computer_t *computer, string_t path) {
 	if (path_is_file(path)) {
 		set_game_path(computer, path);
@@ -453,6 +455,11 @@ int game_load(computer_t *computer, string_t path) {
 	dealloc(get_heap_allocator(), string.data);
 
 	printf("Game loaded!\n");
+
+	// TODO: please store the font in another surface
+	// this is a hacky and temporary fix so I can update the font
+	gfx_copy_surface_rect(SPR_SURF(computer->ram->spritesheet.data), SKIN_SURF(computer->ram->skin.data), (point_t){0, 896}, g_skin_layout.gui_font_rect, COLOR_NONE);
+	gfx_copy_surface_rect(SPR_SURF(computer->ram->spritesheet.data), SKIN_SURF(computer->ram->skin.data), (point_t){0, 928}, g_skin_layout.code_editor_font_rect, COLOR_NONE);
 
 	return 0;
 }

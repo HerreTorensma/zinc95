@@ -397,8 +397,8 @@ g_skin_layout = {
 		.amount = 8,
 	},
 
-	.gui_font_rect = {{2560, 432, 384, 32}},
-	.code_editor_font_rect = {{2560, 464, 384, 16}},
+	.gui_font_rect = {{3200, 432, 384, 32}},
+	.code_editor_font_rect = {{3200, 464, 384, 16}},
 
 	.code_file_button = {
 		.unpressed_rect = {{3200, 316, 64, 13}},

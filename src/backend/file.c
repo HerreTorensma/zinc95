@@ -226,7 +226,7 @@ static void _compute_tokens(file_t *file) {
 	// _print_token_list(file);
 }
 
-static size_t _pos_to_line_index(file_t *file, size_t pos) {
+size_t file_get_line_index_from_pos(file_t *file, size_t pos) {
 	for (size_t i = 0; i < file->edit_state.lines.len; i++) {
 		if (file->edit_state.lines.data[i].start > pos) {
 			if (i > 0) {
@@ -324,7 +324,7 @@ size_t get_token_index_around_pos(file_t *file, int pos);
 
 // TODO: doesnt seem to work if string below is empty
 size_t file_move_pos_vertical(file_t *file, int pos, int64_t amount) {
-	size_t line_index = _pos_to_line_index(file, pos);
+	size_t line_index = file_get_line_index_from_pos(file, pos);
 	int64_t new_line_index =clamp_int(line_index + amount, 0, file->edit_state.lines.len - 1);
 	
 	string_reference_t *line = &file->edit_state.lines.data[line_index];
