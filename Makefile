@@ -41,7 +41,7 @@ endif
 
 ifeq ($(PLAT),macosx)
 	SRC += src/common/io_posix.c
-	CFLAGS += -Iextern/sdl2/include -Iextern/lua-5.4.8/src
+	CFLAGS += -Iextern/sdl2/include -Iextern/lua-5.4.8/src -DPLATFORM_MACOSX
 	LDFLAGS = extern/lua-5.4.8/src/liblua.a -Lextern/sdl2/lib -lSDL2 -lm
 endif
 

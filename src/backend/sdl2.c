@@ -228,6 +228,16 @@ void sdl2_quit() {
 }
 
 static SDL_Scancode _key_to_sdl2_scancode(zinc_key_t key) {
+	// Use command key on MacOS
+	#ifdef PLATFORM_MACOSX
+	if (key == KEY_LCTRL) {
+		return SDL_SCANCODE_LGUI;
+	}
+	if (key == KEY_RCTRL) {
+		return SDL_SCANCODE_RGUI;
+	}
+	#endif
+
 	switch (key) {
 		case KEY_A: return SDL_SCANCODE_A;
 		case KEY_B: return SDL_SCANCODE_B;

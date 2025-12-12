@@ -98,7 +98,7 @@ void computer_init(computer_t *computer) {
 	computer->current_path = string_copy(get_heap_allocator(), STR("/"));
 
 	// Text files
-	// file_append_line(&computer->files[0], STR(""));
+	file_append_string(&computer->files[0], STR(""));
 
 	computer->active_files_amount = 1;
 }
