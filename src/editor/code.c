@@ -22,7 +22,15 @@ _layout = {
 	.code_rect = {{68 + 2, 24 + 2, 568 - 4, 452 - 4}},
 };
 
-static size_t _current_file_index = 0; 
+static size_t _current_file_index = 0;
+
+static void _swap_if_a_greater_than_b(size_t *a, size_t *b) {
+	if (*a > *b) {
+		size_t temp = *a;
+		*a = *b;
+		*b = temp;
+	}
+}
 
 void code_editor_init(computer_t *computer) {
 
@@ -61,6 +69,8 @@ static int _screen_pos_to_file_pos(file_t *file, font_t *font, rect_t rect, poin
 }
 
 static void _commit_to_history(file_t *file, size_t start, size_t end, file_action_type_t type, bool was_selection) {
+	_swap_if_a_greater_than_b(&start, &end);
+
 	string_t view = string_view(file->string, start, end - start);
 	
 	string_t string = {0};
@@ -102,7 +112,10 @@ void _commit_pending_insert(file_t *file) {
 		return;
 
 	size_t start = file->edit_state.pending_insert_start;
-	size_t len = file->edit_state.cursor_pos - start;
+	size_t end = file->edit_state.pending_insert_end;
+	// _swap_if_a_greater_than_b(&start, &end); // Don't think this is necessary
+
+	size_t len = end - start;
 
 	if (len > 0) {
 		file_action_t action = {
@@ -152,13 +165,18 @@ static bool _handle_keybinds(computer_t *computer, file_t *file) {
 	}
 
 	if (is_keybind_pressed(g_keybinds.global.paste)) {
+		_commit_pending_insert(file);
+
 		_remove_selection_if_exists(file);
 
 		string_t clipboard = get_clipboard_text(get_heap_allocator());
 		file_insert_string_at(file, file->edit_state.cursor_pos, clipboard);
+		
+		_commit_to_history(file, file->edit_state.cursor_pos, file->edit_state.cursor_pos + clipboard.len, FILE_ACTION_INSERT, false);
+
 		heap_dealloc(clipboard.data);
 		file->edit_state.cursor_pos += clipboard.len;
-
+		
 		return true;
 	}
 
@@ -327,10 +345,15 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 				file->edit_state.has_pending_insert = true;
 			}
 
+			// TODO: put removing selection and inserting character in one commit?
+			// That's hard to do with the current system though
+			// But for the moving of a selection or line I'll also need it
+			// So one action can do both
 			_remove_selection_if_exists(file);
 			
 			file_insert_char_at(file, file->edit_state.cursor_pos, c);
 			file->edit_state.cursor_pos++;
+			file->edit_state.pending_insert_end = file->edit_state.cursor_pos;
 
 			if (is_whitespace(c)) {
 				_commit_pending_insert(file);
@@ -404,14 +427,6 @@ static point_t _file_cursor_pos_to_screen_pos(computer_t *computer, file_t *file
 	}
 
 	return pos;
-}
-
-static void _swap_if_a_greater_than_b(size_t *a, size_t *b) {
-	if (*a > *b) {
-		size_t temp = *a;
-		*a = *b;
-		*b = temp;
-	}
 }
 
 static void _draw_selection_rect_for_char(computer_t *computer, file_t *file, font_t *font, int x, int y, int width_in_chars, color_t color, int index, rect_t rect) {

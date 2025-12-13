@@ -65,10 +65,9 @@ typedef struct file {
 		bool supress_mouse_selection; // Set to true when the selection was just removed, to prevent from instantly making a new selection
 
 		file_action_t_array_t history;
-		bool has_pending_insert;
+		bool has_pending_insert; // TODO: remove this maybe and make function instead that only uses the below 2 variables
 		size_t pending_insert_start;
-		bool has_pending_remove;
-		size_t pending_remove_start;
+		size_t pending_insert_end;
 	} edit_state;
 } file_t;
 
