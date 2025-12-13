@@ -1,6 +1,5 @@
 #include "gfx.h"
 
-#include <SDL2/SDL_video.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

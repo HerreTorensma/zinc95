@@ -60,19 +60,89 @@ static int _screen_pos_to_file_pos(file_t *file, font_t *font, rect_t rect, poin
 	return final_pos;
 }
 
-static void _remove_selection_if_exists(file_t *file) {
-	if (file_does_selection_exist(file)) {
-		file_fix_selection(file);
+static void _commit_to_history(file_t *file, size_t start, size_t end, file_action_type_t type, bool was_selection) {
+	string_t view = string_view(file->string, start, end - start);
+	
+	string_t string = {0};
 
-		file_remove_section(file, file->edit_state.selection_start, file->edit_state.selection_end - file->edit_state.selection_start);
-		file->edit_state.cursor_pos = file->edit_state.selection_start;
-		file_deselect(file);
-		file->edit_state.supress_mouse_selection = true;
+	if (start != end) {
+		string = string_copy(get_heap_allocator(), view);
 	}
+
+	file_action_t action = {
+		.pos = start,
+		.string = string,
+		.type = type,
+		.was_selection = was_selection,
+	};
+
+	file->edit_state.history.allocator = get_heap_allocator();
+	array_push(&file->edit_state.history, action);
+
+	printf("pushed insert action\n");
+}
+
+static void _remove_selection_if_exists(file_t *file) {
+	if (!file_does_selection_exist(file)) {
+		return;
+	}
+
+	file_fix_selection(file);
+
+	_commit_to_history(file, file->edit_state.selection_start, file->edit_state.selection_end, FILE_ACTION_REMOVE, true);
+
+	file_remove_section(file, file->edit_state.selection_start, file->edit_state.selection_end - file->edit_state.selection_start);
+	file->edit_state.cursor_pos = file->edit_state.selection_start;
+	file_deselect(file);
+	file->edit_state.supress_mouse_selection = true;
+}
+
+void _commit_pending_insert(file_t *file) {
+	if (!file->edit_state.has_pending_insert)
+		return;
+
+	size_t start = file->edit_state.pending_insert_start;
+	size_t len = file->edit_state.cursor_pos - start;
+
+	if (len > 0) {
+		file_action_t action = {
+			.type = FILE_ACTION_INSERT,
+			.pos = start,
+			.string = string_copy(get_heap_allocator(), string_view(file->string, start, len)),
+		};
+
+		file->edit_state.history.allocator = get_heap_allocator();
+		array_push(&file->edit_state.history, action);
+	}
+
+	file->edit_state.has_pending_insert = false;
 }
 
 // Returns true if a keybind was activated (so the char input can be skipped), false otherwise
 static bool _handle_keybinds(computer_t *computer, file_t *file) {
+	if (is_keybind_pressed(g_keybinds.global.undo)) {
+		_commit_pending_insert(file);
+
+		if (file->edit_state.history.len > 0) {
+			file_action_t action = array_pop(&file->edit_state.history);
+		
+			if (action.type == FILE_ACTION_INSERT) {
+				file_remove_section(file, action.pos, action.string.len);
+				file->edit_state.cursor_pos = action.pos;
+			} else if (action.type == FILE_ACTION_REMOVE) {
+				file_insert_string_at(file, action.pos, action.string);
+				file->edit_state.cursor_pos = action.pos + action.string.len;
+
+				if (action.was_selection) {
+					file->edit_state.selection_start = action.pos;
+					file->edit_state.selection_end = action.pos + action.string.len;
+				}
+			}
+		}
+
+		return true;
+	}
+
 	if (is_keybind_pressed(g_keybinds.global.copy)) {
 		file_fix_selection(file);
 		string_t clipboard = string_view(file->string, file->edit_state.selection_start, file->edit_state.selection_end - file->edit_state.selection_start);
@@ -234,10 +304,14 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 
 	if (input_key_pressed_or_long_pressed(KEY_BACKSPACE)) {
 		printf("selection start: %d, selection end: %d\n", file->edit_state.selection_start, file->edit_state.selection_end);
-		
+
+		_commit_pending_insert(file);
+
 		if (file_does_selection_exist(file)) {
 			_remove_selection_if_exists(file);
 		} else {
+			_commit_to_history(file, file->edit_state.cursor_pos - 1, file->edit_state.cursor_pos, FILE_ACTION_REMOVE, false);
+
 			file_remove_section(file, file->edit_state.cursor_pos - 1, 1);
 			file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos - 1, 0, file->string.len);
 		}
@@ -248,10 +322,19 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 		// TODO: caps lock
 		char c = input_get_as_char();
 		if (!(c == '\0' || c == '\b')) {
+			if (!file->edit_state.has_pending_insert) {
+				file->edit_state.pending_insert_start = file->edit_state.cursor_pos;
+				file->edit_state.has_pending_insert = true;
+			}
+
 			_remove_selection_if_exists(file);
 			
 			file_insert_char_at(file, file->edit_state.cursor_pos, c);
 			file->edit_state.cursor_pos++;
+
+			if (is_whitespace(c)) {
+				_commit_pending_insert(file);
+			}
 		}
 	}
 

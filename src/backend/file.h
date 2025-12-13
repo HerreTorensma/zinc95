@@ -33,6 +33,23 @@ typedef struct lua_token {
 
 ARRAY_DEFINE(lua_token_t)
 
+typedef enum file_action_type {
+	FILE_ACTION_INVALID,
+	FILE_ACTION_INSERT,
+	FILE_ACTION_REMOVE,
+	FILE_ACTION_MOVE,
+} file_action_type_t;
+
+typedef struct file_action {
+	size_t pos;
+	string_t string;
+	bool was_selection;
+
+	file_action_type_t type;
+} file_action_t;
+
+ARRAY_DEFINE(file_action_t)
+
 typedef struct file {
 	string_t string;
 	size_t size;
@@ -46,6 +63,12 @@ typedef struct file {
 		string_reference_t_array_t lines;
 		lua_token_t_array_t tokens;
 		bool supress_mouse_selection; // Set to true when the selection was just removed, to prevent from instantly making a new selection
+
+		file_action_t_array_t history;
+		bool has_pending_insert;
+		size_t pending_insert_start;
+		bool has_pending_remove;
+		size_t pending_remove_start;
 	} edit_state;
 } file_t;
 

@@ -72,6 +72,8 @@ void workspace_menu_update(computer_t *computer) {
 	}
 
 	// TODO: I should probably check if computer.game_path exists
+	// yes I definitely should bc the program crashes if you save a game without a name
+
 	// Maybe it already fills it automatically?
 	// and only check if inside the editor
 	// But maybe for this and the run one above I'll move it into shared.h/c and call it from every editor seperately for more control
