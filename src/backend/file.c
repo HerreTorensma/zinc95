@@ -343,17 +343,24 @@ bool file_does_selection_exist(file_t *file) {
 }
 
 string_t file_get_name(file_t *file) {
-	string_t view = file->string;
-	view.len = MIN(10, file->string.len);
+	size_t view_start = 0;
 
 	for (size_t i = 0; i < file->string.len; i++) {
-		if (file->string.data[i] == '\n') {
-			view.len = MIN(10, i);
-			return view;
+		if (!(file->string.data[i] == '-' || file->string.data[i] == ' ' || file->string.data[i] == '\t')) {
+			view_start = i;
+			break;
 		}
 	}
 
-	return view;
+	size_t new_len = file->string.len - view_start;
+
+	for (size_t i = view_start; i < new_len; i++) {
+		if (file->string.data[i] == '\n') {
+			return string_view(file->string, view_start, MIN(10, i));
+		}
+	}
+
+	return string_view(file->string, view_start, MIN(10, new_len));
 }
 
 // Swaps the selection_start and selection_end if necessary
