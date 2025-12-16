@@ -240,7 +240,7 @@ static bool _handle_keybinds(computer_t *computer, file_t *file) {
 	return false;
 }
 
-static void _move_cursor_vertical(file_t *file, int amount) {
+static void _move_cursor_vertical(file_t *file, int amount, int tab_size) {
 	size_t line_index = file_get_line_index_from_pos(file, file->edit_state.cursor_pos);
 	size_t new_line_index = clamp_int(line_index + amount, 0, file->edit_state.lines.len - 1);
 
@@ -255,9 +255,23 @@ static void _move_cursor_vertical(file_t *file, int amount) {
 	}
 
 	string_reference_t *new_line = &file->edit_state.lines.data[new_line_index];
+	string_t new_line_string = string_view(file->string, new_line->start, new_line->len);
 
-	int new_offset = clamp_int(file->edit_state.horizontal_cursor_pos, 0, new_line->len);
+	int visual_offset = file->edit_state.horizontal_cursor_pos;
+
+	int new_offset = clamp_int(visual_string_pos_to_string_pos(new_line_string, visual_offset, tab_size) , 0, new_line->len);
 	file->edit_state.cursor_pos = new_line->start + new_offset;
+}
+
+static void _update_horizontal_cursor_pos(file_t *file, int tab_size) {
+	size_t line_index = file_get_line_index_from_pos(file, file->edit_state.cursor_pos);
+	string_reference_t ref = file->edit_state.lines.data[line_index];
+	string_t line = string_view(file->string, ref.start, ref.len);
+
+	size_t offset = file_get_offset_from_line_start(file, file->edit_state.cursor_pos);
+	size_t visual_offset = string_pos_to_visual_string_pos(line, offset, tab_size);
+
+	file->edit_state.horizontal_cursor_pos = visual_offset;
 }
 
 // TODO: split into multiple functions
@@ -303,7 +317,7 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 				cursor_moved = true;
 			}
 
-			file->edit_state.horizontal_cursor_pos = file_get_offset_from_line_start(file, file->edit_state.cursor_pos);
+			_update_horizontal_cursor_pos(file, config.tab_size);
 		}
 		if (input_key_pressed_or_long_pressed(KEY_RIGHT)) {
 			if (file_does_selection_exist(file) && !shift_held) {
@@ -332,7 +346,7 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 				cursor_moved = true;
 			}
 
-			file->edit_state.horizontal_cursor_pos = file_get_offset_from_line_start(file, file->edit_state.cursor_pos);
+			_update_horizontal_cursor_pos(file, config.tab_size);
 		}
 
 		// TODO: retain the original horizontal position of the cursor (decided only by left and right keys I think)
@@ -342,7 +356,7 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 				file_deselect(file);
 			}
 
-			_move_cursor_vertical(file, -1);
+			_move_cursor_vertical(file, -1, config.tab_size);
 			
 			if (file_get_line_index_from_pos(file, file->edit_state.cursor_pos) < file->edit_state.scroll_amount) {
 				file->edit_state.scroll_amount--;
@@ -355,7 +369,7 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 				file_deselect(file);
 			}
 
-			_move_cursor_vertical(file, 1);
+			_move_cursor_vertical(file, 1, config.tab_size);
 			
 			font_t *font = &computer->ram->fonts[config.font_index];
 			size_t lines_in_rect = rect.h / (font->height + font->vertical_space);
@@ -376,7 +390,7 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 
 			cursor_moved = true;
 
-			file->edit_state.horizontal_cursor_pos = file_get_offset_from_line_start(file, file->edit_state.cursor_pos);
+			_update_horizontal_cursor_pos(file, config.tab_size);
 		}
 	
 		if (input_key_pressed_or_long_pressed(KEY_END)) {
@@ -389,7 +403,7 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 
 			cursor_moved = true;
 
-			file->edit_state.horizontal_cursor_pos = file_get_offset_from_line_start(file, file->edit_state.cursor_pos);
+			_update_horizontal_cursor_pos(file, config.tab_size);
 		}
 	
 		if (shift_held && cursor_moved) {
@@ -420,7 +434,7 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 			file_remove_section(file, file->edit_state.cursor_pos - 1, 1);
 			file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos - 1, 0, file->string.len);
 
-			file->edit_state.horizontal_cursor_pos = file_get_offset_from_line_start(file, file->edit_state.cursor_pos);
+			_update_horizontal_cursor_pos(file, config.tab_size);
 		}
 	}
 
@@ -446,7 +460,7 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 			
 			file_insert_char_at(file, file->edit_state.cursor_pos, c);
 			file->edit_state.cursor_pos++;
-			file->edit_state.horizontal_cursor_pos = file_get_offset_from_line_start(file, file->edit_state.cursor_pos);
+			_update_horizontal_cursor_pos(file, config.tab_size);
 
 			// Match indentation of current line
 			if (c == '\n') {
@@ -502,7 +516,7 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 				file->edit_state.cursor_pos = _screen_pos_to_file_pos(file, font, rect, input_get_mouse_pos(), config.tab_size, LINE_NUMBER_DIGITS_AMOUNT);
 				file->edit_state.selection_end = file->edit_state.cursor_pos;
 
-				file->edit_state.horizontal_cursor_pos = file_get_offset_from_line_start(file, file->edit_state.cursor_pos);
+				_update_horizontal_cursor_pos(file, config.tab_size);
 			}
 		
 			if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {

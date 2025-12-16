@@ -382,7 +382,6 @@ size_t visual_string_pos_to_string_pos(string_t string, size_t visual_pos, size_
 	return string.len;
 }
 
-// Untested, but probably need later
 size_t string_pos_to_visual_string_pos(string_t string, size_t pos, size_t tab_size) {
 	size_t new_pos = pos;
 
