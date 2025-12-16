@@ -322,20 +322,11 @@ void file_clear(file_t *file) {
 
 size_t get_token_index_around_pos(file_t *file, int pos);
 
-// TODO: doesnt seem to work if string below is empty
-size_t file_move_pos_vertical(file_t *file, int pos, int64_t amount) {
-	size_t line_index = file_get_line_index_from_pos(file, pos);
-	int64_t new_line_index =clamp_int(line_index + amount, 0, file->edit_state.lines.len - 1);
-	
+size_t file_get_offset_from_line_start(file_t *file, int global_pos) {
+	size_t line_index = file_get_line_index_from_pos(file, global_pos);
 	string_reference_t *line = &file->edit_state.lines.data[line_index];
-	string_reference_t *prev_line = &file->edit_state.lines.data[new_line_index];
 
-	int64_t offset = pos - line->start;
-	if (offset > prev_line->len) offset = prev_line->len;
-
-	pos = prev_line->start + offset;
-
-	return pos;
+	return global_pos - line->start;
 }
 
 bool file_does_selection_exist(file_t *file) {

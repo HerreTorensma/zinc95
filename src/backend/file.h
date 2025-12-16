@@ -68,6 +68,7 @@ typedef struct file {
 		bool has_pending_insert; // TODO: remove this maybe and make function instead that only uses the below 2 variables
 		size_t pending_insert_start;
 		size_t pending_insert_end;
+		int horizontal_cursor_pos;
 	} edit_state;
 } file_t;
 
@@ -88,11 +89,7 @@ void file_clear(file_t *file);
 
 size_t get_token_index_around_pos(file_t *file, int pos);
 
-// size_t file_move_pos_up(file_t *file, size_t pos);
-// // Get the index at the same offset from the beginning of the line pos is on, but the line above
-// size_t file_move_pos_down(file_t *file, size_t pos);
-
-size_t file_move_pos_vertical(file_t *file, int pos, int64_t amount);
+size_t file_get_offset_from_line_start(file_t *file, int global_pos);
 
 bool file_does_selection_exist(file_t *file);
 
