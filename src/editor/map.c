@@ -179,6 +179,8 @@ void map_editor_update(computer_t *computer) {
 
 		_camera.pos.x -= diff.x / _camera.zoom;
 		_camera.pos.y -= diff.y / _camera.zoom;
+
+		input_set_cursor_style(CURSOR_STYLE_HAND);
 	}
 
 	if (point_in_rect(mouse_pos, _layout.map_rect)) {

@@ -134,6 +134,8 @@ void _commit_pending_insert(file_t *file) {
 // Returns true if a keybind was activated (so the char input can be skipped), false otherwise
 static bool _handle_keybinds(computer_t *computer, file_t *file) {
 	if (is_keybind_pressed(g_keybinds.global.undo)) {
+		file_deselect(file);
+
 		_commit_pending_insert(file);
 
 		if (file->edit_state.history.len > 0) {
@@ -158,8 +160,26 @@ static bool _handle_keybinds(computer_t *computer, file_t *file) {
 
 	if (is_keybind_pressed(g_keybinds.global.copy)) {
 		file_fix_selection(file);
-		string_t clipboard = string_view(file->string, file->edit_state.selection_start, file->edit_state.selection_end - file->edit_state.selection_start);
-		set_clipboard_text(get_heap_allocator(), clipboard);
+		
+		if (file_does_selection_exist(file)) {
+			string_t clipboard = string_view(file->string, file->edit_state.selection_start, file->edit_state.selection_end - file->edit_state.selection_start);
+			set_clipboard_text(get_heap_allocator(), clipboard);
+		} else {
+			size_t line_index = file_get_line_index_from_pos(file, file->edit_state.cursor_pos);
+			string_reference_t ref = file->edit_state.lines.data[line_index];
+			string_t line = string_view(file->string, ref.start, ref.len);
+			
+			if (line.len == 0) {
+				set_clipboard_text(get_temp_allocator(), STR("\n"));
+				goto ah;
+			}
+
+			// TODO: find way to communicate this is a line and should be inserted below the current instead of in the middle (on paste)
+
+			set_clipboard_text(get_heap_allocator(), line);
+		}
+
+		ah:
 
 		return true;
 	}
@@ -182,10 +202,37 @@ static bool _handle_keybinds(computer_t *computer, file_t *file) {
 
 	if (is_keybind_pressed(g_keybinds.global.cut)) {
 		file_fix_selection(file);
-		string_t clipboard = string_view(file->string, file->edit_state.selection_start, file->edit_state.selection_end - file->edit_state.selection_start);
-		set_clipboard_text(get_heap_allocator(), clipboard);
+		
+		if (file_does_selection_exist(file)) {
+			string_t clipboard = string_view(file->string, file->edit_state.selection_start, file->edit_state.selection_end - file->edit_state.selection_start);
+			set_clipboard_text(get_heap_allocator(), clipboard);
+			_remove_selection_if_exists(file);
+		} else {
+			size_t line_index = file_get_line_index_from_pos(file, file->edit_state.cursor_pos);
+			string_reference_t ref = file->edit_state.lines.data[line_index];
+			string_t line = string_view(file->string, ref.start, ref.len);
 
-		_remove_selection_if_exists(file);
+			if (line.len == 0) {
+				set_clipboard_text(get_temp_allocator(), STR("\n"));
+				goto eh;
+			}
+
+			// TODO: find way to communicate this is a line and should be inserted below the current instead of in the middle (on paste)
+
+			set_clipboard_text(get_heap_allocator(), line);
+
+			
+			size_t start = clamp_int(ref.start - 1, 0, file->string.len);
+			size_t len = clamp_int(ref.len + 1, 0, file->string.len);
+			size_t end = clamp_int(ref.start + ref.len, 0, file->string.len);
+
+			_commit_to_history(file, start, end, FILE_ACTION_REMOVE, false);
+			file_remove_section(file, start, len);
+			
+			file->edit_state.cursor_pos = clamp_int(start + 1, 0, file->string.len);
+		}
+
+		eh:
 
 		return true;
 	}
@@ -219,15 +266,23 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 
 		if (input_key_pressed_or_long_pressed(KEY_LEFT)) {
 			if (file_does_selection_exist(file) && !shift_held) {
+				file->edit_state.cursor_pos = file->edit_state.selection_start;
 				file_deselect(file);
 			} else {
 				if (input_key_held(KEY_LCTRL)) {
 					// Jump to previous word
+					bool broke = false;
+
 					for (int i = file->edit_state.cursor_pos - 2; i >= 0; i--) {
 						if (file->string.data[i] == ' ' || file->string.data[i] == '\n' || file->string.data[i] == ',' || file->string.data[i] == '\t' || file->string.data[i] == '(') {
 							file->edit_state.cursor_pos = i + 1;
+							broke = true;
 							break;
 						}
+					}
+
+					if (!broke) {
+						file->edit_state.cursor_pos = 0;
 					}
 				} else {
 					file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos - 1, 0, file->string.len);
@@ -238,15 +293,23 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 		}
 		if (input_key_pressed_or_long_pressed(KEY_RIGHT)) {
 			if (file_does_selection_exist(file) && !shift_held) {
+				file->edit_state.cursor_pos = file->edit_state.selection_end;
 				file_deselect(file);
 			} else {
 				if (input_key_held(KEY_LCTRL)) {
 					// Jump to next word
+					bool broke = false;
+					
 					for (int i = file->edit_state.cursor_pos + 1; i < file->string.len; i++) {
 						if (file->string.data[i] == ' ' || file->string.data[i] == '\n' || file->string.data[i] == ',' || file->string.data[i] == '\t' || file->string.data[i] == '(') {
 							file->edit_state.cursor_pos = i;
+							broke = true;
 							break;
 						}
+					}
+
+					if (!broke) {
+						file->edit_state.cursor_pos = (file->string.len);
 					}
 				} else {
 					file->edit_state.cursor_pos = clamp_int(file->edit_state.cursor_pos + 1, 0, file->string.len);
@@ -256,6 +319,8 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 			}
 		}
 
+		// TODO: retain the original horizontal position of the cursor (decided only by left and right keys I think)
+		// and move accordingly, rather than losing that information
 		if (input_key_pressed_or_long_pressed(KEY_UP)) {
 			if (file_does_selection_exist(file) && !shift_held) {
 				file_deselect(file);
@@ -286,10 +351,10 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 		if (input_key_pressed_or_long_pressed(KEY_HOME)) {
 			if (file_does_selection_exist(file) && !shift_held) {
 				file_deselect(file);
-			} else {
-				size_t line_index = file_get_line_index_from_pos(file, file->edit_state.cursor_pos);
-				file->edit_state.cursor_pos = file->edit_state.lines.data[line_index].start;
 			}
+
+			size_t line_index = file_get_line_index_from_pos(file, file->edit_state.cursor_pos);
+			file->edit_state.cursor_pos = file->edit_state.lines.data[line_index].start;
 
 			cursor_moved = true;
 		}
@@ -297,10 +362,10 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 		if (input_key_pressed_or_long_pressed(KEY_END)) {
 			if (file_does_selection_exist(file) && !shift_held) {
 				file_deselect(file);
-			} else {
-				size_t line_index = file_get_line_index_from_pos(file, file->edit_state.cursor_pos);
-				file->edit_state.cursor_pos = file->edit_state.lines.data[line_index].start + file->edit_state.lines.data[line_index].len;
 			}
+
+			size_t line_index = file_get_line_index_from_pos(file, file->edit_state.cursor_pos);
+			file->edit_state.cursor_pos = file->edit_state.lines.data[line_index].start + file->edit_state.lines.data[line_index].len;
 
 			cursor_moved = true;
 		}
@@ -310,9 +375,9 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 		}
 	
 		if (input_key_pressed(KEY_LSHIFT)) {
-			file_deselect(file);
-			file->edit_state.selection_start = file->edit_state.cursor_pos;
-			file->edit_state.selection_end = file->edit_state.cursor_pos;
+			if (file->edit_state.selection_start != file->edit_state.cursor_pos && file->edit_state.selection_end != file->edit_state.cursor_pos) {
+				file_deselect(file);
+			}
 		}
 		
 		if (input_key_released(KEY_LSHIFT)) {
@@ -350,9 +415,32 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 			// But for the moving of a selection or line I'll also need it
 			// So one action can do both
 			_remove_selection_if_exists(file);
+
+			size_t line_index = file_get_line_index_from_pos(file, file->edit_state.cursor_pos);
+			string_reference_t ref = file->edit_state.lines.data[line_index];
+			string_t line = string_view(file->string, ref.start, ref.len);
 			
 			file_insert_char_at(file, file->edit_state.cursor_pos, c);
 			file->edit_state.cursor_pos++;
+
+			// Match indentation of current line
+			if (c == '\n') {
+				size_t indentation_level = 0;
+
+				for (size_t i = 0; i < line.len; i++) {
+					if (line.data[i] == '\t') {
+						indentation_level++;
+					} else {
+						break;
+					}
+				}
+
+				for (size_t i = 0; i < indentation_level; i++) {
+					file_insert_char_at(file, file->edit_state.cursor_pos, '\t');
+					file->edit_state.cursor_pos++;
+				}
+			}
+
 			file->edit_state.pending_insert_end = file->edit_state.cursor_pos;
 
 			if (is_whitespace(c)) {
@@ -488,10 +576,6 @@ static void _file_draw(computer_t *computer, file_t *file, rect_t rect, code_edi
 					new_y += font->height + font->vertical_space;
 					line_index++;
 	
-					if (j != file->edit_state.cursor_pos - 1) {
-						_draw_selection_rect_for_char(computer, file, font, new_x, new_y, 1, config.selection_color, string_reference.start + j, rect);
-	
-					}
 					continue;
 				}
 	
