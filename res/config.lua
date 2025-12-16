@@ -1,15 +1,16 @@
+
 return {
 	skin = "default",
-
+	
 	palette = "default",
-
+	
 	code_editor = {
 		tab_size = 4,
 		scroll_speed = 3,
 		
 		selection_color = 11,
 		cursor_color = 9,
-
+		
 		token_colors = {
 			keyword = 12,
 			builtin_function = 6,
@@ -21,7 +22,8 @@ return {
 			whitespace = 255,
 		},
 	},
-
+	
+	-- NOTE: setting the same keybind for multiple actions can cause unexpected behavior! Proceed with caution.
 	keybinds = {
 		global = {
 			run = {"Ctrl", "R"},

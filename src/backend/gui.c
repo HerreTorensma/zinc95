@@ -172,52 +172,6 @@ bool gui_toggle_button(ram_t *ram, point_t pos, button_t button, bool set) {
 	return set;
 }
 
-int gui_get_string_width(font_t *font, string_t string, int max_offset) {
-	int len = 0;
-
-	for (int i = 0; i < (int)string.len && i < max_offset; i++) {
-		if (string.data[i] == '\t') {
-			len += (font->widths[' ' - VISIBLE_CHARACTERS_START] + font->horizontal_space) * TAB_SIZE;
-			continue;
-		}
-
-		len += font->widths[string.data[i] - VISIBLE_CHARACTERS_START] + font->horizontal_space;
-	}
-
-	return len;
-}
-
-int gui_get_text_width(font_t *font, char text[], int max_offset) {
-	size_t len = strlen(text);
-	return gui_get_string_width(font, (string_t){.data = text, .len = len}, max_offset);
-}
-
-// Only works on monospace fonts, uses the width of the space character for the whole string
-int gui_x_to_string_index(font_t *font, string_t string, int x) {
-	int index = x / (font->widths[0] + font->horizontal_space);
-	// int index = x / 8;
-
-	int real_index = index;
-
-	for (size_t i = 0; i < index && i < string.len; i++) {
-		if (string.data[i] == '\t') {
-			real_index -= TAB_SIZE - 1;
-		}
-
-		if (real_index < 0) {
-			real_index = 0;
-			break;
-		}
-	}
-	
-	
-	if (real_index >= string.len) {
-		real_index = string.len;
-	}
-
-	return real_index;
-}
-
 void gui_init_monospace_font_widths(ram_t *ram, int font_index, int width) {
 	for (int i = 0; i < VISIBLE_CHARACTERS_SIZE; i++) {
 		ram->fonts[font_index].widths[i] = width;

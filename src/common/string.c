@@ -347,17 +347,50 @@ string_t path_get_filename(string_t path) {
 	return path;
 }
 
-size_t string_get_size_with_expanded_tabs(string_t string, size_t tab_size) {
-	size_t size = 0;
-	
+size_t visual_string_pos_to_string_pos(string_t string, size_t visual_pos, size_t tab_size) {
+	size_t visual_column = 0;
+
 	for (size_t i = 0; i < string.len; i++) {
+		size_t char_width = 0;
+
 		if (string.data[i] == '\t') {
-			size += tab_size;
-			continue;
+			char_width = tab_size;
+		} else {
+			char_width = 1;
 		}
 
-		size++;
+		// Split if inside tab character
+		if (visual_pos < visual_column + char_width) {
+			if (string.data[i] == '\t') {
+				size_t half = char_width / 2;
+				// TODO: there is a <= instead of < because in the code editor where I'm calling my function, I already added half a character horizontal size
+				// so this should maybe be changed if I want to call the function from somewhere else or if I decide to be a better programmer
+				// but for now it works and this comment will suffice
+				if (visual_pos - visual_column <= half) {
+					return i;
+				} else {
+					return i + 1;
+				}
+			}
+
+			return i;
+		}
+
+		visual_column += char_width;
 	}
 
-	return size;
+	return string.len;
+}
+
+// Untested, but probably need later
+size_t string_pos_to_visual_string_pos(string_t string, size_t pos, size_t tab_size) {
+	size_t new_pos = pos;
+
+	for (size_t i = 0; i < pos; i++) {
+		if (string.data[i] == '\t') {
+			new_pos += (tab_size - 1);
+		}
+	}
+
+	return new_pos;
 }

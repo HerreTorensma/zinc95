@@ -97,4 +97,6 @@ string_t path_truncate_extension(string_t path);
 // Get the filename without the extension
 string_t path_get_filename(string_t path);
 
-size_t string_get_size_with_expanded_tabs(string_t string, size_t tab_size);
+size_t visual_string_pos_to_string_pos(string_t string, size_t pos, size_t tab_size);
+
+size_t string_pos_to_visual_string_pos(string_t string, size_t pos, size_t tab_size);

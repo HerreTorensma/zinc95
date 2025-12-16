@@ -47,21 +47,13 @@ static int _screen_pos_to_file_pos(file_t *file, font_t *font, rect_t rect, poin
 
 	string_reference_t *line = &file->edit_state.lines.data[line_index];
 
-	int offset_from_line_with_tabs_expanded = (adjusted_pos.x / (font->widths[0] + font->horizontal_space)) - (line_number_digits_amount + 1);
-	offset_from_line_with_tabs_expanded = clamp_int(offset_from_line_with_tabs_expanded, 0, line->len);
-
-	int offset_from_line = offset_from_line_with_tabs_expanded;
-	{
-		string_t thing = string_view(file->string, line->start, offset_from_line);
-		
-		for (size_t i = 0; i < thing.len; i++) {
-			if (thing.data[i] == '\t') {
-				offset_from_line -= (tab_size - 1);
-			}
-		}
-		
-		offset_from_line = clamp_int(offset_from_line, 0, line->len);
+	int visual_offset_from_line = (adjusted_pos.x / (font->widths[0] + font->horizontal_space)) - (line_number_digits_amount + 1);
+	if (visual_offset_from_line < 0) {
+		visual_offset_from_line = 0;
 	}
+
+	int offset_from_line = visual_string_pos_to_string_pos(string_view(file->string, line->start, line->len), visual_offset_from_line, tab_size);
+	offset_from_line = clamp_int(offset_from_line, 0, line->len);
 
 	int final_pos = clamp_int(line->start + offset_from_line, 0, file->string.len);
 

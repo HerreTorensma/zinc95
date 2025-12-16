@@ -25,12 +25,6 @@ bool gui_press_button(ram_t *ram, point_t pos, button_t button);
 
 bool gui_toggle_button(ram_t *ram, point_t pos, button_t button, bool set);
 
-int gui_get_string_width(font_t *font, string_t string, int max_offset);
-
-int gui_get_text_width(font_t *font, char text[], int max_offset);
-
-int gui_x_to_string_index(font_t *font, string_t string, int x);
-
 void gui_init_monospace_font_widths(ram_t *ram, int font_index, int width);
 
 void gui_init_font_widths(ram_t *ram, int font_index);
