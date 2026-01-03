@@ -105,7 +105,7 @@ void _commit_pending_insert(file_t *file) {
 
 	size_t start = file->edit_state.pending_insert_start;
 	size_t end = file->edit_state.pending_insert_end;
-	// _swap_if_a_greater_than_b(&start, &end); // Don't think this is necessary
+	_swap_if_a_greater_than_b(&start, &end); // Don't think this is necessary (little did me from a week ago know, it was necessary)
 
 	size_t len = end - start;
 

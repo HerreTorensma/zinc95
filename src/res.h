@@ -268,6 +268,7 @@ static const palette_t g_builtin_palette = (palette_t){
 	},
 };
 
+// TODO: make substructs for each editor like in g_keybinds
 static struct {
 	button_t zinc_button;
 
@@ -304,6 +305,8 @@ static struct {
 	button_t square_wave_button;
 	button_t triangle_wave_button;
 	button_t sawtooth_wave_button;
+
+	button_array_t map_entity_tool_buttons;
 }
 g_skin_layout = {
 	.zinc_button = {
@@ -430,6 +433,15 @@ g_skin_layout = {
 	.sawtooth_wave_button = {
 		.unpressed_rect = {{3200, 398, 32, 16}},
 		.pressed_rect = {{3232, 398, 32, 16}},
+	},
+
+	.map_entity_tool_buttons = {
+		.base = {
+			.unpressed_rect = {{3328, 76, 16, 16}},
+			.pressed_rect = {{3344, 76, 16, 16}},
+		},
+		.increase = {0, 16},
+		.amount = 4,
 	},
 };
 

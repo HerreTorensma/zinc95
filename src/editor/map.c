@@ -32,6 +32,8 @@ static camera_t _camera = {
 // 0 - 3 are tile layers
 static int _selected_layer = 0;
 
+#define ENTITY_LAYER -1
+
 // TODO: also add this in the RAM but this variable should still exist
 // because the editor shouldn't influence what layers are visible in-game
 // but it should be able to be set in-game as well
@@ -40,6 +42,24 @@ static bool _hidden_layers[MAP_LAYERS_AMOUNT] = {0};
 static bool _entity_layer_hidden = false;
 
 static point_t _last_frame_mouse_pos = {0};
+
+typedef enum entity_tool {
+	ENTITY_TOOL_PICK,
+	ENTITY_TOOL_SELECT,
+	ENTITY_TOOL_MOVE,
+	ENTITY_TOOL_STAMP,
+} entity_tool_t;
+
+ARRAY_DEFINE(size_t)
+
+static size_t_array_t _selected_entity_indices = {0};
+
+static entity_tool_t _selected_entity_tool = ENTITY_TOOL_SELECT;
+
+static bool _moving_entity = false;
+static point_t _moving_entity_offset = {0};
+static point_t _entity_selection_start = {0};
+static point_t _entity_selection_end = {0};
 
 static struct {
 	rect_t map_rect;
@@ -52,9 +72,11 @@ static struct {
 
 	point_t sprite_selector_pos;
 	point_t sprite_selector_buttons_start_pos;
+
+	point_t tools_start_pos;
 }
 _layout = {
-	.map_rect = {{0, 20, 640, 324}},
+	.map_rect = {{0, 20, 620, 324}},
 	.gui_rect = {{0, 344, 640, 136}},
 
 	.entity_layer_pos = {4, 394},
@@ -62,6 +84,8 @@ _layout = {
 	
 	.sprite_selector_pos = {200, 348},
 	.sprite_selector_buttons_start_pos = {588, 348},
+
+	.tools_start_pos = {622, 34},
 };
 
 static void _draw_grid(surface_t surf) {
@@ -87,7 +111,8 @@ static void _draw_grid(surface_t surf) {
 }
 
 void map_editor_init(computer_t *computer) {
-
+	// TODO: dealloc
+	array_init(&_selected_entity_indices, get_heap_allocator());
 }
 
 void map_editor_update(computer_t *computer) {
@@ -97,17 +122,67 @@ void map_editor_update(computer_t *computer) {
 	rect_t in_frame_rect = get_in_frame_rect();
 	rect_t in_frame_rect_in_sprites = get_in_frame_rect_in_sprites();
 
-	if (_selected_layer == -1) { // Entities layer
-		if (point_in_rect(mouse_pos, _layout.map_rect)) {
+	if (_selected_layer == ENTITY_LAYER && point_in_rect(mouse_pos, _layout.map_rect)) { // Entities layer
+		if (_selected_entity_tool == ENTITY_TOOL_SELECT) {
+			if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
+				_moving_entity = false;
+
+				array_clear(&_selected_entity_indices);
+				
+				point_t world_mouse_pos = cam_screen_to_world(&_camera, mouse_pos);
+
+				for (size_t i = 0; i < MAX_ENTITIES; i++) {
+					if (computer->ram->entities.entities[i].id[0] == '\0') {
+						break;
+					}
+
+					rect_t entity_rect = {
+						.x = computer->ram->entities.entities[i].x,
+						.y = computer->ram->entities.entities[i].y,
+						.w = computer->ram->entities.entities[i].w * SPRITE_WIDTH,
+						.h = computer->ram->entities.entities[i].h * SPRITE_HEIGHT,
+					};
+
+					if (point_in_rect(world_mouse_pos, entity_rect)) {
+						array_push(&_selected_entity_indices, i);
+						_moving_entity = true;
+
+						_moving_entity_offset.x = world_mouse_pos.x - computer->ram->entities.entities[i].x;
+						_moving_entity_offset.y = world_mouse_pos.y - computer->ram->entities.entities[i].y;
+
+						break;
+					}
+
+					_entity_selection_start = world_mouse_pos;
+				}
+			}
+
+			if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+				point_t world_mouse_pos = cam_screen_to_world(&_camera, mouse_pos);
+
+				if (_moving_entity) {
+					input_set_cursor_style(CURSOR_STYLE_MOVE);
+					size_t index = _selected_entity_indices.data[0];
+					computer->ram->entities.entities[index].x = world_mouse_pos.x - _moving_entity_offset.x;
+					computer->ram->entities.entities[index].y = world_mouse_pos.y - _moving_entity_offset.y;
+				} else {
+					_entity_selection_end = world_mouse_pos;
+				}
+			}
+
+			if (input_mouse_button_released(MOUSE_BUTTON_LEFT) && !_moving_entity) {
+				// Add all entities within selection rect to _selected_entity_indices
+			}
+		} else if (_selected_entity_tool == ENTITY_TOOL_STAMP) {
 			if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
 				// Kind of inefficient, should improve if it becomes problematic
 				for (size_t i = 0; i < MAX_ENTITIES; i++) {
 					if (computer->ram->entities.entities[i].id[0] == '\0') {
 						// Found empty entity
-
+	
 						// strncpy((char *)computer->ram->entities.entities[i].id, "idk", 3);
 						computer->ram->entities.entities[i].id[0] = 'e';
-
+	
 						point_t pos = cam_screen_to_world(&_camera, POINT(mouse_pos.x - (in_frame_rect.w * _camera.zoom) / 2, mouse_pos.y - (in_frame_rect.h * _camera.zoom) / 2));
 						computer->ram->entities.entities[i].x = pos.x;
 						computer->ram->entities.entities[i].y = pos.y;
@@ -115,7 +190,7 @@ void map_editor_update(computer_t *computer) {
 						computer->ram->entities.entities[i].sprite = get_sprite_index();
 						computer->ram->entities.entities[i].w = in_frame_rect_in_sprites.w;
 						computer->ram->entities.entities[i].h = in_frame_rect_in_sprites.h;
-
+	
 						break;
 					}
 				}
@@ -289,7 +364,30 @@ void map_editor_draw(computer_t *computer) {
 			// TODO: change color key to that of the sprite?
 			// but which sprite
 			gfx_draw_spritesheet_pro(computer->ram, source_rect, dest_rect, COLOR_BLACK, _layout.map_rect);
+
+			// if (computer->ram->entities.entities[i].selected) {
+			// 	// TODO: maybe make a function of expand_rect(rect_t rect, int amount);
+			// 	draw_selection_rect(0, fb_surf, dest_rect);
+			// }
 		}
+	}
+
+	// Draw selection rect
+	for (size_t i = 0; i < _selected_entity_indices.len; i++) {
+		entity_t *entity = &computer->ram->entities.entities[_selected_entity_indices.data[i]];
+
+		rect_t source_rect = sprite_index_to_spritesheet_rect(entity->sprite, entity->w, entity->h);
+		point_t pos = cam_world_to_screen(&_camera, POINT(entity->x, entity->y));
+
+		rect_t dest_rect = {
+			.x = pos.x,
+			.y = pos.y,
+			.w = source_rect.w * _camera.zoom,
+			.h = source_rect.h * _camera.zoom,
+		};
+
+		// TODO: maybe make a function of expand_rect(rect_t rect, int amount);
+		gui_draw_selection_rect(computer->ram->ticks, fb_surf, dest_rect);
 	}
 
 	// Draw rect where mouse is
@@ -304,18 +402,21 @@ void map_editor_draw(computer_t *computer) {
 	surface_t skin_surface = (surface_t){.data = computer->ram->skin.data, .width = SKIN_WIDTH, .height = SKIN_HEIGHT};
 	gfx_draw_surface_rect(&computer->ram->framebuffer, skin_surface, POINT(0, 0), RECT(SCREEN_WIDTH * 2, 0, SCREEN_WIDTH, SCREEN_HEIGHT), computer->ram->skin.color_key);
 
-	if (_selected_layer == -1) {
-		rect_t dest_rect = {
-			.x = mouse_pos.x - (in_frame_rect.w * _camera.zoom) / 2,
-			.y = mouse_pos.y - (in_frame_rect.h * _camera.zoom) / 2,
-			.w = in_frame_rect.w * _camera.zoom,
-			.h = in_frame_rect.h * _camera.zoom,
-		};
-
-		dest_rect.pos = snap_to_grid(dest_rect.pos, (int)_camera.zoom, (int)_camera.zoom);
-
-		gfx_draw_spritesheet_pro(computer->ram, in_frame_rect, dest_rect, COLOR_BLACK, _layout.map_rect); // TODO: replace COLOR_NONE with the color key of the sprite
-
+	if (_selected_layer == ENTITY_LAYER) {
+		if (_selected_entity_tool == ENTITY_TOOL_SELECT) {
+			// TODO
+		} else if (_selected_entity_tool == ENTITY_TOOL_STAMP) {
+			rect_t dest_rect = {
+				.x = mouse_pos.x - (in_frame_rect.w * _camera.zoom) / 2,
+				.y = mouse_pos.y - (in_frame_rect.h * _camera.zoom) / 2,
+				.w = in_frame_rect.w * _camera.zoom,
+				.h = in_frame_rect.h * _camera.zoom,
+			};
+	
+			dest_rect.pos = snap_to_grid(dest_rect.pos, (int)_camera.zoom, (int)_camera.zoom);
+	
+			gfx_draw_spritesheet_pro(computer->ram, in_frame_rect, dest_rect, COLOR_BLACK, _layout.map_rect); // TODO: replace COLOR_NONE with the color key of the sprite
+		}
 	} else {
 		if (point_in_rect(mouse_pos, _layout.map_rect)) {
 			point_t tile = cam_screen_to_tile(&_camera, mouse_pos, in_frame_rect_in_sprites, SPRITE_WIDTH, SPRITE_HEIGHT);
@@ -329,8 +430,8 @@ void map_editor_draw(computer_t *computer) {
 	sprite_selector_draw(computer, _layout.sprite_selector_pos, _layout.sprite_selector_buttons_start_pos);
 
 	// Entity layer
-	if (gui_button(computer->ram, _layout.entity_layer_pos, g_skin_layout.map_entity_layer_button, _selected_layer == -1)) {
-		_selected_layer = -1;
+	if (gui_button(computer->ram, _layout.entity_layer_pos, g_skin_layout.map_entity_layer_button, _selected_layer == ENTITY_LAYER)) {
+		_selected_layer = ENTITY_LAYER;
 	}
 
 	// Entity layer visible
@@ -347,5 +448,19 @@ void map_editor_draw(computer_t *computer) {
 
 		// Visibility button
 		_hidden_layers[i] = gui_toggle_button(computer->ram, POINT(pos.x + button.pressed_rect.w, pos.y), g_skin_layout.toggle_layer_button, _hidden_layers[i]);
+	}
+
+	// Tool bar
+	if (_selected_layer == ENTITY_LAYER) {
+		for (int i = 0; i < g_skin_layout.map_entity_tool_buttons.amount; i++) {
+			point_t pos = button_array_get_pos(&g_skin_layout.map_entity_tool_buttons, _layout.tools_start_pos, i);
+			button_t button = button_array_get(&g_skin_layout.map_entity_tool_buttons, i);
+
+			if (gui_button(computer->ram, pos, button, i == _selected_entity_tool)) {
+				_selected_entity_tool = i;
+			}
+		}
+	} else {
+
 	}
 }

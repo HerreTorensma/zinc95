@@ -253,7 +253,7 @@ static uint32_t _get_current_modifiers() {
 
 // Checks if only that keybind is active
 bool is_keybind_pressed(keybind_t keybind) {
-	if (!input_key_pressed(keybind.key)) {
+	if (!input_key_pressed_or_long_pressed(keybind.key)) {
 		return false;
 	}
 

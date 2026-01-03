@@ -435,6 +435,8 @@ static void _sdl2_audio_callback(void *userdata, uint8_t *stream, int len) {
 }
 
 void sdl2_audio_init(computer_t *computer) {
+	return;
+
 	SDL_AudioSpec wav_spec;
 
 	SDL_AudioSpec spec = {

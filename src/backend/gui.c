@@ -259,3 +259,26 @@ int64_t gui_slider(ram_t *ram, int font_index, rect_t rect, int64_t min, int64_t
 
 	return value;
 }
+
+void gui_draw_selection_rect(uint64_t ticks, surface_t surf, rect_t rect) {
+	int thing = ticks % 30 < 15;
+	for (int j = rect.x; j < rect.x+rect.w; j++) {
+		color_t color = j % 3 == thing ? COLOR_BLACK : COLOR_WHITE;
+		surf_set_pixel(surf, j, rect.y, color);
+	}
+
+	for (int j = rect.x; j < rect.x+rect.w; j++) {
+		color_t color = j % 3 == thing ? COLOR_BLACK : COLOR_WHITE;
+		surf_set_pixel(surf, j, rect.y+rect.h-1, color);
+	}
+
+	for (int i = rect.y; i < rect.y+rect.h; i++) {
+		color_t color = i % 3 == thing ? COLOR_BLACK : COLOR_WHITE;
+		surf_set_pixel(surf, rect.x, i, color);
+	}
+
+	for (int i = rect.y; i < rect.y+rect.h; i++) {
+		color_t color = i % 3 == thing ? COLOR_BLACK : COLOR_WHITE;
+		surf_set_pixel(surf, rect.x+rect.w - 1, i, color);
+	}
+}

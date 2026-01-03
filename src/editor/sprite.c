@@ -571,30 +571,6 @@ void sprite_editor_update(computer_t *computer) {
 	}
 }
 
-// TODO: probably move this to GUI
-static void _draw_selection_rect(uint64_t ticks, surface_t surf, rect_t rect) {
-	int thing = ticks % 30 < 15;
-	for (int j = rect.x; j < rect.x+rect.w; j++) {
-		color_t color = j % 3 == thing ? COLOR_BLACK : COLOR_WHITE;
-		surf_set_pixel(surf, j, rect.y, color);
-	}
-
-	for (int j = rect.x; j < rect.x+rect.w; j++) {
-		color_t color = j % 3 == thing ? COLOR_BLACK : COLOR_WHITE;
-		surf_set_pixel(surf, j, rect.y+rect.h-1, color);
-	}
-
-	for (int i = rect.y; i < rect.y+rect.h; i++) {
-		color_t color = i % 3 == thing ? COLOR_BLACK : COLOR_WHITE;
-		surf_set_pixel(surf, rect.x, i, color);
-	}
-
-	for (int i = rect.y; i < rect.y+rect.h; i++) {
-		color_t color = i % 3 == thing ? COLOR_BLACK : COLOR_WHITE;
-		surf_set_pixel(surf, rect.x+rect.w - 1, i, color);
-	}
-}
-
 // TODO: overlay is drawn over selected sprites, need to fix
 void sprite_editor_draw(computer_t *computer) {
 	framebuffer_t *fb = &computer->ram->framebuffer;
@@ -730,7 +706,7 @@ void sprite_editor_draw(computer_t *computer) {
 		selection.y += _layout.sprite_editor_focus_rect.y;
 		
 		// gfx_draw_rect(fb_surf, selection, COLOR_LIGHTGRAY);
-		_draw_selection_rect(computer->ram->ticks, fb_surf, selection);
+		gui_draw_selection_rect(computer->ram->ticks, fb_surf, selection);
 	}
 
 	// Focus rect
