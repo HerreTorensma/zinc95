@@ -24,38 +24,41 @@ static struct {
 }
 _layout = {
 	.piano_pos = {300, 100},
-	.pitch_graph_rect = {{4, 24, 256, 96}},
+	// .pitch_graph_rect = {{4, 24, 256, 96}},
+	.pitch_graph_rect = {{0, 24, 640, 96}},
 	
-	.sine_wave_button_pos = {262, 22},
-	.square_wave_button_pos = {294, 22},
-	.triangle_wave_button_pos = {326, 22},
-	.sawtooth_wave_button_pos = {358, 22},
-	.speed_slider_rect = {{262, 38, 16, 16}},
+	.sine_wave_button_pos = {510, 174},
+	.square_wave_button_pos = {542, 174},
+	.triangle_wave_button_pos = {574, 174},
+	.sawtooth_wave_button_pos = {606, 174},
+
+	.speed_slider_rect = {{4, 174, 16, 16}},
 	
-	.volume_graph_rect = {{4, 124, 256, 48}},
+	// .volume_graph_rect = {{4, 124, 256, 48}},
+	.volume_graph_rect = {{0, 124, 640, 48}},
 };
 
-#define PIANO_KEY_WIDTH 20
-#define PIANO_KEY_HEIGHT 80
+// #define PIANO_KEY_WIDTH 20
+// #define PIANO_KEY_HEIGHT 80
 
-static voice_t *_piano_voices[12] = {0};
+// static voice_t *_piano_voices[12] = {0};
 
-static const zinc_key_t _note_key_map[] = {
-	[NOTE_C] = KEY_Z,
-	[NOTE_CSHARP] = KEY_S,
-	[NOTE_D] = KEY_X,
-	[NOTE_DSHARP] = KEY_D,
-	[NOTE_E] = KEY_C,
-	[NOTE_F] = KEY_V,
-	[NOTE_FSHARP] = KEY_G,
-	[NOTE_G] = KEY_B,
-	[NOTE_GSHARP] = KEY_H,
-	[NOTE_A] = KEY_N,
-	[NOTE_ASHARP] = KEY_J,
-	[NOTE_B] = KEY_M,
-};
+// static const zinc_key_t _note_key_map[] = {
+// 	[NOTE_C] = KEY_Z,
+// 	[NOTE_CSHARP] = KEY_S,
+// 	[NOTE_D] = KEY_X,
+// 	[NOTE_DSHARP] = KEY_D,
+// 	[NOTE_E] = KEY_C,
+// 	[NOTE_F] = KEY_V,
+// 	[NOTE_FSHARP] = KEY_G,
+// 	[NOTE_G] = KEY_B,
+// 	[NOTE_GSHARP] = KEY_H,
+// 	[NOTE_A] = KEY_N,
+// 	[NOTE_ASHARP] = KEY_J,
+// 	[NOTE_B] = KEY_M,
+// };
 
-static int _current_octave = 4;
+// static int _current_octave = 4;
 
 static int _current_pattern = 0;
 static int _selected_waveform = WAVEFORM_SINE;
@@ -71,40 +74,40 @@ void sound_editor_init(computer_t *computer) {
 }
 
 void sound_editor_update(computer_t *computer) {
-	if (input_key_pressed(KEY_UP)) {
-		_current_octave++;
-	}
-	if (input_key_pressed(KEY_DOWN)) {
-		_current_octave--;
-	}
+	// if (input_key_pressed(KEY_UP)) {
+	// 	_current_octave++;
+	// }
+	// if (input_key_pressed(KEY_DOWN)) {
+	// 	_current_octave--;
+	// }
 
-	/*
-	╔═══╗                  
-	║   ║ °                
-	╠═══╝ ╖ ╒══╗ ╔══╗ ╔══╗ 
-	║     ║ ╔══╣ ║  ║ ║  ║ 
-	╜     ╙ ╚══╝ ╜  ╙ ╚══╝ 
-	*/
-	for (int i = 0; i < 12; i++) {
-		if (input_key_pressed(_note_key_map[i])) {
-			voice_t *voice = voice_alloc(&computer->voice_pool);
-			voice->oscillator = (oscillator_t){
-				.freq = note_to_freq_tet12(i, _current_octave),
-				.phase = 0.0f,
-				.waveform = WAVEFORM_SINE,
-			};
-			voice->amplitude = 0.5f;
+	// /*
+	// ╔═══╗                  
+	// ║   ║ °                
+	// ╠═══╝ ╖ ╒══╗ ╔══╗ ╔══╗ 
+	// ║     ║ ╔══╣ ║  ║ ║  ║ 
+	// ╜     ╙ ╚══╝ ╜  ╙ ╚══╝ 
+	// */
+	// for (int i = 0; i < 12; i++) {
+	// 	if (input_key_pressed(_note_key_map[i])) {
+	// 		voice_t *voice = voice_alloc(&computer->voice_pool);
+	// 		voice->oscillator = (oscillator_t){
+	// 			.freq = note_to_freq_tet12(i, _current_octave),
+	// 			.phase = 0.0f,
+	// 			.waveform = WAVEFORM_SINE,
+	// 		};
+	// 		voice->amplitude = 0.5f;
 
-			_piano_voices[i] = voice;
-		}
-	}
+	// 		_piano_voices[i] = voice;
+	// 	}
+	// }
 
-	for (int i = 0; i < 12; i++) {
-		if (input_key_released(_note_key_map[i])) {
-			_piano_voices[i]->active = false;
-			_piano_voices[i] = NULL;
-		}
-	}
+	// for (int i = 0; i < 12; i++) {
+	// 	if (input_key_released(_note_key_map[i])) {
+	// 		_piano_voices[i]->active = false;
+	// 		_piano_voices[i] = NULL;
+	// 	}
+	// }
 
 	point_t mouse_pos = input_get_mouse_pos();
 
@@ -141,17 +144,17 @@ void sound_editor_draw(computer_t *computer) {
 	// memset(computer->ram->patterns, 0, PATTERN_AMOUNT * sizeof(pattern_t));
 
 	// Pitch graph
-	gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), _layout.pitch_graph_rect, COLOR_BLACK);
+	// gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), _layout.pitch_graph_rect, COLOR_BLACK);
 
-	// Grid
-	for (size_t i = 0; i < STEPS_IN_PATTERN; i++) {
-		gfx_draw_line(
-			FB_SURF(computer->ram->framebuffer.data),
-			POINT(_layout.pitch_graph_rect.x + i * (_layout.pitch_graph_rect.w / STEPS_IN_PATTERN), _layout.pitch_graph_rect.y),
-			POINT(_layout.pitch_graph_rect.x + i * (_layout.pitch_graph_rect.w / STEPS_IN_PATTERN), _layout.pitch_graph_rect.y + _layout.pitch_graph_rect.h - 1),
-			COLOR_DARKGRAY
-		);
-	}
+	// // Grid
+	// for (size_t i = 0; i < STEPS_IN_PATTERN; i++) {
+	// 	gfx_draw_line(
+	// 		FB_SURF(computer->ram->framebuffer.data),
+	// 		POINT(_layout.pitch_graph_rect.x + i * (_layout.pitch_graph_rect.w / STEPS_IN_PATTERN), _layout.pitch_graph_rect.y),
+	// 		POINT(_layout.pitch_graph_rect.x + i * (_layout.pitch_graph_rect.w / STEPS_IN_PATTERN), _layout.pitch_graph_rect.y + _layout.pitch_graph_rect.h - 1),
+	// 		COLOR_DARKGRAY
+	// 	);
+	// }
 	
 	// Notes
 	for (size_t i = 0; i < STEPS_IN_PATTERN; i++) {
@@ -162,11 +165,19 @@ void sound_editor_draw(computer_t *computer) {
 			RECT(
 				_layout.pitch_graph_rect.x + i * (_layout.pitch_graph_rect.w / STEPS_IN_PATTERN) + 1,
 				_layout.pitch_graph_rect.y + _layout.pitch_graph_rect.h - (computer->ram->patterns[_current_pattern].steps[i].pitch * (_layout.pitch_graph_rect.h / MAX_PITCH)) - 3,
-				7,
+				(_layout.pitch_graph_rect.w / STEPS_IN_PATTERN) - 1,
 				3
 			),
 			9 + computer->ram->patterns[_current_pattern].steps[i].waveform
 		);
+
+		// Note text
+		{
+			int x = _layout.pitch_graph_rect.x + i * (_layout.pitch_graph_rect.w / STEPS_IN_PATTERN) + 1;
+			int y = _layout.pitch_graph_rect.y + _layout.pitch_graph_rect.h - (computer->ram->patterns[_current_pattern].steps[i].pitch * (_layout.pitch_graph_rect.h / MAX_PITCH)) - 3 - 32;
+			uint8_t pitch = computer->ram->patterns[_current_pattern].steps[i].pitch % 12;
+			gui_draw_text(computer->ram, 0, note_to_string_map[pitch], POINT(x, y), COLOR_WHITE);
+		}
 	}
 
 	// Progress beam
@@ -182,22 +193,22 @@ void sound_editor_draw(computer_t *computer) {
 
 
 
-	// Volume
-	gfx_draw_filled_rect(
-		FB_SURF(computer->ram->framebuffer.data),
-		_layout.volume_graph_rect,
-		COLOR_BLACK
-	);
+	// // Volume
+	// gfx_draw_filled_rect(
+	// 	FB_SURF(computer->ram->framebuffer.data),
+	// 	_layout.volume_graph_rect,
+	// 	COLOR_BLACK
+	// );
 
-	// Volume grid
-	for (size_t i = 0; i < STEPS_IN_PATTERN; i++) {
-		gfx_draw_line(
-			FB_SURF(computer->ram->framebuffer.data),
-			POINT(_layout.volume_graph_rect.x + i * 8, _layout.volume_graph_rect.y),
-			POINT(_layout.volume_graph_rect.x + i * 8, _layout.volume_graph_rect.y + _layout.volume_graph_rect.h - 1),
-			COLOR_DARKGRAY
-		);
-	}
+	// // Volume grid
+	// for (size_t i = 0; i < STEPS_IN_PATTERN; i++) {
+	// 	gfx_draw_line(
+	// 		FB_SURF(computer->ram->framebuffer.data),
+	// 		POINT(_layout.volume_graph_rect.x + i * 8, _layout.volume_graph_rect.y),
+	// 		POINT(_layout.volume_graph_rect.x + i * 8, _layout.volume_graph_rect.y + _layout.volume_graph_rect.h - 1),
+	// 		COLOR_DARKGRAY
+	// 	);
+	// }
 
 	// Volume points
 	for (size_t i = 0; i < STEPS_IN_PATTERN; i++) {
@@ -207,7 +218,8 @@ void sound_editor_draw(computer_t *computer) {
 				_layout.volume_graph_rect.x + i * (_layout.volume_graph_rect.w / STEPS_IN_PATTERN) + 1,
 				// _layout.volume_graph_rect.y + _layout.volume_graph_rect.h - (computer->ram->patterns[_current_pattern].steps[i].volume * (_layout.volume_graph_rect.h / MAX_VOLUME)) - 3,
 				_layout.volume_graph_rect.y + _layout.volume_graph_rect.h - (computer->ram->patterns[_current_pattern].steps[i].volume * (_layout.volume_graph_rect.h / MAX_VOLUME)) - 3,
-				7,
+				// 7,
+				(_layout.volume_graph_rect.w / STEPS_IN_PATTERN) - 1,
 				3
 			),
 			14 // TODO: change shade based on volume?
@@ -229,15 +241,15 @@ void sound_editor_draw(computer_t *computer) {
 		_selected_waveform = WAVEFORM_SAWTOOTH;
 	}
 
-	// Draw a piano
-	for (int i = 0; i < 12; i++) {
-		color_t color = COLOR_WHITE;
-		if (_piano_voices[i] != NULL && _piano_voices[i]->active) {
-			color = 2;
-		}
+	// // Draw a piano
+	// for (int i = 0; i < 12; i++) {
+	// 	color_t color = COLOR_WHITE;
+	// 	if (_piano_voices[i] != NULL && _piano_voices[i]->active) {
+	// 		color = 2;
+	// 	}
 
-		gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(_layout.piano_pos.x + i * PIANO_KEY_WIDTH, _layout.piano_pos.y, PIANO_KEY_WIDTH, PIANO_KEY_HEIGHT), color);
-		gfx_draw_rect(FB_SURF(computer->ram->framebuffer.data), RECT(_layout.piano_pos.x + i * PIANO_KEY_WIDTH, _layout.piano_pos.y, PIANO_KEY_WIDTH, PIANO_KEY_HEIGHT), COLOR_BLACK);
-		gui_draw_text(computer->ram, 0, note_to_string_map[i], POINT(2 + _layout.piano_pos.x + i * PIANO_KEY_WIDTH, 2 + _layout.piano_pos.y), COLOR_BLACK);
-	}
+	// 	gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(_layout.piano_pos.x + i * PIANO_KEY_WIDTH, _layout.piano_pos.y, PIANO_KEY_WIDTH, PIANO_KEY_HEIGHT), color);
+	// 	gfx_draw_rect(FB_SURF(computer->ram->framebuffer.data), RECT(_layout.piano_pos.x + i * PIANO_KEY_WIDTH, _layout.piano_pos.y, PIANO_KEY_WIDTH, PIANO_KEY_HEIGHT), COLOR_BLACK);
+	// 	gui_draw_text(computer->ram, 0, note_to_string_map[i], POINT(2 + _layout.piano_pos.x + i * PIANO_KEY_WIDTH, 2 + _layout.piano_pos.y), COLOR_BLACK);
+	// }
 }

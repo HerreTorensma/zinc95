@@ -2,6 +2,15 @@
 // also random thought, in the API you should be able to pass a bitmask into the draw_map function
 // so it only draws the tiles with those flags. That way you can do easy z sorting
 
+/*
+System for entities:
+
+entities table is a global defined in the lua code
+the map editor then reads this and draws them in the map editor
+this could even be handled in lua and extended, so the user can make a script that also draws collision boxes or text and whatnot
+
+*/
+
 #include "map.h"
 
 #include <stdio.h>
@@ -137,21 +146,13 @@ void map_editor_init(computer_t *computer) {
 	array_init(&_drag_state.items, get_heap_allocator());
 }
 
-static void _entity_editor_update(computer_t *computer) {
-
-}
-
-static void _tile_editor_update(computer_t *computer) {
-
-}
-
 // Linear time
 // argument pos is world coordinates
 // Returns index
 static int64_t _entity_under_pos(computer_t *computer, point_t pos) {
 	for (size_t i = 0; i < MAX_ENTITIES; i++) {
 		if (computer->ram->entities.entities[i].id[0] == '\0') {
-			break;
+			continue;
 		}
 
 		rect_t entity_rect = {
@@ -196,123 +197,168 @@ static void _initialize_drag_state(computer_t *computer, point_t world_mouse_pos
 	}
 }
 
-void map_editor_update(computer_t *computer) {
-	sprite_selector_update(computer, SNAP_MODE_ZOOM, _layout.sprite_selector_pos);
+static size_t _find_empty_entity_index(computer_t *computer) {
+	for (size_t i = 0; i < MAX_ENTITIES; i++) {
+		if (computer->ram->entities.entities[i].id[0] == '\0') {
+			return i;
+		}
+	}
 
+	// No entity available so idk overwrite the first one for now (TODO change probably)
+	return 0;
+}
+
+static void _entity_tool_select(computer_t *computer) {
+	point_t mouse_pos = input_get_mouse_pos();
+	point_t world_mouse_pos = cam_screen_to_world(&_camera, mouse_pos);
+
+	if (!point_in_rect(mouse_pos, _layout.map_rect)) {
+		return;
+	}
+
+	if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
+		_moving_entity = false;
+
+		int64_t entity_under_mouse = _entity_under_pos(computer, world_mouse_pos);
+
+		if (entity_under_mouse != -1) {
+			_moving_entity = true;
+			_reset_entity_selection_rect();
+
+			bool already_selected = _is_entity_selected(computer, entity_under_mouse);
+
+			if (!already_selected) {
+				array_clear(&_selected_entity_indices);
+				array_push(&_selected_entity_indices, entity_under_mouse);
+			}
+			
+			_initialize_drag_state(computer, world_mouse_pos);
+			
+		} else {
+			array_clear(&_selected_entity_indices);
+			_entity_selection_start = world_mouse_pos;
+		}
+	}
+
+	if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+		if (_moving_entity) {
+			input_set_cursor_style(CURSOR_STYLE_MOVE);
+
+			for (size_t i = 0; i < _drag_state.items.len; i++) {
+				drag_state_item_t *item = &_drag_state.items.data[i];
+
+				computer->ram->entities.entities[item->entity_index].x = world_mouse_pos.x - item->offset_to_mouse.x;
+				computer->ram->entities.entities[item->entity_index].y = world_mouse_pos.y - item->offset_to_mouse.y;
+			}
+		} else {
+			_entity_selection_end = world_mouse_pos;
+		}
+	}
+
+	if (input_mouse_button_released(MOUSE_BUTTON_LEFT) && !_moving_entity) {
+		// Add all entities within selection rect to _selected_entity_indices
+		for (size_t i = 0; i < MAX_ENTITIES; i++) {
+			entity_t *entity = &computer->ram->entities.entities[i];
+
+			rect_t entity_rect = {
+				.x = entity->x,
+				.y = entity->y,
+				.w = entity->w * SPRITE_WIDTH,
+				.h = entity->h * SPRITE_HEIGHT,
+			};
+
+			rect_t selection_rect = rect_from_2_points(_entity_selection_start, _entity_selection_end);
+
+			if (rect_in_rect(selection_rect, entity_rect)) {
+				array_push(&_selected_entity_indices, i);
+			}
+		}
+
+		array_clear(&_drag_state.items); // Clear drag state
+		_reset_entity_selection_rect();
+	}
+
+	if (is_keybind_pressed(g_keybinds.global.deselect)) {
+		array_clear(&_selected_entity_indices);
+	}
+
+	if (is_keybind_pressed(g_keybinds.global.delete_selection)) {
+		for (size_t i = 0; i < _selected_entity_indices.len; i++) {
+			entity_t *entity = &computer->ram->entities.entities[_selected_entity_indices.data[i]];
+			memset(entity, 0, sizeof(entity_t));
+
+		}
+		array_clear(&_selected_entity_indices);
+	}
+}
+
+static void _entity_tool_stamp(computer_t *computer) {
+	point_t mouse_pos = input_get_mouse_pos();
+	rect_t in_frame_rect = get_in_frame_rect();
+	rect_t in_frame_rect_in_sprites = get_in_frame_rect_in_sprites();
+
+	if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
+		size_t index = _find_empty_entity_index(computer);
+		entity_t *entity = &computer->ram->entities.entities[index];
+
+		entity->id[0] = 'e';
+
+		point_t pos = cam_screen_to_world(&_camera, POINT(mouse_pos.x - (in_frame_rect.w * _camera.zoom) / 2, mouse_pos.y - (in_frame_rect.h * _camera.zoom) / 2));
+		entity->x = pos.x;
+		entity->y = pos.y;
+		
+		entity->sprite = get_sprite_index();
+		entity->w = in_frame_rect_in_sprites.w;
+		entity->h = in_frame_rect_in_sprites.h;
+	}
+}
+
+static void _entity_editor_update(computer_t *computer) {
+	switch (_selected_entity_tool) {
+		case ENTITY_TOOL_SELECT: _entity_tool_select(computer); break;
+		case ENTITY_TOOL_STAMP: _entity_tool_stamp(computer); break;
+	}
+}
+
+static void _tile_editor_update(computer_t *computer) {
 	point_t mouse_pos = input_get_mouse_pos();
 	rect_t in_frame_rect = get_in_frame_rect();
 	rect_t in_frame_rect_in_sprites = get_in_frame_rect_in_sprites();
 	point_t world_mouse_pos = cam_screen_to_world(&_camera, mouse_pos);
 
-	if (_selected_layer == ENTITY_LAYER && point_in_rect(mouse_pos, _layout.map_rect)) { // Entities layer
-		if (_selected_entity_tool == ENTITY_TOOL_SELECT) {
-			if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
-				_moving_entity = false;
+	point_t cell_mouse_pos = cam_screen_to_tile(&_camera, mouse_pos, in_frame_rect_in_sprites, SPRITE_WIDTH, SPRITE_HEIGHT);
 
-				int64_t entity_under_mouse = _entity_under_pos(computer, world_mouse_pos);
-
-				if (entity_under_mouse != -1) {
-					_moving_entity = true;
-					_reset_entity_selection_rect();
-
-					bool already_selected = _is_entity_selected(computer, entity_under_mouse);
-
-					if (!already_selected) {
-						array_clear(&_selected_entity_indices);
-						array_push(&_selected_entity_indices, entity_under_mouse);
-					}
-					
-					_initialize_drag_state(computer, world_mouse_pos);
-					
-				} else {
-					array_clear(&_selected_entity_indices);
-					_entity_selection_start = world_mouse_pos;
-				}
-			}
-
-			if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
-				if (_moving_entity) {
-					input_set_cursor_style(CURSOR_STYLE_MOVE);
-
-					for (size_t i = 0; i < _drag_state.items.len; i++) {
-						drag_state_item_t *item = &_drag_state.items.data[i];
-
-						computer->ram->entities.entities[item->entity_index].x = world_mouse_pos.x - item->offset_to_mouse.x;
-						computer->ram->entities.entities[item->entity_index].y = world_mouse_pos.y - item->offset_to_mouse.y;
-					}
-				} else {
-					_entity_selection_end = world_mouse_pos;
-				}
-			}
-
-			if (input_mouse_button_released(MOUSE_BUTTON_LEFT) && !_moving_entity) {
-				// Add all entities within selection rect to _selected_entity_indices
-				for (size_t i = 0; i < MAX_ENTITIES; i++) {
-					entity_t *entity = &computer->ram->entities.entities[i];
-
-					rect_t entity_rect = {
-						.x = entity->x,
-						.y = entity->y,
-						.w = entity->w * SPRITE_WIDTH,
-						.h = entity->h * SPRITE_HEIGHT,
-					};
-
-					rect_t selection_rect = rect_from_2_points(_entity_selection_start, _entity_selection_end);
-
-					if (rect_in_rect(selection_rect, entity_rect)) {
-						array_push(&_selected_entity_indices, i);
-					}
-				}
-
-				array_clear(&_drag_state.items); // Clear drag state
-				_reset_entity_selection_rect();
-			}
-		} else if (_selected_entity_tool == ENTITY_TOOL_STAMP) {
-			if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
-				// Kind of inefficient, should improve if it becomes problematic
-				for (size_t i = 0; i < MAX_ENTITIES; i++) {
-					if (computer->ram->entities.entities[i].id[0] == '\0') {
-						// Found empty entity
-	
-						// strncpy((char *)computer->ram->entities.entities[i].id, "idk", 3);
-						computer->ram->entities.entities[i].id[0] = 'e';
-	
-						point_t pos = cam_screen_to_world(&_camera, POINT(mouse_pos.x - (in_frame_rect.w * _camera.zoom) / 2, mouse_pos.y - (in_frame_rect.h * _camera.zoom) / 2));
-						computer->ram->entities.entities[i].x = pos.x;
-						computer->ram->entities.entities[i].y = pos.y;
-						
-						computer->ram->entities.entities[i].sprite = get_sprite_index();
-						computer->ram->entities.entities[i].w = in_frame_rect_in_sprites.w;
-						computer->ram->entities.entities[i].h = in_frame_rect_in_sprites.h;
-	
-						break;
-					}
+	if (point_in_rect(mouse_pos, _layout.map_rect)) {
+		if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+			for (int i = 0; i < in_frame_rect_in_sprites.h; i++) {
+				for (int j = 0; j < in_frame_rect_in_sprites.w; j++) {
+					// TODO: make a function for this
+					int index = (get_page_index() * SPRITES_PER_PAGE) + sprite_coords_to_index(in_frame_rect_in_sprites.x + j, in_frame_rect_in_sprites.y + i);
+					computer->ram->map.layers[_selected_layer].data[(cell_mouse_pos.y + i) * MAP_WIDTH + (cell_mouse_pos.x + j)] = (uint16_t)index;
 				}
 			}
 		}
-	} else { // Tile layers
-		point_t cell_mouse_pos = cam_screen_to_tile(&_camera, mouse_pos, in_frame_rect_in_sprites, SPRITE_WIDTH, SPRITE_HEIGHT);
-
-		if (point_in_rect(mouse_pos, _layout.map_rect)) {
-			if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
-				for (int i = 0; i < in_frame_rect_in_sprites.h; i++) {
-					for (int j = 0; j < in_frame_rect_in_sprites.w; j++) {
-						// TODO: make a function for this
-						int index = (get_page_index() * SPRITES_PER_PAGE) + sprite_coords_to_index(in_frame_rect_in_sprites.x + j, in_frame_rect_in_sprites.y + i);
-						computer->ram->map.layers[_selected_layer].data[(cell_mouse_pos.y + i) * MAP_WIDTH + (cell_mouse_pos.x + j)] = (uint16_t)index;
-					}
-				}
-			}
-		
-			if (input_mouse_button_held(MOUSE_BUTTON_RIGHT)) {
-				for (int i = 0; i < in_frame_rect_in_sprites.h; i++) {
-					for (int j = 0; j < in_frame_rect_in_sprites.w; j++) {
-						computer->ram->map.layers[_selected_layer].data[(cell_mouse_pos.y + i) * MAP_WIDTH + (cell_mouse_pos.x + j)] = 0;
-					}
+	
+		if (input_mouse_button_held(MOUSE_BUTTON_RIGHT)) {
+			for (int i = 0; i < in_frame_rect_in_sprites.h; i++) {
+				for (int j = 0; j < in_frame_rect_in_sprites.w; j++) {
+					computer->ram->map.layers[_selected_layer].data[(cell_mouse_pos.y + i) * MAP_WIDTH + (cell_mouse_pos.x + j)] = 0;
 				}
 			}
 		}
 	}
+}
+
+void map_editor_update(computer_t *computer) {
+	sprite_selector_update(computer, SNAP_MODE_ZOOM, _layout.sprite_selector_pos);
+
+	if (_selected_layer == ENTITY_LAYER) { // Entities layer
+		_entity_editor_update(computer);
+	} else { // Tile layers
+		_tile_editor_update(computer);
+	}
+	
+	point_t mouse_pos = input_get_mouse_pos();
 
 	// Zoom for sprite selector
 	if (point_in_rect(mouse_pos, RECT(_layout.sprite_selector_pos.x, _layout.sprite_selector_pos.y, SPRITESHEET_PAGE_WIDTH, SPRITESHEET_PAGE_HEIGHT))) {
@@ -324,19 +370,6 @@ void map_editor_update(computer_t *computer) {
 			sprite_selector_zoom_out();
 		}
 	}
-
-	// if (input_key_held(KEY_A)) {
-	// 	_camera.pos.x -= _move_speed;
-	// }
-	// if (input_key_held(KEY_D)) {
-	// 	_camera.pos.x += _move_speed;
-	// }
-	// if (input_key_held(KEY_W)) {
-	// 	_camera.pos.y -= _move_speed;
-	// }
-	// if (input_key_held(KEY_S)) {
-	// 	_camera.pos.y += _move_speed;
-	// }
 
 	point_t mouse_in_world = cam_screen_to_world(&_camera, mouse_pos);
 	
@@ -386,7 +419,6 @@ static void _draw_background(framebuffer_t *fb, rect_t rect, color_t color1, col
 				gfx_set_pixel(fb, (rect.x + j + offset) % rect.w, rect.y + i, color2);
 			}
 		}
-		// printf("offset: %d\n", (offset % rect.w));
 		offset++;
 	}
 }
@@ -441,7 +473,7 @@ void map_editor_draw(computer_t *computer) {
 	if (!_entity_layer_hidden) {
 		for (size_t i = 0; i < MAX_ENTITIES; i++) {
 			if (computer->ram->entities.entities[i].id[0] == '\0') {
-				break;
+				continue;
 			}
 	
 			rect_t source_rect = sprite_index_to_spritesheet_rect(computer->ram->entities.entities[i].sprite, computer->ram->entities.entities[i].w, computer->ram->entities.entities[i].h);
@@ -466,7 +498,7 @@ void map_editor_draw(computer_t *computer) {
 		}
 	}
 
-	// Draw selection rect for active entities
+	// Draw selection rect for selected entities
 	for (size_t i = 0; i < _selected_entity_indices.len; i++) {
 		entity_t *entity = &computer->ram->entities.entities[_selected_entity_indices.data[i]];
 

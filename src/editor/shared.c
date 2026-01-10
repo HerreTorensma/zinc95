@@ -97,16 +97,16 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 	{
 		point_t old_pos = _in_frame_rect.pos;
 
-		if (input_key_pressed_or_long_pressed(KEY_A)) {
+		if (is_keybind_pressed(g_keybinds.global.active_sprite_move_left)) {
 			_in_frame_rect.x -= _in_frame_rect.w;
 		}
-		if (input_key_pressed_or_long_pressed(KEY_D)) {
+		if (is_keybind_pressed(g_keybinds.global.active_sprite_move_right)) {
 			_in_frame_rect.x += _in_frame_rect.w;
 		}
-		if (input_key_pressed_or_long_pressed(KEY_W)) {
+		if (is_keybind_pressed(g_keybinds.global.active_sprite_move_up)) {
 			_in_frame_rect.y -= _in_frame_rect.h;
 		}
-		if (input_key_pressed_or_long_pressed(KEY_S)) {
+		if (is_keybind_pressed(g_keybinds.global.active_sprite_move_down)) {
 			_in_frame_rect.y += _in_frame_rect.h;
 		}
 

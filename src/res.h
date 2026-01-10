@@ -467,6 +467,13 @@ static struct {
 		keybind_t cut;
 	
 		keybind_t select_all;
+		keybind_t deselect;
+		keybind_t delete_selection;
+
+		keybind_t active_sprite_move_left;
+		keybind_t active_sprite_move_right;
+		keybind_t active_sprite_move_up;
+		keybind_t active_sprite_move_down;
 	} global;
 
 	struct {
@@ -501,6 +508,13 @@ g_keybinds = {
 		.cut = {MODIFIER_CTRL, KEY_X},
 	
 		.select_all = {MODIFIER_CTRL, KEY_A},
+		.deselect = {MODIFIER_CTRL, KEY_D},
+		.delete_selection = {MODIFIER_NONE, KEY_DELETE},
+
+		.active_sprite_move_left = {MODIFIER_NONE, KEY_A},
+		.active_sprite_move_right = {MODIFIER_NONE, KEY_D},
+		.active_sprite_move_up = {MODIFIER_NONE, KEY_W},
+		.active_sprite_move_down = {MODIFIER_NONE, KEY_S},
 	},
 
 	.sprite_editor = {
