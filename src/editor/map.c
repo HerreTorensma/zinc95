@@ -44,20 +44,31 @@ static bool _entity_layer_hidden = false;
 static point_t _last_frame_mouse_pos = {0};
 
 typedef enum entity_tool {
-	ENTITY_TOOL_PICK,
 	ENTITY_TOOL_SELECT,
-	ENTITY_TOOL_MOVE,
 	ENTITY_TOOL_STAMP,
 } entity_tool_t;
 
 ARRAY_DEFINE(size_t)
+
+typedef struct drag_state_item {
+	size_t entity_index;
+	point_t offset_to_mouse;
+} drag_state_item_t;
+
+ARRAY_DEFINE(drag_state_item_t)
+
+typedef struct drag_state {
+	drag_state_item_t_array_t items;
+} drag_state_t;
+
+static drag_state_t _drag_state = {0};
 
 static size_t_array_t _selected_entity_indices = {0};
 
 static entity_tool_t _selected_entity_tool = ENTITY_TOOL_SELECT;
 
 static bool _moving_entity = false;
-static point_t _moving_entity_offset = {0};
+
 static point_t _entity_selection_start = {0};
 static point_t _entity_selection_end = {0};
 
@@ -110,9 +121,79 @@ static void _draw_grid(surface_t surf) {
 	}
 }
 
+static bool _does_entity_selection_rect_exist() {
+	return _entity_selection_start.x != _entity_selection_end.x && _entity_selection_start.y != _entity_selection_end.y;
+}
+
+static void _reset_entity_selection_rect() {
+	_entity_selection_start = (point_t){0};
+	_entity_selection_end = (point_t){0};
+}
+
 void map_editor_init(computer_t *computer) {
 	// TODO: dealloc
 	array_init(&_selected_entity_indices, get_heap_allocator());
+
+	array_init(&_drag_state.items, get_heap_allocator());
+}
+
+static void _entity_editor_update(computer_t *computer) {
+
+}
+
+static void _tile_editor_update(computer_t *computer) {
+
+}
+
+// Linear time
+// argument pos is world coordinates
+// Returns index
+static int64_t _entity_under_pos(computer_t *computer, point_t pos) {
+	for (size_t i = 0; i < MAX_ENTITIES; i++) {
+		if (computer->ram->entities.entities[i].id[0] == '\0') {
+			break;
+		}
+
+		rect_t entity_rect = {
+			.x = computer->ram->entities.entities[i].x,
+			.y = computer->ram->entities.entities[i].y,
+			.w = computer->ram->entities.entities[i].w * SPRITE_WIDTH,
+			.h = computer->ram->entities.entities[i].h * SPRITE_HEIGHT,
+		};
+
+		if (point_in_rect(pos, entity_rect)) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+// Linear time
+static bool _is_entity_selected(computer_t *computer, size_t entity_index) {
+	for (size_t i = 0; i < _selected_entity_indices.len; i++) {
+		if (_selected_entity_indices.data[i] == entity_index) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static void _initialize_drag_state(computer_t *computer, point_t world_mouse_pos) {
+	array_clear(&_drag_state.items);
+	for (size_t i = 0; i < _selected_entity_indices.len; i++) {
+		size_t index = _selected_entity_indices.data[i];
+		
+		drag_state_item_t item = {
+			.entity_index = index,
+			.offset_to_mouse = {
+				.x = world_mouse_pos.x - computer->ram->entities.entities[index].x,
+				.y = world_mouse_pos.y - computer->ram->entities.entities[index].y,
+			},
+		};
+		
+		array_push(&_drag_state.items, item);
+	}
 }
 
 void map_editor_update(computer_t *computer) {
@@ -121,50 +202,44 @@ void map_editor_update(computer_t *computer) {
 	point_t mouse_pos = input_get_mouse_pos();
 	rect_t in_frame_rect = get_in_frame_rect();
 	rect_t in_frame_rect_in_sprites = get_in_frame_rect_in_sprites();
+	point_t world_mouse_pos = cam_screen_to_world(&_camera, mouse_pos);
 
 	if (_selected_layer == ENTITY_LAYER && point_in_rect(mouse_pos, _layout.map_rect)) { // Entities layer
 		if (_selected_entity_tool == ENTITY_TOOL_SELECT) {
 			if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
 				_moving_entity = false;
 
-				array_clear(&_selected_entity_indices);
-				
-				point_t world_mouse_pos = cam_screen_to_world(&_camera, mouse_pos);
+				int64_t entity_under_mouse = _entity_under_pos(computer, world_mouse_pos);
 
-				for (size_t i = 0; i < MAX_ENTITIES; i++) {
-					if (computer->ram->entities.entities[i].id[0] == '\0') {
-						break;
+				if (entity_under_mouse != -1) {
+					_moving_entity = true;
+					_reset_entity_selection_rect();
+
+					bool already_selected = _is_entity_selected(computer, entity_under_mouse);
+
+					if (!already_selected) {
+						array_clear(&_selected_entity_indices);
+						array_push(&_selected_entity_indices, entity_under_mouse);
 					}
-
-					rect_t entity_rect = {
-						.x = computer->ram->entities.entities[i].x,
-						.y = computer->ram->entities.entities[i].y,
-						.w = computer->ram->entities.entities[i].w * SPRITE_WIDTH,
-						.h = computer->ram->entities.entities[i].h * SPRITE_HEIGHT,
-					};
-
-					if (point_in_rect(world_mouse_pos, entity_rect)) {
-						array_push(&_selected_entity_indices, i);
-						_moving_entity = true;
-
-						_moving_entity_offset.x = world_mouse_pos.x - computer->ram->entities.entities[i].x;
-						_moving_entity_offset.y = world_mouse_pos.y - computer->ram->entities.entities[i].y;
-
-						break;
-					}
-
+					
+					_initialize_drag_state(computer, world_mouse_pos);
+					
+				} else {
+					array_clear(&_selected_entity_indices);
 					_entity_selection_start = world_mouse_pos;
 				}
 			}
 
 			if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
-				point_t world_mouse_pos = cam_screen_to_world(&_camera, mouse_pos);
-
 				if (_moving_entity) {
 					input_set_cursor_style(CURSOR_STYLE_MOVE);
-					size_t index = _selected_entity_indices.data[0];
-					computer->ram->entities.entities[index].x = world_mouse_pos.x - _moving_entity_offset.x;
-					computer->ram->entities.entities[index].y = world_mouse_pos.y - _moving_entity_offset.y;
+
+					for (size_t i = 0; i < _drag_state.items.len; i++) {
+						drag_state_item_t *item = &_drag_state.items.data[i];
+
+						computer->ram->entities.entities[item->entity_index].x = world_mouse_pos.x - item->offset_to_mouse.x;
+						computer->ram->entities.entities[item->entity_index].y = world_mouse_pos.y - item->offset_to_mouse.y;
+					}
 				} else {
 					_entity_selection_end = world_mouse_pos;
 				}
@@ -172,6 +247,25 @@ void map_editor_update(computer_t *computer) {
 
 			if (input_mouse_button_released(MOUSE_BUTTON_LEFT) && !_moving_entity) {
 				// Add all entities within selection rect to _selected_entity_indices
+				for (size_t i = 0; i < MAX_ENTITIES; i++) {
+					entity_t *entity = &computer->ram->entities.entities[i];
+
+					rect_t entity_rect = {
+						.x = entity->x,
+						.y = entity->y,
+						.w = entity->w * SPRITE_WIDTH,
+						.h = entity->h * SPRITE_HEIGHT,
+					};
+
+					rect_t selection_rect = rect_from_2_points(_entity_selection_start, _entity_selection_end);
+
+					if (rect_in_rect(selection_rect, entity_rect)) {
+						array_push(&_selected_entity_indices, i);
+					}
+				}
+
+				array_clear(&_drag_state.items); // Clear drag state
+				_reset_entity_selection_rect();
 			}
 		} else if (_selected_entity_tool == ENTITY_TOOL_STAMP) {
 			if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
@@ -372,7 +466,7 @@ void map_editor_draw(computer_t *computer) {
 		}
 	}
 
-	// Draw selection rect
+	// Draw selection rect for active entities
 	for (size_t i = 0; i < _selected_entity_indices.len; i++) {
 		entity_t *entity = &computer->ram->entities.entities[_selected_entity_indices.data[i]];
 
@@ -388,6 +482,13 @@ void map_editor_draw(computer_t *computer) {
 
 		// TODO: maybe make a function of expand_rect(rect_t rect, int amount);
 		gui_draw_selection_rect(computer->ram->ticks, fb_surf, dest_rect);
+	}
+
+	// Draw selection rect for selection currently being made
+	if (_does_entity_selection_rect_exist()) {
+		rect_t dest_rect = rect_from_2_points(cam_world_to_screen(&_camera, _entity_selection_start), cam_world_to_screen(&_camera, _entity_selection_end));
+		gui_draw_selection_rect(computer->ram->ticks, fb_surf, dest_rect);
+		input_set_cursor_style(CURSOR_STYLE_CROSSHAIR);
 	}
 
 	// Draw rect where mouse is

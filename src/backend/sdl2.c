@@ -142,6 +142,7 @@ void sdl2_init(char title[], int initial_scale) {
 	_cursors[CURSOR_STYLE_TEXT] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_IBEAM); 
 	_cursors[CURSOR_STYLE_MOVE] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEALL); 
 	_cursors[CURSOR_STYLE_HAND] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND); 
+	_cursors[CURSOR_STYLE_CROSSHAIR] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_CROSSHAIR);
 }
 
 bool sdl2_window_is_open() {
@@ -435,8 +436,6 @@ static void _sdl2_audio_callback(void *userdata, uint8_t *stream, int len) {
 }
 
 void sdl2_audio_init(computer_t *computer) {
-	return;
-
 	SDL_AudioSpec wav_spec;
 
 	SDL_AudioSpec spec = {

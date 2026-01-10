@@ -13,6 +13,19 @@ bool point_in_rect(point_t point, rect_t rect) {
 	return false;
 }
 
+bool rect_in_rect(rect_t container, rect_t containee) {
+	point_t top_left = containee.pos;
+	
+	// TODO: make function for this???
+	point_t bottom_right = {
+		.x = containee.pos.x + containee.w,
+		.y = containee.pos.y + containee.h,
+	};
+
+	return point_in_rect(top_left, container) && point_in_rect(bottom_right, container);
+}
+
+
 // TODO: properly test this function
 // TODO: make CLAMP macro and use it here
 rect_t rect_clip(rect_t container, rect_t rect) {

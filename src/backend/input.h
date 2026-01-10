@@ -16,6 +16,7 @@ typedef enum cursor_style {
 	CURSOR_STYLE_TEXT,
 	CURSOR_STYLE_MOVE,
 	CURSOR_STYLE_HAND,
+	CURSOR_STYLE_CROSSHAIR,
 
 	CURSOR_STYLE_COUNT,
 } cursor_style_t;

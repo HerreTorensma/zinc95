@@ -441,7 +441,7 @@ g_skin_layout = {
 			.pressed_rect = {{3344, 76, 16, 16}},
 		},
 		.increase = {0, 16},
-		.amount = 4,
+		.amount = 2,
 	},
 };
 

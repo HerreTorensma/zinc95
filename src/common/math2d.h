@@ -42,7 +42,7 @@ typedef union rect {
 
 void rect_print(rect_t rect);
 
-// TODO: rect_in_rect (used in map editor for rect selecting entities)
+bool rect_in_rect(rect_t container, rect_t containee);
 
 // Check if an x, y coordinate is inside a given rect
 bool point_in_rect(point_t point, rect_t rect);

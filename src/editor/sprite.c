@@ -247,6 +247,8 @@ static void _set_selection_inactive() {
 }
 
 static void _tool_select(computer_t *computer, point_t spritesheet_coord_under_mouse) {
+	input_set_cursor_style(CURSOR_STYLE_CROSSHAIR);
+
 	if (_selection_active) {
 		rect_t selection = _get_selection_rect();
 
@@ -306,7 +308,7 @@ static void _tool_select(computer_t *computer, point_t spritesheet_coord_under_m
 		if (_selection_active && _moving_selection) {
 			int xdiff = spritesheet_coord_under_mouse.x - _last_frame_spritesheet_coord_under_mouse.x;
 			int ydiff = spritesheet_coord_under_mouse.y - _last_frame_spritesheet_coord_under_mouse.y;
-
+			
 			_selection_start.x += xdiff;
 			_selection_start.y += ydiff;
 			_selection_end.x += xdiff;

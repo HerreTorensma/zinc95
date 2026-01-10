@@ -67,7 +67,7 @@ void computer_load_resouces(computer_t *computer) {
 		.scroll_speed = 3,
 		// .background_color = COLOR_WHITE,
 		.font_index = 1,
-		.tab_size = 8,
+		.tab_size = 4,
 		.token_colors = {
 			[LUA_TOKEN_KEYWORD] = 12,
 			[LUA_TOKEN_BUILTIN_FUNCTION] = 6,
