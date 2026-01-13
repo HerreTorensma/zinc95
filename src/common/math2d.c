@@ -1,5 +1,6 @@
 #include "math2d.h"
 
+#include <math.h>
 #include <stdio.h>
 
 void rect_print(rect_t rect) {
@@ -11,6 +12,12 @@ bool point_in_rect(point_t point, rect_t rect) {
 		return true;
 	}
 	return false;
+}
+
+bool point_in_circle(point_t point, point_t circle_center, int circle_radius) {
+	int dist = sqrt((point.x - circle_center.x) * (point.x - circle_center.x) + (point.y - circle_center.y) * (point.y - circle_center.y));
+	
+	return dist <= circle_radius;
 }
 
 bool rect_in_rect(rect_t container, rect_t containee) {

@@ -47,6 +47,8 @@ bool rect_in_rect(rect_t container, rect_t containee);
 // Check if an x, y coordinate is inside a given rect
 bool point_in_rect(point_t point, rect_t rect);
 
+bool point_in_circle(point_t point, point_t circle_center, int circle_radius);
+
 // Clips the given rect to be contained within the container
 // Currently if the given rect is completely outside the container, the width and height are just set to 0 and the rect is not moved
 // I might change this later if necessary 

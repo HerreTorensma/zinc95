@@ -79,6 +79,15 @@ void computer_load_resouces(computer_t *computer) {
 			[LUA_TOKEN_WHITESPACE] = COLOR_LIGHTGRAY,
 		},
 	};
+
+	// Init patterns
+	for (size_t i = 0; i < PATTERN_AMOUNT; i++) {
+		computer->ram->patterns[i].speed = 1;
+		for (size_t j = 0; j < STEPS_IN_PATTERN; j++) {
+			computer->ram->patterns[i].steps[j].volume = 11;
+		}
+	}
+
 }
 
 #ifndef PATH_MAX

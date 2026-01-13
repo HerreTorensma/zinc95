@@ -2,6 +2,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "input.h"
 #include "gfx.h"
@@ -245,17 +246,55 @@ void gui_load_skin(ram_t *ram, string_t path, color_t color_key, color_t font_co
 	ram->skin.font_color = font_color;
 }
 
-int64_t gui_slider(ram_t *ram, int font_index, rect_t rect, int64_t min, int64_t max, int64_t value) {
-	gui_draw_string(ram, font_index, int_to_string(get_temp_allocator(), value), rect.pos, ram->skin.font_color);
+int64_t gui_knob(ram_t *ram, int font_index, point_t center, int radius, point_t text_pos, int64_t min, int64_t max, int64_t value, gui_knob_state_t *state) {
+	// gfx_draw_circle(FB_SURF(ram->framebuffer.data), rect.pos, radius, COLOR_BLACK);
+
+	gui_draw_string(ram, font_index, int_to_string(get_temp_allocator(), value), text_pos, COLOR_GREEN);
+
+	// Line
+	{
+		// Convert value in range min - max to angle within 0 - 2PI
+		float range_size = max - min;
+		float angle = (float)(value - min) / range_size;
+		angle *= 2.0f * M_PI;
+
+		// Add one quarter to the angle so the default state is pointing down
+		angle += 0.5f * M_PI;
+
+		point_t offset = {
+			.x = cos(angle) * radius,
+			.y = sin(angle) * radius,
+		};
+
+		// TODO: make color configurable
+		gfx_draw_line(FB_SURF(ram->framebuffer.data), center, POINT(center.x + offset.x, center.y + offset.y), COLOR_WHITE);
+	}
 
 	point_t mouse_pos = input_get_mouse_pos();
-	if (point_in_rect(mouse_pos, rect)) {
-		if (value < max && input_mouse_scrolled(SCROLL_DIR_DOWN)) {
+	if (point_in_circle(mouse_pos, center, radius)) {
+		if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
+			state->held = true;
+			state->value_when_pressed = value;
+		}
+
+		if (input_mouse_scrolled(SCROLL_DIR_DOWN)) {
 			value++;
-		} else if (value > min && input_mouse_scrolled(SCROLL_DIR_UP)) {
+		} else if (input_mouse_scrolled(SCROLL_DIR_UP)) {
 			value--;
 		}
+	} else {
+		if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
+			state->held = false;
+		}
 	}
+
+	if (state->held) {
+		point_t mouse_pos = input_get_mouse_pos();
+		int y_dist = mouse_pos.y - center.y;
+		value = state->value_when_pressed + y_dist;
+	}
+
+	value = clamp_int(value, min, max);
 
 	return value;
 }
@@ -281,4 +320,25 @@ void gui_draw_selection_rect(uint64_t ticks, surface_t surf, rect_t rect) {
 		color_t color = i % 3 == thing ? COLOR_BLACK : COLOR_WHITE;
 		surf_set_pixel(surf, rect.x+rect.w - 1, i, color);
 	}
+}
+
+int gui_button_matrix(ram_t *ram, point_t pos, button_matrix_t matrix, int already_pressed_index) {
+	int new_pressed_index = already_pressed_index;
+	int index = 0;
+
+	for (size_t i = 0; i < matrix.rows; i++) {
+		for (size_t j = 0; j < matrix.columns; j++) {
+			point_t new_pos = pos;
+			new_pos.x += matrix.column_increase * j;
+			new_pos.y += matrix.row_increase * i;
+
+			if (gui_button(ram, new_pos, matrix.base, new_pressed_index == index)) {
+				new_pressed_index = index;
+			}
+			
+			index++;
+		}
+	}
+
+	return new_pressed_index;
 }

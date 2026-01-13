@@ -18,11 +18,6 @@ frequency: how dense the waves are kind of, controls the pitch
 
 #include "../computer.h"
 
-// Define PI in case that didn't already happen for some reason
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-
 typedef enum note {
 	NOTE_C,
 	NOTE_CSHARP,

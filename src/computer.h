@@ -15,6 +15,11 @@ Memory layout, global constants
 #include "common/math2d.h"
 #include "backend/input.h"
 
+// Define PI in case that didn't already happen for some reason
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 // TODO: rename some stuff so it's all consistent, dont mix AMOUNT, MAX, TOTAL etc.
 
 #define RAM_SIZE (32 * 1024 * 1024)
@@ -89,6 +94,8 @@ Memory layout, global constants
 #define MAX_VOICES 8
 #define MAX_PITCH 48
 #define MAX_VOLUME 24
+#define MIN_PATTERN_SPEED 1
+#define MAX_PATTERN_SPEED 255
 
 #define SKIN_WIDTH SCREEN_WIDTH * 6
 #define SKIN_HEIGHT SCREEN_HEIGHT
@@ -249,6 +256,7 @@ typedef enum waveform {
 	WAVEFORM_SQUARE,
 	WAVEFORM_TRIANGLE,
 	WAVEFORM_SAWTOOTH,
+	WAVEFORM_NOISE,
 } waveform_t;
 
 typedef struct pattern_step {
@@ -257,7 +265,7 @@ typedef struct pattern_step {
 	waveform_t waveform;
 } pattern_step_t;
 
-#define STEPS_IN_PATTERN 32
+#define STEPS_IN_PATTERN 64
 #define PATTERN_AMOUNT 128
 
 typedef struct pattern {
@@ -321,6 +329,13 @@ typedef struct voice_pool {
 	voice_t voices[MAX_VOICES];
 } voice_pool_t;
 
+typedef struct channel {
+	uint16_t pattern_index;
+	voice_t *voice;
+	int time_left_on_current_step;
+	int current_step;
+} channel_t;
+
 typedef enum computer_state {
 	// STATE_EDITING,
 	// STATE_PLAYING,
@@ -359,6 +374,14 @@ typedef struct button_array {
 	point_t increase; // Used for both positioning in the skin and the program layout, so the skin and layout should match
 	int amount;
 } button_array_t;
+
+typedef struct button_matrix {
+	button_t base;
+	int rows;
+	int columns;
+	int row_increase;
+	int column_increase;
+} button_matrix_t;
 
 void set_global_computer(computer_t *computer);
 

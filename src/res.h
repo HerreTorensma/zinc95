@@ -305,6 +305,9 @@ static struct {
 	button_t square_wave_button;
 	button_t triangle_wave_button;
 	button_t sawtooth_wave_button;
+	button_t noise_wave_button;
+
+	button_matrix_t sfx_picker_buttons;
 
 	button_array_t map_entity_tool_buttons;
 }
@@ -433,6 +436,21 @@ g_skin_layout = {
 	.sawtooth_wave_button = {
 		.unpressed_rect = {{3200, 398, 32, 16}},
 		.pressed_rect = {{3232, 398, 32, 16}},
+	},
+	.noise_wave_button = {
+		.unpressed_rect = {{3200, 414, 32, 16}},
+		.pressed_rect = {{3232, 414, 32, 16}},
+	},
+
+	.sfx_picker_buttons = {
+		.base = {
+			.unpressed_rect = {{3264, 366, 8, 8}},
+			.pressed_rect = {{3392, 366, 8, 8}},
+		},
+		.rows = 8,
+		.columns = 16,
+		.row_increase = 8,
+		.column_increase = 8,
 	},
 
 	.map_entity_tool_buttons = {

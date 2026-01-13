@@ -15,6 +15,11 @@ GUI-related stuff like text drawing, buttons etc.
 #define GUI_SMALL_BUTTON_SIZE 12
 #define GUI_BORDER_WIDTH 2
 
+typedef struct gui_knob_state {
+	bool held;
+	int64_t value_when_pressed;
+} gui_knob_state_t;
+
 void gui_draw_string(ram_t *ram, int font_index, string_t string, point_t pos, int color);
 
 void gui_draw_text(ram_t *ram, int font_index, const char text[], point_t pos, int color);
@@ -37,6 +42,9 @@ point_t button_array_get_pos(button_array_t *array, point_t base_pos, int index)
 
 void gui_load_skin(ram_t *ram, string_t path, color_t color_key, color_t font_color);
 
-int64_t gui_slider(ram_t *ram, int font_index, rect_t rect, int64_t min, int64_t max, int64_t value);
+// int64_t gui_knob(ram_t *ram, int font_index, rect_t rect, int64_t min, int64_t max, int64_t value, gui_knob_state_t *state);
+int64_t gui_knob(ram_t *ram, int font_index, point_t center, int radius, point_t text_pos, int64_t min, int64_t max, int64_t value, gui_knob_state_t *state);
 
 void gui_draw_selection_rect(uint64_t ticks, surface_t surf, rect_t rect);
+
+int gui_button_matrix(ram_t *ram, point_t pos, button_matrix_t matrix, int already_pressed_index);

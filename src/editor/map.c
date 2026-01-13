@@ -259,6 +259,9 @@ static void _entity_tool_select(computer_t *computer) {
 		// Add all entities within selection rect to _selected_entity_indices
 		for (size_t i = 0; i < MAX_ENTITIES; i++) {
 			entity_t *entity = &computer->ram->entities.entities[i];
+			if (entity->id[0] == '\0') {
+				continue;
+			}
 
 			rect_t entity_rect = {
 				.x = entity->x,
@@ -276,6 +279,19 @@ static void _entity_tool_select(computer_t *computer) {
 
 		array_clear(&_drag_state.items); // Clear drag state
 		_reset_entity_selection_rect();
+	}
+
+	if (is_keybind_pressed(g_keybinds.global.select_all)) {
+		array_clear(&_selected_entity_indices);
+
+		for (size_t i = 0; i < MAX_ENTITIES; i++) {
+			entity_t *entity = &computer->ram->entities.entities[i];
+			if (entity->id[0] == '\0') {
+				continue;
+			}
+
+			array_push(&_selected_entity_indices, i);
+		}
 	}
 
 	if (is_keybind_pressed(g_keybinds.global.deselect)) {
@@ -297,7 +313,7 @@ static void _entity_tool_stamp(computer_t *computer) {
 	rect_t in_frame_rect = get_in_frame_rect();
 	rect_t in_frame_rect_in_sprites = get_in_frame_rect_in_sprites();
 
-	if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
+	if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT) && point_in_rect(mouse_pos, _layout.map_rect)) {
 		size_t index = _find_empty_entity_index(computer);
 		entity_t *entity = &computer->ram->entities.entities[index];
 
