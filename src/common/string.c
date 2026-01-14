@@ -222,6 +222,21 @@ string_t int_to_string(allocator_t allocator, int n) {
 	return string;
 }
 
+string_t int_to_string_formatted(allocator_t allocator, int number, int desired_length, char filler) {
+	string_t string = int_to_string(allocator, number);
+
+	if (desired_length != -1 && string.len < desired_length) {
+		int diff = desired_length - string.len;
+		memmove(string.data + diff, string.data, diff);
+		for (size_t i = 0; i < diff; i++) {
+			string.data[i] = filler;
+		}
+		string.len = desired_length;
+	}
+
+	return string;
+}
+
 int string_to_int(string_t string) {
 	int n = 0;
 

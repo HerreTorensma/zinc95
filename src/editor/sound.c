@@ -56,6 +56,8 @@ static int _selected_waveform = WAVEFORM_SINE;
 
 static gui_knob_state_t _speed_knob_state = {0};
 
+static size_t _active_sound_effect_channel_index = 0;
+
 // This is a function because later there will be more knobs and then I need to loop something
 static bool _is_any_knob_held() {
 	return (_speed_knob_state.held);
@@ -67,7 +69,11 @@ void sound_editor_init(computer_t *computer) {
 
 void sound_editor_update(computer_t *computer) {
 	if (input_key_pressed(KEY_SPACE)) {
-		audio_play_pattern(computer, _current_pattern);
+		if (audio_get_channel_current_step(computer, 0) > 0) {
+			audio_cancel_channel(computer, 0);
+		} else {
+			_active_sound_effect_channel_index = audio_play_pattern(computer, _current_pattern, 0);
+		}
 	}
 	
 	if (_is_any_knob_held()) {
@@ -101,7 +107,7 @@ void sound_editor_update(computer_t *computer) {
 			int pitch = MAX_PITCH-1 - adjusted_mouse_pos.y / (_layout.pitch_graph_rect.h / MAX_PITCH);
 			// printf("step: %d, pitch: %d\n", step, pitch);
 			computer->ram->patterns[_current_pattern].steps[step].pitch = pitch;
-			computer->ram->patterns[_current_pattern].steps[step].waveform = _selected_waveform;
+			computer->ram->patterns[_current_pattern].steps[step].instrument_index = _selected_waveform;
 		}
 	}
 
@@ -124,7 +130,8 @@ void sound_editor_draw(computer_t *computer) {
 			.x = _layout.note_list_rect.x + (i / 8) * 64,
 			.y = _layout.note_list_rect.y + (i % 8) * 12,
 		};
-		int progress = get_current_step_of_sound_editor_pattern();
+
+		int progress = audio_get_channel_current_step(computer, _active_sound_effect_channel_index);
 		if (progress > 0 && i == progress) {
 			gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(pos.x, pos.y, 64, 12), COLOR_LIGHTGRAY);
 		}
@@ -138,16 +145,16 @@ void sound_editor_draw(computer_t *computer) {
 
 		// Instrument
 		{
-			uint8_t waveform = computer->ram->patterns[_current_pattern].steps[i].waveform;
+			uint8_t waveform = computer->ram->patterns[_current_pattern].steps[i].instrument_index;
 			pos.x += 2 * (computer->ram->fonts[1].widths[0] + computer->ram->fonts[1].horizontal_space) + computer->ram->fonts[1].horizontal_space;
-			string_t string = int_to_string(get_temp_allocator(), step->waveform);
-			gui_draw_string(computer->ram, 1, string, pos, 9 + step->waveform);
+			string_t string = int_to_string_formatted(get_temp_allocator(), step->instrument_index, 2, ' ');
+			gui_draw_string(computer->ram, 1, string, pos, 9 + step->instrument_index);
 		}
 
 		// Volume
 		{
 			pos.x += 2 * (computer->ram->fonts[1].widths[0] + computer->ram->fonts[1].horizontal_space) + computer->ram->fonts[1].horizontal_space;
-			string_t string = int_to_string(get_temp_allocator(), step->volume);
+			string_t string = int_to_string_formatted(get_temp_allocator(), step->volume, 2, ' ');
 			gui_draw_string(computer->ram, 1, string, pos, 14);
 		}
 	}
@@ -162,7 +169,7 @@ void sound_editor_draw(computer_t *computer) {
 				(_layout.pitch_graph_rect.w / STEPS_IN_PATTERN) - 1,
 				3
 			),
-			9 + computer->ram->patterns[_current_pattern].steps[i].waveform
+			9 + computer->ram->patterns[_current_pattern].steps[i].instrument_index
 		);
 
 		// The thing underneath
@@ -183,7 +190,7 @@ void sound_editor_draw(computer_t *computer) {
 	}
 
 	// Progress beam
-	int progress = get_current_step_of_sound_editor_pattern();
+	int progress = audio_get_channel_current_step(computer, _active_sound_effect_channel_index);
 	if (progress > 0) {
 		gfx_draw_line(
 			FB_SURF(computer->ram->framebuffer.data),
@@ -227,5 +234,9 @@ void sound_editor_draw(computer_t *computer) {
 		_selected_waveform = WAVEFORM_NOISE;
 	}
 
-	_current_pattern = gui_button_matrix(computer->ram, _layout.pattern_picker_pos, g_skin_layout.sfx_picker_buttons, _current_pattern);
+	size_t new_current_pattern = gui_button_matrix(computer->ram, _layout.pattern_picker_pos, g_skin_layout.sfx_picker_buttons, _current_pattern);
+	if (_current_pattern != new_current_pattern) {
+		audio_cancel_channel(computer, 0);
+	}
+	_current_pattern = new_current_pattern;
 }

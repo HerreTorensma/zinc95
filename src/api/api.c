@@ -196,7 +196,7 @@ int api_ticks(ram_t *ram) {
 }
 
 void api_sfx(ram_t *ram, int index) {
-	audio_play_pattern(get_global_computer(), index);
+	audio_play_pattern(get_global_computer(), index, -1);
 }
 
 // TODO: sprite_get_flags, sprite_set_flags

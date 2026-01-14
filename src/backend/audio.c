@@ -19,56 +19,59 @@ const char *note_to_string_map[] = {
 	[NOTE_B] = "B",
 };
 
-static channel_t channels[12] = {0};
-
-int get_current_step_of_sound_editor_pattern() {
-	return channels[0].current_step;
+int audio_get_channel_current_step(computer_t *computer, int channel_index) {
+	return computer->channels[channel_index].current_step_index;
 }
 
-voice_t *voice_alloc(voice_pool_t *pool) {
-	for (size_t i = 0; i < MAX_VOICES; i++) {
-		if (!pool->voices[i].active) {
-			pool->voices[i].active = true;
-			return &pool->voices[i];
+void audio_cancel_channel(computer_t *computer, int channel_index) {
+	memset(&computer->channels[channel_index], 0, sizeof(channel_t));
+}
+
+size_t channel_alloc(computer_t *computer) {
+	for (size_t i = 0; i < MAX_CHANNELS; i++) {
+		if (computer->channels[i].active) {
+			continue;
 		}
+		return i;
 	}
-
-	// Voices are full, so no sound will be played
-	return NULL;
+	return 0; // Take channel 0 if all are taken
 }
 
-// Tet 12 music scale
-float note_to_freq_tet12(note_t note, int octave) {
-	int n = (octave - 4) * 12 + note;
-	return 440.0f * powf(2.0f, n / 12.0f);
+static float _note_to_freq(note_t note, int octave) {
+	int midi_note = (octave + 1) * 12 + note;
+	return 440.0f * powf(2.0f, (midi_note - 69) / 12.0f);
 }
 
-sample_t osc_next_sample(oscillator_t *osc) {
-	osc->phase += osc->freq / (float)SAMPLE_RATE;
-	if (osc->phase >= 1.0f) {
-		osc->phase -= 1.0f;
+sample_t synth_sample(computer_t *computer, channel_t *channel) {
+	channel->phase += channel->frequency / (float)SAMPLE_RATE;
+	if (channel->phase >= 1.0f) {
+		channel->phase -= 1.0f;
 	}
 
 	float value = 0.0f;
 
-	switch (osc->waveform) {
+	instrument_t *instrument = &computer->ram->instruments[channel->instrument_index];
+
+	// TODO: make proper
+	// switch (instrument->waveform) {
+	switch (channel->instrument_index) {
 		case (WAVEFORM_SINE): {
-			value = sinf(2.0f * M_PI * osc->phase);
+			value = sinf(2.0f * M_PI * channel->phase);
 			break;
 		}
 
 		case (WAVEFORM_SQUARE): {
-			value = (osc->phase < 0.5f) ? 1.0f : -1.0f;
+			value = (channel->phase < 0.5f) ? 1.0f : -1.0f;
 			break;
 		}
 
 		case WAVEFORM_TRIANGLE: {
-			value = 2.0f * fabsf(2.0f * osc->phase - 1.0f) - 1.0f;
+			value = 2.0f * fabsf(2.0f * channel->phase - 1.0f) - 1.0f;
 			break;
 		}
 
 		case WAVEFORM_SAWTOOTH: {
-			value = osc->phase;
+			value = channel->phase;
 			break;
 		}
 
@@ -80,7 +83,6 @@ sample_t osc_next_sample(oscillator_t *osc) {
 
 			value = thing ? 1.0f : -1.0f;
 
-			printf("value: %f\n", value);
 			break;
 		}
 	}
@@ -93,54 +95,57 @@ void audio_init(computer_t *computer) {
 }
 
 void _update_channels(computer_t *computer) {
-	voice_t *voice = channels[0].voice;
-	if (voice == NULL) {
-		return;
-	}
-
-	if (channels[0].current_step == STEPS_IN_PATTERN) {
-		voice->active = false;
-		memset(&channels[0], 0, sizeof(channel_t));
+	for (size_t i = 0; i < MAX_CHANNELS; i++) {
+		channel_t *channel = &computer->channels[i];
+		instrument_t *instrument = &computer->ram->instruments[channel->instrument_index];
 		
-		return;
-	}
+		if (!channel->active) {
+			continue;
+		}
+
+		if (channel->current_step_index == STEPS_IN_PATTERN) {
+			channel->active = false;
+			memset(channel, 0, sizeof(channel_t));
+			
+			continue;
+		}
+		
+		if (channel->time_left_on_current_step > 0) {
+			channel->time_left_on_current_step--;
+			continue;
+		}
 	
-	if (channels[0].time_left_on_current_step > 0) {
-		channels[0].time_left_on_current_step--;
-		return;
+		pattern_t *pattern = &computer->ram->patterns[channel->pattern_index];
+	
+		int octave = pattern->steps[channel->current_step_index].pitch / 12 + BASE_OCTAVE;
+	
+		channel->instrument_index = pattern->steps[channel->current_step_index].instrument_index;
+		channel->frequency = _note_to_freq(pattern->steps[channel->current_step_index].pitch, octave);
+		channel->amplitude = 0.01f * (float)pattern->steps[channel->current_step_index].volume;
+	
+		channel->time_left_on_current_step = SAMPLES * pattern->speed;
+		channel->current_step_index++;
 	}
-
-	pattern_t *pattern = &get_global_computer()->ram->patterns[channels[0].pattern_index];
-
-	int octave = pattern->steps[channels[0].current_step].pitch / 12 + BASE_OCTAVE;
-	int freq = note_to_freq_tet12(pattern->steps[channels[0].current_step].pitch, octave);
-
-	voice->oscillator.freq = freq;
-	voice->oscillator.waveform = pattern->steps[channels[0].current_step].waveform;
-	voice->amplitude = 0.01f * (float)pattern->steps[channels[0].current_step].volume;
-
-	channels[0].time_left_on_current_step = SAMPLES * pattern->speed;
-	channels[0].current_step++;
 }
 
 void audio_update(float *buffer, int frames) {
-	voice_pool_t *pool = &get_global_computer()->voice_pool;
+	computer_t *computer = get_global_computer();
 
 	for (int i = 0; i < frames; i++) {
-		_update_channels(get_global_computer());
+		_update_channels(computer);
 
 		float left = 0.0f;
 		float right = 0.0f;
 
-		for (int j = 0; j < MAX_VOICES; j++) {
-			voice_t *voice = &pool->voices[j];
-			if (!voice->active) {
+		for (int j = 0; j < MAX_CHANNELS; j++) {
+			channel_t *channel = &computer->channels[j];
+			if (!channel->active) {
 				continue;
 			}
 
-			sample_t sample = osc_next_sample(&voice->oscillator);
-			left += sample.left * voice->amplitude;
-			right += sample.right * voice->amplitude;
+			sample_t sample = synth_sample(computer, channel);
+			left += sample.left * channel->amplitude;
+			right += sample.right * channel->amplitude;
 		}
 
 		buffer[i * 2 + 0] = left;
@@ -148,13 +153,18 @@ void audio_update(float *buffer, int frames) {
 	}
 }
 
-void audio_play_pattern(computer_t *computer, int pattern_index) {
-	pattern_t *pattern = &computer->ram->patterns[pattern_index];
-	voice_t *voice = &computer->voice_pool.voices[0];
-	voice->active = true;
+size_t audio_play_pattern(computer_t *computer, int pattern_index, int channel_index) {
+	if (channel_index == -1) {
+		channel_index = channel_alloc(computer);
+	}
+	channel_t *channel = &computer->channels[channel_index];
 
-	channels[0].current_step = 0;
-	channels[0].pattern_index = pattern_index;
-	channels[0].time_left_on_current_step = 0;
-	channels[0].voice = voice;
+	pattern_t *pattern = &computer->ram->patterns[pattern_index];
+	channel->active = true;
+
+	channel->current_step_index = 0;
+	channel->pattern_index = pattern_index;
+	channel->time_left_on_current_step = 0;
+
+	return channel_index;
 }

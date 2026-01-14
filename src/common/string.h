@@ -82,6 +82,8 @@ bool is_whitespace(char c);
 
 string_t int_to_string(allocator_t allocator, int number);
 
+string_t int_to_string_formatted(allocator_t allocator, int number, int desired_length, char filler);
+
 int string_to_int(string_t string);
 
 // Appends a path to another path

@@ -109,6 +109,9 @@ Memory layout, global constants
 
 #define BASE_OCTAVE 1
 
+#define MAX_CHANNELS 12
+#define MAX_INSTRUMENTS 64
+
 typedef uint8_t color_t;
 
 typedef struct rgb_color {
@@ -259,10 +262,14 @@ typedef enum waveform {
 	WAVEFORM_NOISE,
 } waveform_t;
 
+typedef struct instrument {
+	waveform_t waveform;
+} instrument_t;
+
 typedef struct pattern_step {
 	uint8_t pitch; // Ranges from 0 - 23, so 2 * 12 possibilities or 2 octaves
 	uint8_t volume;
-	waveform_t waveform;
+	uint8_t instrument_index;
 } pattern_step_t;
 
 #define STEPS_IN_PATTERN 64
@@ -293,7 +300,9 @@ typedef union ram {
 		color_t border_color;
 		text_mode_font_t text_mode_font;
 		entities_t entities;
+		
 		pattern_t patterns[PATTERN_AMOUNT];
+		instrument_t instruments[MAX_INSTRUMENTS];
 
 		terminal_t terminal;
 		shell_t shell;
@@ -307,33 +316,19 @@ typedef struct sample {
 	float right;
 } sample_t;
 
-typedef struct oscillator {
-	waveform_t waveform;
-	float freq;
-	float phase;
-} oscillator_t;
-
-typedef struct voice {
-	oscillator_t oscillator;
-	float amplitude;
-
-	// float duration;
-	// float time;
-	
+typedef struct channel {
 	bool active;
 
-	// int frames_left;
-} voice_t;
-
-typedef struct voice_pool {
-	voice_t voices[MAX_VOICES];
-} voice_pool_t;
-
-typedef struct channel {
 	uint16_t pattern_index;
-	voice_t *voice;
 	int time_left_on_current_step;
-	int current_step;
+	int current_step_index;
+
+	int instrument_index;
+
+	// Voice state
+	float phase;
+	float frequency;
+	float amplitude;
 } channel_t;
 
 typedef enum computer_state {
@@ -357,7 +352,7 @@ typedef struct computer {
 	// TODO: use this
 	// file_collection_t file_collection;
 
-	voice_pool_t voice_pool;
+	channel_t channels[MAX_CHANNELS];
 
 	string_t current_path;
 	string_t game_path; // Absolute path
