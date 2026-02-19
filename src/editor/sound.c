@@ -42,6 +42,8 @@ static struct {
 	point_t release_knob_center;
 	// int attack_knob_radius;
 	// point_t attack_knob_text_pos;
+
+	rect_t oscilloscope_rect;
 }
 _layout = {
 	.note_list_rect = {{124, 24 , 512, 96}},
@@ -78,6 +80,8 @@ _layout = {
 	.release_knob_center = {208, 453},
 	// .attack_knob_radius = 8,
 	// .attack_knob_text_pos = {210, 279},
+
+	.oscilloscope_rect = {4, 428, 116, 48},
 };
 
 static int _current_pattern = 0;
@@ -291,7 +295,8 @@ void sound_editor_draw(computer_t *computer) {
 				_current_instrument = i;
 			}
 
-			gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(pos.x + 2, pos.y + 2, 8, 8), 1 + i);
+			gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(pos.x + 4, pos.y + 4, 4, 4), 1 + i);
+			// gfx_set_pixel(&computer->ram->framebuffer, pos.x + 6, pos.y + 5, COLOR_WHITE);
 		}
 	}
 	
@@ -330,7 +335,7 @@ void sound_editor_draw(computer_t *computer) {
 		computer->ram,
 		0,
 		_layout.release_knob_center,
-		_universal_knob,
+		_universal_knob,              
 		0, 255,
 		computer->ram->instruments[_current_instrument].release,
 		&_release_knob_state
@@ -351,4 +356,19 @@ void sound_editor_draw(computer_t *computer) {
 		audio_cancel_channel(computer, 0);
 	}
 	_current_pattern = new_current_pattern;
+
+	// Oscilloscope
+	{
+		float *stream = audio_get_stream();
+
+		float inc = 1.0f / (float)_layout.oscilloscope_rect.w;
+
+		for (size_t i = 0; i < _layout.oscilloscope_rect.w; i++) {
+			int x = _layout.oscilloscope_rect.x + i;
+			int y = _layout.oscilloscope_rect.y + (_layout.oscilloscope_rect.h / 2) + (int)(stream[i] * _layout.oscilloscope_rect.h);
+
+			// TODO: make color part of skin
+			gfx_set_pixel(&computer->ram->framebuffer, x, y, 53);
+		}
+	}
 }

@@ -44,3 +44,5 @@ void audio_init(computer_t *computer);
 void audio_update(float *buffer, int frames);
 
 size_t audio_play_pattern(computer_t *computer, int pattern_index, int channel_index);
+
+float *audio_get_stream();

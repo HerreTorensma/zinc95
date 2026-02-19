@@ -19,6 +19,8 @@ const char *note_to_string_map[] = {
 	[NOTE_B] = "B",
 };
 
+static float *_stream = NULL;
+
 int audio_get_channel_current_step(computer_t *computer, int channel_index) {
 	if (!computer->channels[channel_index].active) {
 		return -1;
@@ -211,6 +213,7 @@ void _update_channels(computer_t *computer) {
 
 void audio_update(float *buffer, int frames) {
 	computer_t *computer = get_global_computer();
+	_stream = buffer;
 
 	for (int i = 0; i < frames; i++) {
 		_update_channels(computer);
@@ -254,4 +257,8 @@ size_t audio_play_pattern(computer_t *computer, int pattern_index, int channel_i
 	_setup_new_note(computer, channel);
 
 	return channel_index;
+}
+
+float *audio_get_stream() {
+	return _stream;
 }
