@@ -22,13 +22,26 @@ static struct {
 	point_t sawtooth_wave_button_pos;
 	point_t noise_wave_button_pos;
 
+	// TODO: put in global layout, like make a knob_t struct
 	point_t speed_knob_center;
-	int speed_knob_radius;
-	point_t speed_knob_text_pos;
+	// int speed_knob_radius;
+	// point_t speed_knob_text_pos;
 	
 	rect_t volume_graph_rect;
 
-	point_t pattern_picker_pos;
+	point_t pattern_picker1_pos;
+	point_t pattern_picker2_pos;
+	point_t pattern_picker3_pos;
+	point_t pattern_picker4_pos;
+
+	point_t instrument_button_pos;
+
+	point_t attack_knob_center;
+	point_t decay_knob_center;
+	point_t sustain_knob_center;
+	point_t release_knob_center;
+	// int attack_knob_radius;
+	// point_t attack_knob_text_pos;
 }
 _layout = {
 	.note_list_rect = {{124, 24 , 512, 96}},
@@ -36,31 +49,58 @@ _layout = {
 
 	.pitch_graph_rect = {{123, 124, 512, 96}},
 	
-	.sine_wave_button_pos = {478, 274},
-	.square_wave_button_pos = {510, 274},
-	.triangle_wave_button_pos = {542, 274},
-	.sawtooth_wave_button_pos = {574, 274},
-	.noise_wave_button_pos = {606, 274},
+	.sine_wave_button_pos = {200, 280},
+	.square_wave_button_pos = {232, 280},
+	.triangle_wave_button_pos = {264, 280},
+	.sawtooth_wave_button_pos = {296, 280},
+	.noise_wave_button_pos = {328, 280},
 
-	.speed_knob_center = {130, 283},
-	.speed_knob_radius = 8,
-	.speed_knob_text_pos = {140, 279},
+	.speed_knob_center = {14, 280},
+	// .speed_knob_radius = 8,
+	// .speed_knob_text_pos = {140, 279},
 	
 	.volume_graph_rect = {{123, 224, 512, 48}},
 
-	.pattern_picker_pos = {508, 412},
+	.pattern_picker1_pos = {6, 26},
+	.pattern_picker2_pos = {6, 88},
+	.pattern_picker3_pos = {6, 150},
+	.pattern_picker4_pos = {6, 212},
+
+	.instrument_button_pos = {132, 280},
+
+	// .attack_knob_center = {200, 283},
+	// .decay_knob_center = {241, 283},
+	// .sustain_knob_center = {282, 283},
+	// .release_knob_center = {323, 283},
+	.attack_knob_center = {208, 365},
+	.decay_knob_center = {208, 394},
+	.sustain_knob_center = {208, 424},
+	.release_knob_center = {208, 453},
+	// .attack_knob_radius = 8,
+	// .attack_knob_text_pos = {210, 279},
 };
 
 static int _current_pattern = 0;
-static int _selected_waveform = WAVEFORM_SINE;
+// static int _selected_waveform = WAVEFORM_SINE;
+
+static int _current_instrument = 0;
 
 static gui_knob_state_t _speed_knob_state = {0};
+static gui_knob_state_t _attack_knob_state = {0};
+static gui_knob_state_t _decay_knob_state = {0};
+static gui_knob_state_t _sustain_knob_state = {0};
+static gui_knob_state_t _release_knob_state = {0};
 
 static size_t _active_sound_effect_channel_index = 0;
 
+static knob_t _universal_knob = {
+	.radius = 8,
+	.text_offset = {10, -4},
+};
+
 // This is a function because later there will be more knobs and then I need to loop something
 static bool _is_any_knob_held() {
-	return (_speed_knob_state.held);
+	return _speed_knob_state.held || _attack_knob_state.held || _decay_knob_state.held || _sustain_knob_state.held || _release_knob_state.held;
 }
 
 void sound_editor_init(computer_t *computer) {
@@ -100,6 +140,8 @@ void sound_editor_update(computer_t *computer) {
 		computer->ram->patterns[_current_pattern].steps[step].pitch = pitch;
 	}
 
+	// TODO: scroll wheel control on volume and notes
+
 	if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
 		if (point_in_rect(mouse_pos, _layout.pitch_graph_rect)) {
 			int step = adjusted_mouse_pos.x / (_layout.pitch_graph_rect.w / STEPS_IN_PATTERN);
@@ -107,7 +149,7 @@ void sound_editor_update(computer_t *computer) {
 			int pitch = MAX_PITCH-1 - adjusted_mouse_pos.y / (_layout.pitch_graph_rect.h / MAX_PITCH);
 			// printf("step: %d, pitch: %d\n", step, pitch);
 			computer->ram->patterns[_current_pattern].steps[step].pitch = pitch;
-			computer->ram->patterns[_current_pattern].steps[step].instrument_index = _selected_waveform;
+			computer->ram->patterns[_current_pattern].steps[step].instrument_index = _current_instrument;
 		}
 	}
 
@@ -125,6 +167,7 @@ void sound_editor_update(computer_t *computer) {
 
 void sound_editor_draw(computer_t *computer) {
 	// Notes
+	// TODO: highlight cell under mouse
 	for (size_t i = 0; i < STEPS_IN_PATTERN; i++) {
 		point_t pos = {
 			.x = _layout.note_list_rect.x + (i / 8) * 64,
@@ -148,7 +191,7 @@ void sound_editor_draw(computer_t *computer) {
 			uint8_t waveform = computer->ram->patterns[_current_pattern].steps[i].instrument_index;
 			pos.x += 2 * (computer->ram->fonts[1].widths[0] + computer->ram->fonts[1].horizontal_space) + computer->ram->fonts[1].horizontal_space;
 			string_t string = int_to_string_formatted(get_temp_allocator(), step->instrument_index, 2, ' ');
-			gui_draw_string(computer->ram, 1, string, pos, 9 + step->instrument_index);
+			gui_draw_string(computer->ram, 1, string, pos, 1 + step->instrument_index); // TODO: use new colors
 		}
 
 		// Volume
@@ -169,13 +212,19 @@ void sound_editor_draw(computer_t *computer) {
 				(_layout.pitch_graph_rect.w / STEPS_IN_PATTERN) - 1,
 				3
 			),
-			9 + computer->ram->patterns[_current_pattern].steps[i].instrument_index
+			// 9 + computer->ram->patterns[_current_pattern].steps[i].instrument_index
+			1 + computer->ram->patterns[_current_pattern].steps[i].instrument_index
 		);
 
 		// The thing underneath
 		{
 			int y = _layout.pitch_graph_rect.y + _layout.pitch_graph_rect.h - (computer->ram->patterns[_current_pattern].steps[i].pitch * (_layout.pitch_graph_rect.h / MAX_PITCH)) + 1;
 	
+			color_t color = COLOR_DARKGRAY;
+			if (i == audio_get_channel_current_step(computer, _active_sound_effect_channel_index)) {
+				color = COLOR_LIGHTGRAY;
+			}
+
 			gfx_draw_filled_rect(
 				FB_SURF(computer->ram->framebuffer.data),
 				RECT(
@@ -184,20 +233,9 @@ void sound_editor_draw(computer_t *computer) {
 					(_layout.pitch_graph_rect.w / STEPS_IN_PATTERN) - 1,
 					_layout.pitch_graph_rect.y + _layout.pitch_graph_rect.h - y
 				),
-				COLOR_DARKGRAY
+				color
 			);
 		}
-	}
-
-	// Progress beam
-	int progress = audio_get_channel_current_step(computer, _active_sound_effect_channel_index);
-	if (progress > 0) {
-		gfx_draw_line(
-			FB_SURF(computer->ram->framebuffer.data),
-			POINT(_layout.pitch_graph_rect.x + progress * (_layout.pitch_graph_rect.w / STEPS_IN_PATTERN), _layout.pitch_graph_rect.y),
-			POINT(_layout.pitch_graph_rect.x + progress * (_layout.pitch_graph_rect.w / STEPS_IN_PATTERN), _layout.pitch_graph_rect.y + _layout.pitch_graph_rect.h),
-			COLOR_WHITE
-		);
 	}
 
 	// Volume points
@@ -216,25 +254,99 @@ void sound_editor_draw(computer_t *computer) {
 		);
 	}
 
-	computer->ram->patterns[_current_pattern].speed = gui_knob(computer->ram, 0, _layout.speed_knob_center, _layout.speed_knob_radius, _layout.speed_knob_text_pos, MIN_PATTERN_SPEED, MAX_PATTERN_SPEED, computer->ram->patterns[_current_pattern].speed, &_speed_knob_state);
+	// Delay
+	computer->ram->patterns[_current_pattern].speed = gui_knob(
+		computer->ram,
+		0,
+		_layout.speed_knob_center,
+		_universal_knob,
+		MIN_PATTERN_SPEED, MAX_PATTERN_SPEED,
+		computer->ram->patterns[_current_pattern].speed,
+		&_speed_knob_state
+	);
 
-	if (gui_button(computer->ram, _layout.sine_wave_button_pos, g_skin_layout.sine_wave_button, _selected_waveform == WAVEFORM_SINE)) {
-		_selected_waveform = WAVEFORM_SINE;
+	waveform_t *waveform = &computer->ram->instruments[_current_instrument].waveform;
+	if (gui_button(computer->ram, _layout.sine_wave_button_pos, g_skin_layout.sine_wave_button, *waveform == WAVEFORM_SINE)) {
+		*waveform = WAVEFORM_SINE;
 	}
-	if (gui_button(computer->ram, _layout.square_wave_button_pos, g_skin_layout.square_wave_button, _selected_waveform == WAVEFORM_SQUARE)) {
-		_selected_waveform = WAVEFORM_SQUARE;
+	if (gui_button(computer->ram, _layout.square_wave_button_pos, g_skin_layout.square_wave_button, *waveform == WAVEFORM_SQUARE)) {
+		*waveform = WAVEFORM_SQUARE;
 	}
-	if (gui_button(computer->ram, _layout.triangle_wave_button_pos, g_skin_layout.triangle_wave_button, _selected_waveform == WAVEFORM_TRIANGLE)) {
-		_selected_waveform = WAVEFORM_TRIANGLE;
+	if (gui_button(computer->ram, _layout.triangle_wave_button_pos, g_skin_layout.triangle_wave_button, *waveform == WAVEFORM_TRIANGLE)) {
+		*waveform = WAVEFORM_TRIANGLE;
 	}
-	if (gui_button(computer->ram, _layout.sawtooth_wave_button_pos, g_skin_layout.sawtooth_wave_button, _selected_waveform == WAVEFORM_SAWTOOTH)) {
-		_selected_waveform = WAVEFORM_SAWTOOTH;
+	if (gui_button(computer->ram, _layout.sawtooth_wave_button_pos, g_skin_layout.sawtooth_wave_button, *waveform == WAVEFORM_SAWTOOTH)) {
+		*waveform = WAVEFORM_SAWTOOTH;
 	}
-	if (gui_button(computer->ram, _layout.noise_wave_button_pos, g_skin_layout.noise_wave_button, _selected_waveform == WAVEFORM_NOISE)) {
-		_selected_waveform = WAVEFORM_NOISE;
+	if (gui_button(computer->ram, _layout.noise_wave_button_pos, g_skin_layout.noise_wave_button, *waveform == WAVEFORM_NOISE)) {
+		*waveform = WAVEFORM_NOISE;
 	}
+	
+	// Instruments
+	{
+		for (size_t i = 0; i < MAX_INSTRUMENTS; i++) {
+			point_t pos = _layout.instrument_button_pos;
+			pos.y += i * g_skin_layout.instrument_button.unpressed_rect.h;
+			if (gui_button(computer->ram, pos, g_skin_layout.instrument_button, i == _current_instrument)) {
+				_current_instrument = i;
+			}
 
-	size_t new_current_pattern = gui_button_matrix(computer->ram, _layout.pattern_picker_pos, g_skin_layout.sfx_picker_buttons, _current_pattern);
+			gfx_draw_filled_rect(FB_SURF(computer->ram->framebuffer.data), RECT(pos.x + 2, pos.y + 2, 8, 8), 1 + i);
+		}
+	}
+	
+	// ADSR
+	computer->ram->instruments[_current_instrument].attack = gui_knob(
+		computer->ram,
+		0,
+		_layout.attack_knob_center,
+		_universal_knob,
+		0, 255,
+		computer->ram->instruments[_current_instrument].attack,
+		&_attack_knob_state
+	);
+
+	computer->ram->instruments[_current_instrument].decay = gui_knob(
+		computer->ram,
+		0,
+		_layout.decay_knob_center,
+		_universal_knob,
+		0, 255,
+		computer->ram->instruments[_current_instrument].decay,
+		&_decay_knob_state
+	);
+
+	computer->ram->instruments[_current_instrument].sustain = gui_knob(
+		computer->ram,
+		0,
+		_layout.sustain_knob_center,
+		_universal_knob,
+		0, 255,
+		computer->ram->instruments[_current_instrument].sustain,
+		&_sustain_knob_state
+	);
+
+	computer->ram->instruments[_current_instrument].release = gui_knob(
+		computer->ram,
+		0,
+		_layout.release_knob_center,
+		_universal_knob,
+		0, 255,
+		computer->ram->instruments[_current_instrument].release,
+		&_release_knob_state
+	);
+
+	// size_t new_current_pattern = gui_button_matrix(computer->ram, _layout.pattern_picker1_pos, g_skin_layout.sfx_picker_buttons, _current_pattern);
+	// new_current_pattern = 98 + gui_button_matrix(computer->ram, _layout.pattern_picker2_pos, g_skin_layout.sfx_picker_buttons, 98 + _current_pattern);
+	// new_current_pattern = 98 * 2 + gui_button_matrix(computer->ram, _layout.pattern_picker3_pos, g_skin_layout.sfx_picker_buttons, 98 * 2 + _current_pattern);
+	// new_current_pattern = 98 * 3 + gui_button_matrix(computer->ram, _layout.pattern_picker4_pos, g_skin_layout.sfx_picker_buttons, 98 * 3 + _current_pattern);
+	
+	// size_t new_current_pattern = gui_button_matrix(computer->ram, _layout.pattern_picker1_pos, g_skin_layout.sfx_picker_buttons, _current_pattern, 0);
+	size_t new_current_pattern = gui_button_matrix(computer->ram, _layout.pattern_picker1_pos, g_skin_layout.sfx_picker_buttons, _current_pattern);
+	
+	// new_current_pattern = gui_button_matrix(computer->ram, _layout.pattern_picker2_pos, g_skin_layout.sfx_picker_buttons, _current_pattern % 98, 98);
+	// new_current_pattern = 98 * 2 + gui_button_matrix(computer->ram, _layout.pattern_picker3_pos, g_skin_layout.sfx_picker_buttons, _current_pattern % 98);
+	// new_current_pattern = 98 * 3 + gui_button_matrix(computer->ram, _layout.pattern_picker4_pos, g_skin_layout.sfx_picker_buttons, _current_pattern % 98);
 	if (_current_pattern != new_current_pattern) {
 		audio_cancel_channel(computer, 0);
 	}

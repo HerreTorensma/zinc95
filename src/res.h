@@ -310,6 +310,14 @@ static struct {
 	button_matrix_t sfx_picker_buttons;
 
 	button_array_t map_entity_tool_buttons;
+
+	button_t instrument_button;
+
+	// knob_t delay_knob;
+	// knob_t attack_knob;
+	// knob_t decay_knob;
+	// knob_t sustain_knob;
+	// knob_t release_knob;
 }
 g_skin_layout = {
 	.zinc_button = {
@@ -447,10 +455,13 @@ g_skin_layout = {
 			.unpressed_rect = {{3264, 366, 8, 8}},
 			.pressed_rect = {{3392, 366, 8, 8}},
 		},
-		.rows = 8,
-		.columns = 16,
+		.rows = 7 * 4,
+		.columns = 14,
 		.row_increase = 8,
 		.column_increase = 8,
+
+		.v_break_size = 6,
+		.v_break = 7,
 	},
 
 	.map_entity_tool_buttons = {
@@ -460,6 +471,11 @@ g_skin_layout = {
 		},
 		.increase = {0, 16},
 		.amount = 2,
+	},
+
+	.instrument_button = {
+		.unpressed_rect = {{3200, 204, 64, 12}},
+		.pressed_rect = {{3264, 204, 64, 12}},
 	},
 };
 

@@ -91,7 +91,6 @@ Memory layout, global constants
 #define SAMPLE_RATE 44100
 #define SAMPLES 256
 #define CHANNELS 2
-#define MAX_VOICES 8
 #define MAX_PITCH 48
 #define MAX_VOLUME 24
 #define MIN_PATTERN_SPEED 1
@@ -110,7 +109,7 @@ Memory layout, global constants
 #define BASE_OCTAVE 1
 
 #define MAX_CHANNELS 12
-#define MAX_INSTRUMENTS 64
+#define MAX_INSTRUMENTS 16
 
 typedef uint8_t color_t;
 
@@ -264,6 +263,11 @@ typedef enum waveform {
 
 typedef struct instrument {
 	waveform_t waveform;
+
+	uint8_t attack;
+	uint8_t decay;
+	float sustain;
+	uint8_t release;
 } instrument_t;
 
 typedef struct pattern_step {
@@ -273,7 +277,7 @@ typedef struct pattern_step {
 } pattern_step_t;
 
 #define STEPS_IN_PATTERN 64
-#define PATTERN_AMOUNT 128
+#define PATTERN_AMOUNT 392
 
 typedef struct pattern {
 	pattern_step_t steps[STEPS_IN_PATTERN];
@@ -316,6 +320,14 @@ typedef struct sample {
 	float right;
 } sample_t;
 
+typedef enum envelope_stage {
+	ENVELOPE_OFF,
+	ENVELOPE_ATTACK,
+	ENVELOPE_DECAY,
+	ENVELOPE_SUSTAIN,
+	ENVELOPE_RELEASE,
+} envelope_stage_t;
+
 typedef struct channel {
 	bool active;
 
@@ -329,6 +341,9 @@ typedef struct channel {
 	float phase;
 	float frequency;
 	float amplitude;
+	float env; // amplitude multiplier
+
+	envelope_stage_t envelope_stage;
 } channel_t;
 
 typedef enum computer_state {
@@ -364,6 +379,11 @@ typedef struct button {
 	rect_t pressed_rect;
 } button_t;
 
+typedef struct knob {
+	int radius;
+	point_t text_offset; // from center
+} knob_t;
+
 typedef struct button_array {
 	button_t base;
 	point_t increase; // Used for both positioning in the skin and the program layout, so the skin and layout should match
@@ -376,6 +396,9 @@ typedef struct button_matrix {
 	int columns;
 	int row_increase;
 	int column_increase;
+
+	int v_break_size;
+	int v_break;
 } button_matrix_t;
 
 void set_global_computer(computer_t *computer);

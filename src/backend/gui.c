@@ -246,9 +246,10 @@ void gui_load_skin(ram_t *ram, string_t path, color_t color_key, color_t font_co
 	ram->skin.font_color = font_color;
 }
 
-int64_t gui_knob(ram_t *ram, int font_index, point_t center, int radius, point_t text_pos, int64_t min, int64_t max, int64_t value, gui_knob_state_t *state) {
+int64_t gui_knob(ram_t *ram, int font_index, point_t center, knob_t knob, int64_t min, int64_t max, int64_t value, gui_knob_state_t *state) {
 	// gfx_draw_circle(FB_SURF(ram->framebuffer.data), rect.pos, radius, COLOR_BLACK);
 
+	point_t text_pos = POINT(center.x + knob.text_offset.x, center.y + knob.text_offset.y);
 	gui_draw_string(ram, font_index, int_to_string(get_temp_allocator(), value), text_pos, COLOR_GREEN);
 
 	// Line
@@ -262,8 +263,8 @@ int64_t gui_knob(ram_t *ram, int font_index, point_t center, int radius, point_t
 		angle += 0.5f * M_PI;
 
 		point_t offset = {
-			.x = cos(angle) * radius,
-			.y = sin(angle) * radius,
+			.x = cos(angle) * knob.radius,
+			.y = sin(angle) * knob.radius,
 		};
 
 		// TODO: make color configurable
@@ -271,7 +272,7 @@ int64_t gui_knob(ram_t *ram, int font_index, point_t center, int radius, point_t
 	}
 
 	point_t mouse_pos = input_get_mouse_pos();
-	if (point_in_circle(mouse_pos, center, radius)) {
+	if (point_in_circle(mouse_pos, center, knob.radius)) {
 		if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
 			state->held = true;
 			state->value_when_pressed = value;
@@ -282,13 +283,14 @@ int64_t gui_knob(ram_t *ram, int font_index, point_t center, int radius, point_t
 		} else if (input_mouse_scrolled(SCROLL_DIR_UP)) {
 			value--;
 		}
-	} else {
-		if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
-			state->held = false;
-		}
+	}
+	
+	if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
+		state->held = false;
 	}
 
-	if (state->held) {
+	if (state->held && input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+	// if (state->held) {
 		point_t mouse_pos = input_get_mouse_pos();
 		int y_dist = mouse_pos.y - center.y;
 		value = state->value_when_pressed + y_dist;
@@ -325,19 +327,26 @@ void gui_draw_selection_rect(uint64_t ticks, surface_t surf, rect_t rect) {
 int gui_button_matrix(ram_t *ram, point_t pos, button_matrix_t matrix, int already_pressed_index) {
 	int new_pressed_index = already_pressed_index;
 	int index = 0;
+	point_t new_pos = pos;
 
 	for (size_t i = 0; i < matrix.rows; i++) {
+		new_pos.x = pos.x;
+		
 		for (size_t j = 0; j < matrix.columns; j++) {
-			point_t new_pos = pos;
-			new_pos.x += matrix.column_increase * j;
-			new_pos.y += matrix.row_increase * i;
-
 			if (gui_button(ram, new_pos, matrix.base, new_pressed_index == index)) {
 				new_pressed_index = index;
 			}
 			
 			index++;
+			
+			new_pos.x += matrix.column_increase;
 		}
+
+		new_pos.y += matrix.row_increase;
+		if (matrix.v_break != -1 && (i + 1) % matrix.v_break == 0) {
+			new_pos.y += matrix.v_break_size;
+		}
+		
 	}
 
 	return new_pressed_index;

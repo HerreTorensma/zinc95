@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -O2 -Wall -Wextra -Wsign-conversion -Wpedantic -std=c11 -Wno-unused-parameter -Werror=incompatible-pointer-types -funsigned-char
+CFLAGS = -g -Wall -Wextra -Wsign-conversion -Wpedantic -std=c11 -Wno-unused-parameter -Werror=incompatible-pointer-types -funsigned-char
 EXECUTABLE = zinc95
 
 # Source files

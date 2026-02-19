@@ -88,6 +88,14 @@ void computer_load_resouces(computer_t *computer) {
 		}
 	}
 
+	// Init instruments
+	for (size_t i = 0; i < MAX_INSTRUMENTS; i++) {
+		computer->ram->instruments[i].attack = 16;
+		computer->ram->instruments[i].decay = 32;
+		computer->ram->instruments[i].sustain = 200;
+		computer->ram->instruments[i].release = 48;
+	}
+
 }
 
 #ifndef PATH_MAX
