@@ -290,6 +290,17 @@ void game_save(computer_t *computer, string_t path) {
 
 		string_builder_append(&builder, STR("\n"));
 	}
+	string_builder_append(&builder, STR("\n"));
+
+	// Instruments
+	string_builder_append(&builder, STR("__ins__\n"));
+	for (size_t i = 0; i < MAX_INSTRUMENTS; i++) {
+		char hex[sizeof(instrument_t) * 2] = {0};
+		_bytes_to_hex((uint8_t *)&computer->ram->instruments[i], sizeof(instrument_t), hex);
+		string_builder_append(&builder, (string_t){.data = hex, .len = sizeof(instrument_t) * 2});
+
+		string_builder_append(&builder, STR("\n"));
+	}
 
 	// Write it to disk
 	file_write_string(path, builder.string);
@@ -381,6 +392,7 @@ int game_load(computer_t *computer, string_t path) {
 		SECTION_SPR,
 		SECTION_MAP,
 		SECTION_PAT,
+		SECTION_INS,
 	} current_section = SECTION_LUA;
 
 	string_t string = _file_load_to_string(get_heap_allocator(), path);
@@ -391,6 +403,7 @@ int game_load(computer_t *computer, string_t path) {
 	size_t spr_offset = 0;
 	size_t map_offset = 0;
 	size_t pat_offset = 0;
+	size_t ins_offset = 0;
 
 	computer->active_files_amount = 0;
 
@@ -422,6 +435,11 @@ int game_load(computer_t *computer, string_t path) {
 
 		if (string_eq(line_string, STR("__pat__"))) {
 			current_section = SECTION_PAT;
+			continue;
+		}
+
+		if (string_eq(line_string, STR("__ins__"))) {
+			current_section = SECTION_INS;
 			continue;
 		}
 
@@ -484,6 +502,14 @@ int game_load(computer_t *computer, string_t path) {
 					printf("Line %zu in section __pat__ does not have the correct size\n", i);
 				}
 				pat_offset += line_string.len / 2;
+				break;
+			}
+
+			case SECTION_INS: {
+				if (_hex_string_to_raw(line_string, (uint8_t *)(computer->ram->instruments) + ins_offset, sizeof(instrument_t)) > 0) {
+					printf("Line %zu in section __ins__ does not have the correct size\n", i);
+				}
+				ins_offset += line_string.len / 2;
 				break;
 			}
 		}
