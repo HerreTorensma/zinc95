@@ -8,6 +8,21 @@
 #include "gfx.h"
 #include "../res.h"
 
+static bool _gui_frozen = false;
+
+void freeze_gui() {
+	_gui_frozen = true;
+}
+
+void unfreeze_gui() {
+	_gui_frozen = false;
+}
+
+bool is_gui_frozen() {
+	return _gui_frozen;
+}
+
+
 // Get the rect of the char in the spritesheet
 static void _get_char_rect(font_t *font, char c) {
 
@@ -102,7 +117,7 @@ bool gui_button(ram_t *ram, point_t pos, button_t button, bool already_pressed) 
 	};
 	
 	if (point_in_rect(mouse_pos, rect)) {
-		if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+		if (input_mouse_button_held(MOUSE_BUTTON_LEFT) && !is_gui_frozen()) {
 			already_pressed = true;
 		}
 	}
@@ -134,8 +149,9 @@ bool gui_press_button(ram_t *ram, point_t pos, button_t button) {
 			held = true;
 		}
 
-		if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
+		if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT) && !is_gui_frozen()) {
 			pressed = true;
+			freeze_gui();
 		}
 	}
 	
@@ -276,6 +292,7 @@ int64_t gui_knob(ram_t *ram, int font_index, point_t center, knob_t knob, int64_
 		if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
 			state->held = true;
 			state->value_when_pressed = value;
+			freeze_gui();
 		}
 
 		if (input_mouse_scrolled(SCROLL_DIR_DOWN)) {
@@ -340,13 +357,16 @@ int gui_button_matrix(ram_t *ram, point_t pos, button_matrix_t matrix, int alrea
 			index++;
 			
 			new_pos.x += matrix.column_increase;
+
+			if (matrix.h_break != -1 && (j + 1) % matrix.h_break == 0) {
+				new_pos.x += matrix.h_break_size;
+			}
 		}
 
 		new_pos.y += matrix.row_increase;
-		if (matrix.v_break != -1 && (i + 1) % matrix.v_break == 0) {
+ 		if (matrix.v_break != -1 && (i + 1) % matrix.v_break == 0) {
 			new_pos.y += matrix.v_break_size;
 		}
-		
 	}
 
 	return new_pressed_index;

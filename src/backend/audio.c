@@ -98,6 +98,10 @@ void audio_init(computer_t *computer) {
 	sdl2_audio_init(computer);
 }
 
+void audio_deinit(computer_t *computer) {
+	sdl2_audio_deinit(computer);
+}
+
 #define MAX_ATTACK_SEC  0.02f * 10.0f   // 20 ms
 #define MAX_DECAY_SEC   0.05f * 10.0f   // 50 ms
 #define MAX_RELEASE_SEC 0.1f * 10.0f    // 100 ms
@@ -197,7 +201,6 @@ void _update_channels(computer_t *computer) {
 		// TODO: is_step_empty (release can continue if yes, otherwise the new note actually starts)
 		channel->time_left_on_current_step = SAMPLES * pattern->speed;
 		channel->current_step_index++;
-
 		
 		channel->envelope_stage = ENVELOPE_RELEASE;
 		if (pattern->steps[channel->current_step_index].volume > 0) {
@@ -227,12 +230,16 @@ void audio_update(float *buffer, int frames) {
 				continue;
 			}
 
+			pattern_t *pattern = &computer->ram->patterns[channel->pattern_index];
+			float volume_multiplier = (float)pattern->volume / 255.0f;
+
 			instrument_t *instrument = &computer->ram->instruments[channel->instrument_index];
+
 			_update_envelope(computer->ram, channel);
 			
 			sample_t sample = synth_sample(computer, channel);
-			left += sample.left * channel->amplitude * channel->env; // TODO: this is the source of the ticking, because env gets set to 0.0f every note
-			right += sample.right * channel->amplitude * channel->env;
+			left += sample.left * channel->amplitude * channel->env * volume_multiplier; // TODO: this is the source of the ticking, because env gets set to 0.0f every note
+			right += sample.right * channel->amplitude * channel->env * volume_multiplier;
 		}
 
 		buffer[i * 2 + 0] = left;

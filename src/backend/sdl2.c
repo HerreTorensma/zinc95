@@ -1,3 +1,4 @@
+#include <SDL2/SDL_audio.h>
 #include <SDL2/SDL_mouse.h>
 #include <SDL2/SDL_pixels.h>
 #include <stdio.h>
@@ -453,6 +454,10 @@ void sdl2_audio_init(computer_t *computer) {
 	}
 
 	SDL_PauseAudio(0);
+}
+
+void sdl2_audio_deinit(computer_t *computer) {
+	SDL_CloseAudio();
 }
 
 void sdl2_set_clipboard_text(allocator_t allocator, string_t string) {

@@ -110,6 +110,7 @@ Memory layout, global constants
 
 #define MAX_CHANNELS 12
 #define MAX_INSTRUMENTS 16
+#define MAX_ARRANGEMENTS 128
 
 typedef uint8_t color_t;
 
@@ -282,7 +283,12 @@ typedef struct pattern_step {
 typedef struct pattern {
 	pattern_step_t steps[STEPS_IN_PATTERN];
 	uint8_t speed;
+	uint8_t volume;
 } pattern_t;
+
+typedef struct arrangement {
+	int16_t pattern_indices[6]; // Signed because -1 is used to indicate no pattern
+} arrangement_t;
 
 // TODO: Manually align this stuff
 typedef union ram {
@@ -307,6 +313,7 @@ typedef union ram {
 		
 		pattern_t patterns[PATTERN_AMOUNT];
 		instrument_t instruments[MAX_INSTRUMENTS];
+		arrangement_t arrangements[MAX_ARRANGEMENTS];
 
 		terminal_t terminal;
 		shell_t shell;
@@ -399,6 +406,9 @@ typedef struct button_matrix {
 
 	int v_break_size;
 	int v_break;
+
+	int h_break_size;
+	int h_break;
 } button_matrix_t;
 
 void set_global_computer(computer_t *computer);

@@ -15,15 +15,9 @@
 #define SAVE_ICON_INDEX 5858
 #define PLAY_ICON_INDEX 5856
 
-typedef enum workspace_type {
-	WORKSPACE_CODE,
-	WORKSPACE_SPRITE,
-	WORKSPACE_MAP,
-	WORKSPACE_SOUND,
-	WORKSPACE_MUSIC,
-} workspace_type_t;
-
 static workspace_type_t _active_workspace = WORKSPACE_SPRITE;
+
+static bool _gui_frozen = false;
 
 static struct {
 	point_t zinc_button_pos;
@@ -48,6 +42,10 @@ _layout = {
 	.play_button_pos = {622, 2},
 };
 
+void switch_to_workspace(size_t index) {
+	_active_workspace = index;
+}
+
 void workspace_menu_init(computer_t *computer) {
 	// Init the sprite selector (shared between sprite and map editor)
 	sprite_selector_init(computer);
@@ -56,9 +54,15 @@ void workspace_menu_init(computer_t *computer) {
 	sprite_editor_init(computer);
 	map_editor_init(computer);
 	sound_editor_init(computer);
+	music_editor_init(computer);
 }
 
 void workspace_menu_update(computer_t *computer) {
+	// TODO: maybe move this block into a gui_update function
+	if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
+		unfreeze_gui();
+	}
+
 	// --- Global keybinds ---
 	if (is_keybind_pressed(g_keybinds.global.run)) {
 		if (computer->game_running) {
@@ -123,6 +127,9 @@ void workspace_menu_update(computer_t *computer) {
 		case WORKSPACE_SOUND:
 			sound_editor_update(computer);
 			break;
+
+		case WORKSPACE_MUSIC:
+			music_editor_update(computer);
 
 		default:
 			break;

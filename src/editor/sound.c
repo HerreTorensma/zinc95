@@ -23,7 +23,8 @@ static struct {
 	point_t noise_wave_button_pos;
 
 	// TODO: put in global layout, like make a knob_t struct
-	point_t speed_knob_center;
+	point_t speed_knob_center; // TODO: rename to delay_knob_center
+	point_t volume_knob_center;
 	// int speed_knob_radius;
 	// point_t speed_knob_text_pos;
 	
@@ -44,6 +45,7 @@ static struct {
 	// point_t attack_knob_text_pos;
 
 	rect_t oscilloscope_rect;
+	rect_t instrument_wave_oscilloscope;
 }
 _layout = {
 	.note_list_rect = {{124, 24 , 512, 96}},
@@ -57,7 +59,8 @@ _layout = {
 	.sawtooth_wave_button_pos = {296, 280},
 	.noise_wave_button_pos = {328, 280},
 
-	.speed_knob_center = {14, 280},
+	.speed_knob_center = {14, 296},
+	.volume_knob_center = {14, 326},
 	// .speed_knob_radius = 8,
 	// .speed_knob_text_pos = {140, 279},
 	
@@ -81,7 +84,8 @@ _layout = {
 	// .attack_knob_radius = 8,
 	// .attack_knob_text_pos = {210, 279},
 
-	.oscilloscope_rect = {4, 428, 116, 48},
+	.oscilloscope_rect = {{4, 428, 116, 48}},
+	.instrument_wave_oscilloscope = {{570, 278+3, 64, 25}},
 };
 
 static int _current_pattern = 0;
@@ -90,12 +94,18 @@ static int _current_pattern = 0;
 static int _current_instrument = 0;
 
 static gui_knob_state_t _speed_knob_state = {0};
+static gui_knob_state_t _volume_knob_state = {0};
 static gui_knob_state_t _attack_knob_state = {0};
 static gui_knob_state_t _decay_knob_state = {0};
 static gui_knob_state_t _sustain_knob_state = {0};
 static gui_knob_state_t _release_knob_state = {0};
 
 static size_t _active_sound_effect_channel_index = 0;
+
+// Only used for wave visualization
+static channel_t _fake_channel = {
+	.frequency = (int)((1.0f/(float)64) * SAMPLE_RATE)
+};
 
 static knob_t _universal_knob = {
 	.radius = 8,
@@ -104,7 +114,11 @@ static knob_t _universal_knob = {
 
 // This is a function because later there will be more knobs and then I need to loop something
 static bool _is_any_knob_held() {
-	return _speed_knob_state.held || _attack_knob_state.held || _decay_knob_state.held || _sustain_knob_state.held || _release_knob_state.held;
+	return _speed_knob_state.held || _volume_knob_state.held || _attack_knob_state.held || _decay_knob_state.held || _sustain_knob_state.held || _release_knob_state.held;
+}
+
+void sound_set_current_pattern(size_t index) {
+	_current_pattern = index;
 }
 
 void sound_editor_init(computer_t *computer) {
@@ -113,7 +127,7 @@ void sound_editor_init(computer_t *computer) {
 
 void sound_editor_update(computer_t *computer) {
 	if (input_key_pressed(KEY_SPACE)) {
-		if (audio_get_channel_current_step(computer, 0) > 0) {
+		if (audio_get_channel_current_step(computer, 0) > 0) { // TODO: make the default value -1 or something bc now it's annoying
 			audio_cancel_channel(computer, 0);
 		} else {
 			_active_sound_effect_channel_index = audio_play_pattern(computer, _current_pattern, 0);
@@ -269,6 +283,17 @@ void sound_editor_draw(computer_t *computer) {
 		&_speed_knob_state
 	);
 
+	// Volume
+	computer->ram->patterns[_current_pattern].volume = gui_knob(
+		computer->ram,
+		0,
+		_layout.volume_knob_center,
+		_universal_knob,
+		0, 255,
+		computer->ram->patterns[_current_pattern].volume,
+		&_volume_knob_state
+	);
+
 	waveform_t *waveform = &computer->ram->instruments[_current_instrument].waveform;
 	if (gui_button(computer->ram, _layout.sine_wave_button_pos, g_skin_layout.sine_wave_button, *waveform == WAVEFORM_SINE)) {
 		*waveform = WAVEFORM_SINE;
@@ -284,6 +309,22 @@ void sound_editor_draw(computer_t *computer) {
 	}
 	if (gui_button(computer->ram, _layout.noise_wave_button_pos, g_skin_layout.noise_wave_button, *waveform == WAVEFORM_NOISE)) {
 		*waveform = WAVEFORM_NOISE;
+	}
+
+	// Instrument oscilloscope
+	// TODO: maybe make a seperate one for left and right (stereo)
+	{
+		_fake_channel.phase = 0.0f;
+		_fake_channel.instrument_index = _current_instrument;
+		for (size_t i = 0; i < _layout.instrument_wave_oscilloscope.w; i++) {
+			sample_t sample = synth_sample(computer, &_fake_channel);
+
+			int x = _layout.instrument_wave_oscilloscope.x + i;
+			int y = _layout.instrument_wave_oscilloscope.y + (_layout.instrument_wave_oscilloscope.h / 2) + (int)(sample.left / 2 * _layout.instrument_wave_oscilloscope.h);
+
+			// TODO: make color part of skin
+			gfx_set_pixel(&computer->ram->framebuffer, x, y, 53);
+		}
 	}
 	
 	// Instruments
@@ -356,6 +397,11 @@ void sound_editor_draw(computer_t *computer) {
 		audio_cancel_channel(computer, 0);
 	}
 	_current_pattern = new_current_pattern;
+
+	// Pattern
+	char buffer[32];
+	sprintf(buffer, "#%03d\n", _current_pattern);
+	gui_draw_text(computer->ram, 1, buffer, (point_t){6, 272}, COLOR_BLACK);
 
 	// Oscilloscope
 	{

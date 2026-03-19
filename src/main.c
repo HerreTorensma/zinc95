@@ -244,5 +244,6 @@ int main(int argc, char *argv[]) {
 	// TODO: rename to computer_deinit
 	computer_quit(&computer);
 
+	audio_deinit(&computer);
 	window_quit();
 }

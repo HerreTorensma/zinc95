@@ -20,11 +20,19 @@ typedef struct gui_knob_state {
 	int64_t value_when_pressed;
 } gui_knob_state_t;
 
+void freeze_gui();
+
+void unfreeze_gui();
+
+bool is_gui_frozen();
+
 void gui_draw_string(ram_t *ram, int font_index, string_t string, point_t pos, int color);
 
 void gui_draw_text(ram_t *ram, int font_index, const char text[], point_t pos, int color);
 
 bool gui_button(ram_t *ram, point_t pos, button_t button, bool already_pressed);
+
+bool gui_freeze_button(ram_t *ram, point_t pos, button_t button, bool already_pressed);
 
 bool gui_press_button(ram_t *ram, point_t pos, button_t button);
 

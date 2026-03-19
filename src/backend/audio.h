@@ -35,11 +35,15 @@ typedef enum note {
 
 extern const char *note_to_string_map[];
 
+sample_t synth_sample(computer_t *computer, channel_t *channel);
+
 int audio_get_channel_current_step(computer_t *computer, int channel_index);
 
 void audio_cancel_channel(computer_t *computer, int channel_index);
 
 void audio_init(computer_t *computer);
+
+void audio_deinit(computer_t *computer);
 
 void audio_update(float *buffer, int frames);
 

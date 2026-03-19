@@ -313,6 +313,13 @@ static struct {
 
 	button_t instrument_button;
 
+	button_matrix_t arrangement_picker_buttons;
+
+	button_t music_editor_pattern_button;
+
+	button_t music_editor_pattern_inc_button;
+	button_t music_editor_pattern_dec_button;
+
 	// knob_t delay_knob;
 	// knob_t attack_knob;
 	// knob_t decay_knob;
@@ -450,7 +457,7 @@ g_skin_layout = {
 		.pressed_rect = {{3232, 414, 32, 16}},
 	},
 
-	.sfx_picker_buttons = {
+	.sfx_picker_buttons = { // TODO: rename to pattern_picker_buttons
 		.base = {
 			.unpressed_rect = {{3264, 366, 8, 8}},
 			.pressed_rect = {{3392, 366, 8, 8}},
@@ -462,6 +469,9 @@ g_skin_layout = {
 
 		.v_break_size = 6,
 		.v_break = 7,
+
+		.h_break_size = 0,
+		.h_break = -1,
 	},
 
 	.map_entity_tool_buttons = {
@@ -476,6 +486,38 @@ g_skin_layout = {
 	.instrument_button = {
 		.unpressed_rect = {{3200, 204, 64, 12}},
 		.pressed_rect = {{3264, 204, 64, 12}},
+	},
+
+	.arrangement_picker_buttons = {
+		.base = { // TODO: make different from sfx_picker_buttons
+			.unpressed_rect = {{3264, 366, 8, 8}},
+			.pressed_rect = {{3392, 366, 8, 8}},
+		},
+		.rows = 2,
+		.columns = 8 * 8,
+		.row_increase = 8,
+		.column_increase = 8,
+
+		.v_break_size = 0,
+		.v_break = -1,
+		
+		.h_break_size = 8,
+		.h_break = 8,
+	},
+
+	.music_editor_pattern_button = {
+		.unpressed_rect = {{3492, 328, 54, 14}},
+		.pressed_rect = {{3492, 342, 54, 14}},
+	},
+
+	.music_editor_pattern_inc_button = {
+		.unpressed_rect = {{3546, 328, 14, 7}},
+		.pressed_rect = {{3546, 342, 14, 7}},
+	},
+
+	.music_editor_pattern_dec_button = {
+		.unpressed_rect = {{3546, 335, 14, 7}},
+		.pressed_rect = {{3546, 349, 14, 7}},
 	},
 };
 
