@@ -567,13 +567,20 @@ void map_editor_draw(computer_t *computer) {
 			gfx_draw_spritesheet_pro(computer->ram, in_frame_rect, dest_rect, COLOR_BLACK, _layout.map_rect); // TODO: replace COLOR_NONE with the color key of the sprite
 		}
 	} else {
+		point_t tile = cam_screen_to_tile(&_camera, mouse_pos, in_frame_rect_in_sprites, SPRITE_WIDTH, SPRITE_HEIGHT);
+		
 		if (point_in_rect(mouse_pos, _layout.map_rect)) {
-			point_t tile = cam_screen_to_tile(&_camera, mouse_pos, in_frame_rect_in_sprites, SPRITE_WIDTH, SPRITE_HEIGHT);
 			point_t rect_pos = cam_tile_to_screen(&_camera, tile, in_frame_rect_in_sprites, SPRITE_WIDTH, SPRITE_HEIGHT);
 			rect_pos.x -= 1;
 			rect_pos.y -= 1;
 			gfx_draw_rect(fb_surf, RECT(rect_pos.x, rect_pos.y, in_frame_rect.w * _camera.zoom + 2, in_frame_rect.h * _camera.zoom + 2), COLOR_WHITE);
 		}
+
+		char buffer[16];
+		sprintf(buffer, "%d x %d", tile.x, tile.y);
+		gui_draw_text(computer->ram, 1, buffer, POINT(4, 348), COLOR_BLACK);
+		sprintf(buffer, "%d x %d", in_frame_rect_in_sprites.w, in_frame_rect_in_sprites.h);
+		gui_draw_text(computer->ram, 1, buffer, POINT(4, 356), COLOR_BLACK);
 	}
 
 	sprite_selector_draw(computer, _layout.sprite_selector_pos, _layout.sprite_selector_buttons_start_pos);

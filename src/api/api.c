@@ -11,6 +11,11 @@
 #include "../backend/audio.h"
 
 const api_meta_t api_metas[API_FUNC_COUNT] = {
+	[API_FUNC_PRINT] = {
+		.name = "print",
+		.signature = "print(text)",
+		.desc = "Print a string to the console",
+	},
 	[API_FUNC_CLS] = {
 		.name = "cls",
 		.signature = "cls(color=0)",
@@ -91,6 +96,36 @@ const api_meta_t api_metas[API_FUNC_COUNT] = {
 		.name = "load_from_slot",
 		.signature = "load_from_slot(index) -> table | nil",
 		.desc = "Load the table stored in the given slot index",
+	},
+
+	[API_FUNC_GET_ENTS] = {
+		.name = "get_ents",
+		.signature = "get_ents() -> table",
+		.desc = "Get the entities",
+	},
+
+	[API_FUNC_NORM] = {
+		.name = "norm",
+		.signature = "norm(x, y) -> number, number | nil",
+		.desc = "Normalize a vector",
+	},
+
+	[API_FUNC_SFX] = {
+		.name = "sfx",
+		.signature = "sfx(index)",
+		.desc = "Play a sound effect",
+	},
+
+	[API_FUNC_MGET] = {
+		.name = "mget",
+		.signature = "mget(layer, cell_x, cell_y)",
+		.desc = "Get the tile index of the given map coordinates",
+	},
+
+	[API_FUNC_FMATCH] = {
+		.name = "fmatch",
+		.signature = "fmatch(index, flags)",
+		.desc = "Check if the flags of the given tile match the input flags (bitwise and)",
 	},
 };
 
@@ -198,6 +233,37 @@ int api_ticks(ram_t *ram) {
 void api_sfx(ram_t *ram, int index) {
 	audio_play_pattern(get_global_computer(), index, -1);
 }
+
+int api_mget(ram_t *ram, int layer, int x, int y) {
+	return ram->map.layers[layer].data[y * MAP_WIDTH + x];
+}
+
+// TODO: make work with longer flags string
+// like for "kl" the flags must have both k and l
+bool api_fmatch(ram_t *ram, int index, string_t flags) {
+	uint32_t bitmask = 0;
+
+	for (size_t i = 0; i < flags.len; i++) {
+		uint32_t offset = 0;
+
+		if (flags.data[i] >= '0' && flags.data[i] <= '9') {
+			offset = flags.data[i] - '0';
+		} else if (flags.data[i] >= 'a' && flags.data[i] <= 'v') {
+			offset = 10 + flags.data[i] - 'a';
+		}
+
+		bitmask |= 1ULL << offset;
+		if ((ram->sprites[index].flags & bitmask) == 0) {
+			return false;
+		}
+	}
+
+	// return ram->sprites[index].flags & bitmask;
+	return true;
+}
+/*
+0123456789abc
+*/
 
 // TODO: sprite_get_flags, sprite_set_flags
 // also think about how that should work with multiple sprites selected

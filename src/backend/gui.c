@@ -371,3 +371,11 @@ int gui_button_matrix(ram_t *ram, point_t pos, button_matrix_t matrix, int alrea
 
 	return new_pressed_index;
 }
+
+// Assumes the string is already allocated, and modifies it
+void gui_line_edit(ram_t *ram, string_t string, size_t max_len, bool focused, rect_t skin_area, point_t pos) {
+	// Draw the shit
+	gfx_draw_surface_rect(&ram->framebuffer, SKIN_SURF(ram->skin.data), pos, skin_area, COLOR_NONE);
+
+	// input_get_as_char();
+}

@@ -17,6 +17,8 @@ API
 // extern const api_metas[API_FUNC_COUNT];
 
 typedef enum api_func {
+	API_FUNC_PRINT,
+
 	API_FUNC_CLS,
 	API_FUNC_RECT,
 	API_FUNC_RECTF,
@@ -33,6 +35,15 @@ typedef enum api_func {
 	
 	API_FUNC_SAVE_TO_SLOT,
 	API_FUNC_LOAD_FROM_SLOT,
+
+	API_FUNC_GET_ENTS,
+
+	API_FUNC_NORM,
+
+	API_FUNC_SFX,
+
+	API_FUNC_MGET,
+	API_FUNC_FMATCH,
 
 	API_FUNC_COUNT,
 
@@ -143,3 +154,8 @@ void api_poke(ram_t *ram, uint64_t address, uint8_t value);
 
 // --- Audio ---
 void api_sfx(ram_t *ram, int index);
+
+// --- Map ---
+int api_mget(ram_t *ram, int layer, int x, int y);
+
+bool api_fmatch(ram_t *ram, int index, string_t flags);

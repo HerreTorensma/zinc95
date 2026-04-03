@@ -37,6 +37,9 @@ static struct {
 	point_t sprite_selector_buttons_start_pos;
 
 	point_t tools_start_pos;
+
+	rect_t freelook_rect1;
+	rect_t freelook_rect2;
 }
 _layout = {
 	.color_picker_rect = {{4, 388, 192, 88}},
@@ -60,6 +63,9 @@ _layout = {
 	.sprite_selector_buttons_start_pos = {588, 348},
 
 	.tools_start_pos = {622, 34},
+
+	.freelook_rect1 = {{0, 20, 620, 344}},
+	.freelook_rect2 = {{200, 364, 420, 116}},
 };
 
 static color_t _selected_color = 0;
@@ -74,6 +80,9 @@ static point_t _max_reached_point = {0};
 static point_t _selection_start = {0};
 static point_t _selection_end = {0};
 static bool _selection_active = false;
+
+static bool _freelook = false;
+static point_t _last_frame_mouse_pos = {0};
 
 static camera_t _camera = {
 	// Put camera at the center of the screen
@@ -166,6 +175,16 @@ void sprite_editor_init(computer_t *computer) {
 	gfx_clear(_selection_surf, COLOR_NONE);
 
 	stack_init(&_undo_stack, sizeof(change_t), UNDO_STACK_SIZE);
+}
+
+static bool _is_cursor_in_canvas() {
+	point_t mouse_pos = input_get_mouse_pos();
+
+	if (_freelook) {
+		return point_in_rect(mouse_pos, _layout.freelook_rect1) || point_in_rect(mouse_pos, _layout.freelook_rect2);
+	}
+
+	return point_in_rect(mouse_pos, _layout.sprite_editor_full_rect);
 }
 
 static point_t _color_index_to_pos(uint8_t color) {
@@ -452,11 +471,57 @@ static void _tool_ellipsef(computer_t *computer, point_t spritesheet_coord_under
 
 static void _tool_bucket(computer_t *computer, point_t spritesheet_coord_under_mouse, point_t mouse_pos) {
 	if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
-		rect_t limit = point_in_rect(mouse_pos, _layout.sprite_editor_focus_rect) ? get_in_frame_rect() : RECT(0, 0, SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT);
+		rect_t limit = !_freelook && point_in_rect(mouse_pos, _layout.sprite_editor_focus_rect) ? get_in_frame_rect() : RECT(0, 0, SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT);
 		
 		_push_to_undo(computer, limit);
 		
 		gfx_flood_fill(SPR_SURF(computer->ram->spritesheet.data), spritesheet_coord_under_mouse, _selected_color, limit);
+	}
+}
+
+static void _exit_freelook() {
+	// Snap back to reality
+	_freelook = false;
+
+
+}
+
+static void _update_freelook(computer_t *computer) {
+	point_t mouse_pos = input_get_mouse_pos();
+	point_t mouse_in_world = cam_screen_to_world(&_camera, mouse_pos);
+
+	if (_is_cursor_in_canvas()) {
+		if (input_mouse_scrolled(SCROLL_DIR_UP) && _camera.zoom < 32.0f) {
+			float new_zoom = _camera.zoom * 2.0f;
+			
+			_camera.pos.x += (mouse_in_world.x - _camera.pos.x) * (1 - _camera.zoom / new_zoom);
+			_camera.pos.y += (mouse_in_world.y - _camera.pos.y) * (1 - _camera.zoom / new_zoom);
+			
+			_camera.zoom = new_zoom;
+		}
+
+		if (input_mouse_scrolled(SCROLL_DIR_DOWN) && _camera.zoom >= 0.25f) {
+			float new_zoom = _camera.zoom * 0.5f;
+			
+			_camera.pos.x += (mouse_in_world.x - _camera.pos.x) * (1 - _camera.zoom / new_zoom);
+			_camera.pos.y += (mouse_in_world.y - _camera.pos.y) * (1 - _camera.zoom / new_zoom);
+			
+			_camera.zoom = new_zoom;
+		}
+	}
+}
+
+static void _update_snapped(computer_t *computer) {
+	sprite_selector_update(computer, SNAP_MODE_ZOOM, _layout.sprite_selector_pos);
+
+	// Zoom for sprite selector
+	// TODO: should this be handled by the sprite selector itself?
+	if (input_key_pressed(KEY_EQUALS) || input_mouse_scrolled(SCROLL_DIR_UP)) {
+		sprite_selector_zoom_in();
+	}
+
+	if (input_key_pressed(KEY_MINUS) || input_mouse_scrolled(SCROLL_DIR_DOWN)) {
+		sprite_selector_zoom_out();
 	}
 }
 
@@ -467,9 +532,37 @@ void sprite_editor_update(computer_t *computer) {
 	_spritesheet_coord_under_mouse = cam_screen_to_world(&_camera, mouse_pos);
 
 	rect_t in_frame_rect = get_in_frame_rect();
-	
-	sprite_selector_update(computer, SNAP_MODE_ZOOM, _layout.sprite_selector_pos);
 
+	// Freelook
+	// TODO: use keybind system?
+	if (input_key_pressed(KEY_TAB)) {
+		if (_freelook) {
+			_exit_freelook();
+		} else {
+			_freelook = true;
+		}
+	}
+
+	input_set_cursor_style(CURSOR_STYLE_ARROW);
+
+	if (input_mouse_button_held(MOUSE_BUTTON_MIDDLE)) {
+		_freelook = true;
+
+		input_set_cursor_style(CURSOR_STYLE_HAND);
+
+		point_t diff = {
+			.x = mouse_pos.x - _last_frame_mouse_pos.x,
+			.y = mouse_pos.y - _last_frame_mouse_pos.y,
+		};
+
+		// printf("diff x: %d\n", (int)(diff.x));
+
+		_camera.pos.x -= diff.x / _camera.zoom;
+		_camera.pos.y -= diff.y / _camera.zoom;
+	}
+
+	_last_frame_mouse_pos = mouse_pos;
+	
 	if (point_in_rect(mouse_pos, _layout.color_picker_rect)) {
 		if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
 			_selected_color = _pos_to_color_index(mouse_pos);
@@ -508,16 +601,7 @@ void sprite_editor_update(computer_t *computer) {
 		_selected_tool = TOOL_BUCKET;
 	}
 
-	// Zoom for sprite selector
-	if (input_key_pressed(KEY_MINUS) || input_mouse_scrolled(SCROLL_DIR_UP)) {
-		sprite_selector_zoom_in();
-	}
-
-	if (input_key_pressed(KEY_EQUALS) || input_mouse_scrolled(SCROLL_DIR_DOWN)) {
-		sprite_selector_zoom_out();
-	}
-
-	if (point_in_rect(mouse_pos, _layout.sprite_editor_full_rect)) {
+	if (_is_cursor_in_canvas()) {
 		if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
 			_change_start = _spritesheet_coord_under_mouse;
 		}
@@ -571,164 +655,52 @@ void sprite_editor_update(computer_t *computer) {
 				break;
 		}
 	}
+
+	if (_freelook) {
+		_update_freelook(computer);
+	} else {
+		_update_snapped(computer);
+	}
 }
 
-// TODO: overlay is drawn over selected sprites, need to fix
-void sprite_editor_draw(computer_t *computer) {
+static void _draw_freelook(computer_t *computer) {
+
+}
+
+static void _draw_snapped(computer_t *computer) {
 	framebuffer_t *fb = &computer->ram->framebuffer;
 	surface_t fb_surf = FB_SURF(fb->data);
 	rect_t in_frame_rect = get_in_frame_rect();
 	rect_t in_frame_rect_in_sprites = get_in_frame_rect_in_sprites();
-	
 	int scale = _layout.sprite_editor_focus_rect.w / in_frame_rect.w;
 
-	// TODO: also update sprite selector in frame rect when scrolling anywhere, just in the sprite editor
-
-	// Draw spritesheet
-	{
-		_camera.pos = in_frame_rect.pos;
-		_camera.zoom = scale;
-
-		// Source rect is the entire spritesheet
-		// TODO: make a global const or macro or something
-		rect_t source_rect = RECT(0, 0, SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT);
-
-		rect_t dest_rect = {0};
-		dest_rect.pos = cam_world_to_screen(&_camera, (point_t){0});
-
-		dest_rect.w = source_rect.w * _camera.zoom;
-		dest_rect.h = source_rect.h * _camera.zoom;
-
-		gfx_draw_spritesheet_pro(computer->ram, source_rect, dest_rect, COLOR_NONE, _layout.sprite_editor_full_rect);
-	}
+	_camera.pos = in_frame_rect.pos;
+	_camera.zoom = scale;
 
 	// Spritesheet / sprite selector
 	sprite_selector_draw(computer, _layout.sprite_selector_pos, _layout.sprite_selector_buttons_start_pos);
 
-	// Color picker frame
-	gfx_draw_filled_rect(fb_surf, _layout.color_picker_rect, 0);
-
-	// Draw colors
-	for (int i = 0; i < PALETTE_SIZE - 8; i++) {
-		point_t color_cell_pos = _color_index_to_pos(i);
-		gfx_draw_filled_rect(fb_surf, RECT(color_cell_pos.x, color_cell_pos.y, COLOR_SQUARE_SIZE, COLOR_SQUARE_SIZE), i);
-	}
-
-	// Draw selected color square
-	point_t selected_color_cell_pos = _color_index_to_pos(_selected_color);
-	gfx_draw_rect(fb_surf, RECT(selected_color_cell_pos.x - 1, selected_color_cell_pos.y - 1, COLOR_SQUARE_SIZE + 2, COLOR_SQUARE_SIZE + 2), 15);
-
-	// Draw the overlay
-	{
-		rect_t source_rect = RECT(0, 0, SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT);
-
-		rect_t dest_rect = {0};
-		dest_rect.pos = cam_world_to_screen(&_camera, (point_t){0});
-
-		dest_rect.w = source_rect.w * _camera.zoom;
-		dest_rect.h = source_rect.h * _camera.zoom;
-
-		gfx_draw_surface_pro(fb, _overlay_surf, source_rect, dest_rect, COLOR_NONE, _layout.sprite_editor_full_rect);
-	}
-
-	// Draw the selection surface
-	if (_selection_active) {
-		
-		rect_t selection = _get_selection_rect();
-
-		_camera.pos = in_frame_rect.pos;
-		_camera.zoom = scale;
-
-		// Source rect is the entire spritesheet
-		// TODO: make a global const or macro or something
-		rect_t source_rect = RECT(0, 0, selection.w, selection.h);
-
-		rect_t dest_rect = {0};
-		dest_rect.pos = cam_world_to_screen(&_camera, selection.pos);
-
-		dest_rect.w = source_rect.w * _camera.zoom;
-		dest_rect.h = source_rect.h * _camera.zoom;
-
-		gfx_draw_surface_pro(fb, _selection_surf, source_rect, dest_rect, COLOR_NONE, _layout.sprite_editor_full_rect);
-	}
-	
 	// Draw the overlay on sprite selector as well
 	gfx_draw_surface_rect(fb, _overlay_surf, _layout.sprite_selector_pos, get_page_rect(), COLOR_NONE);
 
 	// Draw selection on sprite selector as well
 	// TODO: fix
-	{
-		rect_t selection = _get_selection_rect();
-		point_t pos = {
-			_layout.sprite_selector_pos.x + selection.x,
-			_layout.sprite_selector_pos.y + (selection.y),
-		};
+	rect_t selection = _get_selection_rect();
+	point_t pos = {
+		_layout.sprite_selector_pos.x + selection.x,
+		_layout.sprite_selector_pos.y + (selection.y),
+	};
 
-		rect_t rect = {
-			0,
-			0,
-			selection.w,
-			selection.h,
-		};
-		gfx_draw_surface_rect(fb, _selection_surf, pos, rect, COLOR_NONE);
-	}
-
-	// Draw cursor
-	{
-		if (_selected_tool >= TOOL_BRUSH && _selected_tool <= TOOL_BUCKET) {
-			if (point_in_rect(input_get_mouse_pos(), _layout.sprite_editor_full_rect)) {
-				point_t spritesheet_coord_under_mouse = cam_screen_to_world(&_camera, input_get_mouse_pos());
-
-				rect_t dest_rect = {0};
-				dest_rect.pos = cam_world_to_screen(&_camera, spritesheet_coord_under_mouse);
-
-				dest_rect.w = _camera.zoom;
-				dest_rect.h = _camera.zoom;
-
-				gfx_draw_filled_rect(fb_surf, dest_rect, _selected_color);
-			}
-		}
-	}
-
-	// Draw the selection outline
-	if (!(_selection_start.x == _selection_end.x && _selection_start.y == _selection_end.y)) {
-		rect_t selection = _get_selection_rect();
-
-		// TODO: use world_to_screen for this
-		selection.x -= in_frame_rect.x;
-		selection.y -= in_frame_rect.y;
-	
-		selection.x *= scale;
-		selection.y *= scale;
-	
-		selection.w *= scale;
-		selection.h *= scale;
-		
-		selection.x += _layout.sprite_editor_focus_rect.x;
-		selection.y += _layout.sprite_editor_focus_rect.y;
-		
-		// gfx_draw_rect(fb_surf, selection, COLOR_LIGHTGRAY);
-		gui_draw_selection_rect(computer->ram->ticks, fb_surf, selection);
-	}
+	rect_t rect = {
+		0,
+		0,
+		selection.w,
+		selection.h,
+	};
+	gfx_draw_surface_rect(fb, _selection_surf, pos, rect, COLOR_NONE);
 
 	// Focus rect
 	gfx_draw_rect(fb_surf, RECT(_layout.sprite_editor_focus_rect.x - 1, _layout.sprite_editor_focus_rect.y - 1, _layout.sprite_editor_focus_rect.w + 2, _layout.sprite_editor_focus_rect.h + 2), COLOR_WHITE);
-
-	// Selected color
-	char buffer[32];
-	gfx_draw_filled_rect(fb_surf, _layout.selected_color_rect, _selected_color);
-	sprintf(buffer, "#%03d\n", _selected_color);
-	gui_draw_text(computer->ram, GUI_FONT_INDEX, buffer, _layout.selected_color_label_pos, computer->ram->skin.font_color);
-
-	// Secondary selected color
-	gfx_draw_filled_rect(fb_surf, _layout.secondary_selected_color_rect, _secondary_selected_color);
-
-	// gui_draw_text(computer->ram, 2, buffer, _layout.selected_color_label_pos, COLOR_NONE); // Testing not passing a color
-	
-	// Selected sprite preview
-	gfx_draw_spritesheet_pro(computer->ram, in_frame_rect, _layout.selected_sprite_rect, COLOR_NONE, RECT(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)); // TODO: fix so it adds the other rects to currently_editing_rect
-	sprintf(buffer, "#%04d\n", get_sprite_index());
-	gui_draw_text(computer->ram, GUI_FONT_INDEX, buffer, _layout.selected_sprite_label_pos, computer->ram->skin.font_color);
 
 	// Sprite flags and color key
 	sprite_t *selected_sprite = &computer->ram->sprites[get_sprite_index()];
@@ -767,6 +739,144 @@ void sprite_editor_draw(computer_t *computer) {
 	}
 	gfx_draw_filled_rect(fb_surf, _layout.color_key_rect, selected_sprite->color_key);
 
+	// Selected sprite preview
+	char buffer[32];
+	gfx_draw_spritesheet_pro(computer->ram, in_frame_rect, _layout.selected_sprite_rect, COLOR_NONE, RECT(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)); // TODO: fix so it adds the other rects to currently_editing_rect
+	sprintf(buffer, "#%04d\n", get_sprite_index());
+	gui_draw_text(computer->ram, GUI_FONT_INDEX, buffer, _layout.selected_sprite_label_pos, computer->ram->skin.font_color);
+}
+
+// TODO: overlay is drawn over selected sprites, need to fix
+void sprite_editor_draw(computer_t *computer) {
+	framebuffer_t *fb = &computer->ram->framebuffer;
+	surface_t fb_surf = FB_SURF(fb->data);
+	rect_t in_frame_rect = get_in_frame_rect();
+	rect_t in_frame_rect_in_sprites = get_in_frame_rect_in_sprites();
+	
+	int scale = _layout.sprite_editor_focus_rect.w / in_frame_rect.w;
+
+	// TODO: also update sprite selector in frame rect when scrolling anywhere, just in the sprite editor
+
+	if (_freelook) {
+		gfx_draw_surface_rect(&computer->ram->framebuffer, SKIN_SURF(computer->ram->skin.data), POINT(0, 0), RECT(SCREEN_WIDTH * 6, 0, SCREEN_WIDTH, SCREEN_HEIGHT), COLOR_NONE);
+	}
+
+	// Draw spritesheet
+	{
+		// Source rect is the entire spritesheet
+		// TODO: make a global const or macro or something
+		rect_t source_rect = RECT(0, 0, SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT);
+
+		rect_t dest_rect = {0};
+		dest_rect.pos = cam_world_to_screen(&_camera, (point_t){0});
+
+		dest_rect.w = source_rect.w * _camera.zoom;
+		dest_rect.h = source_rect.h * _camera.zoom;
+
+		if (_freelook) {
+			gfx_draw_spritesheet_pro(computer->ram, source_rect, dest_rect, COLOR_NONE, _layout.freelook_rect1);
+			gfx_draw_spritesheet_pro(computer->ram, source_rect, dest_rect, COLOR_NONE, _layout.freelook_rect2);
+		} else {
+			gfx_draw_spritesheet_pro(computer->ram, source_rect, dest_rect, COLOR_NONE, _layout.sprite_editor_full_rect);
+		}
+	}
+
+	// Color picker frame
+	gfx_draw_filled_rect(fb_surf, _layout.color_picker_rect, 0);
+
+	// Draw colors
+	for (int i = 0; i < PALETTE_SIZE - 8; i++) {
+		point_t color_cell_pos = _color_index_to_pos(i);
+		gfx_draw_filled_rect(fb_surf, RECT(color_cell_pos.x, color_cell_pos.y, COLOR_SQUARE_SIZE, COLOR_SQUARE_SIZE), i);
+	}
+
+	// Draw selected color square
+	point_t selected_color_cell_pos = _color_index_to_pos(_selected_color);
+	gfx_draw_rect(fb_surf, RECT(selected_color_cell_pos.x - 1, selected_color_cell_pos.y - 1, COLOR_SQUARE_SIZE + 2, COLOR_SQUARE_SIZE + 2), 15);
+
+	// Draw the overlay
+	{
+		rect_t source_rect = RECT(0, 0, SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT);
+
+		rect_t dest_rect = {0};
+		dest_rect.pos = cam_world_to_screen(&_camera, (point_t){0});
+
+		dest_rect.w = source_rect.w * _camera.zoom;
+		dest_rect.h = source_rect.h * _camera.zoom;
+
+		if (_freelook) {
+			gfx_draw_surface_pro(fb, _overlay_surf, source_rect, dest_rect, COLOR_NONE, _layout.freelook_rect1);
+			gfx_draw_surface_pro(fb, _overlay_surf, source_rect, dest_rect, COLOR_NONE, _layout.freelook_rect2);
+		} else {
+			gfx_draw_surface_pro(fb, _overlay_surf, source_rect, dest_rect, COLOR_NONE, _layout.sprite_editor_full_rect);
+		}
+	}
+
+	// Draw the selection surface
+	if (_selection_active) {
+		rect_t selection = _get_selection_rect();
+
+		// _camera.pos = in_frame_rect.pos;
+		// _camera.zoom = scale;
+
+		// Source rect is the entire spritesheet
+		// TODO: make a global const or macro or something
+		rect_t source_rect = RECT(0, 0, selection.w, selection.h);
+
+		rect_t dest_rect = {0};
+		dest_rect.pos = cam_world_to_screen(&_camera, selection.pos);
+
+		dest_rect.w = source_rect.w * _camera.zoom;
+		dest_rect.h = source_rect.h * _camera.zoom;
+
+		// gfx_draw_surface_pro(fb, _selection_surf, source_rect, dest_rect, COLOR_NONE, _layout.sprite_editor_full_rect);
+		if (_freelook) {
+			gfx_draw_surface_pro(fb, _selection_surf, source_rect, dest_rect, COLOR_NONE, _layout.freelook_rect1);
+			gfx_draw_surface_pro(fb, _selection_surf, source_rect, dest_rect, COLOR_NONE, _layout.freelook_rect2);
+		} else {
+			gfx_draw_surface_pro(fb, _selection_surf, source_rect, dest_rect, COLOR_NONE, _layout.sprite_editor_full_rect);
+		}
+	}
+
+	// Draw cursor
+	{
+		if (_selected_tool >= TOOL_BRUSH && _selected_tool <= TOOL_BUCKET) {
+			if (_is_cursor_in_canvas()) {
+				point_t spritesheet_coord_under_mouse = cam_screen_to_world(&_camera, input_get_mouse_pos());
+
+				rect_t dest_rect = {0};
+				dest_rect.pos = cam_world_to_screen(&_camera, spritesheet_coord_under_mouse);
+
+				dest_rect.w = _camera.zoom;
+				dest_rect.h = _camera.zoom;
+
+				gfx_draw_filled_rect(fb_surf, dest_rect, _selected_color);
+			}
+		}
+	}
+
+	// Draw the selection outline
+	if (!(_selection_start.x == _selection_end.x && _selection_start.y == _selection_end.y)) {
+		rect_t selection = _get_selection_rect();
+
+		point_t top_left = cam_world_to_screen(&_camera, selection.pos);
+		point_t bottom_right = cam_world_to_screen(&_camera, (point_t){selection.x + selection.w, selection.y + selection.h});
+		selection = rect_from_2_points(top_left, bottom_right);
+		
+		gui_draw_selection_rect(computer->ram->ticks, fb_surf, selection);
+	}
+
+	// Selected color
+	char buffer[32];
+	gfx_draw_filled_rect(fb_surf, _layout.selected_color_rect, _selected_color);
+	sprintf(buffer, "#%03d\n", _selected_color);
+	gui_draw_text(computer->ram, GUI_FONT_INDEX, buffer, _layout.selected_color_label_pos, computer->ram->skin.font_color);
+
+	// Secondary selected color
+	gfx_draw_filled_rect(fb_surf, _layout.secondary_selected_color_rect, _secondary_selected_color);
+
+	// gui_draw_text(computer->ram, 2, buffer, _layout.selected_color_label_pos, COLOR_NONE); // Testing not passing a color
+
 	// Tools
 	for (int i = 0; i < g_skin_layout.sprite_tool_buttons.amount; i++) {
 		point_t pos = button_array_get_pos(&g_skin_layout.sprite_tool_buttons, _layout.tools_start_pos, i);
@@ -783,4 +893,10 @@ void sprite_editor_draw(computer_t *computer) {
 	// gfx_draw_ellipse(fb_surf, POINT(201, 121), POINT(100, 100), COLOR_RED);
 	// gfx_draw_rect(fb_surf, RECT(100, 100, 3, 3), COLOR_BLUE);
 	// gfx_draw_ellipse(fb_surf, POINT(100, 100), 50, 200, COLOR_RED);
+
+	if (_freelook) {
+		_draw_freelook(computer);
+	} else {
+		_draw_snapped(computer);
+	}
 }

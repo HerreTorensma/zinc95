@@ -292,7 +292,7 @@ static int _lua_load_from_slot(lua_State *lua) {
 	return luaL_error(lua, "Expected 1 argument");
 }
 
-static int _lua_get_entities(lua_State *lua) {
+static int _lua_get_ents(lua_State *lua) {
 	computer_t *computer = get_global_computer();
 	
 
@@ -331,7 +331,7 @@ static int _lua_get_entities(lua_State *lua) {
 }
 
 // TODO: use internal functions, but rn I can't be bothered yet
-static int _lua_normalize(lua_State *lua) {
+static int _lua_norm(lua_State *lua) {
 	if (lua_gettop(lua) == 2) {
 		float x = lua_tonumber(lua, 1);
 		float y = lua_tonumber(lua, 2);
@@ -363,6 +363,38 @@ static int _lua_sfx(lua_State *lua) {
 	}
 	
 	return 0;
+}
+
+static int _lua_mget(lua_State *lua) {
+	if (lua_gettop(lua) == 3) {
+		int layer = (int)lua_tonumber(lua, 1);
+		int x = (int)lua_tonumber(lua, 2);
+		int y = (int)lua_tonumber(lua, 3);
+
+		int index = api_mget(get_global_computer()->ram, layer, x, y);
+		printf("mget index: %d\n", index);
+
+		lua_pushinteger(lua, index);
+	}
+
+	return 1;
+}
+
+static int _lua_fmatch(lua_State *lua) {
+	if (lua_gettop(lua) == 2) {
+		int index = (int)lua_tonumber(lua, 1);
+		const char *buffer = lua_tostring(lua, 2);
+
+		if (buffer) {
+			bool result = api_fmatch(get_global_computer()->ram, index, STR(buffer));
+			printf("result: %d\n", result);
+			lua_pushboolean(lua, result);
+		} else {
+			printf("no buffer\n");
+		}
+	}
+
+	return 1;
 }
 
 // The following is copy-pasted and edited from the Lua docs and has some parts of the standard library commented out
@@ -405,7 +437,7 @@ int lua_init(computer_t *computer) {
 
 	// TODO: handle this in a loop based on the api metas
 	// maybe not because then I have issues with circular dependency
-	lua_register(_lua, "print", _lua_print);
+	lua_register(_lua, api_metas[API_FUNC_PRINT].name, _lua_print);
 	lua_register(_lua, api_metas[API_FUNC_CLS].name, _lua_cls);
 	lua_register(_lua, api_metas[API_FUNC_SPR].name, _lua_spr);
 	lua_register(_lua, api_metas[API_FUNC_CIRC].name, _lua_circ);
@@ -417,9 +449,13 @@ int lua_init(computer_t *computer) {
 	
 	lua_register(_lua, api_metas[API_FUNC_SAVE_TO_SLOT].name, _lua_save_to_slot);
 	lua_register(_lua, api_metas[API_FUNC_LOAD_FROM_SLOT].name, _lua_load_from_slot);
-	lua_register(_lua, "get_entities", _lua_get_entities);
-	lua_register(_lua, "normalize", _lua_normalize);
-	lua_register(_lua, "sfx", _lua_sfx);
+	
+	lua_register(_lua, api_metas[API_FUNC_GET_ENTS].name, _lua_get_ents); // TODO: make this a global variable instead of a function?
+	lua_register(_lua, api_metas[API_FUNC_NORM].name, _lua_norm);
+	lua_register(_lua, api_metas[API_FUNC_SFX].name, _lua_sfx);
+
+	lua_register(_lua, api_metas[API_FUNC_MGET].name, _lua_mget);
+	lua_register(_lua, api_metas[API_FUNC_FMATCH].name, _lua_fmatch);
 
 	for (size_t i = 0; i < computer->active_files_amount; i++) {
 		string_t file_string = computer->files[i].string;

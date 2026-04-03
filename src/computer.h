@@ -96,7 +96,7 @@ Memory layout, global constants
 #define MIN_PATTERN_SPEED 1
 #define MAX_PATTERN_SPEED 255
 
-#define SKIN_WIDTH SCREEN_WIDTH * 6
+#define SKIN_WIDTH SCREEN_WIDTH * 7
 #define SKIN_HEIGHT SCREEN_HEIGHT
 
 #define GUI_FONT_INDEX 0

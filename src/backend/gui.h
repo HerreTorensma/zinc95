@@ -56,3 +56,5 @@ int64_t gui_knob(ram_t *ram, int font_index, point_t center, knob_t knob, int64_
 void gui_draw_selection_rect(uint64_t ticks, surface_t surf, rect_t rect);
 
 int gui_button_matrix(ram_t *ram, point_t pos, button_matrix_t matrix, int already_pressed_index);
+
+void gui_line_edit(ram_t *ram, string_t string, size_t max_len, bool focused, rect_t skin_area, point_t pos);
