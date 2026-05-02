@@ -5,23 +5,23 @@
 #include "../backend/gui.h"
 #include "../res.h"
 
-static rect_t _page_rect = {0};
-static rect_t _in_frame_rect = {0};
+static rect_t _visible_rect = {0};
+static rect_t _in_frame_rect = {0}; // 'focused', in the white rect
 
-static int _page_index = 0;
+static int _current_area_index = 0;
 
-static void _set_page_index(int index) {
-	_page_index = index;
-	_page_rect = (rect_t){
-		.x = 0,
-		.y = _page_index * SPRITESHEET_PAGE_HEIGHT,
+static void _set_area_index(int index) {
+	_current_area_index = index;
+	_visible_rect = (rect_t){
+		.x = (_current_area_index % 4) * SPRITESHEET_PAGE_WIDTH,
+		.y = (_current_area_index / 4) * SPRITESHEET_PAGE_HEIGHT,
 		.w = SPRITESHEET_PAGE_WIDTH,
 		.h = SPRITESHEET_PAGE_HEIGHT,
 	};
 }
 
 void sprite_selector_init(computer_t *computer) {
-	_set_page_index(0);
+	_set_area_index(0);
 	
 	_in_frame_rect = (rect_t){
 		.x = 0,
@@ -84,7 +84,7 @@ void sprite_selector_zoom_out() {
 	_in_frame_rect.w *= 2;
 	_in_frame_rect.h *= 2;
 
-	if (_in_frame_rect.w > SPRITESHEET_WIDTH || _in_frame_rect.h > SPRITESHEET_HEIGHT) {
+	if (_in_frame_rect.h > SPRITESHEET_PAGE_HEIGHT) {
 		_in_frame_rect.w /= 2;
 		_in_frame_rect.h /= 2;
 	}
@@ -115,7 +115,7 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 		}
 
 		if (_in_frame_rect.pos.x != old_pos.x || _in_frame_rect.pos.y != old_pos.y) {
-			_set_page_index(_in_frame_rect.y / SPRITESHEET_PAGE_HEIGHT);
+			_set_area_index((_in_frame_rect.y / SPRITESHEET_PAGE_HEIGHT) * 4 + (_in_frame_rect.x / SPRITESHEET_PAGE_WIDTH));
 		}
 	}
 
@@ -152,8 +152,8 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 				_in_frame_rect.x = cell_x * _in_frame_rect.w;
 				_in_frame_rect.y = cell_y * _in_frame_rect.h;
 
-				_in_frame_rect.x += _page_rect.x;
-				_in_frame_rect.y += _page_rect.y;
+				_in_frame_rect.x += _visible_rect.x;
+				_in_frame_rect.y += _visible_rect.y;
 			}
 		}
 
@@ -188,25 +188,21 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 }
 
 void sprite_selector_draw(computer_t *computer, point_t pos, point_t page_buttons_pos) {
-	gfx_draw_spritesheet_rect(computer->ram, pos, _page_rect, COLOR_NONE);
+	gfx_draw_spritesheet_rect(computer->ram, pos, _visible_rect, COLOR_NONE);
 
-	for (int i = 0; i < g_skin_layout.spritesheet_page_buttons.amount; i++) {
-		point_t pos = button_array_get_pos(&g_skin_layout.spritesheet_page_buttons, page_buttons_pos, i);
-		button_t button = button_array_get(&g_skin_layout.spritesheet_page_buttons, i);
-
-		if (gui_button(computer->ram, pos, button, _page_index == i)) {
-			rect_t old_page_rect = _page_rect;
-			_set_page_index(i);
-			_in_frame_rect.x += (_page_rect.x - old_page_rect.x);
-			_in_frame_rect.y += (_page_rect.y - old_page_rect.y);
-		}
+	int new_area_index = gui_full_button_matrix(computer->ram, page_buttons_pos, g_skin_layout.spritesheet_area_buttons, _current_area_index);
+	if (new_area_index != _current_area_index) {
+		_set_area_index(new_area_index);
 	}
 
-	gfx_draw_rect(FB_SURF(computer->ram->framebuffer.data), RECT(pos.x + _in_frame_rect.x - 1, pos.y + (_in_frame_rect.y % SPRITESHEET_PAGE_HEIGHT) - 1, _in_frame_rect.w + 2, _in_frame_rect.h + 2), 15);
+	// gfx_draw_rect(FB_SURF(computer->ram->framebuffer.data), RECT(pos.x + _in_frame_rect.x - 1, pos.y + (_in_frame_rect.y % SPRITESHEET_PAGE_HEIGHT) - 1, _in_frame_rect.w + 2, _in_frame_rect.h + 2), 15);
+	if (rect_in_rect(_visible_rect, _in_frame_rect)) {
+		gfx_draw_rect(FB_SURF(computer->ram->framebuffer.data), RECT(pos.x + (_in_frame_rect.x % SPRITESHEET_PAGE_WIDTH) - 1, pos.y + (_in_frame_rect.y % SPRITESHEET_PAGE_HEIGHT) - 1, _in_frame_rect.w + 2, _in_frame_rect.h + 2), 15);
+	}
 }
 
 rect_t get_page_rect() {
-	return _page_rect;
+	return _visible_rect;
 }
 
 rect_t get_in_frame_rect() {
@@ -220,10 +216,6 @@ rect_t get_in_frame_rect_in_sprites() {
 		.w = _in_frame_rect.w / SPRITE_WIDTH,
 		.h = _in_frame_rect.h / SPRITE_HEIGHT,
 	};
-}
-
-int get_page_index() {
-	return _page_index;
 }
 
 int get_sprite_index() {

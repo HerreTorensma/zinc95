@@ -32,8 +32,6 @@ rect_t get_in_frame_rect();
 // Selected rect in number of sprites, like for example 
 rect_t get_in_frame_rect_in_sprites();
 
-int get_page_index();
-
 int get_sprite_index();
 
 int sprite_coords_to_index(int x, int y);

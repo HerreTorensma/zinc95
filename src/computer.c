@@ -35,12 +35,14 @@ void computer_load_resouces(computer_t *computer) {
 	// the monospace bool can also go
 	// And the vertical_space is kinda stupid since there is already height
 	computer->ram->fonts[0] = (font_t){
-		.sprite_index = 5376,
+		.start_pos = {3200, 432},
 		.horizontal_space = 1,
 		.vertical_space = 3,
 		.height = 10,
-		.sprite_width = 1,
-		.sprite_height = 2,
+		.char_max_width = 8,
+		.char_max_height = 16,
+		.columns = 48,
+		.surface = SURFACE_SKIN,
 
 		.color_key = COLOR_BLACK,
 		.seperator_color = COLOR_GREEN,
@@ -48,12 +50,14 @@ void computer_load_resouces(computer_t *computer) {
 	gui_init_font_widths(computer->ram, 0);
 
 	computer->ram->fonts[1] = (font_t){
-		.sprite_index = 5568,
+		.start_pos = {3200, 464},
 		.horizontal_space = 1,
 		.vertical_space = 1,
 		.height = 8,
-		.sprite_width = 1,
-		.sprite_height = 1,
+		.char_max_width = 8,
+		.char_max_height = 8,
+		.columns = 48,
+		.surface = SURFACE_SKIN,
 
 		.color_key = COLOR_BLACK,
 		.seperator_color = COLOR_GREEN,
@@ -475,7 +479,7 @@ int game_load(computer_t *computer, string_t path) {
 			}
 
 			case SECTION_GFX: {
-				if (_hex_string_to_raw(line_string, (uint8_t *)computer->ram->spritesheet.data + gfx_offset, SPRITESHEET_PAGE_WIDTH * sizeof(color_t)) > 0) {
+				if (_hex_string_to_raw(line_string, (uint8_t *)computer->ram->spritesheet.data + gfx_offset, SPRITESHEET_WIDTH * sizeof(color_t)) > 0) {
 					printf("Line %zu in section __gfx__ does not have the correct size\n", i);
 				}
 				gfx_offset += line_string.len / 2;
@@ -527,8 +531,8 @@ int game_load(computer_t *computer, string_t path) {
 
 	// TODO: please store the font in another surface
 	// this is a hacky and temporary fix so I can update the font
-	gfx_copy_surface_rect(SPR_SURF(computer->ram->spritesheet.data), SKIN_SURF(computer->ram->skin.data), (point_t){0, 896}, g_skin_layout.gui_font_rect, COLOR_NONE);
-	gfx_copy_surface_rect(SPR_SURF(computer->ram->spritesheet.data), SKIN_SURF(computer->ram->skin.data), (point_t){0, 928}, g_skin_layout.code_editor_font_rect, COLOR_NONE);
+	// gfx_copy_surface_rect(SPR_SURF(computer->ram->spritesheet.data), SKIN_SURF(computer->ram->skin.data), (point_t){0, 896}, g_skin_layout.gui_font_rect, COLOR_NONE);
+	// gfx_copy_surface_rect(SPR_SURF(computer->ram->spritesheet.data), SKIN_SURF(computer->ram->skin.data), (point_t){0, 928}, g_skin_layout.code_editor_font_rect, COLOR_NONE);
 
 	return 0;
 }

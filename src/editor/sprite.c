@@ -44,7 +44,7 @@ static struct {
 _layout = {
 	.color_picker_rect = {{4, 388, 192, 88}},
 	.sprite_editor_focus_rect = {{192, 46, 256, 256}},
-	.sprite_editor_full_rect = {{0, 20, 620, 308}},
+	.sprite_editor_full_rect = {{0, 20, 620, 324}},
 
 	.selected_color_rect = {{4, 368, 16, 16}},
 	.selected_color_label_pos = {24, 372},
@@ -53,14 +53,13 @@ _layout = {
 	.selected_sprite_rect = {{4, 348, 16, 16}},
 	.selected_sprite_label_pos = {24, 351},
 
-	// .color_key_button_rect = RECT(622, 332, 12, 12),
-	.color_key_button_pos = {588, 332},
-	.color_key_rect = {{590, 334, 8, 8}},
+	.color_key_button_pos = {524, 349},
+	.color_key_rect = {{526, 351, 8, 8}},
 
-	.sprite_flags_start_pos = {200, 332},
+	.sprite_flags_start_pos = {206, 396},
 
-	.sprite_selector_pos = {200, 348},
-	.sprite_selector_buttons_start_pos = {588, 348},
+	.sprite_selector_pos = {264, 348},
+	.sprite_selector_buttons_start_pos = {524, 364},
 
 	.tools_start_pos = {622, 34},
 
@@ -705,30 +704,57 @@ static void _draw_snapped(computer_t *computer) {
 	// Sprite flags and color key
 	sprite_t *selected_sprite = &computer->ram->sprites[get_sprite_index()];
 
-	// Still using the macro because it is probably safer
-	for (int i = 0; i < SPRITE_FLAGS_SIZE; i++) {
-		uint32_t mask = 1U << i;
-
-		bool old_val = (selected_sprite->flags & mask) != 0;
-
-		point_t pos = button_array_get_pos(&g_skin_layout.sprite_flag_buttons, _layout.sprite_flags_start_pos, i);
-		button_t button = button_array_get(&g_skin_layout.sprite_flag_buttons, i);
+	{
+		button_matrix_t matrix = g_skin_layout.sprite_flag_button_matrix;
 		
-		bool new_val = gui_toggle_button(computer->ram, pos, button, old_val);
-		if (new_val == old_val) {
-			continue;
-		}
+		int index = 0;
+		point_t new_pos = _layout.sprite_flags_start_pos;
 
-		for (size_t y = 0; y < in_frame_rect_in_sprites.h; y++) {
-			for (size_t x = 0; x < in_frame_rect_in_sprites.w; x++) {
-				size_t sprite_index = sprite_coords_to_index(in_frame_rect_in_sprites.x + x, in_frame_rect_in_sprites.y + y);
-				sprite_t *sprite = &computer->ram->sprites[sprite_index];
+		for (size_t i = 0; i < matrix.rows; i++) {
+			new_pos.x = _layout.sprite_flags_start_pos.x;
+			
+			for (size_t j = 0; j < matrix.columns; j++) {
+				button_t button = matrix.base;
 				
-				if (new_val) {
-					sprite->flags |= mask;
-				} else {
-					sprite->flags &= ~mask;
+				button.pressed_rect.x += new_pos.x - _layout.sprite_flags_start_pos.x;
+				button.pressed_rect.y += new_pos.y - _layout.sprite_flags_start_pos.y;
+
+				button.unpressed_rect.x += new_pos.x - _layout.sprite_flags_start_pos.x;
+				button.unpressed_rect.y += new_pos.y - _layout.sprite_flags_start_pos.y;
+				
+				uint32_t mask = 1U << index;
+				bool old_val = (selected_sprite->flags & mask) != 0;
+
+				bool new_val = gui_toggle_button(computer->ram, new_pos, button, old_val);
+				
+				if (new_val != old_val) {
+					for (size_t y = 0; y < in_frame_rect_in_sprites.h; y++) {
+						for (size_t x = 0; x < in_frame_rect_in_sprites.w; x++) {
+							size_t sprite_index = sprite_coords_to_index(in_frame_rect_in_sprites.x + x, in_frame_rect_in_sprites.y + y);
+							sprite_t *sprite = &computer->ram->sprites[sprite_index];
+							
+							if (new_val) {
+								sprite->flags |= mask;
+							} else {
+								sprite->flags &= ~mask;
+							}
+						}
+					}
 				}
+
+				
+				index++;
+				
+				new_pos.x += matrix.column_increase;
+
+				if (matrix.h_break != -1 && (j + 1) % matrix.h_break == 0) {
+					new_pos.x += matrix.h_break_size;
+				}
+			}
+
+			new_pos.y += matrix.row_increase;
+			if (matrix.v_break != -1 && (i + 1) % matrix.v_break == 0) {
+				new_pos.y += matrix.v_break_size;
 			}
 		}
 	}

@@ -23,10 +23,9 @@ bool point_in_circle(point_t point, point_t circle_center, int circle_radius) {
 bool rect_in_rect(rect_t container, rect_t containee) {
 	point_t top_left = containee.pos;
 	
-	// TODO: make function for this???
 	point_t bottom_right = {
-		.x = containee.pos.x + containee.w,
-		.y = containee.pos.y + containee.h,
+		.x = containee.pos.x + containee.w - 1,
+		.y = containee.pos.y + containee.h - 1,
 	};
 
 	return point_in_rect(top_left, container) && point_in_rect(bottom_right, container);

@@ -574,6 +574,11 @@ static void _draw_selection_rect_for_char(computer_t *computer, file_t *file, fo
 
 static void _file_draw(computer_t *computer, file_t *file, rect_t rect, code_editor_config_t config) {
 	font_t *font = &computer->ram->fonts[config.font_index];
+	
+	surface_t surface = surface = SPR_SURF(computer->ram->spritesheet.data);
+	if (font->surface == SURFACE_SKIN) {
+		surface = SKIN_SURF(computer->ram->skin.data);
+	}
 
 	size_t lines_in_rect = rect.h / (font->height + font->vertical_space);
 
@@ -627,19 +632,20 @@ static void _file_draw(computer_t *computer, file_t *file, rect_t rect, code_edi
 	
 				_draw_selection_rect_for_char(computer, file, font, new_x, new_y, string.data[j] == '\t' ? config.tab_size : 1, config.selection_color, string_reference.start + j, rect);
 	
-				// Get the correct sprite index keeping in mind some fonts could have multiple sprites per character (not tested for more than 1 horizontal sprite)
-				// int char_index = string.data[j] == '\t' ? 127 : string.data[j] - VISIBLE_CHARACTERS_START;
 				int char_index = string.data[j] == '\t' ? 127 - VISIBLE_CHARACTERS_START : string.data[j] - VISIBLE_CHARACTERS_START;
-				int x_offset = (char_index % (SPRITES_PER_ROW / font->sprite_width)) * font->sprite_width;
-				int y_offset = (char_index / (SPRITES_PER_ROW / font->sprite_width)) * font->sprite_height;
-				int sprite_index = font->sprite_index + x_offset + (y_offset * SPRITES_PER_ROW);
 	
-				rect_t rect = sprite_index_to_spritesheet_rect(sprite_index, font->sprite_width, font->sprite_height);
-	
+				rect_t rect = {
+					.x = font->start_pos.x + (char_index % font->columns) * font->char_max_width,
+					.y = font->start_pos.y + (char_index / font->columns) * font->char_max_height,
+					.w = font->char_max_width,
+					.h = font->char_max_height,
+				};
+
 				for (int k = 0; k < rect.h; k++) {
 					for (int l = 0; l < rect.w; l++) {
-						color_t pixel_color = gfx_spritesheet_get_pixel(&computer->ram->spritesheet, (point_t){rect.x + l, rect.y + k});
-	
+						// color_t pixel_color = gfx_spritesheet_get_pixel(&computer->ram->spritesheet, (point_t){rect.x + l, rect.y + k});
+						color_t pixel_color = surf_get_pixel(surface, rect.x + l, rect.y + k);
+
 						if (pixel_color != font->color_key && pixel_color != font->seperator_color) {
 							gfx_set_pixel(&computer->ram->framebuffer, new_x + l, new_y + k, config.token_colors[file->edit_state.tokens.data[i].type]);
 						}

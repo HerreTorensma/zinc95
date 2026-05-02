@@ -320,6 +320,10 @@ static struct {
 	button_t music_editor_pattern_inc_button;
 	button_t music_editor_pattern_dec_button;
 
+	button_matrix_t spritesheet_area_buttons;
+
+	button_matrix_t sprite_flag_button_matrix;
+
 	// knob_t delay_knob;
 	// knob_t attack_knob;
 	// knob_t decay_knob;
@@ -518,6 +522,33 @@ g_skin_layout = {
 	.music_editor_pattern_dec_button = {
 		.unpressed_rect = {{3546, 335, 14, 7}},
 		.pressed_rect = {{3546, 349, 14, 7}},
+	},
+
+	.spritesheet_area_buttons = {
+		.base = {
+			.unpressed_rect = {{3368, 152, 28, 14}},
+			.pressed_rect = {{3480, 152, 28, 14}},
+		},
+		.rows = 8,
+		.columns = 4,
+		.row_increase = 14,
+		.column_increase = 28,
+		.v_break = -1,
+		.h_break = -1,
+	},
+
+	.sprite_flag_button_matrix = {
+		.base = {
+			.unpressed_rect = {{3600, 156, 12, 12}},
+			.pressed_rect = {{3600, 228, 12, 12}},
+		},
+
+		.rows = 6,
+		.columns = 4,
+		.row_increase = 12,
+		.column_increase = 12,
+		.v_break = -1,
+		.h_break = -1,
 	},
 };
 

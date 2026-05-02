@@ -102,8 +102,8 @@ _layout = {
 	.entity_layer_pos = {4, 394},
 	.layer_buttons_start_pos = {4, 412},
 	
-	.sprite_selector_pos = {200, 348},
-	.sprite_selector_buttons_start_pos = {588, 348},
+	.sprite_selector_pos = {264, 348},
+	.sprite_selector_buttons_start_pos = {524, 364},
 
 	.tools_start_pos = {622, 34},
 };
@@ -349,7 +349,7 @@ static void _tile_editor_update(computer_t *computer) {
 			for (int i = 0; i < in_frame_rect_in_sprites.h; i++) {
 				for (int j = 0; j < in_frame_rect_in_sprites.w; j++) {
 					// TODO: make a function for this
-					int index = (get_page_index() * SPRITES_PER_PAGE) + sprite_coords_to_index(in_frame_rect_in_sprites.x + j, in_frame_rect_in_sprites.y + i);
+					int index = sprite_coords_to_index(in_frame_rect_in_sprites.x + j, in_frame_rect_in_sprites.y + i);
 					computer->ram->map.layers[_selected_layer].data[(cell_mouse_pos.y + i) * MAP_WIDTH + (cell_mouse_pos.x + j)] = (uint16_t)index;
 				}
 			}

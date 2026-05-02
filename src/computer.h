@@ -31,22 +31,10 @@ Memory layout, global constants
 #define PALETTE_SIZE 256
 
 // These are in pixels
-// TODO: put them in terms of sprite width and height
-#define SPRITESHEET_PAGE_WIDTH 384
+#define SPRITESHEET_PAGE_WIDTH 256
 #define SPRITESHEET_PAGE_HEIGHT 128
-#define SPRITESHEET_WIDTH SPRITESHEET_PAGE_WIDTH
-// 8 pages of sprites
-// #define SPRITESHEET_PAGE_AMOUNT 16
-#define SPRITESHEET_PAGE_AMOUNT 8
-#define SPRITESHEET_HEIGHT (SPRITESHEET_PAGE_HEIGHT * SPRITESHEET_PAGE_AMOUNT)
-
-// // These are in pixels
-// // TODO: put them in terms of sprite width and height
-// #define SPRITESHEET_PAGE_WIDTH 384
-// #define SPRITESHEET_PAGE_HEIGHT 128
-// #define SPRITESHEET_WIDTH 1536
-// #define SPRITESHEET_PAGE_AMOUNT 8
-// #define SPRITESHEET_HEIGHT 1024
+#define SPRITESHEET_WIDTH 4 * SPRITESHEET_PAGE_WIDTH
+#define SPRITESHEET_HEIGHT 8 * SPRITESHEET_PAGE_HEIGHT
 
 #define SPRITE_WIDTH 8
 #define SPRITE_HEIGHT 8
@@ -150,11 +138,16 @@ typedef struct map {
 } map_t;
 
 typedef struct font {
-	// Index of first visible ASCII character, which is space ( )
-	uint16_t sprite_index;
+	enum {
+		SURFACE_SPRITESHEET,
+		SURFACE_SKIN,
+	} surface;
 
-	uint8_t sprite_width; // Width in sprites
-	uint8_t sprite_height; // Height in sprites
+	uint8_t char_max_width;
+	uint8_t char_max_height;
+
+	uint8_t columns;
+	point_t start_pos;
 	
 	uint8_t horizontal_space; // Horizontal space between letters in pixels
 	uint8_t vertical_space; // Horizontal space between letters in pixels
