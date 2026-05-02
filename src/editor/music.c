@@ -131,7 +131,7 @@ static void _draw_pattern(computer_t *computer, size_t index, point_t base_pos) 
 		}
 	}
 
-	size_t new_active_arrangement = gui_button_matrix(computer->ram, _layout.arrangement_picker_base_pos, g_skin_layout.arrangement_picker_buttons, _active_arrangement_index);
+	size_t new_active_arrangement = gui_button_matrix(computer->ram, _layout.arrangement_picker_base_pos, g_skin_layout.music_editor.arrangements_button_matrix, _active_arrangement_index);
 	if (new_active_arrangement != _active_arrangement_index) { // TODO: make the default value -1 or something bc now it's annoying
 		_stop_arrangement(computer);
 	}
@@ -154,20 +154,20 @@ void music_editor_draw(computer_t *computer) {
 	
 	// Pattern number and edit button
 	for (size_t i = 0; i < 8; i++) {
-		if (gui_press_button(computer->ram, _layout.channel_button_positions[i], g_skin_layout.music_editor_pattern_button)) {
+		if (gui_press_button(computer->ram, _layout.channel_button_positions[i], g_skin_layout.music_editor.edit_pattern_button)) {
 			sound_set_current_pattern(active_arrangement->pattern_indices[i]);
 			switch_to_workspace(WORKSPACE_SOUND);
 		}
 
-		point_t inc_button_pos = {_layout.channel_button_positions[i].x + g_skin_layout.music_editor_pattern_button.pressed_rect.w, _layout.channel_button_positions[i].y};
-		if (gui_press_button(computer->ram, inc_button_pos, g_skin_layout.music_editor_pattern_inc_button)) {
+		point_t inc_button_pos = {_layout.channel_button_positions[i].x + g_skin_layout.music_editor.edit_pattern_button.pressed_rect.w, _layout.channel_button_positions[i].y};
+		if (gui_press_button(computer->ram, inc_button_pos, g_skin_layout.music_editor.pattern_inc_button)) {
 			int temp = active_arrangement->pattern_indices[i];
 			temp = clamp_int(temp + 1, -1, MAX_ARRANGEMENTS - 1);
 			active_arrangement->pattern_indices[i] = temp;
 		}
 
-		point_t dec_button_pos = {_layout.channel_button_positions[i].x + g_skin_layout.music_editor_pattern_button.pressed_rect.w, _layout.channel_button_positions[i].y + 7};
-		if (gui_press_button(computer->ram, dec_button_pos, g_skin_layout.music_editor_pattern_dec_button)) {
+		point_t dec_button_pos = {_layout.channel_button_positions[i].x + g_skin_layout.music_editor.edit_pattern_button.pressed_rect.w, _layout.channel_button_positions[i].y + 7};
+		if (gui_press_button(computer->ram, dec_button_pos, g_skin_layout.music_editor.pattern_dec_button)) {
 			int temp = active_arrangement->pattern_indices[i];
 			temp = clamp_int(temp - 1, -1, MAX_ARRANGEMENTS - 1);
 			active_arrangement->pattern_indices[i] = temp;

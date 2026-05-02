@@ -705,7 +705,7 @@ static void _draw_snapped(computer_t *computer) {
 	sprite_t *selected_sprite = &computer->ram->sprites[get_sprite_index()];
 
 	{
-		button_matrix_t matrix = g_skin_layout.sprite_flag_button_matrix;
+		button_matrix_t matrix = g_skin_layout.sprite_editor.sprite_flags_button_matrix;
 		
 		int index = 0;
 		point_t new_pos = _layout.sprite_flags_start_pos;
@@ -760,7 +760,7 @@ static void _draw_snapped(computer_t *computer) {
 	}
 
 	// Color key
-	if (gui_button(computer->ram, _layout.color_key_button_pos, g_skin_layout.color_key_button, false)) {
+	if (gui_button(computer->ram, _layout.color_key_button_pos, g_skin_layout.sprite_editor.color_key_button, false)) {
 		selected_sprite->color_key = _selected_color;
 	}
 	gfx_draw_filled_rect(fb_surf, _layout.color_key_rect, selected_sprite->color_key);
@@ -904,9 +904,9 @@ void sprite_editor_draw(computer_t *computer) {
 	// gui_draw_text(computer->ram, 2, buffer, _layout.selected_color_label_pos, COLOR_NONE); // Testing not passing a color
 
 	// Tools
-	for (int i = 0; i < g_skin_layout.sprite_tool_buttons.amount; i++) {
-		point_t pos = button_array_get_pos(&g_skin_layout.sprite_tool_buttons, _layout.tools_start_pos, i);
-		button_t button = button_array_get(&g_skin_layout.sprite_tool_buttons, i);
+	for (int i = 0; i < g_skin_layout.sprite_editor.tool_buttons.amount; i++) {
+		point_t pos = button_array_get_pos(&g_skin_layout.sprite_editor.tool_buttons, _layout.tools_start_pos, i);
+		button_t button = button_array_get(&g_skin_layout.sprite_editor.tool_buttons, i);
 
 		if (gui_button(computer->ram, pos, button, i == _selected_tool)) {
 			_selected_tool = i;

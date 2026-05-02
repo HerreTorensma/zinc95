@@ -295,19 +295,19 @@ void sound_editor_draw(computer_t *computer) {
 	);
 
 	waveform_t *waveform = &computer->ram->instruments[_current_instrument].waveform;
-	if (gui_button(computer->ram, _layout.sine_wave_button_pos, g_skin_layout.sine_wave_button, *waveform == WAVEFORM_SINE)) {
+	if (gui_button(computer->ram, _layout.sine_wave_button_pos, g_skin_layout.sound_editor.sine_wave_button, *waveform == WAVEFORM_SINE)) {
 		*waveform = WAVEFORM_SINE;
 	}
-	if (gui_button(computer->ram, _layout.square_wave_button_pos, g_skin_layout.square_wave_button, *waveform == WAVEFORM_SQUARE)) {
+	if (gui_button(computer->ram, _layout.square_wave_button_pos, g_skin_layout.sound_editor.square_wave_button, *waveform == WAVEFORM_SQUARE)) {
 		*waveform = WAVEFORM_SQUARE;
 	}
-	if (gui_button(computer->ram, _layout.triangle_wave_button_pos, g_skin_layout.triangle_wave_button, *waveform == WAVEFORM_TRIANGLE)) {
+	if (gui_button(computer->ram, _layout.triangle_wave_button_pos, g_skin_layout.sound_editor.triangle_wave_button, *waveform == WAVEFORM_TRIANGLE)) {
 		*waveform = WAVEFORM_TRIANGLE;
 	}
-	if (gui_button(computer->ram, _layout.sawtooth_wave_button_pos, g_skin_layout.sawtooth_wave_button, *waveform == WAVEFORM_SAWTOOTH)) {
+	if (gui_button(computer->ram, _layout.sawtooth_wave_button_pos, g_skin_layout.sound_editor.sawtooth_wave_button, *waveform == WAVEFORM_SAWTOOTH)) {
 		*waveform = WAVEFORM_SAWTOOTH;
 	}
-	if (gui_button(computer->ram, _layout.noise_wave_button_pos, g_skin_layout.noise_wave_button, *waveform == WAVEFORM_NOISE)) {
+	if (gui_button(computer->ram, _layout.noise_wave_button_pos, g_skin_layout.sound_editor.noise_wave_button, *waveform == WAVEFORM_NOISE)) {
 		*waveform = WAVEFORM_NOISE;
 	}
 
@@ -331,8 +331,8 @@ void sound_editor_draw(computer_t *computer) {
 	{
 		for (size_t i = 0; i < MAX_INSTRUMENTS; i++) {
 			point_t pos = _layout.instrument_button_pos;
-			pos.y += i * g_skin_layout.instrument_button.unpressed_rect.h;
-			if (gui_button(computer->ram, pos, g_skin_layout.instrument_button, i == _current_instrument)) {
+			pos.y += i * g_skin_layout.sound_editor.instrument_button.unpressed_rect.h;
+			if (gui_button(computer->ram, pos, g_skin_layout.sound_editor.instrument_button, i == _current_instrument)) {
 				_current_instrument = i;
 			}
 
@@ -382,17 +382,8 @@ void sound_editor_draw(computer_t *computer) {
 		&_release_knob_state
 	);
 
-	// size_t new_current_pattern = gui_button_matrix(computer->ram, _layout.pattern_picker1_pos, g_skin_layout.sfx_picker_buttons, _current_pattern);
-	// new_current_pattern = 98 + gui_button_matrix(computer->ram, _layout.pattern_picker2_pos, g_skin_layout.sfx_picker_buttons, 98 + _current_pattern);
-	// new_current_pattern = 98 * 2 + gui_button_matrix(computer->ram, _layout.pattern_picker3_pos, g_skin_layout.sfx_picker_buttons, 98 * 2 + _current_pattern);
-	// new_current_pattern = 98 * 3 + gui_button_matrix(computer->ram, _layout.pattern_picker4_pos, g_skin_layout.sfx_picker_buttons, 98 * 3 + _current_pattern);
-	
-	// size_t new_current_pattern = gui_button_matrix(computer->ram, _layout.pattern_picker1_pos, g_skin_layout.sfx_picker_buttons, _current_pattern, 0);
-	size_t new_current_pattern = gui_button_matrix(computer->ram, _layout.pattern_picker1_pos, g_skin_layout.sfx_picker_buttons, _current_pattern);
-	
-	// new_current_pattern = gui_button_matrix(computer->ram, _layout.pattern_picker2_pos, g_skin_layout.sfx_picker_buttons, _current_pattern % 98, 98);
-	// new_current_pattern = 98 * 2 + gui_button_matrix(computer->ram, _layout.pattern_picker3_pos, g_skin_layout.sfx_picker_buttons, _current_pattern % 98);
-	// new_current_pattern = 98 * 3 + gui_button_matrix(computer->ram, _layout.pattern_picker4_pos, g_skin_layout.sfx_picker_buttons, _current_pattern % 98);
+	size_t new_current_pattern = gui_button_matrix(computer->ram, _layout.pattern_picker1_pos, g_skin_layout.sound_editor.patterns_button_matrix, _current_pattern);
+
 	if (_current_pattern != new_current_pattern) {
 		audio_cancel_channel(computer, 0);
 	}

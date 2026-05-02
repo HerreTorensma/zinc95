@@ -678,9 +678,9 @@ static void _file_draw(computer_t *computer, file_t *file, rect_t rect, code_edi
 static void _draw_file_buttons(computer_t *computer) {
 	// Draw buttons for files (this file is kinda dirty but it works)
 	for (size_t i = 0; i < computer->active_files_amount; i++) {
-		point_t pos = POINT(_layout.file_buttons_pos.x, _layout.file_buttons_pos.y + i * g_skin_layout.code_file_button.pressed_rect.h);
+		point_t pos = POINT(_layout.file_buttons_pos.x, _layout.file_buttons_pos.y + i * g_skin_layout.code_editor.file_button.pressed_rect.h);
 		
-		if (gui_button(computer->ram, pos, g_skin_layout.code_file_button, _current_file_index == i)) {
+		if (gui_button(computer->ram, pos, g_skin_layout.code_editor.file_button, _current_file_index == i)) {
 			if (_current_file_index == i) {
 				// TODO: see if I can't just replace this with a break statement
 				goto ignore_current_file;
@@ -726,7 +726,7 @@ static void _draw_file_buttons(computer_t *computer) {
 
 	// + button
 	if (computer->active_files_amount < FILES_AMOUNT) {
-		if (gui_button(computer->ram, POINT(_layout.file_buttons_pos.x, _layout.file_buttons_pos.y + computer->active_files_amount * g_skin_layout.code_file_button.pressed_rect.h), g_skin_layout.add_file_button, false)) {
+		if (gui_button(computer->ram, POINT(_layout.file_buttons_pos.x, _layout.file_buttons_pos.y + computer->active_files_amount * g_skin_layout.code_editor.file_button.pressed_rect.h), g_skin_layout.code_editor.add_file_button, false)) {
 			file_append_string(&computer->files[computer->active_files_amount], STR(""));
 			computer->active_files_amount++;
 		}

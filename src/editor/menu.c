@@ -170,44 +170,44 @@ void workspace_menu_draw(computer_t *computer) {
 	if (gui_button(
 		computer->ram,
 		_layout.zinc_button_pos,
-		g_skin_layout.zinc_button,
+		g_skin_layout.global.zinc_button,
 		false
 	)) {
 		
 	}
 
 	// Editors
-	if (gui_button(computer->ram, _layout.code_editor_button_pos, g_skin_layout.code_button, _active_workspace == WORKSPACE_CODE)) {
+	if (gui_button(computer->ram, _layout.code_editor_button_pos, g_skin_layout.global.code_button, _active_workspace == WORKSPACE_CODE)) {
 		_active_workspace = WORKSPACE_CODE;
 	}
 	
-	if (gui_button(computer->ram, _layout.sprite_editor_button_pos, g_skin_layout.sprite_button, _active_workspace == WORKSPACE_SPRITE)) {
+	if (gui_button(computer->ram, _layout.sprite_editor_button_pos, g_skin_layout.global.sprite_button, _active_workspace == WORKSPACE_SPRITE)) {
 		_active_workspace = WORKSPACE_SPRITE;
 	}
 	
-	if (gui_button(computer->ram, _layout.map_editor_button_pos, g_skin_layout.map_button, _active_workspace == WORKSPACE_MAP)) {
+	if (gui_button(computer->ram, _layout.map_editor_button_pos, g_skin_layout.global.map_button, _active_workspace == WORKSPACE_MAP)) {
 		_active_workspace = WORKSPACE_MAP;
 	}
 	
-	if (gui_button(computer->ram, _layout.sound_editor_button_pos, g_skin_layout.sound_button, _active_workspace == WORKSPACE_SOUND)) {
+	if (gui_button(computer->ram, _layout.sound_editor_button_pos, g_skin_layout.global.sound_button, _active_workspace == WORKSPACE_SOUND)) {
 		_active_workspace = WORKSPACE_SOUND;
 	}
 
-	if (gui_button(computer->ram, _layout.music_editor_button_pos, g_skin_layout.music_button, _active_workspace == WORKSPACE_MUSIC)) {
+	if (gui_button(computer->ram, _layout.music_editor_button_pos, g_skin_layout.global.music_button, _active_workspace == WORKSPACE_MUSIC)) {
 		_active_workspace = WORKSPACE_MUSIC;
 	}
 
 	// Save and load
-	if (gui_press_button(computer->ram, _layout.save_button_pos, g_skin_layout.save_button)) {
+	if (gui_press_button(computer->ram, _layout.save_button_pos, g_skin_layout.global.save_button)) {
 		game_save(computer, computer->game_path);
 	}
 	
 	if (!computer->game_running) {
-		if (gui_press_button(computer->ram, _layout.play_button_pos, g_skin_layout.play_button)) {
+		if (gui_press_button(computer->ram, _layout.play_button_pos, g_skin_layout.global.play_button)) {
 			play_game(computer);
 		}
 	} else {
-		if (gui_press_button(computer->ram, _layout.play_button_pos, g_skin_layout.stop_button)) {
+		if (gui_press_button(computer->ram, _layout.play_button_pos, g_skin_layout.global.stop_button)) {
 			quit_game(computer);
 		}
 	}

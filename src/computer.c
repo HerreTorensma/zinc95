@@ -545,6 +545,7 @@ void import_file(computer_t *computer, string_t path) {
 	string_t extension = path_get_filename_extension(path);
 
 	if (string_eq(extension, STR("bmp"))) {
+		// TODO: make undoable
 		gfx_load_surface(&computer->ram->palette, SPR_SURF(computer->ram->spritesheet.data), path);
 	}
 }

@@ -190,7 +190,7 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 void sprite_selector_draw(computer_t *computer, point_t pos, point_t page_buttons_pos) {
 	gfx_draw_spritesheet_rect(computer->ram, pos, _visible_rect, COLOR_NONE);
 
-	int new_area_index = gui_full_button_matrix(computer->ram, page_buttons_pos, g_skin_layout.spritesheet_area_buttons, _current_area_index);
+	int new_area_index = gui_full_button_matrix(computer->ram, page_buttons_pos, g_skin_layout.global.spritesheet_areas_button_matrix, _current_area_index);
 	if (new_area_index != _current_area_index) {
 		_set_area_index(new_area_index);
 	}

@@ -586,31 +586,31 @@ void map_editor_draw(computer_t *computer) {
 	sprite_selector_draw(computer, _layout.sprite_selector_pos, _layout.sprite_selector_buttons_start_pos);
 
 	// Entity layer
-	if (gui_button(computer->ram, _layout.entity_layer_pos, g_skin_layout.map_entity_layer_button, _selected_layer == ENTITY_LAYER)) {
+	if (gui_button(computer->ram, _layout.entity_layer_pos, g_skin_layout.map_editor.entity_layer_button, _selected_layer == ENTITY_LAYER)) {
 		_selected_layer = ENTITY_LAYER;
 	}
 
 	// Entity layer visible
-	_entity_layer_hidden = gui_toggle_button(computer->ram, POINT(_layout.entity_layer_pos.x + g_skin_layout.map_entity_layer_button.pressed_rect.w, _layout.entity_layer_pos.y), g_skin_layout.toggle_layer_button, _entity_layer_hidden);
+	_entity_layer_hidden = gui_toggle_button(computer->ram, POINT(_layout.entity_layer_pos.x + g_skin_layout.map_editor.entity_layer_button.pressed_rect.w, _layout.entity_layer_pos.y), g_skin_layout.map_editor.toggle_layer_button, _entity_layer_hidden);
 
 	// Other layers
-	for (int i = 0; i < g_skin_layout.map_layer_buttons.amount; i++) {
-		point_t pos = button_array_get_pos(&g_skin_layout.map_layer_buttons, _layout.layer_buttons_start_pos, i);
-		button_t button = button_array_get(&g_skin_layout.map_layer_buttons, i);
+	for (int i = 0; i < g_skin_layout.map_editor.tile_layer_buttons.amount; i++) {
+		point_t pos = button_array_get_pos(&g_skin_layout.map_editor.tile_layer_buttons, _layout.layer_buttons_start_pos, i);
+		button_t button = button_array_get(&g_skin_layout.map_editor.tile_layer_buttons, i);
 
 		if (gui_button(computer->ram, pos, button, _selected_layer == i)) {
 			_selected_layer = i;
 		}
 
 		// Visibility button
-		_hidden_layers[i] = gui_toggle_button(computer->ram, POINT(pos.x + button.pressed_rect.w, pos.y), g_skin_layout.toggle_layer_button, _hidden_layers[i]);
+		_hidden_layers[i] = gui_toggle_button(computer->ram, POINT(pos.x + button.pressed_rect.w, pos.y), g_skin_layout.map_editor.toggle_layer_button, _hidden_layers[i]);
 	}
 
 	// Tool bar
 	if (_selected_layer == ENTITY_LAYER) {
-		for (int i = 0; i < g_skin_layout.map_entity_tool_buttons.amount; i++) {
-			point_t pos = button_array_get_pos(&g_skin_layout.map_entity_tool_buttons, _layout.tools_start_pos, i);
-			button_t button = button_array_get(&g_skin_layout.map_entity_tool_buttons, i);
+		for (int i = 0; i < g_skin_layout.map_editor.entity_tool_buttons.amount; i++) {
+			point_t pos = button_array_get_pos(&g_skin_layout.map_editor.entity_tool_buttons, _layout.tools_start_pos, i);
+			button_t button = button_array_get(&g_skin_layout.map_editor.entity_tool_buttons, i);
 
 			if (gui_button(computer->ram, pos, button, i == _selected_entity_tool)) {
 				_selected_entity_tool = i;

@@ -270,285 +270,283 @@ static const palette_t g_builtin_palette = (palette_t){
 
 // TODO: make substructs for each editor like in g_keybinds
 static struct {
-	button_t zinc_button;
 
-	button_t code_button;
-	button_t sprite_button;
-	button_t map_button;
-	button_t sound_button;
-	button_t music_button;
-
-	button_t save_button;
-	button_t play_button;
-	button_t stop_button;
-
-	button_array_t sprite_flag_buttons;
-
-	button_t color_key_button;
+	struct {
+		button_t zinc_button;
 	
-	button_array_t spritesheet_page_buttons;
+		button_t code_button;
+		button_t sprite_button;
+		button_t map_button;
+		button_t sound_button;
+		button_t music_button;
+	
+		button_t save_button;
+		button_t play_button;
+		button_t stop_button;
 
-	button_t map_entity_layer_button;
-	button_array_t map_layer_buttons;
+		rect_t gui_font_rect;
+		rect_t code_editor_font_rect;
 
-	button_array_t sprite_tool_buttons;
+		// Shared between sprite and map editor
+		// TODO: maybe make a seperate one for each
+		button_matrix_t spritesheet_areas_button_matrix;
+	} global;
 
-	rect_t gui_font_rect;
-	rect_t code_editor_font_rect;
+	struct {
+		button_t file_button;
+		button_t add_file_button;
+	} code_editor;
 
-	button_t code_file_button;
-	button_t add_file_button;
+	struct {
+		button_array_t tool_buttons;
 
-	button_t toggle_layer_button;
+		button_matrix_t sprite_flags_button_matrix;
+		button_t color_key_button;
+	} sprite_editor;
 
-	button_t sine_wave_button;
-	button_t square_wave_button;
-	button_t triangle_wave_button;
-	button_t sawtooth_wave_button;
-	button_t noise_wave_button;
+	struct {
+		button_array_t entity_tool_buttons;
 
-	button_matrix_t sfx_picker_buttons;
+		button_t toggle_layer_button;
+		
+		button_t entity_layer_button;
+		button_array_t tile_layer_buttons;
+	} map_editor;
 
-	button_array_t map_entity_tool_buttons;
+	struct {
+		button_matrix_t patterns_button_matrix;
 
-	button_t instrument_button;
+		button_t instrument_button;
 
-	button_matrix_t arrangement_picker_buttons;
+		button_t sine_wave_button;
+		button_t square_wave_button;
+		button_t triangle_wave_button;
+		button_t sawtooth_wave_button;
+		button_t noise_wave_button;
+	} sound_editor;
 
-	button_t music_editor_pattern_button;
+	struct {
+		button_matrix_t arrangements_button_matrix;
 
-	button_t music_editor_pattern_inc_button;
-	button_t music_editor_pattern_dec_button;
-
-	button_matrix_t spritesheet_area_buttons;
-
-	button_matrix_t sprite_flag_button_matrix;
-
-	// knob_t delay_knob;
-	// knob_t attack_knob;
-	// knob_t decay_knob;
-	// knob_t sustain_knob;
-	// knob_t release_knob;
+		button_t edit_pattern_button;
+	
+		button_t pattern_inc_button;
+		button_t pattern_dec_button;
+	} music_editor;
 }
 g_skin_layout = {
-	.zinc_button = {
-		.unpressed_rect = {{3568, 44, 16, 16}},
-		.pressed_rect = {{3568, 60, 16, 16}},
-	},
-
-	.code_button = {
-		.unpressed_rect = {{3200, 44, 64, 16}},
-		.pressed_rect = {{3200, 60, 64, 16}},
-	},
-
-	.sprite_button = {
-		.unpressed_rect = {{3264, 44, 64, 16}},
-		.pressed_rect = {{3264, 60, 64, 16}},
-	},
-
-	.map_button = {
-		.unpressed_rect = {{3328, 44, 64, 16}},
-		.pressed_rect = {{3328, 60, 64, 16}},
-	},
-
-	.sound_button = {
-		.unpressed_rect = {{3392, 44, 64, 16}},
-		.pressed_rect = {{3392, 60, 64, 16}},
-	},
-
-	.music_button = {
-		.unpressed_rect = {{3456, 44, 64, 16}},
-		.pressed_rect = {{3456, 60, 64, 16}},
-	},
-
-	.save_button = {
-		.unpressed_rect = {{3520, 44, 16, 16}},
-		.pressed_rect = {{3520, 60, 16, 16}},
-	},
-
-	.play_button = {
-		.unpressed_rect = {{3536, 44, 16, 16}},
-		.pressed_rect = {{3536, 60, 16, 16}},
-	},
-
-	.stop_button = {
-		.unpressed_rect = {{3552, 44, 16, 16}},
-		.pressed_rect = {{3552, 60, 16, 16}},
-	},
-
-	.sprite_flag_buttons = {
-		.base = {
-			.unpressed_rect = {{3200, 20, 12, 12}},
-			.pressed_rect = {{3200, 32, 12, 12}},
+	.global = {
+		.zinc_button = {
+			.unpressed_rect = {{3568, 44, 16, 16}},
+			.pressed_rect = {{3568, 60, 16, 16}},
 		},
-		.increase = {12, 0},
-		.amount = 32,
-	},
-
-	.color_key_button = {
-		.unpressed_rect = {{3584, 20, 12, 12}},
-		.pressed_rect = {{3584, 32, 12, 12}},
-	},
-
-	.spritesheet_page_buttons = {
-		.base = {
-			.unpressed_rect = {{3200, 76, 48, 16}},
-			.pressed_rect = {{3248, 76, 48, 16}},
+	
+		.code_button = {
+			.unpressed_rect = {{3200, 44, 64, 16}},
+			.pressed_rect = {{3200, 60, 64, 16}},
 		},
-		.increase = {0, 16},
-		.amount = 8,
-	},
-
-	.map_entity_layer_button = {
-		.unpressed_rect = {{3200, 236, 48, 16}},
-		.pressed_rect = {{3248, 236, 48, 16}},
-	},
-
-	.map_layer_buttons = {
-		.base = {
-			.unpressed_rect = {{3200, 252, 48, 16}},
-			.pressed_rect = {{3248, 252, 48, 16}},
+	
+		.sprite_button = {
+			.unpressed_rect = {{3264, 44, 64, 16}},
+			.pressed_rect = {{3264, 60, 64, 16}},
 		},
-		.increase = {0, 16},
-		.amount = 4,
-	},
-
-	.sprite_tool_buttons = {
-		.base = {
-			.unpressed_rect = {{3296, 76, 16, 16}},
-			.pressed_rect = {{3312, 76, 16, 16}},
+	
+		.map_button = {
+			.unpressed_rect = {{3328, 44, 64, 16}},
+			.pressed_rect = {{3328, 60, 64, 16}},
 		},
-		.increase = {0, 16},
-		.amount = 8,
-	},
-
-	.gui_font_rect = {{3200, 432, 384, 32}},
-	.code_editor_font_rect = {{3200, 464, 384, 16}},
-
-	.code_file_button = {
-		.unpressed_rect = {{3200, 316, 64, 13}},
-		.pressed_rect = {{3264, 316, 64, 13}},
-	},
-
-	.add_file_button = {
-		.unpressed_rect = {{3200, 329, 13, 13}},
-		.pressed_rect = {{3213, 329, 13, 13}},
-	},
-
-	.toggle_layer_button = {
-		.unpressed_rect = {{3296, 236, 16, 16}},
-		.pressed_rect = {{3312, 236, 16, 16}},
-	},
-
-	.sine_wave_button = {
-		.unpressed_rect = {{3200, 350, 32, 16}},
-		.pressed_rect = {{3232, 350, 32, 16}},
-	},
-	.square_wave_button = {
-		.unpressed_rect = {{3200, 366, 32, 16}},
-		.pressed_rect = {{3232, 366, 32, 16}},
-	},
-	.triangle_wave_button = {
-		.unpressed_rect = {{3200, 382, 32, 16}},
-		.pressed_rect = {{3232, 382, 32, 16}},
-	},
-	.sawtooth_wave_button = {
-		.unpressed_rect = {{3200, 398, 32, 16}},
-		.pressed_rect = {{3232, 398, 32, 16}},
-	},
-	.noise_wave_button = {
-		.unpressed_rect = {{3200, 414, 32, 16}},
-		.pressed_rect = {{3232, 414, 32, 16}},
-	},
-
-	.sfx_picker_buttons = { // TODO: rename to pattern_picker_buttons
-		.base = {
-			.unpressed_rect = {{3264, 366, 8, 8}},
-			.pressed_rect = {{3392, 366, 8, 8}},
+	
+		.sound_button = {
+			.unpressed_rect = {{3392, 44, 64, 16}},
+			.pressed_rect = {{3392, 60, 64, 16}},
 		},
-		.rows = 7 * 4,
-		.columns = 14,
-		.row_increase = 8,
-		.column_increase = 8,
-
-		.v_break_size = 6,
-		.v_break = 7,
-
-		.h_break_size = 0,
-		.h_break = -1,
-	},
-
-	.map_entity_tool_buttons = {
-		.base = {
-			.unpressed_rect = {{3328, 76, 16, 16}},
-			.pressed_rect = {{3344, 76, 16, 16}},
+	
+		.music_button = {
+			.unpressed_rect = {{3456, 44, 64, 16}},
+			.pressed_rect = {{3456, 60, 64, 16}},
 		},
-		.increase = {0, 16},
-		.amount = 2,
-	},
-
-	.instrument_button = {
-		.unpressed_rect = {{3200, 204, 64, 12}},
-		.pressed_rect = {{3264, 204, 64, 12}},
-	},
-
-	.arrangement_picker_buttons = {
-		.base = { // TODO: make different from sfx_picker_buttons
-			.unpressed_rect = {{3264, 366, 8, 8}},
-			.pressed_rect = {{3392, 366, 8, 8}},
+	
+		.save_button = {
+			.unpressed_rect = {{3520, 44, 16, 16}},
+			.pressed_rect = {{3520, 60, 16, 16}},
 		},
-		.rows = 2,
-		.columns = 8 * 8,
-		.row_increase = 8,
-		.column_increase = 8,
+	
+		.play_button = {
+			.unpressed_rect = {{3536, 44, 16, 16}},
+			.pressed_rect = {{3536, 60, 16, 16}},
+		},
+	
+		.stop_button = {
+			.unpressed_rect = {{3552, 44, 16, 16}},
+			.pressed_rect = {{3552, 60, 16, 16}},
+		},
 
-		.v_break_size = 0,
-		.v_break = -1,
+		.gui_font_rect = {{3200, 432, 384, 32}},
+		.code_editor_font_rect = {{3200, 464, 384, 16}},
+
+		.spritesheet_areas_button_matrix = {
+			.base = {
+				.unpressed_rect = {{3368, 152, 28, 14}},
+				.pressed_rect = {{3480, 152, 28, 14}},
+			},
+			.rows = 8,
+			.columns = 4,
+			.row_increase = 14,
+			.column_increase = 28,
+			.v_break = -1,
+			.h_break = -1,
+		},
+	},
+
+	.code_editor = {
+		.file_button = {
+			.unpressed_rect = {{3200, 316, 64, 13}},
+			.pressed_rect = {{3264, 316, 64, 13}},
+		},
+
+		.add_file_button = {
+			.unpressed_rect = {{3200, 329, 13, 13}},
+			.pressed_rect = {{3213, 329, 13, 13}},
+		},
+	},
+
+	.sprite_editor = {
+		.tool_buttons = {
+			.base = {
+				.unpressed_rect = {{3296, 76, 16, 16}},
+				.pressed_rect = {{3312, 76, 16, 16}},
+			},
+			.increase = {0, 16},
+			.amount = 8,
+		},
+
+		.sprite_flags_button_matrix = {
+			.base = {
+				.unpressed_rect = {{3600, 156, 12, 12}},
+				.pressed_rect = {{3600, 228, 12, 12}},
+			},
+
+			.rows = 6,
+			.columns = 4,
+			.row_increase = 12,
+			.column_increase = 12,
+			.v_break = -1,
+			.h_break = -1,
+		},
 		
-		.h_break_size = 8,
-		.h_break = 8,
-	},
-
-	.music_editor_pattern_button = {
-		.unpressed_rect = {{3492, 328, 54, 14}},
-		.pressed_rect = {{3492, 342, 54, 14}},
-	},
-
-	.music_editor_pattern_inc_button = {
-		.unpressed_rect = {{3546, 328, 14, 7}},
-		.pressed_rect = {{3546, 342, 14, 7}},
-	},
-
-	.music_editor_pattern_dec_button = {
-		.unpressed_rect = {{3546, 335, 14, 7}},
-		.pressed_rect = {{3546, 349, 14, 7}},
-	},
-
-	.spritesheet_area_buttons = {
-		.base = {
-			.unpressed_rect = {{3368, 152, 28, 14}},
-			.pressed_rect = {{3480, 152, 28, 14}},
+		.color_key_button = {
+			.unpressed_rect = {{3584, 20, 12, 12}},
+			.pressed_rect = {{3584, 32, 12, 12}},
 		},
-		.rows = 8,
-		.columns = 4,
-		.row_increase = 14,
-		.column_increase = 28,
-		.v_break = -1,
-		.h_break = -1,
 	},
 
-	.sprite_flag_button_matrix = {
-		.base = {
-			.unpressed_rect = {{3600, 156, 12, 12}},
-			.pressed_rect = {{3600, 228, 12, 12}},
+	.map_editor = {
+		.entity_tool_buttons = {
+			.base = {
+				.unpressed_rect = {{3328, 76, 16, 16}},
+				.pressed_rect = {{3344, 76, 16, 16}},
+			},
+			.increase = {0, 16},
+			.amount = 2,
 		},
 
-		.rows = 6,
-		.columns = 4,
-		.row_increase = 12,
-		.column_increase = 12,
-		.v_break = -1,
-		.h_break = -1,
+		.toggle_layer_button = {
+			.unpressed_rect = {{3296, 236, 16, 16}},
+			.pressed_rect = {{3312, 236, 16, 16}},
+		},
+		
+		.entity_layer_button = {
+			.unpressed_rect = {{3200, 236, 48, 16}},
+			.pressed_rect = {{3248, 236, 48, 16}},
+		},
+	
+		.tile_layer_buttons = {
+			.base = {
+				.unpressed_rect = {{3200, 252, 48, 16}},
+				.pressed_rect = {{3248, 252, 48, 16}},
+			},
+			.increase = {0, 16},
+			.amount = 4,
+		},
+	},
+
+	.sound_editor = {
+		.patterns_button_matrix = {
+			.base = {
+				.unpressed_rect = {{3264, 366, 8, 8}},
+				.pressed_rect = {{3392, 366, 8, 8}},
+			},
+			.rows = 7 * 4,
+			.columns = 14,
+			.row_increase = 8,
+			.column_increase = 8,
+	
+			.v_break_size = 6,
+			.v_break = 7,
+	
+			.h_break_size = 0,
+			.h_break = -1,
+		},
+		
+		.instrument_button = {
+			.unpressed_rect = {{3200, 204, 64, 12}},
+			.pressed_rect = {{3264, 204, 64, 12}},
+		},
+
+		.sine_wave_button = {
+			.unpressed_rect = {{3200, 350, 32, 16}},
+			.pressed_rect = {{3232, 350, 32, 16}},
+		},
+		.square_wave_button = {
+			.unpressed_rect = {{3200, 366, 32, 16}},
+			.pressed_rect = {{3232, 366, 32, 16}},
+		},
+		.triangle_wave_button = {
+			.unpressed_rect = {{3200, 382, 32, 16}},
+			.pressed_rect = {{3232, 382, 32, 16}},
+		},
+		.sawtooth_wave_button = {
+			.unpressed_rect = {{3200, 398, 32, 16}},
+			.pressed_rect = {{3232, 398, 32, 16}},
+		},
+		.noise_wave_button = {
+			.unpressed_rect = {{3200, 414, 32, 16}},
+			.pressed_rect = {{3232, 414, 32, 16}},
+		},
+	},
+
+	.music_editor = {
+		.arrangements_button_matrix = {
+			.base = { // TODO: make different from sfx_picker_buttons
+				.unpressed_rect = {{3264, 366, 8, 8}},
+				.pressed_rect = {{3392, 366, 8, 8}},
+			},
+			.rows = 2,
+			.columns = 8 * 8,
+			.row_increase = 8,
+			.column_increase = 8,
+
+			.v_break_size = 0,
+			.v_break = -1,
+			
+			.h_break_size = 8,
+			.h_break = 8,
+		},
+
+		.edit_pattern_button = {
+			.unpressed_rect = {{3492, 328, 54, 14}},
+			.pressed_rect = {{3492, 342, 54, 14}},
+		},
+
+		.pattern_inc_button = {
+			.unpressed_rect = {{3546, 328, 14, 7}},
+			.pressed_rect = {{3546, 342, 14, 7}},
+		},
+
+		.pattern_dec_button = {
+			.unpressed_rect = {{3546, 335, 14, 7}},
+			.pressed_rect = {{3546, 349, 14, 7}},
+		},
 	},
 };
 
