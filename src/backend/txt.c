@@ -201,7 +201,7 @@ static void _execute_command(computer_t *computer, string_t input) {
 	} 
 	
 	else if (string_eq(arguments.data[0], STR("load"))) {
-		if (arguments.len >= 2) {
+		if (arguments.len == 2) {
 			// Load the file
 			string_t absolute_path = get_absolute_path(get_temp_allocator(), path_append(get_temp_allocator(), STR("discs"), path_append(get_temp_allocator(), computer->current_path, arguments.data[1])));
 			if (game_load(computer, absolute_path) == 0) {
@@ -260,7 +260,7 @@ static void _execute_command(computer_t *computer, string_t input) {
 	}
 
 	else if (string_eq(arguments.data[0], STR("cd"))) {
-		if (arguments.len >= 2) {
+		if (arguments.len == 2) {
 			if (string_eq(arguments.data[1], STR(".."))) {
 				// Go to parent directory
 				computer->current_path = path_get_parent_dir(computer->current_path);
@@ -306,7 +306,7 @@ static void _execute_command(computer_t *computer, string_t input) {
 	}
 
 	else if (string_eq(arguments.data[0], STR("mkdir"))) {
-		if (arguments.len >= 2) {
+		if (arguments.len == 2) {
 			// Create a new directory in the discs dir
 			string_t full_path = path_append(get_temp_allocator(), path_append(get_temp_allocator(), STR("discs"), computer->current_path), arguments.data[1]);
 			create_directory(full_path);
@@ -318,6 +318,22 @@ static void _execute_command(computer_t *computer, string_t input) {
 	else if (string_eq(arguments.data[0], STR("clear"))) {
 		// Clear the textbuffer
 		txt_clear(ram);
+	}
+
+	else if (string_eq(arguments.data[0], STR("export"))) {
+		if (arguments.len == 2) {
+			if (string_eq(path_get_filename_extension(arguments.data[1]), STR("bmp"))) {
+				string_t relative_path = path_append(get_temp_allocator(), STR("exports"), arguments.data[1]);
+				string_t absolute_path = get_absolute_path(get_temp_allocator(), relative_path);
+				export_spritesheet(ram, absolute_path);
+
+				term_print(ram, STR("Spritesheet exported to "));
+				term_print(ram, absolute_path);
+				term_print(ram, STR("\n"));
+			}
+		} else {
+			term_printc(ram, STR("Syntax error: expected 1 argument\n"), COLOR_BLACK, COLOR_RED);
+		}
 	}
 	
 	else {

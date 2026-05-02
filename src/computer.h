@@ -444,3 +444,5 @@ void game_save(computer_t *computer, string_t path);
 
 // Takes absolute file path
 int game_load(computer_t *computer, string_t path);
+
+void export_spritesheet(ram_t *ram, string_t path);

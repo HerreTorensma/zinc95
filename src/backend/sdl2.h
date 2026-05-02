@@ -52,4 +52,6 @@ string_t sdl2_get_clipboard_text(allocator_t allocator);
 
 void sdl2_load_bmp_to_surface(palette_t *palette, surface_t surface, string_t path);
 
+void sdl2_save_surface_as_bmp(palette_t *palette, surface_t surface, string_t path);
+
 void sdl2_set_cursor_style(cursor_style_t style);

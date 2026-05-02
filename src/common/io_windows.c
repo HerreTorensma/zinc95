@@ -160,6 +160,7 @@ void create_default_directories() {
 
 	create_directory(STR("discs"));
 	create_directory(STR("saves"));
+	create_directory(STR("exports"));
 }
 
 bool path_is_dir(string_t path) {

@@ -328,7 +328,7 @@ string_t path_get_parent_dir(string_t path) {
 }
 
 string_t path_truncate_extension(string_t path) {
-		if (path.len == 0) {
+	if (path.len == 0) {
 		return path;
 	}
 
@@ -356,6 +356,29 @@ string_t path_get_filename(string_t path) {
 	for (int64_t i = path.len - 1; i >= 0; i--) {
 		if (path.data[i] == '/') {
 			return string_view(path, i + 1, path.len - (i + 1));
+		}
+	}
+
+	return path;
+}
+
+string_t path_get_filename_extension(string_t path) {
+	if (path.len == 0) {
+		return path;
+	}
+
+	// TODO: define ssize_t myself and use
+	for (int64_t i = path.len - 1; i >= 0; i--) {
+		if (path.data[i] == '.') {
+			i += 1;
+			
+			path.data += i;
+			if (i == 0) {
+				path.len = 1;
+			} else {
+				path.len = path.len - i;
+			}
+			break;
 		}
 	}
 

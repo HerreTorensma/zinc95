@@ -13,6 +13,10 @@
 #include "common/io.h"
 #include "common/string.h"
 
+#ifdef BACKEND_SDL2
+#include "backend/sdl2.h"
+#endif
+
 // This is global because the Lua API functions can't take arguments and they need the computer
 static computer_t *_computer;
 
@@ -535,4 +539,9 @@ int game_load(computer_t *computer, string_t path) {
 	// gfx_copy_surface_rect(SPR_SURF(computer->ram->spritesheet.data), SKIN_SURF(computer->ram->skin.data), (point_t){0, 928}, g_skin_layout.code_editor_font_rect, COLOR_NONE);
 
 	return 0;
+}
+
+void export_spritesheet(ram_t *ram, string_t path) {
+	// color_to
+	sdl2_save_surface_as_bmp(&ram->palette, SPR_SURF(ram->spritesheet.data), path);
 }
