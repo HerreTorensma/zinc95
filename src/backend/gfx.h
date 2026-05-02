@@ -138,4 +138,6 @@ void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section, floa
 // Only BMP is supported
 void gfx_load_surface(palette_t *palette, surface_t surface, string_t path);
 
+void gfx_save_surface(palette_t *palette, surface_t surface, string_t path);
+
 void gfx_flood_fill(surface_t surface, point_t point, color_t color, rect_t limit);

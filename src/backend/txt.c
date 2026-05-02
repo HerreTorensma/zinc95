@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 
+#include "gfx.h"
 #include "input.h"
 #include "../common/io.h"
 
@@ -325,7 +326,7 @@ static void _execute_command(computer_t *computer, string_t input) {
 			if (string_eq(path_get_filename_extension(arguments.data[1]), STR("bmp"))) {
 				string_t relative_path = path_append(get_temp_allocator(), STR("exports"), arguments.data[1]);
 				string_t absolute_path = get_absolute_path(get_temp_allocator(), relative_path);
-				export_spritesheet(ram, absolute_path);
+				gfx_save_surface(&ram->palette, SPR_SURF(ram->spritesheet.data), absolute_path);
 
 				term_print(ram, STR("Spritesheet exported to "));
 				term_print(ram, absolute_path);

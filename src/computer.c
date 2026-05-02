@@ -541,7 +541,10 @@ int game_load(computer_t *computer, string_t path) {
 	return 0;
 }
 
-void export_spritesheet(ram_t *ram, string_t path) {
-	// color_to
-	sdl2_save_surface_as_bmp(&ram->palette, SPR_SURF(ram->spritesheet.data), path);
+void import_file(computer_t *computer, string_t path) {
+	string_t extension = path_get_filename_extension(path);
+
+	if (string_eq(extension, STR("bmp"))) {
+		gfx_load_surface(&computer->ram->palette, SPR_SURF(computer->ram->spritesheet.data), path);
+	}
 }

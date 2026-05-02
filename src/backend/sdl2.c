@@ -1,4 +1,5 @@
 #include <SDL2/SDL_audio.h>
+#include <SDL2/SDL_events.h>
 #include <SDL2/SDL_mouse.h>
 #include <SDL2/SDL_pixels.h>
 #include <SDL2/SDL_surface.h>
@@ -197,6 +198,13 @@ void sdl2_tick_start(computer_t *computer) {
 			} else {
 				_scroll_state = 0;
 			}
+		}
+
+		// Check file drop
+		if (event.type == SDL_DROPFILE) {
+			char *dropped_file = event.drop.file;
+			import_file(computer, string_copy(get_temp_allocator(), STR(dropped_file)));
+			SDL_free(dropped_file);
 		}
 	}
 

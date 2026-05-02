@@ -343,6 +343,13 @@ void gfx_load_surface(palette_t *palette, surface_t surface, string_t path) {
 	#endif
 }
 
+void gfx_save_surface(palette_t *palette, surface_t surface, string_t path) {
+	#ifdef BACKEND_SDL2
+	sdl2_save_surface_as_bmp(palette, surface, path);
+	#endif
+}
+
+
 ARRAY_DEFINE(point_t);
 void gfx_flood_fill(surface_t surface, point_t point, color_t color, rect_t limit) {
 	color_t start_color = surf_get_pixel(surface, point.x, point.y);
