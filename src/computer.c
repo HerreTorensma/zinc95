@@ -358,12 +358,12 @@ static uint8_t _hex_char_to_value(char c) {
 static int _hex_string_to_raw(string_t hex_string, uint8_t buffer[], size_t size) {
 	// The string is too small
 	if (hex_string.len < size * 2) {
-		return 1;
+		return hex_string.len;
 	}
 
 	// The string is too big
 	if (hex_string.len > size * 2) {
-		return 1;
+		return hex_string.len;
 	}
 
 	for (size_t i = 0; i < size; i++) {
@@ -483,8 +483,9 @@ int game_load(computer_t *computer, string_t path) {
 			}
 
 			case SECTION_GFX: {
-				if (_hex_string_to_raw(line_string, (uint8_t *)computer->ram->spritesheet.data + gfx_offset, SPRITESHEET_WIDTH * sizeof(color_t)) > 0) {
-					printf("Line %zu in section __gfx__ does not have the correct size\n", i);
+				int64_t val = _hex_string_to_raw(line_string, (uint8_t *)computer->ram->spritesheet.data + gfx_offset, SPRITESHEET_WIDTH * sizeof(color_t));
+				if (val != 0) {
+					printf("Line %zu in section __gfx__ does not have the correct size. Should be %zu, is %lld\n", i, SPRITESHEET_WIDTH * sizeof(color_t) * 2, val);
 				}
 				gfx_offset += line_string.len / 2;
 				break;
@@ -541,11 +542,12 @@ int game_load(computer_t *computer, string_t path) {
 	return 0;
 }
 
+void sprite_editor_import_spritesheet(ram_t *ram, string_t path);
+
 void import_file(computer_t *computer, string_t path) {
 	string_t extension = path_get_filename_extension(path);
 
 	if (string_eq(extension, STR("bmp"))) {
-		// TODO: make undoable
-		gfx_load_surface(&computer->ram->palette, SPR_SURF(computer->ram->spritesheet.data), path);
+		sprite_editor_import_spritesheet(computer->ram, path);
 	}
 }

@@ -94,9 +94,45 @@ static camera_t _camera = {
 };
 
 typedef struct change {
-	rect_t region;
-	surface_t before;
-	// color_t *after;
+	union {
+		struct {
+			rect_t region;
+			surface_t before;
+		} draw;
+	
+		struct {
+			rect_t region;
+			surface_t before;
+		} create_selection;
+	
+		struct {
+			rect_t origin;
+		} move_selection;
+
+		struct {
+			rect_t region;
+			surface_t spritesheet_surf;
+		} commit_selection;
+	
+		struct {
+			point_t pos;
+			surface_t surface;
+		} paste_selection;
+	
+		struct {
+			surface_t surface;
+			point_t pos;
+		} delete_selection;
+	};
+
+	enum {
+		CHANGE_TYPE_DRAW,
+		CHANGE_TYPE_CREATE_SELECTION,
+		CHANGE_TYPE_MOVE_SELECTION,
+		CHANGE_TYPE_COMMIT_SELECTION,
+		CHANGE_TYPE_PASTE_SELECTION,
+		CHANGE_TYPE_DELETE_SELECTION,
+	} type;
 } change_t;
 
 // I need some kind of overlay for the sprite editor, so
@@ -217,34 +253,144 @@ static uint8_t _pos_to_color_index(point_t pos) {
 	}
 }
 
-static void _push_to_undo(computer_t *computer, rect_t region) {
+// Calculate it here so I don't need to keep a selection global updated
+static rect_t _get_selection_rect() {
+	return rect_from_2_points(_selection_start, _selection_end);
+}
+
+static void _push_draw_to_undo(ram_t *ram, rect_t region) {
 	// Create the change
 	change_t change = {0};
-	change.region = region;
+	change.type = CHANGE_TYPE_DRAW;
+
+	change.draw.region = region;
 	// Allocate memory and copy changed region
-	change.before.data = heap_alloc((region.w * region.h) * sizeof(color_t));
-	change.before.width = region.w;
-	change.before.height = region.h;
-	gfx_copy_surface_rect(change.before, SPR_SURF(computer->ram->spritesheet.data), POINT(0, 0), region, COLOR_NONE);
+	change.draw.before.data = heap_alloc((region.w * region.h) * sizeof(color_t));
+	change.draw.before.width = region.w;
+	change.draw.before.height = region.h;
+	gfx_copy_surface_rect(change.draw.before, SPR_SURF(ram->spritesheet.data), POINT(0, 0), region, COLOR_NONE);
 
 	// Push onto the undo stack
 	stack_push(&_undo_stack, &change);
 }
 
+static void _push_create_selection_to_undo(ram_t *ram, rect_t region) {
+	change_t change = {0};
+	change.type = CHANGE_TYPE_CREATE_SELECTION;
+
+	change.create_selection.region = region;
+	change.create_selection.before.data = heap_alloc((region.w * region.h) * sizeof(color_t));
+	change.create_selection.before.width = region.w;
+	change.create_selection.before.height = region.h;
+	gfx_copy_surface_rect(change.create_selection.before, SPR_SURF(ram->spritesheet.data), POINT(0, 0), region, COLOR_NONE);
+
+	stack_push(&_undo_stack, &change);
+}
+
+static void _push_move_selection_to_undo(ram_t *ram, rect_t origin) {
+	change_t change = {0};
+	if (stack_pop(&_undo_stack, &change)) {
+		if (change.type == CHANGE_TYPE_MOVE_SELECTION) {
+			stack_push(&_undo_stack, &change);
+			return;
+		} else {
+			stack_push(&_undo_stack, &change);
+		}
+	}
+
+	change_t new_change = {0};
+	new_change.type = CHANGE_TYPE_MOVE_SELECTION;
+
+	new_change.move_selection.origin = origin;
+
+	stack_push(&_undo_stack, &new_change);
+}
+
+static void _push_commit_selection_to_undo(ram_t *ram) {
+	change_t change = {0};
+	change.type = CHANGE_TYPE_COMMIT_SELECTION;
+
+	rect_t selection_rect = _get_selection_rect();
+	change.commit_selection.region = selection_rect;
+
+	change.commit_selection.spritesheet_surf.data = heap_alloc((selection_rect.w * selection_rect.h) * sizeof(color_t));
+	change.commit_selection.spritesheet_surf.width = selection_rect.w;
+	change.commit_selection.spritesheet_surf.height = selection_rect.h;
+
+	gfx_copy_surface_rect(change.commit_selection.spritesheet_surf, SPR_SURF(ram->spritesheet.data), POINT(0, 0), selection_rect, COLOR_NONE);
+
+	stack_push(&_undo_stack, &change);
+}
+
+static void _push_paste_to_undo(ram_t *ram) {
+
+}
+
+static void _set_selection_inactive() {
+	_selection_start = POINT(0, 0);
+	_selection_end = POINT(0, 0);
+
+	_selection_active = false;
+}
+
 static void _undo(computer_t *computer) {
 	change_t change = {0};
 	if (stack_pop(&_undo_stack, &change)) {
-		// Copy changed region back to spritesheet
-		gfx_copy_surface_rect(SPR_SURF(computer->ram->spritesheet.data), change.before, change.region.pos, RECT(0, 0, change.region.w, change.region.h), COLOR_NONE);
-	
-		free(change.before.data);
-		change.before.data = NULL;
-	}
-}
+		switch (change.type) {
+			case CHANGE_TYPE_DRAW: {
+				// Copy changed region back to spritesheet
+				gfx_copy_surface_rect(SPR_SURF(computer->ram->spritesheet.data), change.draw.before, change.draw.region.pos, RECT(0, 0, change.draw.region.w, change.draw.region.h), COLOR_NONE);
+			
+				free(change.draw.before.data);
+				change.draw.before.data = NULL;
+				break;
+			}
 
-// Calculate it here so I don't need to keep a selection global updated
-static rect_t _get_selection_rect() {
-	return rect_from_2_points(_selection_start, _selection_end);
+			case CHANGE_TYPE_CREATE_SELECTION: {
+				// Copy changed region back to spritesheet
+				gfx_copy_surface_rect(SPR_SURF(computer->ram->spritesheet.data), change.create_selection.before, change.create_selection.region.pos, RECT(0, 0, change.create_selection.region.w, change.create_selection.region.h), COLOR_NONE);
+			
+				free(change.create_selection.before.data);
+				change.create_selection.before.data = NULL;
+
+				_set_selection_inactive();
+				break;
+			}
+
+			case CHANGE_TYPE_MOVE_SELECTION: {
+				rect_t current = _get_selection_rect();
+	
+				_selection_start = rect_topleft(change.move_selection.origin);
+				_selection_end = rect_bottomright(change.move_selection.origin);
+
+				break;
+			}
+
+			case CHANGE_TYPE_COMMIT_SELECTION: {
+				gfx_copy_surface_rect(_selection_surf, SPR_SURF(computer->ram->spritesheet.data), POINT(0, 0), change.commit_selection.region, COLOR_NONE);
+
+				gfx_copy_surface_rect(SPR_SURF(computer->ram->spritesheet.data), change.commit_selection.spritesheet_surf, change.commit_selection.region.pos, RECT(0, 0, change.commit_selection.region.w, change.commit_selection.region.h), COLOR_NONE);
+			
+				free(change.commit_selection.spritesheet_surf.data);
+				change.commit_selection.spritesheet_surf.data = NULL;
+
+				_selection_start = rect_topleft(change.commit_selection.region);
+				_selection_end = rect_bottomright(change.commit_selection.region);
+				
+				_selection_active = true;
+
+				break;
+			}
+
+			case CHANGE_TYPE_PASTE_SELECTION: {
+				break;
+			}
+
+			case CHANGE_TYPE_DELETE_SELECTION: {
+				break;
+			}
+		}
+	}
 }
 
 static void _commit_overlay(computer_t *computer) {
@@ -259,11 +405,6 @@ static void _commit_selection(computer_t *computer) {
 	gfx_clear(_selection_surf, COLOR_NONE);
 }
 
-static void _set_selection_inactive() {
-	_selection_start = POINT(0, 0);
-	_selection_end = POINT(0, 0);
-}
-
 static void _tool_select(computer_t *computer, point_t spritesheet_coord_under_mouse) {
 	input_set_cursor_style(CURSOR_STYLE_CROSSHAIR);
 
@@ -275,17 +416,10 @@ static void _tool_select(computer_t *computer, point_t spritesheet_coord_under_m
 
 			if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
 				_moving_selection = true;
+				_push_move_selection_to_undo(computer->ram, _get_selection_rect());
 			}
 		}
 
-		if (input_key_pressed(KEY_RETURN) || input_key_pressed(KEY_NUMENTER)) {
-			_selection_active = false;
-
-			// Commit
-			_commit_selection(computer);
-			_set_selection_inactive();
-		}
-		
 		// TODO: use the PRESS_OR_LONG_PRESS macro or whatever it was
 		if (input_key_pressed_or_long_pressed(KEY_LEFT)) {
 			_selection_start.x--;
@@ -309,15 +443,17 @@ static void _tool_select(computer_t *computer, point_t spritesheet_coord_under_m
 	}
 
 	// TODO: fix undo
-	if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
-		if (!_moving_selection) {
-			if (_selection_active) {
-				_selection_active = false;
-	
-				// Commit
-				_commit_selection(computer);
-			}
-			
+	// TODO: deselecting should happen outside this function
+	if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT) && !_moving_selection || is_keybind_pressed(g_keybinds.global.deselect) || input_key_pressed(KEY_RETURN) || input_key_pressed(KEY_NUMENTER)) {
+		if (_selection_active) {
+			_push_commit_selection_to_undo(computer->ram);
+
+			// Commit
+			_commit_selection(computer);
+			_set_selection_inactive();
+		}
+		
+		if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT) && !_moving_selection) {
 			_selection_start = spritesheet_coord_under_mouse;
 		}
 	}
@@ -344,16 +480,18 @@ static void _tool_select(computer_t *computer, point_t spritesheet_coord_under_m
 			if (_selection_start.x == _selection_end.x && _selection_start.y == _selection_end.y) {
 				return;
 			}
-
-			_selection_active = true;
-
+			
 			rect_t selection = _get_selection_rect();
+			
+			_push_create_selection_to_undo(computer->ram, selection);
 			
 			// Copy to selection surface
 			gfx_copy_surface_rect(_selection_surf, SPR_SURF(computer->ram->spritesheet.data), POINT(0, 0), selection, COLOR_NONE);
-	
+			
 			// Delete from spritesheet
 			gfx_draw_filled_rect(SPR_SURF(computer->ram->spritesheet.data), selection, COLOR_BLACK);
+			
+			_selection_active = true;
 		}
 	}
 }
@@ -380,7 +518,7 @@ static void _tool_pencil(computer_t *computer, point_t spritesheet_coord_under_m
 		// Copy the affected part of the overlay to the undo stack and spritesheet
 		rect_t changed_region = rect_from_2_points(_min_reached_point, _max_reached_point);
 
-		_push_to_undo(computer, changed_region);
+		_push_draw_to_undo(computer->ram, changed_region);
 
 		// Copy entire overlay instead
 		_commit_overlay(computer);
@@ -398,7 +536,7 @@ static void _tool_line(computer_t *computer, point_t spritesheet_coord_under_mou
 	if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
 		rect_t changed_region = rect_from_2_points(_change_start, _change_end);
 
-		_push_to_undo(computer, changed_region);
+		_push_draw_to_undo(computer->ram, changed_region);
 
 		// Actually commit the change
 		gfx_draw_line(SPR_SURF(computer->ram->spritesheet.data), _change_start, _change_end, _selected_color);
@@ -419,7 +557,7 @@ static void _tool_rect(computer_t *computer, point_t spritesheet_coord_under_mou
 	if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
 		rect_t changed_region = rect_from_2_points(_change_start, _change_end);
 
-		_push_to_undo(computer, changed_region);
+		_push_draw_to_undo(computer->ram, changed_region);
 
 		gfx_draw_rect(SPR_SURF(computer->ram->spritesheet.data), changed_region, _selected_color);
 	}
@@ -438,7 +576,7 @@ static void _tool_rectf(computer_t *computer, point_t spritesheet_coord_under_mo
 	if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
 		rect_t changed_region = rect_from_2_points(_change_start, _change_end);
 
-		_push_to_undo(computer, changed_region);
+		_push_draw_to_undo(computer->ram, changed_region);
 
 		gfx_draw_filled_rect(SPR_SURF(computer->ram->spritesheet.data), changed_region, _selected_color);
 	}
@@ -458,7 +596,7 @@ static void _tool_ellipse(computer_t *computer, point_t spritesheet_coord_under_
 		rect_t changed_region = rect_from_2_points(_change_start, _change_end);
 		
 		// TODO: fix bug where the whole area is properly commited to the undo stack
-		_push_to_undo(computer, changed_region);
+		_push_draw_to_undo(computer->ram, changed_region);
 
 		gfx_draw_ellipse(SPR_SURF(computer->ram->spritesheet.data), changed_region, _selected_color);
 	}
@@ -472,7 +610,7 @@ static void _tool_bucket(computer_t *computer, point_t spritesheet_coord_under_m
 	if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
 		rect_t limit = !_freelook && point_in_rect(mouse_pos, _layout.sprite_editor_focus_rect) ? get_in_frame_rect() : RECT(0, 0, SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT);
 		
-		_push_to_undo(computer, limit);
+		_push_draw_to_undo(computer->ram, limit);
 		
 		gfx_flood_fill(SPR_SURF(computer->ram->spritesheet.data), spritesheet_coord_under_mouse, _selected_color, limit);
 	}
@@ -925,4 +1063,14 @@ void sprite_editor_draw(computer_t *computer) {
 	} else {
 		_draw_snapped(computer);
 	}
+}
+
+void sprite_editor_import_spritesheet(ram_t *ram, string_t path) {
+	// TODO: this should just call a paste function (which I haven't implemented yet)
+
+	gfx_load_surface(&ram->palette, _selection_surf, path);
+
+	_selection_start = POINT(0, 0);
+	_selection_end = POINT(SPRITESHEET_WIDTH, SPRITESHEET_HEIGHT);
+	_selection_active = true;
 }

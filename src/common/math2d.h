@@ -39,6 +39,7 @@ typedef union rect {
 } rect_t;
 
 #define RECT(_x, _y, _w, _h) ((rect_t){.x = _x, .y = _y, .w = _w, .h = _h})
+#define RECT_EMPTY ((rect_t){0, 0, 0, 0})
 
 void rect_print(rect_t rect);
 
@@ -63,6 +64,10 @@ typedef union vec2 {
 
 // Includes the bottom left pixel
 rect_t rect_from_2_points(point_t start, point_t end);
+
+point_t rect_topleft(rect_t rect);
+
+point_t rect_bottomright(rect_t rect);
 
 typedef struct camera {
 	point_t pos;

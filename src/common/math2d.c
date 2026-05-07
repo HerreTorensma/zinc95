@@ -95,6 +95,18 @@ rect_t rect_from_2_points(point_t start, point_t end) {
 	return rect;
 }
 
+point_t rect_topleft(rect_t rect) {
+	return rect.pos;
+}
+
+point_t rect_bottomright(rect_t rect) {
+	return (point_t){
+		rect.x + rect.w - 1,
+		rect.y + rect.h - 1,
+	};
+}
+
+
 point_t cam_world_to_screen(camera_t *camera, point_t world) {
 	return (point_t){
 		.x = (int)((world.x - camera->pos.x + camera->screen_origin.x / camera->zoom) * camera->zoom),

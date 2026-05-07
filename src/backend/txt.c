@@ -390,7 +390,7 @@ void shell_init(computer_t *computer) {
 	shell_new_command(computer);
 
 	// TODO: remove eventually, it's just so I don't have to type it manually
-	_execute_command(computer, STR("load fucking"));
+	_execute_command(computer, STR("load output"));
 	shell_new_command(computer);
 }
 
