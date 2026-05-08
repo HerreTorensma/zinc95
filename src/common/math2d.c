@@ -106,6 +106,14 @@ point_t rect_bottomright(rect_t rect) {
 	};
 }
 
+rect_t rect_reset_origin(rect_t rect) {
+	return (rect_t){
+		.x = 0,
+		.y = 0,
+		.w = rect.w,
+		.h = rect.h,
+	};
+}
 
 point_t cam_world_to_screen(camera_t *camera, point_t world) {
 	return (point_t){

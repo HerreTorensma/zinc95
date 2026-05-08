@@ -69,6 +69,8 @@ point_t rect_topleft(rect_t rect);
 
 point_t rect_bottomright(rect_t rect);
 
+rect_t rect_reset_origin(rect_t rect);
+
 typedef struct camera {
 	point_t pos;
 	float zoom;

@@ -12,4 +12,4 @@ void sprite_editor_update(computer_t *computer);
 
 void sprite_editor_draw(computer_t *computer);
 
-void sprite_editor_import_spritesheet(ram_t *ram, string_t path);
+void sprite_editor_import_spritesheet(computer_t *computer, string_t path);

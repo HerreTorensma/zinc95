@@ -25,8 +25,16 @@ typedef enum allocator_message {
 // The whole allocator stuff might be kind of overengineered and a simple enum value could suffice but this is more future proof
 // And I like this way of doing things better I think
 typedef struct allocator {
-	void *(*proc)(size_t size, void *existing, allocator_message_t message);
+	void *(*proc)(size_t size, void *existing, void *data, allocator_message_t message);
+	void *data;
 } allocator_t;
+
+// WARNING: arena is currently untested
+typedef struct arena {
+	void *data;
+	size_t capacity;
+	size_t pos;
+} arena_t;
 
 void *alloc(allocator_t allocator, size_t size);
 
@@ -38,6 +46,14 @@ void *heap_realloc(void *data, size_t new_size);
 
 void heap_dealloc(void *data);
 
+void arena_init(arena_t *arena, size_t capacity);
+
+void *arena_alloc(arena_t *arena, size_t size);
+
+void arena_clear(arena_t *arena);
+
+void arena_free(arena_t *arena);
+
 void temp_mem_init(size_t capacity);
 
 void *temp_alloc(size_t size);
@@ -46,9 +62,11 @@ void temp_clear();
 
 void temp_free();
 
-void *heap_allocator_proc(size_t size, void *existing, allocator_message_t message);
+void *heap_allocator_proc(size_t size, void *existing, void *data, allocator_message_t message);
 
-void *temp_allocator_proc(size_t size, void *existing, allocator_message_t message);
+void *arena_allocator_proc(size_t size, void *existing, void *data, allocator_message_t message);
+
+void *temp_allocator_proc(size_t size, void *existing, void *data, allocator_message_t message);
 
 allocator_t get_heap_allocator();
 

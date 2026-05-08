@@ -5,24 +5,18 @@
 #include <string.h>
 #include <assert.h>
 
-typedef struct temp_mem {
-	void *data;
-	size_t capacity;
-	size_t pos;
-} temp_mem_t;
-
-static temp_mem_t _temp_mem = {0};
+static arena_t _temp_arena = {0};
 
 // The asserts are commented out because it breaks the text_file functionality
 // I will get back to that
 void *alloc(allocator_t allocator, size_t size) {
 	// assert(size > 0 && "You requested to allocate 0 bytes which is illegal");
-	return allocator.proc(size, NULL, ALLOCATOR_ALLOCATE);
+	return allocator.proc(size, NULL, allocator.data, ALLOCATOR_ALLOCATE);
 }
 
 void dealloc(allocator_t allocator, void *data) {
 	if (data != NULL) {
-		allocator.proc(0, data, ALLOCATOR_DEALLOCATE);
+		allocator.proc(0, data, allocator.data, ALLOCATOR_DEALLOCATE);
 	}
 }
 
@@ -47,38 +41,54 @@ void heap_dealloc(void *data) {
 	}
 }
 
-void temp_mem_init(size_t capacity) {
-	_temp_mem.pos = 0;
-	_temp_mem.capacity = capacity;
+void arena_init(arena_t *arena, size_t capacity) {
+	arena->pos = 0;
+	arena->capacity = capacity;
 	
-	_temp_mem.data = malloc(capacity);
-	if (_temp_mem.data == NULL) {
+	arena->data = malloc(capacity);
+	if (arena->data == NULL) {
 		fprintf(stderr, "Failed to allocate memory for arena.\n");
 	}
 }
 
-void *temp_alloc(size_t size) {
-	assert(_temp_mem.pos < _temp_mem.capacity && "The temp memory is full");
+void *arena_alloc(arena_t *arena, size_t size) {
+	assert(arena->pos < arena->capacity && "The temp memory is full");
 
-	void *ptr = (uint8_t *)_temp_mem.data + _temp_mem.pos;
+	void *ptr = (uint8_t *)arena->data + arena->pos;
 	memset(ptr, 0, size);
 
-	_temp_mem.pos += size;
+	arena->pos += size;
 
 	return ptr;
 }
 
+void arena_clear(arena_t *arena) {
+	arena->pos = 0;
+}
+
+void arena_free(arena_t *arena) {
+	free(arena->data);
+	arena->capacity = 0;
+	arena->pos = 0;
+}
+
+void temp_mem_init(size_t capacity) {
+	arena_init(&_temp_arena, capacity);
+}
+
+void *temp_alloc(size_t size) {
+	return arena_alloc(&_temp_arena, size);
+}
+
 void temp_clear() {
-	_temp_mem.pos = 0;
+	arena_clear(&_temp_arena);
 }
 
 void temp_free() {
-	free(_temp_mem.data);
-	_temp_mem.capacity = 0;
-	_temp_mem.pos = 0;
+	arena_free(&_temp_arena);
 }
 
-void *heap_allocator_proc(size_t size, void *existing, allocator_message_t message) {
+void *heap_allocator_proc(size_t size, void *existing, void *data, allocator_message_t message) {
 	switch (message) {
 		case ALLOCATOR_ALLOCATE: {
 			return heap_alloc(size);
@@ -95,7 +105,25 @@ void *heap_allocator_proc(size_t size, void *existing, allocator_message_t messa
 	return NULL;
 }
 
-void *temp_allocator_proc(size_t size, void *existing, allocator_message_t message) {
+void *arena_allocator_proc(size_t size, void *existing, void *data, allocator_message_t message) {
+	switch (message) {
+		case ALLOCATOR_ALLOCATE: {
+			return arena_alloc(existing, size);
+		}
+		case ALLOCATOR_REALLOCATE: {
+			printf("Temporary allocator cannot reallocate");
+			return NULL;
+		}
+		case ALLOCATOR_DEALLOCATE: {
+			// You can't free temporary memory
+			return NULL;
+		}
+	}
+
+	return NULL;
+}
+
+void *temp_allocator_proc(size_t size, void *existing, void *data, allocator_message_t message) {
 	switch (message) {
 		case ALLOCATOR_ALLOCATE: {
 			return temp_alloc(size);
@@ -122,6 +150,13 @@ allocator_t get_heap_allocator() {
 allocator_t get_temp_allocator() {
 	return (allocator_t){
 		.proc = temp_allocator_proc,
+	};
+}
+
+allocator_t get_arena_allocator(arena_t *arena) {
+	return (allocator_t){
+		.proc = arena_allocator_proc,
+		.data = (void*)arena,
 	};
 }
 

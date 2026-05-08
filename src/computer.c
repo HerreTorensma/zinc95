@@ -542,12 +542,12 @@ int game_load(computer_t *computer, string_t path) {
 	return 0;
 }
 
-void sprite_editor_import_spritesheet(ram_t *ram, string_t path);
+void sprite_editor_import_spritesheet(computer_t *computer, string_t path);
 
 void import_file(computer_t *computer, string_t path) {
 	string_t extension = path_get_filename_extension(path);
 
 	if (string_eq(extension, STR("bmp"))) {
-		sprite_editor_import_spritesheet(computer->ram, path);
+		sprite_editor_import_spritesheet(computer, path);
 	}
 }

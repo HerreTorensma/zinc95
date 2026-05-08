@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
 
 	// printf("RAM size: %llu\n", sizeof(struct readable_ram));
 
-	temp_mem_init(MB(1ULL));
+	temp_mem_init(MB(4ULL));
 
 	// game_load(&computer, STR("game.zinc95"));
 	// game_load_old(&computer, "game.zinc95");
