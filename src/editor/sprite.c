@@ -599,7 +599,7 @@ static void _tool_line(computer_t *computer, point_t spritesheet_coord_under_mou
 	}
 }
 
-static void _tool_rect(computer_t *computer, point_t spritesheet_coord_under_mouse) {
+static void _tool_shape(computer_t *computer, point_t spritesheet_coord_under_mouse, void (*shape_proc)(surface_t, rect_t, color_t)) {
 	gfx_clear(_overlay_surf, COLOR_NONE);
 
 	if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
@@ -607,7 +607,7 @@ static void _tool_rect(computer_t *computer, point_t spritesheet_coord_under_mou
 		
 		rect_t rect = rect_from_2_points(_change_start, _change_end);
 
-		gfx_draw_rect(_overlay_surf, rect, _selected_color);
+		shape_proc(_overlay_surf, rect, _selected_color);
 	}
 
 	if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
@@ -615,51 +615,8 @@ static void _tool_rect(computer_t *computer, point_t spritesheet_coord_under_mou
 
 		_push_draw_to_undo(computer->ram, changed_region);
 
-		gfx_draw_rect(SPR_SURF(computer->ram->spritesheet.data), changed_region, _selected_color);
+		shape_proc(SPR_SURF(computer->ram->spritesheet.data), changed_region, _selected_color);
 	}
-}
-
-static void _tool_rectf(computer_t *computer, point_t spritesheet_coord_under_mouse) {
-	gfx_clear(_overlay_surf, COLOR_NONE);
-
-	if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
-		_change_end = spritesheet_coord_under_mouse;
-		rect_t rect = rect_from_2_points(_change_start, _change_end);
-
-		gfx_draw_filled_rect(_overlay_surf, rect, _selected_color);
-	}
-
-	if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
-		rect_t changed_region = rect_from_2_points(_change_start, _change_end);
-
-		_push_draw_to_undo(computer->ram, changed_region);
-
-		gfx_draw_filled_rect(SPR_SURF(computer->ram->spritesheet.data), changed_region, _selected_color);
-	}
-}
-
-static void _tool_ellipse(computer_t *computer, point_t spritesheet_coord_under_mouse) {
-	gfx_clear(_overlay_surf, COLOR_NONE);
-	
-	if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
-		_change_end = spritesheet_coord_under_mouse;
-		rect_t rect = rect_from_2_points(_change_start, _change_end);
-
-		gfx_draw_ellipse(_overlay_surf, rect, _selected_color);
-	}
-
-	if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
-		rect_t changed_region = rect_from_2_points(_change_start, _change_end);
-		
-		// TODO: fix bug where the whole area is properly commited to the undo stack
-		_push_draw_to_undo(computer->ram, changed_region);
-
-		gfx_draw_ellipse(SPR_SURF(computer->ram->spritesheet.data), changed_region, _selected_color);
-	}
-}
-
-static void _tool_ellipsef(computer_t *computer, point_t spritesheet_coord_under_mouse) {
-	
 }
 
 static void _tool_bucket(computer_t *computer, point_t spritesheet_coord_under_mouse, point_t mouse_pos) {
@@ -675,8 +632,6 @@ static void _tool_bucket(computer_t *computer, point_t spritesheet_coord_under_m
 static void _exit_freelook() {
 	// Snap back to reality
 	_freelook = false;
-
-
 }
 
 static void _update_freelook(computer_t *computer) {
@@ -830,16 +785,16 @@ void sprite_editor_update(computer_t *computer) {
 				_tool_line(computer, _spritesheet_coord_under_mouse);
 				break;
 			case (TOOL_RECT):
-				_tool_rect(computer, _spritesheet_coord_under_mouse);
+				_tool_shape(computer, _spritesheet_coord_under_mouse, gfx_draw_rect);
 				break;
 			case (TOOL_RECTF):
-				_tool_rectf(computer, _spritesheet_coord_under_mouse);
+				_tool_shape(computer, _spritesheet_coord_under_mouse, gfx_draw_filled_rect);
 				break;
 			case (TOOL_ELLIPSE):
-				_tool_ellipse(computer, _spritesheet_coord_under_mouse);
+				_tool_shape(computer, _spritesheet_coord_under_mouse, gfx_draw_ellipse);
 				break;
 			case (TOOL_ELLIPSEF):
-				_tool_ellipsef(computer, _spritesheet_coord_under_mouse);
+				_tool_shape(computer, _spritesheet_coord_under_mouse, gfx_draw_filled_ellipse);
 				break;
 			case (TOOL_BUCKET):
 				_tool_bucket(computer, _spritesheet_coord_under_mouse, mouse_pos);

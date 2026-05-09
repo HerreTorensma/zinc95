@@ -97,6 +97,8 @@ void gfx_draw_circle(surface_t surf, point_t pos, int radius, color_t color);
 
 void gfx_draw_ellipse(surface_t surf, rect_t bound, color_t color);
 
+void gfx_draw_filled_ellipse(surface_t surf, rect_t bound, color_t color);
+
 color_t gfx_spritesheet_get_pixel(spritesheet_t *spritesheet, point_t point);
 
 void gfx_spritesheet_set_pixel(spritesheet_t *spritesheet, point_t point, color_t color);
