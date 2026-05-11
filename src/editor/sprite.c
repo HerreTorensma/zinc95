@@ -520,6 +520,15 @@ static void _tool_select(computer_t *computer, point_t spritesheet_coord_under_m
 		_put_selection_in_clipboard();
 	}
 
+	// TODO: make it so when you paste it it is in the middle of the screen
+	if (_selection_active && is_keybind_pressed(g_keybinds.global.cut)) {
+		_put_selection_in_clipboard();
+
+		_push_delete_selection_to_undo(computer->ram);
+		gfx_clear(_selection_surf, COLOR_BLACK);
+		_set_selection_inactive();
+	}
+
 	if (is_keybind_pressed(g_keybinds.global.paste)) {
 		_push_commit_selection_to_undo(computer->ram);
 		_paste(computer, _clipboard.selection.surf, _clipboard.selection.rect);
