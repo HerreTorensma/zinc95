@@ -41,6 +41,8 @@ typedef union rect {
 #define RECT(_x, _y, _w, _h) ((rect_t){.x = _x, .y = _y, .w = _w, .h = _h})
 #define RECT_EMPTY ((rect_t){0, 0, 0, 0})
 
+point_t points_sub(point_t a, point_t b);
+
 void rect_print(rect_t rect);
 
 bool rect_in_rect(rect_t container, rect_t containee);
@@ -70,6 +72,10 @@ point_t rect_topleft(rect_t rect);
 point_t rect_bottomright(rect_t rect);
 
 rect_t rect_reset_origin(rect_t rect);
+
+double vec2_length(vec2_t vec);
+
+vec2_t vec2_normalize(vec2_t vec);
 
 typedef struct camera {
 	point_t pos;

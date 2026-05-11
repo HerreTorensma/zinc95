@@ -595,6 +595,19 @@ static void _tool_line(computer_t *computer, point_t spritesheet_coord_under_mou
 
 	if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
 		_change_end = spritesheet_coord_under_mouse;
+
+		// TODO: same story as _tool_shape
+		if (input_key_held(KEY_LSHIFT)) {
+			point_t diff = points_sub(_change_end, _change_start);
+			if (abs(diff.x) > abs(diff.y)) {
+				_change_end.x = _change_start.x + diff.x;
+				_change_end.y = _change_start.y;
+			} else {
+				_change_end.x = _change_start.x;
+				_change_end.y = _change_start.y + diff.y;
+			}
+		}
+
 		gfx_draw_line(_overlay_surf, _change_start, _change_end, _selected_color);
 	}
 
@@ -613,6 +626,15 @@ static void _tool_shape(computer_t *computer, point_t spritesheet_coord_under_mo
 
 	if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
 		_change_end = spritesheet_coord_under_mouse;
+
+		// TODO: use keybind system, I need some function like "is_modifier_key_held"
+		// Make perfect circles or rectangles
+		if (input_key_held(KEY_LSHIFT)) {
+			rect_t rect = rect_from_2_points(_change_start, _change_end);
+			int min = MIN(rect.w, rect.h);
+			_change_end.x = _change_start.x + min;
+			_change_end.y = _change_start.y + min;
+		}
 		
 		rect_t rect = rect_from_2_points(_change_start, _change_end);
 

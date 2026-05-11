@@ -3,6 +3,13 @@
 #include <math.h>
 #include <stdio.h>
 
+point_t points_sub(point_t a, point_t b) {
+	return (point_t){
+		a.x - b.x,
+		a.y - b.y,
+	};
+}
+
 void rect_print(rect_t rect) {
 	printf("x: %d, y: %d, w: %d, h: %d\n", rect.x, rect.y, rect.w, rect.h);
 }
@@ -113,6 +120,20 @@ rect_t rect_reset_origin(rect_t rect) {
 		.w = rect.w,
 		.h = rect.h,
 	};
+}
+
+// TODO: test
+double vec2_length(vec2_t vec) {
+	return sqrt(vec.x*vec.x + vec.y*vec.y);
+}
+
+vec2_t vec2_normalize(vec2_t vec) {
+	double length = vec2_length(vec);
+
+	vec.x /= length;
+	vec.y /= length;
+
+	return vec;
 }
 
 point_t cam_world_to_screen(camera_t *camera, point_t world) {
