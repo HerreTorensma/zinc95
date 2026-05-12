@@ -259,3 +259,8 @@ bool is_keybind_pressed(keybind_t keybind) {
 
 	return keybind.modifiers == _get_current_modifiers();
 }
+
+// TODO: unused and untested currently, maybe ill removed
+bool is_modifier_held(modifier_t mod) {
+	return _get_current_modifiers() & mod;
+}

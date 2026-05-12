@@ -417,7 +417,7 @@ g_skin_layout = {
 				.pressed_rect = {{3312, 76, 16, 16}},
 			},
 			.increase = {0, 16},
-			.amount = 8,
+			.amount = 9,
 		},
 
 		.sprite_flags_button_matrix = {
@@ -489,8 +489,8 @@ g_skin_layout = {
 		},
 		
 		.instrument_button = {
-			.unpressed_rect = {{3200, 204, 64, 12}},
-			.pressed_rect = {{3264, 204, 64, 12}},
+			.unpressed_rect = {{3384, 96, 64, 12}},
+			.pressed_rect = {{3448, 96, 64, 12}},
 		},
 
 		.sine_wave_button = {

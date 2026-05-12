@@ -186,3 +186,5 @@ char input_get_as_char();
 void input_set_cursor_style(cursor_style_t style);
 
 bool is_keybind_pressed(keybind_t keybind);
+
+bool is_modifier_held(modifier_t mod);

@@ -166,11 +166,13 @@ typedef enum tool {
 	TOOL_ELLIPSE,
 	TOOL_ELLIPSEF,
 	TOOL_BUCKET,
+	TOOL_EYEDROPPER,
 
 	TOOL_COUNT,
 } tool_t;
 
 static tool_t _selected_tool = TOOL_BRUSH;
+static tool_t _selected_tool_backup = TOOL_BRUSH;
 
 // TODO: before i commit
 // I think that it is actually not necessary to track exactly which region to change, I can just save the currently_editing_rect to the undo stack
@@ -660,6 +662,16 @@ static void _tool_bucket(computer_t *computer, point_t spritesheet_coord_under_m
 	}
 }
 
+static void _tool_eyedropper(computer_t *computer) {
+	if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+		_selected_color = computer->ram->spritesheet.data[_spritesheet_coord_under_mouse.y * SPRITESHEET_WIDTH + _spritesheet_coord_under_mouse.x];
+	}
+
+	if (input_mouse_button_held(MOUSE_BUTTON_RIGHT)) {
+		_secondary_selected_color = computer->ram->spritesheet.data[_spritesheet_coord_under_mouse.y * SPRITESHEET_WIDTH + _spritesheet_coord_under_mouse.x];
+	}
+}
+
 static void _exit_freelook() {
 	// Snap back to reality
 	_freelook = false;
@@ -786,12 +798,12 @@ void sprite_editor_update(computer_t *computer) {
 		}
 
 		// Eyedropper
-		// TODO: make seperate tool? with button and stuff and then switch to it while alt is held
-		if ((input_key_held(KEY_LALT) || input_key_held(KEY_RALT))) {
-			if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
-				_selected_color = computer->ram->spritesheet.data[_spritesheet_coord_under_mouse.y * SPRITESHEET_WIDTH + _spritesheet_coord_under_mouse.x];
-			}
-			return;
+		if (input_key_pressed(KEY_LALT) || input_key_pressed(KEY_RALT)) {
+			_selected_tool_backup = _selected_tool;
+			_selected_tool = TOOL_EYEDROPPER;
+		}
+		if (input_key_released(KEY_LALT) || input_key_released(KEY_RALT)) {
+			_selected_tool = _selected_tool_backup;
 		}
 
 		// TODO: Maybe remove the overlay and dynamic tracking of changes and just render previews to framebuffer and copy the currently editing rect region to a change object
@@ -829,6 +841,9 @@ void sprite_editor_update(computer_t *computer) {
 				break;
 			case (TOOL_BUCKET):
 				_tool_bucket(computer, _spritesheet_coord_under_mouse, mouse_pos);
+				break;
+			case (TOOL_EYEDROPPER):
+				_tool_eyedropper(computer);
 				break;
 			default:
 				break;
