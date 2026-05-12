@@ -570,13 +570,13 @@ static void _tool_pencil(computer_t *computer, point_t spritesheet_coord_under_m
 		_max_reached_point.x = MAX(_max_reached_point.x, spritesheet_coord_under_mouse.x);
 		_max_reached_point.y = MAX(_max_reached_point.y, spritesheet_coord_under_mouse.y);
 
-		surf_set_pixel(_overlay_surf, spritesheet_coord_under_mouse.x, spritesheet_coord_under_mouse.y, _selected_color);
+		gfx_draw_line(_overlay_surf, _last_frame_spritesheet_coord_under_mouse, spritesheet_coord_under_mouse, _selected_color);
 	}
 
 	if (input_mouse_button_held(MOUSE_BUTTON_RIGHT)) {
 		// TODO: implement this secondary selected color for the other tools as well
 		// TODO: should this also affect the change region and all that? yes probably
-		surf_set_pixel(_overlay_surf, spritesheet_coord_under_mouse.x, spritesheet_coord_under_mouse.y, _secondary_selected_color);
+		gfx_draw_line(_overlay_surf, _last_frame_spritesheet_coord_under_mouse, spritesheet_coord_under_mouse, _secondary_selected_color);
 	}
 
 	if (input_mouse_button_released(MOUSE_BUTTON_LEFT) || input_mouse_button_released(MOUSE_BUTTON_RIGHT)) {
@@ -1056,7 +1056,11 @@ void sprite_editor_draw(computer_t *computer) {
 				dest_rect.w = _camera.zoom;
 				dest_rect.h = _camera.zoom;
 
-				gfx_draw_filled_rect(fb_surf, dest_rect, _selected_color);
+				if (input_mouse_button_held(MOUSE_BUTTON_RIGHT)) {
+					gfx_draw_filled_rect(fb_surf, dest_rect, _secondary_selected_color);
+				} else {
+					gfx_draw_filled_rect(fb_surf, dest_rect, _selected_color);
+				}
 			}
 		}
 	}
