@@ -41,6 +41,8 @@ static struct {
 
 	rect_t freelook_rect1;
 	rect_t freelook_rect2;
+
+	point_t mouse_coords_pos;
 }
 _layout = {
 	.color_picker_rect = {{4, 388, 192, 88}},
@@ -66,6 +68,8 @@ _layout = {
 
 	.freelook_rect1 = {{0, 20, 620, 344}},
 	.freelook_rect2 = {{200, 364, 420, 116}},
+
+	.mouse_coords_pos = {120, 372},
 };
 
 static color_t _selected_color = 0;
@@ -1118,6 +1122,10 @@ void sprite_editor_draw(computer_t *computer) {
 	// gfx_draw_ellipse(fb_surf, POINT(201, 121), POINT(100, 100), COLOR_RED);
 	// gfx_draw_rect(fb_surf, RECT(100, 100, 3, 3), COLOR_BLUE);
 	// gfx_draw_ellipse(fb_surf, POINT(100, 100), 50, 200, COLOR_RED);
+
+	// Mouse coordinates
+	sprintf(buffer, "%04dx%04d\n", _spritesheet_coord_under_mouse.x, _spritesheet_coord_under_mouse.y);
+	gui_draw_text(computer->ram, 1, buffer, _layout.mouse_coords_pos, computer->ram->skin.font_color);
 
 	if (_freelook) {
 		_draw_freelook(computer);
