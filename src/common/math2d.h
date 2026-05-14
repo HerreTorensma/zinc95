@@ -64,8 +64,10 @@ typedef union vec2 {
 
 // TODO: put in lua api
 
-// Includes the bottom left pixel
 rect_t rect_from_2_points(point_t start, point_t end);
+
+// Includes the bottom left pixel
+rect_t rect_from_2_points_expanded(point_t start, point_t end);
 
 point_t rect_topleft(rect_t rect);
 

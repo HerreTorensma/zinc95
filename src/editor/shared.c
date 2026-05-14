@@ -1,14 +1,28 @@
 #include "shared.h"
 
+#include <stdio.h>
+
 #include "../backend/input.h"
 #include "../backend/gfx.h"
 #include "../backend/gui.h"
 #include "../res.h"
 
 static rect_t _visible_rect = {0};
+
+// TODO: save in tiles, not pixels
 static rect_t _in_frame_rect = {0}; // 'focused', in the white rect
 
+static point_t _draw_start = {0};
+
 static int _current_area_index = 0;
+
+typedef enum sprite_select_snap_mode {
+	// SNAP_MODE_SPRITE,
+	SNAP_MODE_ZOOM,
+	SNAP_MODE_DRAW,
+} sprite_select_snap_mode_t;
+
+static sprite_select_snap_mode_t _snap_mode = SNAP_MODE_ZOOM;
 
 static void _set_area_index(int index) {
 	_current_area_index = index;
@@ -91,7 +105,7 @@ void sprite_selector_zoom_out() {
 }
 
 // This whole function is kind of a mess and I should probably rewrite it at some point
-void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap_mode, point_t pos) {
+void sprite_selector_update(computer_t *computer, point_t pos) {
 	point_t mouse_pos = input_get_mouse_pos();
 
 	{
@@ -120,40 +134,67 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 	}
 
 	if (point_in_rect(mouse_pos, RECT(pos.x, pos.y, SPRITESHEET_PAGE_WIDTH, SPRITESHEET_PAGE_HEIGHT))) {
-		if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
-			if (snap_mode == SNAP_MODE_SPRITE) {
-				int adjusted_position_x = mouse_pos.x - pos.x;
-				int adjusted_position_y = mouse_pos.y - pos.y;
+		if (_snap_mode == SNAP_MODE_DRAW) {
+			if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
+				point_t adjusted = points_sub(mouse_pos, pos);
 
-				_in_frame_rect.x = (adjusted_position_x / SPRITE_WIDTH) * SPRITE_WIDTH;
-				_in_frame_rect.y = (adjusted_position_y / SPRITE_HEIGHT) * SPRITE_HEIGHT;
-				// _in_frame_rect.x = (adjusted_position_x / _in_frame_rect.w) * _in_frame_rect.w;
-				// _in_frame_rect.y = (adjusted_position_y / _in_frame_rect.h) * _in_frame_rect.h;
-
-				_in_frame_rect.x -= _in_frame_rect.w / 2;
-				_in_frame_rect.y -= _in_frame_rect.h / 2;
+				_draw_start.x = (adjusted.x / SPRITE_WIDTH) * SPRITE_WIDTH;
+				_draw_start.y = (adjusted.y / SPRITE_HEIGHT) * SPRITE_HEIGHT;
 			}
-			
-			else if (snap_mode == SNAP_MODE_FREE) {
-				// Free movement
 
-				// TODO: update currently_editing_sprites_rect
-				_in_frame_rect.x = mouse_pos.x - pos.x;
-				_in_frame_rect.y = mouse_pos.y - pos.y;
-			}
-			
-			else if (snap_mode == SNAP_MODE_ZOOM) {
-				int adjusted_position_x = mouse_pos.x - pos.x;
-				int adjusted_position_y = mouse_pos.y - pos.y;
+			if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+				point_t adjusted = points_sub(mouse_pos, pos);
 
-				int cell_x = adjusted_position_x / _in_frame_rect.w;
-				int cell_y = adjusted_position_y / _in_frame_rect.h;
-	
-				_in_frame_rect.x = cell_x * _in_frame_rect.w;
-				_in_frame_rect.y = cell_y * _in_frame_rect.h;
+				point_t draw_end = {0};
+				draw_end.x = (adjusted.x / SPRITE_WIDTH) * SPRITE_WIDTH;
+				draw_end.y = (adjusted.y / SPRITE_HEIGHT) * SPRITE_HEIGHT;
+
+				point_t diff = points_sub(draw_end, _draw_start);
+
+				if (diff.x > 0) {
+					draw_end.x += SPRITE_WIDTH;
+				}
+
+				if (diff.y > 0) {
+					draw_end.y += SPRITE_HEIGHT;
+				}
+
+				_in_frame_rect = rect_from_2_points(_draw_start, draw_end);
 
 				_in_frame_rect.x += _visible_rect.x;
 				_in_frame_rect.y += _visible_rect.y;
+			}
+			
+			if (_in_frame_rect.x < 0) {
+				_in_frame_rect.x = 0;
+			}
+
+			if (_in_frame_rect.y < 0) {
+				_in_frame_rect.y = 0;
+			}
+
+			if (_in_frame_rect.w <= SPRITE_WIDTH) {
+				_in_frame_rect.w = SPRITE_WIDTH;
+			}
+
+			if (_in_frame_rect.h <= SPRITE_HEIGHT) {
+				_in_frame_rect.h = SPRITE_HEIGHT;
+			}
+		}else {
+			if (input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
+				if (_snap_mode == SNAP_MODE_ZOOM) {
+					int adjusted_position_x = mouse_pos.x - pos.x;
+					int adjusted_position_y = mouse_pos.y - pos.y;
+
+					int cell_x = adjusted_position_x / _in_frame_rect.w;
+					int cell_y = adjusted_position_y / _in_frame_rect.h;
+		
+					_in_frame_rect.x = cell_x * _in_frame_rect.w;
+					_in_frame_rect.y = cell_y * _in_frame_rect.h;
+
+					_in_frame_rect.x += _visible_rect.x;
+					_in_frame_rect.y += _visible_rect.y;
+				}
 			}
 		}
 
@@ -180,14 +221,13 @@ void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap
 	}
 
 	// Snap
-	if (snap_mode == SNAP_MODE_ZOOM) {
+	if (_snap_mode == SNAP_MODE_ZOOM) {
 		_in_frame_rect.x = (_in_frame_rect.x / _in_frame_rect.w) * _in_frame_rect.w;
 		_in_frame_rect.y = (_in_frame_rect.y / _in_frame_rect.h) * _in_frame_rect.h;
-
 	}
 }
 
-void sprite_selector_draw(computer_t *computer, point_t pos, point_t page_buttons_pos) {
+void sprite_selector_draw(computer_t *computer, point_t pos, point_t page_buttons_pos, point_t snap_mode_buttons_pos) {
 	gfx_draw_spritesheet_rect(computer->ram, pos, _visible_rect, COLOR_NONE);
 
 	int new_area_index = gui_full_button_matrix(computer->ram, page_buttons_pos, g_skin_layout.global.spritesheet_areas_button_matrix, _current_area_index);
@@ -195,10 +235,11 @@ void sprite_selector_draw(computer_t *computer, point_t pos, point_t page_button
 		_set_area_index(new_area_index);
 	}
 
-	// gfx_draw_rect(FB_SURF(computer->ram->framebuffer.data), RECT(pos.x + _in_frame_rect.x - 1, pos.y + (_in_frame_rect.y % SPRITESHEET_PAGE_HEIGHT) - 1, _in_frame_rect.w + 2, _in_frame_rect.h + 2), 15);
 	if (rect_in_rect(_visible_rect, _in_frame_rect)) {
 		gfx_draw_rect(FB_SURF(computer->ram->framebuffer.data), RECT(pos.x + (_in_frame_rect.x % SPRITESHEET_PAGE_WIDTH) - 1, pos.y + (_in_frame_rect.y % SPRITESHEET_PAGE_HEIGHT) - 1, _in_frame_rect.w + 2, _in_frame_rect.h + 2), 15);
 	}
+
+	_snap_mode = gui_button_array(computer->ram, snap_mode_buttons_pos, g_skin_layout.global.spritesheet_snap_mode_buttons, _snap_mode);
 }
 
 rect_t get_page_rect() {

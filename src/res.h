@@ -290,6 +290,7 @@ static struct {
 		// Shared between sprite and map editor
 		// TODO: maybe make a seperate one for each
 		button_matrix_t spritesheet_areas_button_matrix;
+		button_array_t spritesheet_snap_mode_buttons;
 	} global;
 
 	struct {
@@ -395,6 +396,15 @@ g_skin_layout = {
 			.column_increase = 28,
 			.v_break = -1,
 			.h_break = -1,
+		},
+
+		.spritesheet_snap_mode_buttons = {
+			.base = {
+				.unpressed_rect = {{3368, 264, 14, 14}},
+				.pressed_rect = {{3368, 278, 14, 14}},
+			},
+			.increase = {14, 0},
+			.amount = 2,
 		},
 	},
 

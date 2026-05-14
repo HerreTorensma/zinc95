@@ -36,6 +36,7 @@ static struct {
 
 	point_t sprite_selector_pos;
 	point_t sprite_selector_buttons_start_pos;
+	point_t sprite_selector_snap_mode_buttons_pos;
 
 	point_t tools_start_pos;
 
@@ -56,13 +57,14 @@ _layout = {
 	.selected_sprite_rect = {{4, 348, 16, 16}},
 	.selected_sprite_label_pos = {24, 351},
 
-	.color_key_button_pos = {524, 349},
-	.color_key_rect = {{526, 351, 8, 8}},
+	.color_key_button_pos = {242, 384},
+	.color_key_rect = {{244, 386, 8, 8}},
 
 	.sprite_flags_start_pos = {206, 396},
 
 	.sprite_selector_pos = {264, 348},
 	.sprite_selector_buttons_start_pos = {524, 364},
+	.sprite_selector_snap_mode_buttons_pos = {524, 348},
 
 	.tools_start_pos = {622, 34},
 
@@ -270,7 +272,7 @@ static uint8_t _pos_to_color_index(point_t pos) {
 
 // Calculate it here so I don't need to keep a selection global updated
 static rect_t _get_selection_rect() {
-	return rect_from_2_points(_selection_start, _selection_end);
+	return rect_from_2_points_expanded(_selection_start, _selection_end);
 }
 
 static void _push_draw_to_undo(ram_t *ram, rect_t region) {
@@ -587,7 +589,7 @@ static void _tool_pencil(computer_t *computer, point_t spritesheet_coord_under_m
 
 	if (input_mouse_button_released(MOUSE_BUTTON_LEFT) || input_mouse_button_released(MOUSE_BUTTON_RIGHT)) {
 		// Copy the affected part of the overlay to the undo stack and spritesheet
-		rect_t changed_region = rect_from_2_points(_min_reached_point, _max_reached_point);
+		rect_t changed_region = rect_from_2_points_expanded(_min_reached_point, _max_reached_point);
 
 		_push_draw_to_undo(computer->ram, changed_region);
 
@@ -618,7 +620,7 @@ static void _tool_line(computer_t *computer, point_t spritesheet_coord_under_mou
 	}
 
 	if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
-		rect_t changed_region = rect_from_2_points(_change_start, _change_end);
+		rect_t changed_region = rect_from_2_points_expanded(_change_start, _change_end);
 
 		_push_draw_to_undo(computer->ram, changed_region);
 
@@ -636,19 +638,19 @@ static void _tool_shape(computer_t *computer, point_t spritesheet_coord_under_mo
 		// TODO: use keybind system, I need some function like "is_modifier_key_held"
 		// Make perfect circles or rectangles
 		if (input_key_held(KEY_LSHIFT)) {
-			rect_t rect = rect_from_2_points(_change_start, _change_end);
+			rect_t rect = rect_from_2_points_expanded(_change_start, _change_end);
 			int min = MIN(rect.w, rect.h);
 			_change_end.x = _change_start.x + min;
 			_change_end.y = _change_start.y + min;
 		}
 		
-		rect_t rect = rect_from_2_points(_change_start, _change_end);
+		rect_t rect = rect_from_2_points_expanded(_change_start, _change_end);
 
 		shape_proc(_overlay_surf, rect, _selected_color);
 	}
 
 	if (input_mouse_button_released(MOUSE_BUTTON_LEFT)) {
-		rect_t changed_region = rect_from_2_points(_change_start, _change_end);
+		rect_t changed_region = rect_from_2_points_expanded(_change_start, _change_end);
 
 		_push_draw_to_undo(computer->ram, changed_region);
 
@@ -707,7 +709,7 @@ static void _update_freelook(computer_t *computer) {
 }
 
 static void _update_snapped(computer_t *computer) {
-	sprite_selector_update(computer, SNAP_MODE_ZOOM, _layout.sprite_selector_pos);
+	sprite_selector_update(computer, _layout.sprite_selector_pos);
 
 	// Zoom for sprite selector
 	// TODO: should this be handled by the sprite selector itself?
@@ -870,13 +872,16 @@ static void _draw_snapped(computer_t *computer) {
 	surface_t fb_surf = FB_SURF(fb->data);
 	rect_t in_frame_rect = get_in_frame_rect();
 	rect_t in_frame_rect_in_sprites = get_in_frame_rect_in_sprites();
-	int scale = _layout.sprite_editor_focus_rect.w / in_frame_rect.w;
 
 	_camera.pos = in_frame_rect.pos;
-	_camera.zoom = scale;
+	if (in_frame_rect.w > in_frame_rect.h) {
+		_camera.zoom = (float)_layout.sprite_editor_focus_rect.w / in_frame_rect.w;
+	} else {
+		_camera.zoom = (float)_layout.sprite_editor_focus_rect.h / in_frame_rect.h;
+	}
 
 	// Spritesheet / sprite selector
-	sprite_selector_draw(computer, _layout.sprite_selector_pos, _layout.sprite_selector_buttons_start_pos);
+	sprite_selector_draw(computer, _layout.sprite_selector_pos, _layout.sprite_selector_buttons_start_pos, _layout.sprite_selector_snap_mode_buttons_pos);
 
 	// Draw the overlay on sprite selector as well
 	gfx_draw_surface_rect(fb, _overlay_surf, _layout.sprite_selector_pos, get_page_rect(), COLOR_NONE);
@@ -1090,7 +1095,7 @@ void sprite_editor_draw(computer_t *computer) {
 
 		point_t top_left = cam_world_to_screen(&_camera, selection_rect.pos);
 		point_t bottom_right = cam_world_to_screen(&_camera, (point_t){selection_rect.x + selection_rect.w, selection_rect.y + selection_rect.h});
-		selection_rect = rect_from_2_points(top_left, bottom_right);
+		selection_rect = rect_from_2_points_expanded(top_left, bottom_right);
 		
 		gui_draw_selection_rect(computer->ram->ticks, fb_surf, selection_rect);
 	}
@@ -1107,14 +1112,7 @@ void sprite_editor_draw(computer_t *computer) {
 	// gui_draw_text(computer->ram, 2, buffer, _layout.selected_color_label_pos, COLOR_NONE); // Testing not passing a color
 
 	// Tools
-	for (int i = 0; i < g_skin_layout.sprite_editor.tool_buttons.amount; i++) {
-		point_t pos = button_array_get_pos(&g_skin_layout.sprite_editor.tool_buttons, _layout.tools_start_pos, i);
-		button_t button = button_array_get(&g_skin_layout.sprite_editor.tool_buttons, i);
-
-		if (gui_button(computer->ram, pos, button, i == _selected_tool)) {
-			_selected_tool = i;
-		}
-	}
+	_selected_tool = gui_button_array(computer->ram, _layout.tools_start_pos, g_skin_layout.sprite_editor.tool_buttons, _selected_tool);
 
 	// Debugging stuff, will keep for now
 	// gfx_draw_rect(fb_surf, RECT(100, 100, 101, 21), COLOR_BLUE);

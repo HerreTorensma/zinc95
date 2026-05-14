@@ -92,6 +92,7 @@ static struct {
 
 	point_t sprite_selector_pos;
 	point_t sprite_selector_buttons_start_pos;
+	point_t sprite_selector_snap_mode_buttons_pos;
 
 	point_t tools_start_pos;
 }
@@ -104,6 +105,7 @@ _layout = {
 	
 	.sprite_selector_pos = {264, 348},
 	.sprite_selector_buttons_start_pos = {524, 364},
+	.sprite_selector_snap_mode_buttons_pos = {524, 348},
 
 	.tools_start_pos = {622, 34},
 };
@@ -270,7 +272,7 @@ static void _entity_tool_select(computer_t *computer) {
 				.h = entity->h * SPRITE_HEIGHT,
 			};
 
-			rect_t selection_rect = rect_from_2_points(_entity_selection_start, _entity_selection_end);
+			rect_t selection_rect = rect_from_2_points_expanded(_entity_selection_start, _entity_selection_end);
 
 			if (rect_in_rect(selection_rect, entity_rect)) {
 				array_push(&_selected_entity_indices, i);
@@ -366,7 +368,7 @@ static void _tile_editor_update(computer_t *computer) {
 }
 
 void map_editor_update(computer_t *computer) {
-	sprite_selector_update(computer, SNAP_MODE_ZOOM, _layout.sprite_selector_pos);
+	sprite_selector_update(computer, _layout.sprite_selector_pos);
 
 	if (_selected_layer == ENTITY_LAYER) { // Entities layer
 		_entity_editor_update(computer);
@@ -534,7 +536,7 @@ void map_editor_draw(computer_t *computer) {
 
 	// Draw selection rect for selection currently being made
 	if (_does_entity_selection_rect_exist()) {
-		rect_t dest_rect = rect_from_2_points(cam_world_to_screen(&_camera, _entity_selection_start), cam_world_to_screen(&_camera, _entity_selection_end));
+		rect_t dest_rect = rect_from_2_points_expanded(cam_world_to_screen(&_camera, _entity_selection_start), cam_world_to_screen(&_camera, _entity_selection_end));
 		gui_draw_selection_rect(computer->ram->ticks, fb_surf, dest_rect);
 		input_set_cursor_style(CURSOR_STYLE_CROSSHAIR);
 	}
@@ -583,7 +585,7 @@ void map_editor_draw(computer_t *computer) {
 		gui_draw_text(computer->ram, 1, buffer, POINT(4, 356), COLOR_BLACK);
 	}
 
-	sprite_selector_draw(computer, _layout.sprite_selector_pos, _layout.sprite_selector_buttons_start_pos);
+	sprite_selector_draw(computer, _layout.sprite_selector_pos, _layout.sprite_selector_buttons_start_pos, _layout.sprite_selector_snap_mode_buttons_pos);
 
 	// Entity layer
 	if (gui_button(computer->ram, _layout.entity_layer_pos, g_skin_layout.map_editor.entity_layer_button, _selected_layer == ENTITY_LAYER)) {
@@ -608,14 +610,7 @@ void map_editor_draw(computer_t *computer) {
 
 	// Tool bar
 	if (_selected_layer == ENTITY_LAYER) {
-		for (int i = 0; i < g_skin_layout.map_editor.entity_tool_buttons.amount; i++) {
-			point_t pos = button_array_get_pos(&g_skin_layout.map_editor.entity_tool_buttons, _layout.tools_start_pos, i);
-			button_t button = button_array_get(&g_skin_layout.map_editor.entity_tool_buttons, i);
-
-			if (gui_button(computer->ram, pos, button, i == _selected_entity_tool)) {
-				_selected_entity_tool = i;
-			}
-		}
+		_selected_entity_tool = gui_button_array(computer->ram, _layout.tools_start_pos, g_skin_layout.map_editor.entity_tool_buttons, _selected_entity_tool);
 	} else {
 
 	}

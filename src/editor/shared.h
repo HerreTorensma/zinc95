@@ -7,21 +7,15 @@ Shared components among editors
 #include "../computer.h"
 #include "../common/math2d.h"
 
-typedef enum sprite_select_snap_mode {
-	SNAP_MODE_SPRITE,
-	SNAP_MODE_ZOOM,
-	SNAP_MODE_FREE,
-} sprite_select_snap_mode_t;
-
 void sprite_selector_init(computer_t *computer);
 
 void sprite_selector_zoom_in();
 
 void sprite_selector_zoom_out();
 
-void sprite_selector_update(computer_t *computer, sprite_select_snap_mode_t snap_mode, point_t pos);
+void sprite_selector_update(computer_t *computer, point_t pos);
 
-void sprite_selector_draw(computer_t *computer, point_t pos, point_t page_buttons_pos);
+void sprite_selector_draw(computer_t *computer, point_t pos, point_t page_buttons_pos, point_t snap_mode_buttons_pos);
 
 // Get the rect of the current page
 rect_t get_page_rect();

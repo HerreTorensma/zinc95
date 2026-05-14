@@ -137,6 +137,19 @@ bool gui_button(ram_t *ram, point_t pos, button_t button, bool already_pressed) 
 	return already_pressed;
 }
 
+int gui_button_array(ram_t *ram, point_t base_pos, button_array_t buttons, int already_pressed_index) {
+	for (int i = 0; i < buttons.amount; i++) {
+		point_t pos = button_array_get_pos(&buttons, base_pos, i);
+		button_t button = button_array_get(&buttons, i);
+
+		if (gui_button(ram, pos, button, i == already_pressed_index)) {
+			already_pressed_index = i;
+		}
+	}
+
+	return already_pressed_index;
+}
+
 bool gui_press_button(ram_t *ram, point_t pos, button_t button) {
 	point_t mouse_pos = input_get_mouse_pos();
 

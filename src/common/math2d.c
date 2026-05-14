@@ -96,6 +96,12 @@ rect_t rect_from_2_points(point_t start, point_t end) {
 		rect.h = start.y - end.y;
 	}
 
+	return rect;
+}
+
+rect_t rect_from_2_points_expanded(point_t start, point_t end) {
+	rect_t rect = rect_from_2_points(start, end);
+	
 	rect.w++;
 	rect.h++;
 

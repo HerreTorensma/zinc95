@@ -32,6 +32,8 @@ void gui_draw_text(ram_t *ram, int font_index, const char text[], point_t pos, i
 
 bool gui_button(ram_t *ram, point_t pos, button_t button, bool already_pressed);
 
+int gui_button_array(ram_t *ram, point_t base_pos, button_array_t buttons, int already_pressed_index);
+
 bool gui_freeze_button(ram_t *ram, point_t pos, button_t button, bool already_pressed);
 
 bool gui_press_button(ram_t *ram, point_t pos, button_t button);
