@@ -2,21 +2,23 @@
 Main
 */
 
-#include "backend/gfx.h"
+#include "core/gfx.h"
 #include "computer.h"
-#include "backend/window.h"
+#include "core/window.h"
 #include "editor/menu.h"
-#include "backend/input.h"
+#include "core/input.h"
 #include "api/lua_api.h"
 #include "api/api.h"
-#include "backend/audio.h"
-#include "backend/gui.h"
-#include "backend/txt.h"
+#include "core/audio.h"
+#include "editor/gui.h"
+#include "core/txt.h"
 #include "common/io.h"
 #include "common/string.h"
 #include "res.h"
 
+#ifdef BACKEND_SDL2
 #define SDL_MAIN_HANDLED
+#endif
 
 void run_tests(void);
 

@@ -1,7 +1,7 @@
 #include "music.h"
 
-#include "../backend/audio.h"
-#include "../backend/gui.h"
+#include "../core/audio.h"
+#include "gui.h"
 #include "../res.h"
 #include "menu.h"
 #include "sound.h"
@@ -112,7 +112,7 @@ static void _draw_pattern(computer_t *computer, size_t index, point_t base_pos) 
 
 		pattern_step_t *step = &computer->ram->patterns[computer->ram->arrangements[_active_arrangement_index].pattern_indices[index]].steps[real_index + _scroll_amount];
 
-		gui_draw_text(computer->ram, 1, note_to_string_map[step->pitch % 12], pos, COLOR_WHITE);
+		gfx_draw_text(computer->ram, 1, note_to_string_map[step->pitch % 12], pos, COLOR_WHITE);
 
 		// TODO: shared draw_note function between sound and music editor
 		// Instrument
@@ -120,14 +120,14 @@ static void _draw_pattern(computer_t *computer, size_t index, point_t base_pos) 
 			uint8_t waveform = step->instrument_index;
 			pos.x += 2 * (computer->ram->fonts[1].widths[0] + computer->ram->fonts[1].horizontal_space) + computer->ram->fonts[1].horizontal_space;
 			string_t string = int_to_string_formatted(get_temp_allocator(), step->instrument_index, 2, ' ');
-			gui_draw_string(computer->ram, 1, string, pos, 1 + step->instrument_index); // TODO: use new colors
+			gfx_draw_string(computer->ram, 1, string, pos, 1 + step->instrument_index); // TODO: use new colors
 		}
 
 		// Volume
 		{
 			pos.x += 2 * (computer->ram->fonts[1].widths[0] + computer->ram->fonts[1].horizontal_space) + computer->ram->fonts[1].horizontal_space;
 			string_t string = int_to_string_formatted(get_temp_allocator(), step->volume, 2, ' ');
-			gui_draw_string(computer->ram, 1, string, pos, 14);
+			gfx_draw_string(computer->ram, 1, string, pos, 14);
 		}
 	}
 
@@ -179,12 +179,12 @@ void music_editor_draw(computer_t *computer) {
 		};
 
 		if (active_arrangement->pattern_indices[i] == -1) {
-			gui_draw_text(computer->ram, 1, "None", text_pos, COLOR_BLACK);
+			gfx_draw_text(computer->ram, 1, "None", text_pos, COLOR_BLACK);
 		} else {
 			char buffer[32];
 			sprintf(buffer, "#%03d\n", active_arrangement->pattern_indices[i]);
 	
-			gui_draw_text(computer->ram, 1, buffer, text_pos, COLOR_BLACK);
+			gfx_draw_text(computer->ram, 1, buffer, text_pos, COLOR_BLACK);
 		}
 	}
 }

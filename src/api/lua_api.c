@@ -10,7 +10,7 @@
 
 #include "api.h"
 
-#include "../backend/txt.h"
+#include "../core/txt.h"
 #include "../common/io.h"
 
 static lua_State *_lua = NULL;

@@ -144,16 +144,16 @@ vec2_t vec2_normalize(vec2_t vec) {
 
 point_t cam_world_to_screen(camera_t *camera, point_t world) {
 	return (point_t){
-		.x = (int)((world.x - camera->pos.x + camera->screen_origin.x / camera->zoom) * camera->zoom),
-		.y = (int)((world.y - camera->pos.y + camera->screen_origin.y / camera->zoom) * camera->zoom),
+		.x = (int)((world.x - camera->pos.x) * camera->zoom + camera->screen_origin.x),
+		.y = (int)((world.y - camera->pos.y) * camera->zoom + camera->screen_origin.y),
 	};
 }
 
 // Convert screen coordinates to world coordinates
 point_t cam_screen_to_world(camera_t *camera, point_t screen) {
 	return (point_t){
-		.x = (int)((screen.x / camera->zoom) + camera->pos.x - camera->screen_origin.x / camera->zoom),
-		.y = (int)((screen.y / camera->zoom) + camera->pos.y - camera->screen_origin.y / camera->zoom),
+		.x = (int)(((screen.x - camera->screen_origin.x) / camera->zoom) + camera->pos.x),
+		.y = (int)(((screen.y - camera->screen_origin.y) / camera->zoom) + camera->pos.y),
 	};
 }
 

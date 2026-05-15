@@ -5,8 +5,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "backend/file.h"
-#include "backend/input.h"
+#include "core/file.h"
 #include "res.h"
 #include "api/lua_api.h"
 #include "common/mem.h"
@@ -14,7 +13,7 @@
 #include "common/string.h"
 
 #ifdef BACKEND_SDL2
-#include "backend/sdl2.h"
+#include "core/sdl2.h"
 #endif
 
 // This is global because the Lua API functions can't take arguments and they need the computer
@@ -376,7 +375,7 @@ static int _hex_string_to_raw(string_t hex_string, uint8_t buffer[], size_t size
 	return 0;
 }
 
-#include "backend/gfx.h"
+#include "core/gfx.h"
 
 int game_load(computer_t *computer, string_t path) {
 	if (path_is_file(path)) {

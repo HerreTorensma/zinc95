@@ -4,9 +4,8 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "input.h"
-#include "gfx.h"
-#include "../res.h"
+#include "../core/input.h"
+#include "../core/gfx.h"
 
 static bool _gui_frozen = false;
 
@@ -30,86 +29,6 @@ static void _get_char_rect(font_t *font, char c) {
 
 // TODO: DONT USE THIS
 #define TAB_SIZE 4
-
-// TODO: for each font set a color_key and divider color so you can have funky fonts idk
-void gui_draw_string(ram_t *ram, int font_index, string_t string, point_t pos, int color) {
-	font_t *font = &ram->fonts[font_index];
-
-	int new_x = pos.x;
-	int new_y = pos.y;
-
-	surface_t surface = surface = SPR_SURF(ram->spritesheet.data);
-	if (font->surface == SURFACE_SKIN) {
-		surface = SKIN_SURF(ram->skin.data);
-	}
-
-	for (size_t i = 0; i < string.len; i++) {
-		// Commented this out for now, might add it back later not sure yet
-		if (string.data[i] == '\n') {
-			new_x = pos.x;
-			new_y += font->height + font->vertical_space;
-			continue;
-		}
-
-		if (string.data[i] == '\t') {
-			new_x += (font->widths[' ' - VISIBLE_CHARACTERS_START] + font->horizontal_space) * TAB_SIZE;
-			continue;
-		}
-
-		// Inline sprites, will probably remove in favor of making 256 characters available in the fonts
-		// if (string.data[i] == '`') {
-		// 	int sprite_index = 0;
-
-		// 	// Read the digits after
-		// 	size_t index = i + 1;
-		// 	while (string.data[index] >= '0' && string.data[index] <= '9') {
-		// 		sprite_index *= 10;
-		// 		sprite_index += string.data[index] - '0';
-
-		// 		index++;
-		// 	}
-
-		// 	gfx_draw_sprites(ram, sprite_index, POINT(new_x, new_y), font->sprite_width, font->sprite_height);
-		// 	new_x += 16 + font->horizontal_space;
-
-		// 	i = index - 1;
-
-		// 	continue;
-		// }
-
-		int char_index = string.data[i] - VISIBLE_CHARACTERS_START;
-		
-		rect_t rect = {
-			.x = font->start_pos.x + (char_index % font->columns) * font->char_max_width,
-			.y = font->start_pos.y + (char_index / font->columns) * font->char_max_height,
-			.w = font->char_max_width,
-			.h = font->char_max_height,
-		};
-
-		for (int i = 0; i < rect.h; i++) {
-			for (int j = 0; j < rect.w; j++) {
-				color_t pixel_color = surf_get_pixel(surface, rect.x + j, rect.y + i);
-
-				if (pixel_color != font->color_key && pixel_color != font->seperator_color) {
-					if (color != COLOR_NONE) {
-						gfx_set_pixel(&ram->framebuffer, new_x + j, new_y + i, color);
-					} else {
-						gfx_set_pixel(&ram->framebuffer, new_x + j, new_y + i, pixel_color);
-					}
-				}
-			}
-		}
-
-		new_x += font->widths[string.data[i] - VISIBLE_CHARACTERS_START] + font->horizontal_space;
-	}
-}
-
-void gui_draw_text(ram_t *ram, int font_index, const char text[], point_t pos, int color) {
-	size_t len = strlen(text);
-	
-	// Dirty typecast, TODO look at this again maybe
-	gui_draw_string(ram, font_index, (string_t){.data = (char *)text, .len = len}, pos, color);
-}
 
 // Uses the size of the unpressed rect for mouse detection
 bool gui_button(ram_t *ram, point_t pos, button_t button, bool already_pressed) {
@@ -251,15 +170,6 @@ void create_spritesheet_font(ram_t *ram, int font_index) {
 
 }
 
-rect_t gui_rect_to_outset_frame_rect(rect_t rect) {
-	rect.x -= GUI_BORDER_WIDTH;
-	rect.y -= GUI_BORDER_WIDTH;
-	rect.w += GUI_BORDER_WIDTH * 2;
-	rect.h += GUI_BORDER_WIDTH * 2;
-
-	return rect;
-}
-
 button_t button_array_get(button_array_t *array, int index) {
 	button_t button = array->base;
 	
@@ -291,7 +201,7 @@ int64_t gui_knob(ram_t *ram, int font_index, point_t center, knob_t knob, int64_
 	// gfx_draw_circle(FB_SURF(ram->framebuffer.data), rect.pos, radius, COLOR_BLACK);
 
 	point_t text_pos = POINT(center.x + knob.text_offset.x, center.y + knob.text_offset.y);
-	gui_draw_string(ram, font_index, int_to_string(get_temp_allocator(), value), text_pos, COLOR_GREEN);
+	gfx_draw_string(ram, font_index, int_to_string(get_temp_allocator(), value), text_pos, COLOR_GREEN);
 
 	// Line
 	{

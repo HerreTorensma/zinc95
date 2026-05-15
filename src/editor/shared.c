@@ -1,10 +1,8 @@
 #include "shared.h"
 
-#include <stdio.h>
-
-#include "../backend/input.h"
-#include "../backend/gfx.h"
-#include "../backend/gui.h"
+#include "../core/input.h"
+#include "../core/gfx.h"
+#include "gui.h"
 #include "../res.h"
 
 static rect_t _visible_rect = {0};

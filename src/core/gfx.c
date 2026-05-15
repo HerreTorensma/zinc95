@@ -345,6 +345,7 @@ void gfx_draw_sprites_page(ram_t *ram, int page_index, int relative_index, point
 	gfx_draw_spritesheet_rect(ram, pos, rect, ram->sprites[absolute_index].color_key);
 }
 
+// TODO: support clipping so the background in the skin is actually used
 void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section, float scale, color_t color_key) {
 	section = rect_clip(RECT(0, 0, MAP_WIDTH, MAP_HEIGHT), section);
 
@@ -425,4 +426,85 @@ void gfx_flood_fill(surface_t surface, point_t point, color_t color, rect_t limi
 	}
 
 	array_deinit(&stack);
+}
+
+// TODO: for each font set a color_key and divider color so you can have funky fonts idk
+void gfx_draw_string(ram_t *ram, int font_index, string_t string, point_t pos, int color) {
+	font_t *font = &ram->fonts[font_index];
+
+	int new_x = pos.x;
+	int new_y = pos.y;
+
+	surface_t surface = surface = SPR_SURF(ram->spritesheet.data);
+	if (font->surface == SURFACE_SKIN) {
+		surface = SKIN_SURF(ram->skin.data);
+	}
+
+	for (size_t i = 0; i < string.len; i++) {
+		// Commented this out for now, might add it back later not sure yet
+		if (string.data[i] == '\n') {
+			new_x = pos.x;
+			new_y += font->height + font->vertical_space;
+			continue;
+		}
+
+		if (string.data[i] == '\t') {
+			const int TAB_SIZE = 4;
+			new_x += (font->widths[' ' - VISIBLE_CHARACTERS_START] + font->horizontal_space) * TAB_SIZE;
+			continue;
+		}
+
+		// Inline sprites, will probably remove in favor of making 256 characters available in the fonts
+		// if (string.data[i] == '`') {
+		// 	int sprite_index = 0;
+
+		// 	// Read the digits after
+		// 	size_t index = i + 1;
+		// 	while (string.data[index] >= '0' && string.data[index] <= '9') {
+		// 		sprite_index *= 10;
+		// 		sprite_index += string.data[index] - '0';
+
+		// 		index++;
+		// 	}
+
+		// 	gfx_draw_sprites(ram, sprite_index, POINT(new_x, new_y), font->sprite_width, font->sprite_height);
+		// 	new_x += 16 + font->horizontal_space;
+
+		// 	i = index - 1;
+
+		// 	continue;
+		// }
+
+		int char_index = string.data[i] - VISIBLE_CHARACTERS_START;
+		
+		rect_t rect = {
+			.x = font->start_pos.x + (char_index % font->columns) * font->char_max_width,
+			.y = font->start_pos.y + (char_index / font->columns) * font->char_max_height,
+			.w = font->char_max_width,
+			.h = font->char_max_height,
+		};
+
+		for (int i = 0; i < rect.h; i++) {
+			for (int j = 0; j < rect.w; j++) {
+				color_t pixel_color = surf_get_pixel(surface, rect.x + j, rect.y + i);
+
+				if (pixel_color != font->color_key && pixel_color != font->seperator_color) {
+					if (color != COLOR_NONE) {
+						gfx_set_pixel(&ram->framebuffer, new_x + j, new_y + i, color);
+					} else {
+						gfx_set_pixel(&ram->framebuffer, new_x + j, new_y + i, pixel_color);
+					}
+				}
+			}
+		}
+
+		new_x += font->widths[string.data[i] - VISIBLE_CHARACTERS_START] + font->horizontal_space;
+	}
+}
+
+void gfx_draw_text(ram_t *ram, int font_index, const char text[], point_t pos, int color) {
+	size_t len = strlen(text);
+	
+	// Dirty typecast, TODO look at this again maybe
+	gfx_draw_string(ram, font_index, (string_t){.data = (char *)text, .len = len}, pos, color);
 }

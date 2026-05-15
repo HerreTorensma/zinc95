@@ -2,13 +2,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <string.h>
 
-#include "../backend/input.h"
-#include "../backend/gfx.h"
-#include "../backend/gui.h"
-#include "../backend/audio.h"
+#include "../core/input.h"
+#include "../core/gfx.h"
+#include "../core/audio.h"
 
 const api_meta_t api_metas[API_FUNC_COUNT] = {
 	[API_FUNC_PRINT] = {
@@ -221,7 +219,7 @@ bool api_mouse_scrolled(ram_t *ram, int direction) {
 
 
 void api_text(ram_t *ram, int font_index, char text[], int x, int y, int color) {
-	gui_draw_text(ram, font_index, text, POINT(x, y), color);
+	gfx_draw_text(ram, font_index, text, POINT(x, y), color);
 }
 
 

@@ -14,8 +14,11 @@ Graphics
 // or just draw it to the framebuffer actually what am I talking about
 typedef struct surface {
 	color_t *data;
-	int width;
+	int width; // TODO: rename to w and h
 	int height;
+	
+	// TODO: possibly uncomment and use this struct in the map editor for the tile operations
+	// int bytes_per_pixel;
 } surface_t;
 
 // #define SURF(_data, _width, _height) ((surface_t){.data = _data, .width = _width, .height = _height})
@@ -135,6 +138,8 @@ void gfx_draw_sprite_mask(ram_t *ram, int index, color_t color_key, color_t draw
 // Draw the a map layer
 void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section, float scale, color_t color_key);
 
+// TODO: draw map but only the tiles with some flags
+
 // Expects surface to be the same dimension as the image at the filename
 // Because it's only really used to load the skin which has a static size
 // Only BMP is supported
@@ -143,3 +148,7 @@ void gfx_load_surface(palette_t *palette, surface_t surface, string_t path);
 void gfx_save_surface(palette_t *palette, surface_t surface, string_t path);
 
 void gfx_flood_fill(surface_t surface, point_t point, color_t color, rect_t limit);
+
+void gfx_draw_string(ram_t *ram, int font_index, string_t string, point_t pos, int color);
+
+void gfx_draw_text(ram_t *ram, int font_index, const char text[], point_t pos, int color);

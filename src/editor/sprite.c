@@ -7,9 +7,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../backend/input.h"
-#include "../backend/gfx.h"
-#include "../backend/gui.h"
+#include "../core/input.h"
+#include "../core/gfx.h"
+#include "gui.h"
 #include "../common/mem.h"
 #include "shared.h"
 #include "../res.h"
@@ -973,7 +973,7 @@ static void _draw_snapped(computer_t *computer) {
 	char buffer[32];
 	gfx_draw_spritesheet_pro(computer->ram, in_frame_rect, _layout.selected_sprite_rect, COLOR_NONE, RECT(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)); // TODO: fix so it adds the other rects to currently_editing_rect
 	sprintf(buffer, "#%04d\n", get_sprite_index());
-	gui_draw_text(computer->ram, GUI_FONT_INDEX, buffer, _layout.selected_sprite_label_pos, computer->ram->skin.font_color);
+	gfx_draw_text(computer->ram, GUI_FONT_INDEX, buffer, _layout.selected_sprite_label_pos, computer->ram->skin.font_color);
 }
 
 // TODO: overlay is drawn over selected sprites, need to fix
@@ -1104,7 +1104,7 @@ void sprite_editor_draw(computer_t *computer) {
 	char buffer[32];
 	gfx_draw_filled_rect(fb_surf, _layout.selected_color_rect, _selected_color);
 	sprintf(buffer, "#%03d\n", _selected_color);
-	gui_draw_text(computer->ram, GUI_FONT_INDEX, buffer, _layout.selected_color_label_pos, computer->ram->skin.font_color);
+	gfx_draw_text(computer->ram, GUI_FONT_INDEX, buffer, _layout.selected_color_label_pos, computer->ram->skin.font_color);
 
 	// Secondary selected color
 	gfx_draw_filled_rect(fb_surf, _layout.secondary_selected_color_rect, _secondary_selected_color);
@@ -1123,7 +1123,7 @@ void sprite_editor_draw(computer_t *computer) {
 
 	// Mouse coordinates
 	sprintf(buffer, "%04dx%04d\n", _spritesheet_coord_under_mouse.x, _spritesheet_coord_under_mouse.y);
-	gui_draw_text(computer->ram, 1, buffer, _layout.mouse_coords_pos, computer->ram->skin.font_color);
+	gfx_draw_text(computer->ram, 1, buffer, _layout.mouse_coords_pos, computer->ram->skin.font_color);
 
 	if (_freelook) {
 		_draw_freelook(computer);

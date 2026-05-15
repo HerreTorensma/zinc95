@@ -1,8 +1,8 @@
 #include "menu.h"
 
-#include "../backend/input.h"
-#include "../backend/gui.h"
-#include "../backend/gfx.h"
+#include "../core/input.h"
+#include "gui.h"
+#include "../core/gfx.h"
 #include "../res.h"
 
 #include "code.h"

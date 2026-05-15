@@ -159,6 +159,10 @@ typedef struct keybind {
 	zinc_key_t key;
 } keybind_t;
 
+void input_init();
+
+void input_core_update();
+
 void input_update();
 
 // TODO: rename this to make it more clear they're checks

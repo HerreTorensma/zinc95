@@ -1,9 +1,14 @@
 #include "input.h"
-#include "sdl2.h"
+
+#include "../computer.h"
+
+// #ifdef BACKEND_SDL2
+// #include "sdl2.h"
+// #endif
 
 static int _key_timers[KEY_COUNT] = {0};
 
-void input_update() {
+void input_core_update() {
 	for (size_t i = 0; i < KEY_COUNT; i++) {
 		if (_key_timers[i] > 0) {
 			_key_timers[i]--;
@@ -11,11 +16,11 @@ void input_update() {
 	}
 }
 
-bool input_key_pressed(zinc_key_t key) {
-	#ifdef BACKEND_SDL2
-	return sdl2_input_key_pressed(key);
-	#endif
-}
+// bool input_key_pressed(zinc_key_t key) {
+// 	#ifdef BACKEND_SDL2
+// 	return sdl2_input_key_pressed(key);
+// 	#endif
+// }
 
 bool input_key_pressed_or_long_pressed(zinc_key_t key) {
 	if (input_key_pressed(key)) {
@@ -33,51 +38,51 @@ bool input_key_pressed_or_long_pressed(zinc_key_t key) {
 }
 
 
-bool input_key_held(zinc_key_t key) {
-	#ifdef BACKEND_SDL2
-	return sdl2_input_key_held(key);
-	#endif
-}
+// bool input_key_held(zinc_key_t key) {
+// 	#ifdef BACKEND_SDL2
+// 	return sdl2_input_key_held(key);
+// 	#endif
+// }
 
-bool input_key_released(zinc_key_t key) {
-	#ifdef BACKEND_SDL2
-	return sdl2_input_key_released(key);
-	#endif
-}
+// bool input_key_released(zinc_key_t key) {
+// 	#ifdef BACKEND_SDL2
+// 	return sdl2_input_key_released(key);
+// 	#endif
+// }
 
-bool input_mouse_button_pressed(mouse_button_t button) {
-	#ifdef BACKEND_SDL2
-	return sdl2_input_mouse_button_pressed(button);
-	#endif
-}
+// bool input_mouse_button_pressed(mouse_button_t button) {
+// 	#ifdef BACKEND_SDL2
+// 	return sdl2_input_mouse_button_pressed(button);
+// 	#endif
+// }
 
-bool input_mouse_button_released(mouse_button_t button) {
-	#ifdef BACKEND_SDL2
-	return sdl2_input_mouse_button_released(button);
-	#endif
-}
+// bool input_mouse_button_released(mouse_button_t button) {
+// 	#ifdef BACKEND_SDL2
+// 	return sdl2_input_mouse_button_released(button);
+// 	#endif
+// }
 
-bool input_mouse_button_held(mouse_button_t button) {
-	#ifdef BACKEND_SDL2
-	return sdl2_input_mouse_button_held(button);
-	#endif
-}
+// bool input_mouse_button_held(mouse_button_t button) {
+// 	#ifdef BACKEND_SDL2
+// 	return sdl2_input_mouse_button_held(button);
+// 	#endif
+// }
 
-bool input_mouse_scrolled(scroll_dir_t direction) {
-	#ifdef BACKEND_SDL2
-	return sdl2_input_mouse_scrolled(direction);
-	#endif
-}
+// bool input_mouse_scrolled(scroll_dir_t direction) {
+// 	#ifdef BACKEND_SDL2
+// 	return sdl2_input_mouse_scrolled(direction);
+// 	#endif
+// }
 
-point_t input_get_mouse_pos() {
-	#ifdef BACKEND_SDL2
+// point_t input_get_mouse_pos() {
+// 	#ifdef BACKEND_SDL2
 
-	int x, y;
-	sdl2_get_mouse_pos(&x, &y);
-	return (point_t){x, y};
+// 	int x, y;
+// 	sdl2_get_mouse_pos(&x, &y);
+// 	return (point_t){x, y};
 
-	#endif
-}
+// 	#endif
+// }
 
 char input_get_as_char() {
 	if (input_key_pressed_or_long_pressed(KEY_SPACE)) {
@@ -227,11 +232,11 @@ char input_get_as_char() {
 	return '\0';
 }
 
-void input_set_cursor_style(cursor_style_t style) {
-	#ifdef BACKEND_SDL2
-	return sdl2_set_cursor_style(style);
-	#endif
-}
+// void input_set_cursor_style(cursor_style_t style) {
+// 	#ifdef BACKEND_SDL2
+// 	return sdl2_set_cursor_style(style);
+// 	#endif
+// }
 
 static uint32_t _get_current_modifiers() {
 	uint32_t modifiers = 0;

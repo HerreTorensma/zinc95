@@ -4,11 +4,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "../backend/gfx.h"
-#include "../backend/input.h"
-#include "../backend/gui.h"
-#include "../backend/file.h"
-#include "../backend/window.h"
+#include "../core/gfx.h"
+#include "../core/input.h"
+#include "gui.h"
+#include "../core/file.h"
+#include "../core/window.h"
 #include "../res.h"
 
 #define LINE_NUMBER_DIGITS_AMOUNT 4
@@ -597,7 +597,7 @@ static void _file_draw(computer_t *computer, file_t *file, rect_t rect, code_edi
 			sprintf(line_number_string.data, "% 4d", (int)(line_index + 1));
 			line_number_string.len = strlen(line_number_string.data);
 
-			gui_draw_string(computer->ram, config.font_index, line_number_string, POINT(rect.x, rect.y + i * (font->height + font->vertical_space)), config.line_number_color);
+			gfx_draw_string(computer->ram, config.font_index, line_number_string, POINT(rect.x, rect.y + i * (font->height + font->vertical_space)), config.line_number_color);
 		}
 	}
 
@@ -709,7 +709,7 @@ static void _draw_file_buttons(computer_t *computer) {
 
 		ignore_current_file:
 
-		gui_draw_string(computer->ram, CODE_EDITOR_FONT_INDEX, file_get_name(&computer->files[i]), POINT(pos.x + 3, pos.y + 3), COLOR_BLACK);
+		gfx_draw_string(computer->ram, CODE_EDITOR_FONT_INDEX, file_get_name(&computer->files[i]), POINT(pos.x + 3, pos.y + 3), COLOR_BLACK);
 	}
 
 	// TODO: don't also move cursor

@@ -11,9 +11,9 @@ Memory layout, global constants
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include "backend/file.h"
+#include "core/file.h"
 #include "common/math2d.h"
-#include "backend/input.h"
+#include "core/input.h"
 
 // Define PI in case that didn't already happen for some reason
 #ifndef M_PI

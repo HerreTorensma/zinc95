@@ -1,12 +1,12 @@
 #include <stdbool.h>
-#include <stdio.h>
 
 #include "window.h"
 #include "input.h"
-#include "sdl2.h"
-#include "gfx.h"
-#include "txt.h"
 #include "../computer.h"
+
+#ifdef BACKEND_SDL2
+#include "sdl2.h"
+#endif
 
 // TODO: instead of the ifdef stuff SDL2 there should be one window.h file and then window_sdl2.c or window_sokol.c what contain the implementation
 // because this is almost that but with more bloat
@@ -22,6 +22,7 @@ void window_init(char title[], int initial_scale) {
 void window_tick_start(computer_t *computer) {
 	#ifdef BACKEND_SDL2
 	sdl2_tick_start(computer);
+	input_core_update();
 	input_update();
 	input_set_cursor_style(CURSOR_STYLE_ARROW);
 	#endif

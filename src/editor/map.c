@@ -16,9 +16,9 @@ this could even be handled in lua and extended, so the user can make a script th
 #include <stdio.h>
 #include <string.h>
 
-#include "../backend/input.h"
-#include "../backend/gui.h"
-#include "../backend/gfx.h"
+#include "../core/input.h"
+#include "gui.h"
+#include "../core/gfx.h"
 #include "shared.h"
 #include "../res.h"
 
@@ -580,9 +580,9 @@ void map_editor_draw(computer_t *computer) {
 
 		char buffer[16];
 		sprintf(buffer, "%d x %d", tile.x, tile.y);
-		gui_draw_text(computer->ram, 1, buffer, POINT(4, 348), COLOR_BLACK);
+		gfx_draw_text(computer->ram, 1, buffer, POINT(4, 348), COLOR_BLACK);
 		sprintf(buffer, "%d x %d", in_frame_rect_in_sprites.w, in_frame_rect_in_sprites.h);
-		gui_draw_text(computer->ram, 1, buffer, POINT(4, 356), COLOR_BLACK);
+		gfx_draw_text(computer->ram, 1, buffer, POINT(4, 356), COLOR_BLACK);
 	}
 
 	sprite_selector_draw(computer, _layout.sprite_selector_pos, _layout.sprite_selector_buttons_start_pos, _layout.sprite_selector_snap_mode_buttons_pos);

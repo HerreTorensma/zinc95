@@ -1,14 +1,13 @@
 #include "sound.h"
-#include "../backend/input.h"
-#include "../backend/audio.h"
+#include "../core/input.h"
+#include "../core/audio.h"
 
 #include <stdio.h>
-#include <SDL2/SDL.h>
 
 #include "../common/math2d.h"
-#include "../backend/gfx.h"
-#include "../backend/input.h"
-#include "../backend/gui.h"
+#include "../core/gfx.h"
+#include "../core/input.h"
+#include "gui.h"
 #include "../res.h"
 
 static struct {
@@ -202,21 +201,21 @@ void sound_editor_draw(computer_t *computer) {
 
 		pattern_step_t *step = &computer->ram->patterns[_current_pattern].steps[i];
 
-		gui_draw_text(computer->ram, 1, note_to_string_map[step->pitch % 12], pos, COLOR_WHITE);
+		gfx_draw_text(computer->ram, 1, note_to_string_map[step->pitch % 12], pos, COLOR_WHITE);
 
 		// Instrument
 		{
 			uint8_t waveform = computer->ram->patterns[_current_pattern].steps[i].instrument_index;
 			pos.x += 2 * (computer->ram->fonts[1].widths[0] + computer->ram->fonts[1].horizontal_space) + computer->ram->fonts[1].horizontal_space;
 			string_t string = int_to_string_formatted(get_temp_allocator(), step->instrument_index, 2, ' ');
-			gui_draw_string(computer->ram, 1, string, pos, 1 + step->instrument_index); // TODO: use new colors
+			gfx_draw_string(computer->ram, 1, string, pos, 1 + step->instrument_index); // TODO: use new colors
 		}
 
 		// Volume
 		{
 			pos.x += 2 * (computer->ram->fonts[1].widths[0] + computer->ram->fonts[1].horizontal_space) + computer->ram->fonts[1].horizontal_space;
 			string_t string = int_to_string_formatted(get_temp_allocator(), step->volume, 2, ' ');
-			gui_draw_string(computer->ram, 1, string, pos, 14);
+			gfx_draw_string(computer->ram, 1, string, pos, 14);
 		}
 	}
 	
@@ -392,7 +391,7 @@ void sound_editor_draw(computer_t *computer) {
 	// Pattern
 	char buffer[32];
 	sprintf(buffer, "#%03d\n", _current_pattern);
-	gui_draw_text(computer->ram, 1, buffer, (point_t){6, 272}, COLOR_BLACK);
+	gfx_draw_text(computer->ram, 1, buffer, (point_t){6, 272}, COLOR_BLACK);
 
 	// Oscilloscope
 	{

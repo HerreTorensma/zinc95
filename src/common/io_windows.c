@@ -138,7 +138,6 @@ string_t_array_t get_files_in_path(allocator_t allocator, string_t path) {
 	return array;
 }
 
-
 void create_default_directories() {
 	// char path[MAX_PATH];
 	string_t path = temp_alloc_string(MAX_PATH);

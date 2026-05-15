@@ -4,7 +4,7 @@ Builtin resources, right in the source code so they won't have to be read at run
 
 #pragma once
 
-#include "backend/input.h"
+#include "core/input.h"
 #include "computer.h"
 
 static const palette_t g_builtin_palette = (palette_t){
