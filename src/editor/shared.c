@@ -1,6 +1,7 @@
 #include "shared.h"
 
 #include "../core/input.h"
+#include "../core/window.h"
 #include "../core/gfx.h"
 #include "gui.h"
 #include "../res.h"
@@ -104,7 +105,7 @@ void sprite_selector_zoom_out() {
 
 // This whole function is kind of a mess and I should probably rewrite it at some point
 void sprite_selector_update(computer_t *computer, point_t pos) {
-	point_t mouse_pos = input_get_mouse_pos();
+	point_t mouse_pos = window_get_mouse_pos();
 
 	{
 		point_t old_pos = _in_frame_rect.pos;

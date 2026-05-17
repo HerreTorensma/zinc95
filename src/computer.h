@@ -6,8 +6,6 @@ Memory layout, global constants
 
 #pragma once
 
-#define BACKEND_SDL2
-
 #include <inttypes.h>
 #include <stdbool.h>
 

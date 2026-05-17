@@ -1,9 +1,5 @@
 #include "audio.h"
 
-#ifdef BACKEND_SDL2
-#include "sdl2.h"
-#endif
-
 #include <math.h>
 
 const char *note_to_string_map[] = {
@@ -94,18 +90,6 @@ sample_t synth_sample(computer_t *computer, channel_t *channel) {
 	}
 
 	return (sample_t){.left = value, .right = value};
-}
-
-void audio_init(computer_t *computer) {
-	#ifdef BACKEND_SDL2
-	sdl2_audio_init(computer);
-	#endif
-}
-
-void audio_deinit(computer_t *computer) {
-	#ifdef BACKEND_SDL2
-	sdl2_audio_deinit(computer);
-	#endif
 }
 
 #define MAX_ATTACK_SEC  0.02f * 10.0f   // 20 ms

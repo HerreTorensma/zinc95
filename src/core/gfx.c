@@ -4,10 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef BACKEND_SDL2
-#include "sdl2.h"
-#endif
-
 void gfx_generate_rgb_framebuffer(computer_t *computer) {
 	for (int y = 0; y < SCREEN_HEIGHT; y++) {
 		for (int x = 0; x < SCREEN_WIDTH; x++) {
@@ -374,19 +370,6 @@ void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section, floa
 		}
 	}
 }
-
-void gfx_load_surface(palette_t *palette, surface_t surface, string_t path) {
-	#ifdef BACKEND_SDL2
-	sdl2_load_bmp_to_surface(palette, surface, path);
-	#endif
-}
-
-void gfx_save_surface(palette_t *palette, surface_t surface, string_t path) {
-	#ifdef BACKEND_SDL2
-	sdl2_save_surface_as_bmp(palette, surface, path);
-	#endif
-}
-
 
 ARRAY_DEFINE(point_t);
 void gfx_flood_fill(surface_t surface, point_t point, color_t color, rect_t limit) {

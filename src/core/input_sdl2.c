@@ -154,7 +154,7 @@ void input_init() {
 	_cursors[CURSOR_STYLE_CROSSHAIR] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_CROSSHAIR);
 }
 
-void input_update() {
+void input_update(int scroll_state) {
 	memcpy(_sdl2_input.prev_key_state, _sdl2_input.key_state, 256 * sizeof(uint8_t));
 
 	const uint8_t *state = SDL_GetKeyboardState(NULL);
@@ -165,20 +165,7 @@ void input_update() {
 	int x, y;
 	_sdl2_input.mouse_state = SDL_GetMouseState(&x, &y);
 
-	_scroll_state = 0;
-	SDL_Event event;
-	while (SDL_PollEvent(&event)) {
-		// Check scrolling
-		if (event.type == SDL_MOUSEWHEEL) {
-			if (event.wheel.y > 0) {
-				_scroll_state = -1;
-			} else if (event.wheel.y < 0) {
-				_scroll_state = 1;
-			} else {
-				_scroll_state = 0;
-			}
-		}
-	}
+	_scroll_state = scroll_state;
 }
 
 bool input_key_pressed(zinc_key_t key) {
@@ -241,17 +228,4 @@ bool input_mouse_scrolled(scroll_dir_t direction) {
 
 void input_set_cursor_style(cursor_style_t style) {
 	SDL_SetCursor(_cursors[style]);
-}
-
-point_t input_get_mouse_pos() {
-	int sdl_x, sdl_y;
-	SDL_GetMouseState(&sdl_x, &sdl_y);
-
-	float adjusted_x = (float)sdl_x * _dpi_scale_x;
-	float adjusted_y = (float)sdl_y * _dpi_scale_y;
-
-	return (point_t){
-		.x = (adjusted_x / _scale - _viewport_offset_x),
-		.y = (adjusted_y / _scale - _viewport_offset_y),
-	};
 }

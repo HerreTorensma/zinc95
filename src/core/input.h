@@ -163,7 +163,7 @@ void input_init();
 
 void input_core_update();
 
-void input_update();
+void input_update(int scroll_state);
 
 // TODO: rename this to make it more clear they're checks
 // like check_keyp or something
@@ -182,8 +182,6 @@ bool input_mouse_button_released(mouse_button_t button);
 bool input_mouse_button_held(mouse_button_t button);
 
 bool input_mouse_scrolled(scroll_dir_t direction);
-
-point_t input_get_mouse_pos();
 
 char input_get_as_char();
 

@@ -25,6 +25,8 @@ void run_tests(void);
 int main(int argc, char *argv[]) {
 	run_tests();
 
+	temp_mem_init(MB(4ULL));
+
 	computer_t computer = {0};
 	computer_init(&computer);
 
@@ -32,7 +34,7 @@ int main(int argc, char *argv[]) {
 	
 	api_meta_print();
 	
-	window_init("zinc95", 2);
+	window_init(STR("zinc95"), 2);
 	audio_init(&computer);
 	
 	// Spritesheet page: 352x128 pixels (416x128 maybe)
@@ -97,8 +99,6 @@ int main(int argc, char *argv[]) {
 	// I think the text mode font shouldn't be part of the skin
 
 	// printf("RAM size: %llu\n", sizeof(struct readable_ram));
-
-	temp_mem_init(MB(4ULL));
 
 	// game_load(&computer, STR("game.zinc95"));
 	// game_load_old(&computer, "game.zinc95");

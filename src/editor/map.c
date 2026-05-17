@@ -17,6 +17,7 @@ this could even be handled in lua and extended, so the user can make a script th
 #include <string.h>
 
 #include "../core/input.h"
+#include "../core/window.h"
 #include "gui.h"
 #include "../core/gfx.h"
 #include "shared.h"
@@ -211,7 +212,7 @@ static size_t _find_empty_entity_index(computer_t *computer) {
 }
 
 static void _entity_tool_select(computer_t *computer) {
-	point_t mouse_pos = input_get_mouse_pos();
+	point_t mouse_pos = window_get_mouse_pos();
 	point_t world_mouse_pos = cam_screen_to_world(&_camera, mouse_pos);
 
 	if (!point_in_rect(mouse_pos, _layout.map_rect)) {
@@ -311,7 +312,7 @@ static void _entity_tool_select(computer_t *computer) {
 }
 
 static void _entity_tool_stamp(computer_t *computer) {
-	point_t mouse_pos = input_get_mouse_pos();
+	point_t mouse_pos = window_get_mouse_pos();
 	rect_t in_frame_rect = get_in_frame_rect();
 	rect_t in_frame_rect_in_sprites = get_in_frame_rect_in_sprites();
 
@@ -339,7 +340,7 @@ static void _entity_editor_update(computer_t *computer) {
 }
 
 static void _tile_editor_update(computer_t *computer) {
-	point_t mouse_pos = input_get_mouse_pos();
+	point_t mouse_pos = window_get_mouse_pos();
 	rect_t in_frame_rect = get_in_frame_rect();
 	rect_t in_frame_rect_in_sprites = get_in_frame_rect_in_sprites();
 	point_t world_mouse_pos = cam_screen_to_world(&_camera, mouse_pos);
@@ -376,7 +377,7 @@ void map_editor_update(computer_t *computer) {
 		_tile_editor_update(computer);
 	}
 	
-	point_t mouse_pos = input_get_mouse_pos();
+	point_t mouse_pos = window_get_mouse_pos();
 
 	// Zoom for sprite selector
 	if (point_in_rect(mouse_pos, RECT(_layout.sprite_selector_pos.x, _layout.sprite_selector_pos.y, SPRITESHEET_PAGE_WIDTH, SPRITESHEET_PAGE_HEIGHT))) {
@@ -542,7 +543,7 @@ void map_editor_draw(computer_t *computer) {
 	}
 
 	// Draw rect where mouse is
-	point_t mouse_pos = input_get_mouse_pos();
+	point_t mouse_pos = window_get_mouse_pos();
 	rect_t in_frame_rect = get_in_frame_rect();
 	rect_t in_frame_rect_in_sprites = get_in_frame_rect_in_sprites();
 

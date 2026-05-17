@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "../core/input.h"
+#include "../core/window.h"
 #include "../core/gfx.h"
 
 static bool _gui_frozen = false;
@@ -32,7 +32,7 @@ static void _get_char_rect(font_t *font, char c) {
 
 // Uses the size of the unpressed rect for mouse detection
 bool gui_button(ram_t *ram, point_t pos, button_t button, bool already_pressed) {
-	point_t mouse_pos = input_get_mouse_pos();
+	point_t mouse_pos = window_get_mouse_pos();
 
 	rect_t rect = {
 		.x = pos.x,
@@ -70,7 +70,7 @@ int gui_button_array(ram_t *ram, point_t base_pos, button_array_t buttons, int a
 }
 
 bool gui_press_button(ram_t *ram, point_t pos, button_t button) {
-	point_t mouse_pos = input_get_mouse_pos();
+	point_t mouse_pos = window_get_mouse_pos();
 
 	rect_t rect = {
 		.x = pos.x,
@@ -103,7 +103,7 @@ bool gui_press_button(ram_t *ram, point_t pos, button_t button) {
 }
 
 bool gui_toggle_button(ram_t *ram, point_t pos, button_t button, bool set) {
-	point_t mouse_pos = input_get_mouse_pos();
+	point_t mouse_pos = window_get_mouse_pos();
 
 	rect_t rect = {
 		.x = pos.x,
@@ -222,7 +222,7 @@ int64_t gui_knob(ram_t *ram, int font_index, point_t center, knob_t knob, int64_
 		gfx_draw_line(FB_SURF(ram->framebuffer.data), center, POINT(center.x + offset.x, center.y + offset.y), COLOR_WHITE);
 	}
 
-	point_t mouse_pos = input_get_mouse_pos();
+	point_t mouse_pos = window_get_mouse_pos();
 	if (point_in_circle(mouse_pos, center, knob.radius)) {
 		if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
 			state->held = true;
@@ -243,7 +243,7 @@ int64_t gui_knob(ram_t *ram, int font_index, point_t center, knob_t knob, int64_
 
 	if (state->held && input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
 	// if (state->held) {
-		point_t mouse_pos = input_get_mouse_pos();
+		point_t mouse_pos = window_get_mouse_pos();
 		int y_dist = mouse_pos.y - center.y;
 		value = state->value_when_pressed + y_dist;
 	}

@@ -7,6 +7,7 @@
 #include "../common/math2d.h"
 #include "../core/gfx.h"
 #include "../core/input.h"
+#include "../core/window.h"
 #include "gui.h"
 #include "../res.h"
 
@@ -137,7 +138,7 @@ void sound_editor_update(computer_t *computer) {
 		return;
 	}
 
-	point_t mouse_pos = input_get_mouse_pos();
+	point_t mouse_pos = window_get_mouse_pos();
 	point_t adjusted_mouse_pos = POINT(mouse_pos.x - _layout.pitch_graph_rect.x, mouse_pos.y - _layout.pitch_graph_rect.y);
 
 	if (point_in_rect(mouse_pos, _layout.pitch_graph_rect)) {

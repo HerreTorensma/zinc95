@@ -490,7 +490,7 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 
 	// --- Mouse ---
 	{
-		point_t mouse_pos = input_get_mouse_pos();
+		point_t mouse_pos = window_get_mouse_pos();
 	
 		if (point_in_rect(mouse_pos, rect)) {
 			input_set_cursor_style(CURSOR_STYLE_TEXT);
@@ -504,16 +504,16 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 		}
 		file->edit_state.scroll_amount = clamp_int(file->edit_state.scroll_amount, 0, file->edit_state.lines.len - 1);
 	
-		if (point_in_rect(input_get_mouse_pos(), rect)) {
+		if (point_in_rect(window_get_mouse_pos(), rect)) {
 			if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
 				font_t *font = &computer->ram->fonts[config.font_index];
-				file->edit_state.cursor_pos = _screen_pos_to_file_pos(file, font, rect, input_get_mouse_pos(), config.tab_size, LINE_NUMBER_DIGITS_AMOUNT);
+				file->edit_state.cursor_pos = _screen_pos_to_file_pos(file, font, rect, window_get_mouse_pos(), config.tab_size, LINE_NUMBER_DIGITS_AMOUNT);
 				file->edit_state.selection_start = file->edit_state.cursor_pos;
 			}
 		
 			if (!file->edit_state.supress_mouse_selection && input_mouse_button_held(MOUSE_BUTTON_LEFT)) {
 				font_t *font = &computer->ram->fonts[config.font_index];
-				file->edit_state.cursor_pos = _screen_pos_to_file_pos(file, font, rect, input_get_mouse_pos(), config.tab_size, LINE_NUMBER_DIGITS_AMOUNT);
+				file->edit_state.cursor_pos = _screen_pos_to_file_pos(file, font, rect, window_get_mouse_pos(), config.tab_size, LINE_NUMBER_DIGITS_AMOUNT);
 				file->edit_state.selection_end = file->edit_state.cursor_pos;
 
 				_update_horizontal_cursor_pos(file, config.tab_size);

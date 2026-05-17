@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "../core/input.h"
+#include "../core/window.h"
 #include "../core/gfx.h"
 #include "gui.h"
 #include "../common/mem.h"
@@ -230,7 +231,7 @@ void sprite_editor_init(computer_t *computer) {
 }
 
 static bool _is_cursor_in_canvas() {
-	point_t mouse_pos = input_get_mouse_pos();
+	point_t mouse_pos = window_get_mouse_pos();
 
 	if (_freelook) {
 		return point_in_rect(mouse_pos, _layout.freelook_rect1) || point_in_rect(mouse_pos, _layout.freelook_rect2);
@@ -684,7 +685,7 @@ static void _exit_freelook() {
 }
 
 static void _update_freelook(computer_t *computer) {
-	point_t mouse_pos = input_get_mouse_pos();
+	point_t mouse_pos = window_get_mouse_pos();
 	point_t mouse_in_world = cam_screen_to_world(&_camera, mouse_pos);
 
 	if (_is_cursor_in_canvas()) {
@@ -725,7 +726,7 @@ static void _update_snapped(computer_t *computer) {
 void sprite_editor_update(computer_t *computer) {
 	_last_frame_spritesheet_coord_under_mouse = _spritesheet_coord_under_mouse;
 
-	point_t mouse_pos = input_get_mouse_pos();
+	point_t mouse_pos = window_get_mouse_pos();
 	_spritesheet_coord_under_mouse = cam_screen_to_world(&_camera, mouse_pos);
 
 	rect_t in_frame_rect = get_in_frame_rect();
@@ -1072,7 +1073,7 @@ void sprite_editor_draw(computer_t *computer) {
 	{
 		if (_selected_tool >= TOOL_BRUSH && _selected_tool <= TOOL_BUCKET) {
 			if (_is_cursor_in_canvas()) {
-				point_t spritesheet_coord_under_mouse = cam_screen_to_world(&_camera, input_get_mouse_pos());
+				point_t spritesheet_coord_under_mouse = cam_screen_to_world(&_camera, window_get_mouse_pos());
 
 				rect_t dest_rect = {0};
 				dest_rect.pos = cam_world_to_screen(&_camera, spritesheet_coord_under_mouse);

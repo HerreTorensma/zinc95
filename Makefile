@@ -4,7 +4,7 @@ EXECUTABLE = zinc95
 
 # Source files
 SRC = src/main.c src/computer.c \
-src/core/window.c src/core/sdl2.c src/core/input.c src/core/input_sdl2.c src/core/gfx.c src/core/file.c src/core/audio.c src/core/txt.c \
+src/core/window_sdl2.c src/core/input.c src/core/input_sdl2.c src/core/gfx.c src/core/gfx_sdl2.c src/core/file.c src/core/audio.c src/core/audio_sdl2.c src/core/txt.c \
 src/editor/gui.c src/editor/menu.c  src/editor/code.c src/editor/sprite.c src/editor/map.c \
 src/editor/sound.c src/editor/music.c src/editor/shared.c \
 src/api/api.c src/api/lua_api.c \
