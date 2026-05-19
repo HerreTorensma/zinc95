@@ -12,10 +12,6 @@
 #include "common/io.h"
 #include "common/string.h"
 
-#ifdef BACKEND_SDL2
-#include "core/sdl2.h"
-#endif
-
 // This is global because the Lua API functions can't take arguments and they need the computer
 static computer_t *_computer;
 
@@ -223,12 +219,7 @@ static void _bytes_to_hex(uint8_t bytes[], size_t len, char hex[]) {
 	}
 }
 
-// TODO: put this and the load one in io but first I need an io.c that's not platform specific
-string_t file_write_string(string_t path, string_t string) {
-	FILE *file = fopen(string_to_c_string(get_temp_allocator(), path), "w");
-	fwrite(string.data, sizeof(char), string.len, file);
-	fclose(file);
-}
+// TODO: make generic function for writing binary as hex to a text file
 
 // New implementation with length based strings
 void game_save(computer_t *computer, string_t path) {
@@ -309,6 +300,16 @@ void game_save(computer_t *computer, string_t path) {
 		string_builder_append(&builder, STR("\n"));
 	}
 
+	// Arrangements
+	string_builder_append(&builder, STR("__arr__\n"));
+	for (size_t i = 0; i < MAX_ARRANGEMENTS; i++) {
+		char hex[sizeof(arrangement_t) * 2] = {0};
+		_bytes_to_hex((uint8_t *)&computer->ram->arrangements[i], sizeof(arrangement_t), hex);
+		string_builder_append(&builder, (string_t){.data = hex, .len = sizeof(arrangement_t) * 2});
+
+		string_builder_append(&builder, STR("\n"));
+	}
+
 	// Write it to disk
 	file_write_string(path, builder.string);
 
@@ -316,66 +317,6 @@ void game_save(computer_t *computer, string_t path) {
 
 	printf("Game saved!\n");
 }
-
-static string_t _file_load_to_string(allocator_t allocator, string_t path) {
-	FILE *file = fopen(string_to_c_string(get_temp_allocator(), path), "r");
-	if (file == NULL) {
-		printf("Unable to open file\n");
-		return (string_t){.data = NULL, .len = 0};
-	}
-
-	fseek(file, 0, SEEK_END);
-	size_t file_size = ftell(file);
-	fseek(file, 0, SEEK_SET);
-
-	string_t string = {
-		.data = alloc(allocator, file_size),
-		.len = file_size,
-	};
-	assert(string.data != NULL);
-
-	size_t read_len = fread(string.data, sizeof(char), file_size, file);
-	// assert(read_len == file_size);
-	
-	fclose(file);
-
-	return string;
-}
-
-static uint8_t _hex_char_to_value(char c) {
-	if (c >= '0' && c <= '9') {
-		return c - '0';
-	}
-
-	if (c >= 'a' && c <= 'f') {
-		return c - 'a' + 10;
-	}
-
-	return 0;
-}
-
-static int _hex_string_to_raw(string_t hex_string, uint8_t buffer[], size_t size) {
-	// The string is too small
-	if (hex_string.len < size * 2) {
-		return hex_string.len;
-	}
-
-	// The string is too big
-	if (hex_string.len > size * 2) {
-		return hex_string.len;
-	}
-
-	for (size_t i = 0; i < size; i++) {
-		// Get the first c
-		uint8_t high = _hex_char_to_value(hex_string.data[i * 2]);
-		uint8_t low = _hex_char_to_value(hex_string.data[i * 2 + 1]);
-		buffer[i] = (high << 4) | low;
-	}
-
-	return 0;
-}
-
-#include "core/gfx.h"
 
 int game_load(computer_t *computer, string_t path) {
 	if (path_is_file(path)) {
@@ -400,9 +341,10 @@ int game_load(computer_t *computer, string_t path) {
 		SECTION_MAP,
 		SECTION_PAT,
 		SECTION_INS,
+		SECTION_ARR,
 	} current_section = SECTION_LUA;
 
-	string_t string = _file_load_to_string(get_heap_allocator(), path);
+	string_t string = file_load_to_string(get_heap_allocator(), path);
 
 	string_t_array_t lines = string_split(get_heap_allocator(), string, '\n');
 
@@ -411,6 +353,7 @@ int game_load(computer_t *computer, string_t path) {
 	size_t map_offset = 0;
 	size_t pat_offset = 0;
 	size_t ins_offset = 0;
+	size_t arr_offset = 0;
 
 	computer->active_files_amount = 0;
 
@@ -450,6 +393,11 @@ int game_load(computer_t *computer, string_t path) {
 			continue;
 		}
 
+		if (string_eq(line_string, STR("__arr__"))) {
+			current_section = SECTION_ARR;
+			continue;
+		}
+
 		if (current_section != SECTION_LUA && line_string.len == 0) {
 			printf("line empty?\n");
 			continue;
@@ -482,7 +430,7 @@ int game_load(computer_t *computer, string_t path) {
 			}
 
 			case SECTION_GFX: {
-				int64_t val = _hex_string_to_raw(line_string, (uint8_t *)computer->ram->spritesheet.data + gfx_offset, SPRITESHEET_WIDTH * sizeof(color_t));
+				int64_t val = hex_string_to_binary(line_string, (uint8_t *)computer->ram->spritesheet.data + gfx_offset, SPRITESHEET_WIDTH * sizeof(color_t));
 				if (val != 0) {
 					printf("Line %zu in section __gfx__ does not have the correct size. Should be %zu, is %lld\n", i, SPRITESHEET_WIDTH * sizeof(color_t) * 2, val);
 				}
@@ -491,14 +439,14 @@ int game_load(computer_t *computer, string_t path) {
 			}
 
 			case SECTION_SPR: {
-				if (_hex_string_to_raw(line_string, (uint8_t *)computer->ram->sprites, TOTAL_SPRITES * sizeof(sprite_t)) > 0) {
+				if (hex_string_to_binary(line_string, (uint8_t *)computer->ram->sprites, TOTAL_SPRITES * sizeof(sprite_t)) > 0) {
 					printf("Line %zu in section __spr__ does not have the correct size\n", i);
 				}
 				break;
 			}
 
 			case SECTION_MAP: {
-				if (_hex_string_to_raw(line_string, (uint8_t *)(computer->ram->map.layers[0].data) + map_offset, MAP_WIDTH * sizeof(uint16_t)) > 0) {
+				if (hex_string_to_binary(line_string, (uint8_t *)(computer->ram->map.layers[0].data) + map_offset, MAP_WIDTH * sizeof(uint16_t)) > 0) {
 					printf("Line %zu in section __map__ does not have the correct size\n", i);
 				}
 				map_offset += line_string.len / 2;
@@ -506,7 +454,7 @@ int game_load(computer_t *computer, string_t path) {
 			}
 
 			case SECTION_PAT: {
-				if (_hex_string_to_raw(line_string, (uint8_t *)(computer->ram->patterns) + pat_offset, sizeof(pattern_t)) > 0) {
+				if (hex_string_to_binary(line_string, (uint8_t *)(computer->ram->patterns) + pat_offset, sizeof(pattern_t)) > 0) {
 					printf("Line %zu in section __pat__ does not have the correct size\n", i);
 				}
 				pat_offset += line_string.len / 2;
@@ -514,10 +462,18 @@ int game_load(computer_t *computer, string_t path) {
 			}
 
 			case SECTION_INS: {
-				if (_hex_string_to_raw(line_string, (uint8_t *)(computer->ram->instruments) + ins_offset, sizeof(instrument_t)) > 0) {
+				if (hex_string_to_binary(line_string, (uint8_t *)(computer->ram->instruments) + ins_offset, sizeof(instrument_t)) > 0) {
 					printf("Line %zu in section __ins__ does not have the correct size\n", i);
 				}
 				ins_offset += line_string.len / 2;
+				break;
+			}
+
+			case SECTION_ARR: {
+				if (hex_string_to_binary(line_string, (uint8_t *)(computer->ram->arrangements) + arr_offset, sizeof(arrangement_t)) > 0) {
+					printf("Line %zu in section __arr__ does not have the correct size\n", i);
+				}
+				arr_offset += line_string.len / 2;
 				break;
 			}
 		}
@@ -532,11 +488,6 @@ int game_load(computer_t *computer, string_t path) {
 	dealloc(get_heap_allocator(), string.data);
 
 	printf("Game loaded!\n");
-
-	// TODO: please store the font in another surface
-	// this is a hacky and temporary fix so I can update the font
-	// gfx_copy_surface_rect(SPR_SURF(computer->ram->spritesheet.data), SKIN_SURF(computer->ram->skin.data), (point_t){0, 896}, g_skin_layout.gui_font_rect, COLOR_NONE);
-	// gfx_copy_surface_rect(SPR_SURF(computer->ram->spritesheet.data), SKIN_SURF(computer->ram->skin.data), (point_t){0, 928}, g_skin_layout.code_editor_font_rect, COLOR_NONE);
 
 	return 0;
 }

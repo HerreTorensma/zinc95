@@ -431,3 +431,36 @@ size_t string_pos_to_visual_string_pos(string_t string, size_t pos, size_t tab_s
 
 	return new_pos;
 }
+
+uint8_t hex_char_to_value(char c) {
+	if (c >= '0' && c <= '9') {
+		return c - '0';
+	}
+
+	if (c >= 'a' && c <= 'f') {
+		return c - 'a' + 10;
+	}
+
+	return 0;
+}
+
+int hex_string_to_binary(string_t hex_string, uint8_t *buffer, size_t size) {
+	// The string is too small
+	if (hex_string.len < size * 2) {
+		return hex_string.len;
+	}
+
+	// The string is too big
+	if (hex_string.len > size * 2) {
+		return hex_string.len;
+	}
+
+	for (size_t i = 0; i < size; i++) {
+		// Get the first c
+		uint8_t high = hex_char_to_value(hex_string.data[i * 2]);
+		uint8_t low = hex_char_to_value(hex_string.data[i * 2 + 1]);
+		buffer[i] = (high << 4) | low;
+	}
+
+	return 0;
+}

@@ -35,6 +35,7 @@ int main(int argc, char *argv[]) {
 	api_meta_print();
 	
 	window_init(STR("zinc95"), 2);
+	input_init();
 	audio_init(&computer);
 	
 	// Spritesheet page: 352x128 pixels (416x128 maybe)

@@ -25,3 +25,7 @@ bool path_is_dir(string_t path);
 
 // Check if the path exists and is a file
 bool path_is_file(string_t path);
+
+void file_write_string(string_t path, string_t string);
+
+string_t file_load_to_string(allocator_t allocator, string_t path);

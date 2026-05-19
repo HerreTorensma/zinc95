@@ -435,8 +435,6 @@ void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int 
 
 void set_game_path(computer_t *computer, string_t new_path);
 
-string_t file_write_string(string_t path, string_t string);
-
 // Takes absolute file path
 void game_save(computer_t *computer, string_t path);
 

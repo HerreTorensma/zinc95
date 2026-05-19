@@ -104,3 +104,7 @@ string_t path_get_filename_extension(string_t path);
 size_t visual_string_pos_to_string_pos(string_t string, size_t pos, size_t tab_size);
 
 size_t string_pos_to_visual_string_pos(string_t string, size_t pos, size_t tab_size);
+
+uint8_t hex_char_to_value(char c);
+
+int hex_string_to_binary(string_t hex_string, uint8_t *buffer, size_t size);
