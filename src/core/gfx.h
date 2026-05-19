@@ -136,7 +136,8 @@ void gfx_draw_sprites_page(ram_t *ram, int page_index, int relative_index, point
 void gfx_draw_sprite_mask(ram_t *ram, int index, color_t color_key, color_t drawn_color);
 
 // Draw the a map layer
-void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section, float scale, color_t color_key, rect_t clip_rect);
+// A mask with all 1's will always draw everything even if the sprite flags are all 0
+void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section, float scale, color_t color_key, rect_t clip_rect, uint32_t mask);
 
 // TODO: draw map but only the tiles with some flags
 

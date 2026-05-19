@@ -174,8 +174,30 @@ void api_sspr(ram_t *ram, int dst_x, int dst_y, int dst_w, int dst_h, int src_x,
 	gfx_draw_spritesheet_pro(ram, RECT(src_x, src_y, src_w, src_h), RECT(dst_x, dst_y, dst_w, dst_h), color_key, RECT(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT));
 }
 
-void api_map(ram_t *ram, int layer, int x, int y, int cell_x, int cell_y, int cell_w, int cell_h) {
-	gfx_draw_map(ram, layer, POINT(x, y), RECT(cell_x, cell_y, cell_w, cell_h), 1.0f, COLOR_BLACK, RECT(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT));
+static uint32_t _stringmask_to_bitmask32(string_t string) {
+	uint32_t bitmask = 0;
+
+	for (size_t i = 0; i < string.len; i++) {
+		uint32_t offset = 0;
+
+		if (string.data[i] >= '0' && string.data[i] <= '9') {
+			offset = string.data[i] - '0';
+		} else if (string.data[i] >= 'a' && string.data[i] <= 'v') {
+			offset = 10 + string.data[i] - 'a';
+		}
+
+		bitmask |= 1ULL << offset;
+	}
+
+	return bitmask;
+}
+
+void api_map(ram_t *ram, int layer, int x, int y, int cell_x, int cell_y, int cell_w, int cell_h, string_t mask) {
+	uint32_t bitmask = _stringmask_to_bitmask32(mask);
+	if (mask.len == 0) {
+		bitmask = 0b11111111111111111111111111111111;
+	}
+	gfx_draw_map(ram, layer, POINT(x, y), RECT(cell_x, cell_y, cell_w, cell_h), 1.0f, COLOR_BLACK, RECT(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT), bitmask);
 }
 
 /*
@@ -239,25 +261,8 @@ int api_mget(ram_t *ram, int layer, int x, int y) {
 // TODO: make work with longer flags string
 // like for "kl" the flags must have both k and l
 bool api_fmatch(ram_t *ram, int index, string_t flags) {
-	uint32_t bitmask = 0;
-
-	for (size_t i = 0; i < flags.len; i++) {
-		uint32_t offset = 0;
-
-		if (flags.data[i] >= '0' && flags.data[i] <= '9') {
-			offset = flags.data[i] - '0';
-		} else if (flags.data[i] >= 'a' && flags.data[i] <= 'v') {
-			offset = 10 + flags.data[i] - 'a';
-		}
-
-		bitmask |= 1ULL << offset;
-		if ((ram->sprites[index].flags & bitmask) == 0) {
-			return false;
-		}
-	}
-
-	// return ram->sprites[index].flags & bitmask;
-	return true;
+	uint32_t bitmask = _stringmask_to_bitmask32(flags);
+	return ram->sprites[index].flags & bitmask;
 }
 /*
 0123456789abc

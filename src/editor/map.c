@@ -467,7 +467,8 @@ void map_editor_draw(computer_t *computer) {
 				section,
 				_camera.zoom,
 				COLOR_BLACK,
-				_layout.map_rect
+				_layout.map_rect,
+				0b11111111111111111111111111111111
 			);
 		}
 	}

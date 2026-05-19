@@ -75,7 +75,7 @@ static int _lua_circ(lua_State *lua) {
 }
 
 static int _lua_map(lua_State *lua) {
-	if (lua_gettop(lua) == 7) {
+	if (lua_gettop(lua) >= 7) {
 		if (lua_isnumber(lua, 1) && lua_isnumber(lua, 2) && lua_isnumber(lua, 3) && lua_isnumber(lua, 4) && lua_isnumber(lua, 5) && lua_isnumber(lua, 6) && lua_isnumber(lua, 7)) {
 			computer_t *computer = get_global_computer();
 
@@ -90,7 +90,13 @@ static int _lua_map(lua_State *lua) {
 			int cell_w = (int)lua_tonumber(lua, 6);
 			int cell_h = (int)lua_tonumber(lua, 7);
 
-			api_map(computer->ram, layer, x, y, cell_x, cell_y, cell_w, cell_h);
+			string_t mask = {0};
+			if (lua_gettop(lua) == 8) {
+				const char *buffer = lua_tostring(lua, 8);
+				mask = STR(buffer);
+			}
+
+			api_map(computer->ram, layer, x, y, cell_x, cell_y, cell_w, cell_h, mask);
 		}
 	}
 

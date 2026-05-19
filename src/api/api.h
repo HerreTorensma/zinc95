@@ -102,7 +102,7 @@ void api_sspr(ram_t *ram, int dst_x, int dst_y, int dst_w, int dst_h, int src_x,
 
 // Draw a portion of a map layer
 // The x, y, w, h are the rect of the drawn portion in tiles
-void api_map(ram_t *ram, int layer, int x, int y, int cell_x, int cell_y, int cell_w, int cell_h);
+void api_map(ram_t *ram, int layer, int x, int y, int cell_x, int cell_y, int cell_w, int cell_h, string_t mask);
 
 
 

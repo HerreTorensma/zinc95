@@ -342,7 +342,7 @@ void gfx_draw_sprites_page(ram_t *ram, int page_index, int relative_index, point
 }
 
 // TODO: support clipping so the background in the skin is actually used
-void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section, float scale, color_t color_key, rect_t clip_rect) {
+void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section, float scale, color_t color_key, rect_t clip_rect, uint32_t mask) {
 	section = rect_clip(RECT(0, 0, MAP_WIDTH, MAP_HEIGHT), section);
 
 	for (int i = section.y; i < section.y + section.h; i++) {
@@ -353,6 +353,9 @@ void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section, floa
 			// or maybe placing anything in the map editor while the top left origin of the in frame rect in sprites is 0, 0 will result in all sprites placed being 0??? idk
 
 			int sprite_index = ram->map.layers[layer_index].data[i * MAP_WIDTH + j];
+			if (mask != 0b11111111111111111111111111111111 && (ram->sprites[sprite_index].flags & mask) == 0) {
+				continue;
+			}
 
 			rect_t source_rect = sprite_index_to_spritesheet_rect(sprite_index, 1, 1);
 

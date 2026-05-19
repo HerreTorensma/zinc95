@@ -422,7 +422,7 @@ int game_load(computer_t *computer, string_t path) {
 			case SECTION_GFX: {
 				int64_t val = hex_string_to_binary(line_string, (uint8_t *)computer->ram->spritesheet.data + gfx_offset, SPRITESHEET_WIDTH * sizeof(color_t));
 				if (val != 0) {
-					printf("Line %zu in section __gfx__ does not have the correct size. Should be %zu, is %lld\n", i, SPRITESHEET_WIDTH * sizeof(color_t) * 2, val);
+					printf("Line %zu in section __gfx__ does not have the correct size. Should be %zu, is %zu\n", i, SPRITESHEET_WIDTH * sizeof(color_t) * 2, val);
 				}
 				gfx_offset += line_string.len / 2;
 				break;
