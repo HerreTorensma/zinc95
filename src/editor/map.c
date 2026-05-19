@@ -427,27 +427,10 @@ void map_editor_update(computer_t *computer) {
 	_last_frame_mouse_pos = mouse_pos;
 }
 
-static void _draw_background(framebuffer_t *fb, rect_t rect, color_t color1, color_t color2, int width) {
-	int offset = 0;
-	for (int i = 0; i < rect.h; i++) {
-		for (int j = 0; j < rect.w; j++) {
-			
-			if (j % width < width / 2) {
-				gfx_set_pixel(fb, (rect.x + j + offset) % rect.w, rect.y + i, color1);
-			} else {
-				gfx_set_pixel(fb, (rect.x + j + offset) % rect.w, rect.y + i, color2);
-			}
-		}
-		offset++;
-	}
-}
-
 void map_editor_draw(computer_t *computer) {
 	surface_t fb_surf = FB_SURF(computer->ram->framebuffer.data);
 
 	// TODO: make colors part of skin
-	_draw_background(&computer->ram->framebuffer, _layout.map_rect, 0, 4, 8);
-	// gfx_draw_filled_rect(fb_surf, _layout.map_rect, 0);
 
 	// Section of the map that's visible
 	// So the map drawing is O(1)
@@ -483,7 +466,8 @@ void map_editor_draw(computer_t *computer) {
 				cam_world_to_screen(&_camera, (point_t){0}),
 				section,
 				_camera.zoom,
-				COLOR_BLACK
+				COLOR_BLACK,
+				_layout.map_rect
 			);
 		}
 	}
@@ -548,11 +532,6 @@ void map_editor_draw(computer_t *computer) {
 	rect_t in_frame_rect_in_sprites = get_in_frame_rect_in_sprites();
 
 	_draw_grid(fb_surf);
-
-	// Draw skin again because currently I don't have a way to clip the gfx_draw_map function (yet)
-	// TODO: make a better solution for this
-	surface_t skin_surface = (surface_t){.data = computer->ram->skin.data, .width = SKIN_WIDTH, .height = SKIN_HEIGHT};
-	gfx_draw_surface_rect(&computer->ram->framebuffer, skin_surface, POINT(0, 0), RECT(SCREEN_WIDTH * 2, 0, SCREEN_WIDTH, SCREEN_HEIGHT), computer->ram->skin.color_key);
 
 	if (_selected_layer == ENTITY_LAYER) {
 		if (_selected_entity_tool == ENTITY_TOOL_SELECT) {

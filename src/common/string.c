@@ -464,3 +464,13 @@ int hex_string_to_binary(string_t hex_string, uint8_t *buffer, size_t size) {
 
 	return 0;
 }
+
+static const char _hex_chars[] = "0123456789abcdef";
+
+// hex should be twice as big as bytes
+void bytes_to_hex(uint8_t bytes[], size_t len, char hex[]) {
+	for (size_t i = 0; i < len; i++) {
+		hex[i * 2] = _hex_chars[(bytes[i] >> 4) & 0x0f]; \
+		hex[i * 2 + 1] = _hex_chars[(bytes[i] & 0x0f)]; \
+	}
+}

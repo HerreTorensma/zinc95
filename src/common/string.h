@@ -108,3 +108,5 @@ size_t string_pos_to_visual_string_pos(string_t string, size_t pos, size_t tab_s
 uint8_t hex_char_to_value(char c);
 
 int hex_string_to_binary(string_t hex_string, uint8_t *buffer, size_t size);
+
+void bytes_to_hex(uint8_t bytes[], size_t len, char hex[]);

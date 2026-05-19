@@ -209,16 +209,6 @@ void set_game_path(computer_t *computer, string_t new_path) {
 	computer->game_path = string_copy(get_heap_allocator(), new_path);
 }
 
-static const char _hex_chars[] = "0123456789abcdef";
-
-// hex should be twice as big as bytes
-static void _bytes_to_hex(uint8_t bytes[], size_t len, char hex[]) {
-	for (size_t i = 0; i < len; i++) {
-		hex[i * 2] = _hex_chars[(bytes[i] >> 4) & 0x0f]; \
-		hex[i * 2 + 1] = _hex_chars[(bytes[i] & 0x0f)]; \
-	}
-}
-
 // TODO: make generic function for writing binary as hex to a text file
 
 // New implementation with length based strings
@@ -249,7 +239,7 @@ void game_save(computer_t *computer, string_t path) {
 			color_t color = computer->ram->spritesheet.data[y * SPRITESHEET_WIDTH + x];
 			
 			char hex[2] = {0};
-			_bytes_to_hex((uint8_t *)&color, 1, hex);
+			bytes_to_hex((uint8_t *)&color, 1, hex);
 			string_builder_append(&builder, (string_t){.data = hex, .len = sizeof(color_t) * 2});
 		}
 		string_builder_append(&builder, STR("\n"));
@@ -260,7 +250,7 @@ void game_save(computer_t *computer, string_t path) {
 	string_builder_append(&builder, STR("__spr__\n"));
 	for (size_t i = 0; i < TOTAL_SPRITES; i++) {
 		char hex[sizeof(sprite_t) * 2] = {0};
-		_bytes_to_hex((uint8_t *)&computer->ram->sprites[i], sizeof(sprite_t), hex);
+		bytes_to_hex((uint8_t *)&computer->ram->sprites[i], sizeof(sprite_t), hex);
 		string_builder_append(&builder, (string_t){.data = hex, .len = sizeof(sprite_t) * 2});
 	}
 	string_builder_append(&builder, STR("\n\n"));
@@ -271,7 +261,7 @@ void game_save(computer_t *computer, string_t path) {
 		for (int y = 0; y < MAP_HEIGHT; y++) {
 			for (int x = 0; x < MAP_WIDTH; x++) {
 				char hex[sizeof(uint16_t) * 2] = {0};
-				_bytes_to_hex((uint8_t *)(&computer->ram->map.layers[i].data[y * MAP_WIDTH + x]), sizeof(uint16_t), hex);
+				bytes_to_hex((uint8_t *)(&computer->ram->map.layers[i].data[y * MAP_WIDTH + x]), sizeof(uint16_t), hex);
 				string_builder_append(&builder, (string_t){.data = hex, .len = sizeof(uint16_t) * 2});
 			}
 			string_builder_append(&builder, STR("\n"));
@@ -283,7 +273,7 @@ void game_save(computer_t *computer, string_t path) {
 	string_builder_append(&builder, STR("__pat__\n"));
 	for (size_t i = 0; i < PATTERN_AMOUNT; i++) {
 		char hex[sizeof(pattern_t) * 2] = {0};
-		_bytes_to_hex((uint8_t *)&computer->ram->patterns[i], sizeof(pattern_t), hex);
+		bytes_to_hex((uint8_t *)&computer->ram->patterns[i], sizeof(pattern_t), hex);
 		string_builder_append(&builder, (string_t){.data = hex, .len = sizeof(pattern_t) * 2});
 
 		string_builder_append(&builder, STR("\n"));
@@ -294,7 +284,7 @@ void game_save(computer_t *computer, string_t path) {
 	string_builder_append(&builder, STR("__ins__\n"));
 	for (size_t i = 0; i < MAX_INSTRUMENTS; i++) {
 		char hex[sizeof(instrument_t) * 2] = {0};
-		_bytes_to_hex((uint8_t *)&computer->ram->instruments[i], sizeof(instrument_t), hex);
+		bytes_to_hex((uint8_t *)&computer->ram->instruments[i], sizeof(instrument_t), hex);
 		string_builder_append(&builder, (string_t){.data = hex, .len = sizeof(instrument_t) * 2});
 
 		string_builder_append(&builder, STR("\n"));
@@ -304,7 +294,7 @@ void game_save(computer_t *computer, string_t path) {
 	string_builder_append(&builder, STR("__arr__\n"));
 	for (size_t i = 0; i < MAX_ARRANGEMENTS; i++) {
 		char hex[sizeof(arrangement_t) * 2] = {0};
-		_bytes_to_hex((uint8_t *)&computer->ram->arrangements[i], sizeof(arrangement_t), hex);
+		bytes_to_hex((uint8_t *)&computer->ram->arrangements[i], sizeof(arrangement_t), hex);
 		string_builder_append(&builder, (string_t){.data = hex, .len = sizeof(arrangement_t) * 2});
 
 		string_builder_append(&builder, STR("\n"));

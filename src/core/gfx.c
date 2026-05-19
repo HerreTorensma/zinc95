@@ -342,7 +342,7 @@ void gfx_draw_sprites_page(ram_t *ram, int page_index, int relative_index, point
 }
 
 // TODO: support clipping so the background in the skin is actually used
-void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section, float scale, color_t color_key) {
+void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section, float scale, color_t color_key, rect_t clip_rect) {
 	section = rect_clip(RECT(0, 0, MAP_WIDTH, MAP_HEIGHT), section);
 
 	for (int i = section.y; i < section.y + section.h; i++) {
@@ -366,7 +366,10 @@ void gfx_draw_map(ram_t *ram, int layer_index, point_t pos, rect_t section, floa
 				scaled_sprite_height
 			);
 
-			gfx_draw_spritesheet_pro(ram, source_rect, dest_rect, color_key, RECT(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)); // TODO: pass argument for clip rect
+			// TODO: not sure about the performance implications of just passing the clip rect to the spritesheet function
+			// because now its still trying to draw each tile and ideally tiles should be culled beforehand
+			// but I think until it gives problems this is alright
+			gfx_draw_spritesheet_pro(ram, source_rect, dest_rect, color_key, clip_rect);
 		}
 	}
 }
