@@ -19,6 +19,9 @@ static workspace_type_t _active_workspace = WORKSPACE_SPRITE;
 
 static bool _gui_frozen = false;
 
+static string_t_array_t _log = {0};
+static int _notification_timer = 0;
+
 static struct {
 	point_t zinc_button_pos;
 	point_t code_editor_button_pos;
@@ -29,6 +32,8 @@ static struct {
 
 	point_t save_button_pos;
 	point_t play_button_pos;
+
+	point_t notification_pos;
 }
 _layout = {
 	.zinc_button_pos = {2, 2},
@@ -40,6 +45,8 @@ _layout = {
 
 	.save_button_pos = {606, 2},
 	.play_button_pos = {622, 2},
+
+	.notification_pos = {484, 6},
 };
 
 void switch_to_workspace(size_t index) {
@@ -47,6 +54,8 @@ void switch_to_workspace(size_t index) {
 }
 
 void workspace_menu_init(computer_t *computer) {
+	array_init(&_log, get_heap_allocator());
+
 	// Init the sprite selector (shared between sprite and map editor)
 	sprite_selector_init(computer);
 
@@ -211,4 +220,21 @@ void workspace_menu_draw(computer_t *computer) {
 			quit_game(computer);
 		}
 	}
+
+	if (_notification_timer > 0) {
+		_notification_timer--;
+
+		string_t message = array_pop(&_log);
+		gfx_draw_string(computer->ram, 1, message, _layout.notification_pos, COLOR_BLACK); // TODO: read color from skin
+		array_push(&_log, message);
+	}
+}
+
+void workspace_menu_deinit(computer_t *computer) {
+	array_deinit(&_log);
+}
+
+void push_log(ram_t *ram, string_t message) {
+	array_push(&_log, message);
+	_notification_timer = SECONDS(2);
 }

@@ -23,6 +23,8 @@ Memory layout, global constants
 #define RAM_SIZE (32 * 1024 * 1024)
 #define CODE_SIZE (8 * 1024 * 1024)
 
+#define SECONDS(x) (x * 60)
+
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
 

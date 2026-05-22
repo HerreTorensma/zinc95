@@ -6,6 +6,7 @@
 #include <assert.h>
 
 #include "core/file.h"
+#include "editor/menu.h"
 #include "res.h"
 #include "api/lua_api.h"
 #include "common/mem.h"
@@ -100,10 +101,6 @@ void computer_load_resouces(computer_t *computer) {
 	}
 
 }
-
-#ifndef PATH_MAX
-#define PATH_MAX 4096
-#endif
 
 void computer_init(computer_t *computer) {
 	computer->ram = heap_alloc(RAM_SIZE);
@@ -213,6 +210,8 @@ void set_game_path(computer_t *computer, string_t new_path) {
 
 // New implementation with length based strings
 void game_save(computer_t *computer, string_t path) {
+	push_log(computer->ram, STR("Saving game..."));
+
 	printf("Saving game...\n");
 	
 	string_builder_t builder = {0};
@@ -306,6 +305,7 @@ void game_save(computer_t *computer, string_t path) {
 	string_builder_deinit(&builder);
 
 	printf("Game saved!\n");
+	push_log(computer->ram, STR("Game saved!"));
 }
 
 int game_load(computer_t *computer, string_t path) {

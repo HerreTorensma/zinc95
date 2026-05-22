@@ -240,6 +240,8 @@ int main(int argc, char *argv[]) {
 		window_tick_end(&computer);
 	}
 
+	workspace_menu_deinit(&computer);
+
 	shell_deinit(&computer);
 
 	temp_free();

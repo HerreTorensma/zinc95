@@ -23,3 +23,7 @@ void workspace_menu_init(computer_t *computer);
 void workspace_menu_update(computer_t *computer);
 
 void workspace_menu_draw(computer_t *computer);
+
+void workspace_menu_deinit(computer_t *computer);
+
+void push_log(ram_t *ram, string_t message);
