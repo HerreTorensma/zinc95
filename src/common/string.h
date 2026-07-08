@@ -30,6 +30,8 @@ ARRAY_DEFINE(string_t)
 
 string_t temp_alloc_string(size_t capacity);
 
+// TODO: string dealloc functions
+
 // String functions
 // any that use the temporary allocator have temp in the name somewhere
 bool string_eq(string_t a, string_t b);
@@ -48,6 +50,7 @@ string_t string_view(string_t source, size_t start, size_t len);
 
 // Copies new_string to base, without doing any allocation
 // Assumes base has enough memory allocated for new_string
+// TODO: consider removing this function
 void string_place(string_t *base, string_t new_string);
 
 bool string_is_empty(string_t string);
@@ -69,6 +72,8 @@ typedef struct string_builder {
 void string_builder_init(string_builder_t *builder, allocator_t allocator, size_t initial_capacity);
 
 void string_builder_append(string_builder_t *builder, string_t string);
+
+void string_builder_append_char(string_builder_t *builder, uint8_t c);
 
 void string_builder_deinit(string_builder_t *builder);
 
@@ -110,3 +115,5 @@ uint8_t hex_char_to_value(char c);
 int hex_string_to_binary(string_t hex_string, uint8_t *buffer, size_t size);
 
 void bytes_to_hex(uint8_t bytes[], size_t len, char hex[]);
+
+string_t format_string(allocator_t allocator, string_t base, ...);

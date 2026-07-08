@@ -52,7 +52,7 @@ void arena_init(arena_t *arena, size_t capacity) {
 }
 
 void *arena_alloc(arena_t *arena, size_t size) {
-	assert(arena->pos < arena->capacity && "The temp memory is full");
+	assert(arena->pos < arena->capacity && "The arena is full");
 
 	void *ptr = (uint8_t *)arena->data + arena->pos;
 	memset(ptr, 0, size);
@@ -108,7 +108,7 @@ void *heap_allocator_proc(size_t size, void *existing, void *data, allocator_mes
 void *arena_allocator_proc(size_t size, void *existing, void *data, allocator_message_t message) {
 	switch (message) {
 		case ALLOCATOR_ALLOCATE: {
-			return arena_alloc(existing, size);
+			return arena_alloc(data, size);
 		}
 		case ALLOCATOR_REALLOCATE: {
 			printf("Temporary allocator cannot reallocate");

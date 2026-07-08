@@ -301,7 +301,6 @@ static int _lua_load_from_slot(lua_State *lua) {
 static int _lua_get_ents(lua_State *lua) {
 	computer_t *computer = get_global_computer();
 	
-
 	int size = 0;
 	for (size_t i = 0; i < MAX_ENTITIES; i++) {
 		if (computer->ram->entities.entities[i].id[0] == '\0') {

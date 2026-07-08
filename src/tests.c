@@ -10,6 +10,8 @@ Unit tests for low level stuff
 #include "common/string.h"
 #include "common/io.h"
 
+// TODO: make arenas instead of using heap allocator
+
 static void _test_array(void) {
 	ARRAY_DEFINE(int)
 
@@ -115,6 +117,14 @@ static void _test_string(void) {
 	assert(string_eq(path_get_filename(STR("some/path/thing.txt")), STR("thing.txt")) && "path_get_filename failed");
 	assert(string_eq(path_get_filename(STR("some/path/thing.txt")), STR("thing.txt")) && "path_get_filename failed");
 	assert(string_eq(path_get_filename(STR("/some/path/thing.txt")), STR("thing.txt")) && "path_get_filename failed");
+
+	// format_string
+	assert(string_eq(STR("the number is 14"), format_string(get_heap_allocator(), STR("the number is %d"), 14)));
+	assert(string_eq(STR("the number is -14"), format_string(get_heap_allocator(), STR("the number is %d"), -14)));
+	assert(string_eq(STR("the number is 0"), format_string(get_heap_allocator(), STR("the number is %d"), 0)));
+	assert(string_eq(STR("the string is what"), format_string(get_heap_allocator(), STR("the string is %s"), STR("what"))));
+	assert(string_eq(STR("the char is s"), format_string(get_heap_allocator(), STR("the char is %c"), 's')));
+	assert(string_eq(STR("the char is c"), format_string(get_heap_allocator(), STR("the char is %c"), 'c')));
 }
 
 void run_tests(void) {

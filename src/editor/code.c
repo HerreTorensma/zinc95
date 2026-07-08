@@ -1,3 +1,5 @@
+// TODO: make cursor blink
+
 #include "code.h"
 
 #include <string.h>
@@ -277,7 +279,7 @@ static void _update_horizontal_cursor_pos(file_t *file, int tab_size) {
 // TODO: split into multiple functions
 // and make sure all the things don't intefere with each other
 // So if one function returns some value that something happened the next one doesnt get executed
-static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_editor_config_t config) {
+void file_update(computer_t *computer, file_t *file, rect_t rect, code_editor_config_t config) {
 	bool any_keybind_executed = _handle_keybinds(computer, file);
 	if (any_keybind_executed) {
 		return;
@@ -528,7 +530,7 @@ static void _file_update(computer_t *computer, file_t *file, rect_t rect, code_e
 }
 
 void code_editor_update(computer_t *computer) {
-	_file_update(computer, &computer->files[_current_file_index], _layout.code_rect, computer->ram->code_editor_config);
+	file_update(computer, &computer->files[_current_file_index], _layout.code_rect, computer->ram->code_editor_config);
 }
 
 static point_t _file_cursor_pos_to_screen_pos(computer_t *computer, file_t *file, font_t *font, code_editor_config_t config) {
@@ -572,7 +574,7 @@ static void _draw_selection_rect_for_char(computer_t *computer, file_t *file, fo
 	}
 }
 
-static void _file_draw(computer_t *computer, file_t *file, rect_t rect, code_editor_config_t config) {
+void file_draw(computer_t *computer, file_t *file, rect_t rect, code_editor_config_t config) {
 	font_t *font = &computer->ram->fonts[config.font_index];
 	
 	surface_t surface = surface = SPR_SURF(computer->ram->spritesheet.data);
@@ -734,6 +736,6 @@ static void _draw_file_buttons(computer_t *computer) {
 }
 
 void code_editor_draw(computer_t *computer) {
-	_file_draw(computer, &computer->files[_current_file_index], _layout.code_rect, computer->ram->code_editor_config);
+	file_draw(computer, &computer->files[_current_file_index], _layout.code_rect, computer->ram->code_editor_config);
 	_draw_file_buttons(computer);
 }

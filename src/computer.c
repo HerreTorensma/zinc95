@@ -201,6 +201,23 @@ void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int 
 }
 */
 
+static string_t _serialize_entity(allocator_t allocator, entity_t *entity) {
+	string_builder_t builder = {0};
+	string_builder_init(&builder, allocator, 8);
+
+	string_builder_append(&builder, STR("{\n"));
+	string_builder_append(&builder, format_string(get_temp_allocator(), STR("\tsprite = %d\n"), entity->sprite));
+	string_builder_append(&builder, format_string(get_temp_allocator(), STR("\tx = %d\n"), entity->x));
+	string_builder_append(&builder, format_string(get_temp_allocator(), STR("\ty = %d\n"), entity->y));
+	string_builder_append(&builder, format_string(get_temp_allocator(), STR("\tw = %d\n"), entity->w));
+	string_builder_append(&builder, format_string(get_temp_allocator(), STR("\th = %d\n"), entity->h));
+	string_builder_append(&builder, STR("\tdata = {\n"));
+	string_builder_append(&builder, entity->data.string);
+	string_builder_append(&builder, STR("},\n"));
+
+	return builder.string;
+}
+
 void set_game_path(computer_t *computer, string_t new_path) {
 	heap_dealloc(computer->game_path.data);
 	computer->game_path = string_copy(get_heap_allocator(), new_path);
@@ -219,6 +236,9 @@ void game_save(computer_t *computer, string_t path) {
 	// 8MB should be enough for most games
 	// Also make it heap allocated to not overload the temporary memory
 	string_builder_init(&builder, get_heap_allocator(), MB(8));
+
+	arena_t arena = {0};
+	arena_init(&arena, MB(4));
 	
 	// Lua code
 	for (size_t i = 0; i < computer->active_files_amount; i++) {
@@ -268,6 +288,16 @@ void game_save(computer_t *computer, string_t path) {
 	}
 	string_builder_append(&builder, STR("\n"));
 
+	string_builder_append(&builder, STR("__ent__\n"));
+	for (size_t i = 0; i < MAX_ENTITIES; i++) {
+		if (computer->ram->entities.entities[i].id[0] == '\0') {
+			break;
+		}
+		string_t entity_string = _serialize_entity(get_arena_allocator(&arena), &computer->ram->entities.entities[i]);
+		string_builder_append(&builder, entity_string);
+	}
+	string_builder_append(&builder, STR("\n"));
+
 	// Patterns
 	string_builder_append(&builder, STR("__pat__\n"));
 	for (size_t i = 0; i < PATTERN_AMOUNT; i++) {
@@ -303,6 +333,7 @@ void game_save(computer_t *computer, string_t path) {
 	file_write_string(path, builder.string);
 
 	string_builder_deinit(&builder);
+	arena_free(&arena);
 
 	printf("Game saved!\n");
 	push_log(computer->ram, STR("Game saved!"));
@@ -329,6 +360,7 @@ int game_load(computer_t *computer, string_t path) {
 		SECTION_GFX,
 		SECTION_SPR,
 		SECTION_MAP,
+		SECTION_ENT,
 		SECTION_PAT,
 		SECTION_INS,
 		SECTION_ARR,
@@ -341,6 +373,7 @@ int game_load(computer_t *computer, string_t path) {
 	size_t gfx_offset = 0;
 	size_t spr_offset = 0;
 	size_t map_offset = 0;
+	size_t ent_offset = 0;
 	size_t pat_offset = 0;
 	size_t ins_offset = 0;
 	size_t arr_offset = 0;
@@ -370,6 +403,11 @@ int game_load(computer_t *computer, string_t path) {
 
 		if (string_eq(line_string, STR("__map__"))) {
 			current_section = SECTION_MAP;
+			continue;
+		}
+
+		if (string_eq(line_string, STR("__ent__"))) {
+			current_section = SECTION_ENT;
 			continue;
 		}
 
@@ -440,6 +478,11 @@ int game_load(computer_t *computer, string_t path) {
 					printf("Line %zu in section __map__ does not have the correct size\n", i);
 				}
 				map_offset += line_string.len / 2;
+				break;
+			}
+
+			case SECTION_ENT: {
+				// Parse the entities
 				break;
 			}
 

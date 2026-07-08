@@ -72,6 +72,8 @@ allocator_t get_heap_allocator();
 
 allocator_t get_temp_allocator();
 
+allocator_t get_arena_allocator(arena_t *arena);
+
 // TODO: make this
 allocator_t get_static_allocator(uint8_t *memory, size_t size);
 

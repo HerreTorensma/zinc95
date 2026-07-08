@@ -1,9 +1,11 @@
 #include "string.h"
+#include "mem.h"
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <stdarg.h>
 
 string_t temp_alloc_string(size_t capacity) {
 	return (string_t) {
@@ -152,6 +154,13 @@ void string_builder_append(string_builder_t *builder, string_t string) {
 
 	memcpy(builder->string.data + builder->string.len, string.data, string.len * sizeof(char));
 	builder->string.len += string.len;
+}
+
+void string_builder_append_char(string_builder_t *builder, uint8_t c) {
+	_string_builder_reserve(builder, builder->string.len + 1);
+
+	builder->string.data[builder->string.len] = c;
+	builder->string.len++;
 }
 
 void string_builder_deinit(string_builder_t *builder) {
@@ -444,6 +453,8 @@ uint8_t hex_char_to_value(char c) {
 	return 0;
 }
 
+// TODO: probably rename to deserialize
+// bc now it sounds like im gonna make a char array of 0's and 1's
 int hex_string_to_binary(string_t hex_string, uint8_t *buffer, size_t size) {
 	// The string is too small
 	if (hex_string.len < size * 2) {
@@ -473,4 +484,55 @@ void bytes_to_hex(uint8_t bytes[], size_t len, char hex[]) {
 		hex[i * 2] = _hex_chars[(bytes[i] >> 4) & 0x0f]; \
 		hex[i * 2 + 1] = _hex_chars[(bytes[i] & 0x0f)]; \
 	}
+}
+
+// TODO: finish this function
+// also add support for stuff like "% 4d"
+string_t format_string(allocator_t allocator, string_t base, ...) {
+	string_builder_t builder = {0};
+	string_builder_init(&builder, allocator, 8);
+
+	va_list args;
+	va_start(args, base);
+	int arg_index = 0;
+
+	size_t i = 0;
+	while (i < base.len) {
+		if (base.data[i] == '%') {
+			switch (base.data[i + 1]) {
+				case 'c': {
+					string_builder_append_char(&builder, va_arg(args, int));
+					break;
+				}
+
+				case 'd': {
+					string_t int_string = int_to_string(allocator, va_arg(args, int));
+					string_builder_append(&builder, int_string);
+					dealloc(allocator, int_string.data);
+					break;
+				}
+
+				case 'e': {
+					break;
+				}
+
+				case 'f': {
+					break;
+				}
+
+				case 's': {
+					string_builder_append(&builder, va_arg(args, string_t));
+					break;
+				}
+			}
+			i += 2;
+		} else {
+			string_builder_append_char(&builder, base.data[i]);
+			i++;
+		}
+	}
+
+	va_end(args);
+
+	return builder.string;
 }

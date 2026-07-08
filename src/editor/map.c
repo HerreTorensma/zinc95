@@ -22,6 +22,7 @@ this could even be handled in lua and extended, so the user can make a script th
 #include "../core/gfx.h"
 #include "shared.h"
 #include "../res.h"
+#include "code.h"
 
 static camera_t _camera = {
 	// Put camera at the center of the screen
@@ -56,6 +57,7 @@ static point_t _last_frame_mouse_pos = {0};
 typedef enum entity_tool {
 	ENTITY_TOOL_SELECT,
 	ENTITY_TOOL_STAMP,
+	ENTIYY_TOOL_EDIT,
 } entity_tool_t;
 
 ARRAY_DEFINE(size_t)
@@ -82,6 +84,8 @@ static bool _moving_entity = false;
 static point_t _entity_selection_start = {0};
 static point_t _entity_selection_end = {0};
 
+static int64_t _edit_tool_selected_entity = -1;
+
 static struct {
 	rect_t map_rect;
 
@@ -96,6 +100,9 @@ static struct {
 	point_t sprite_selector_snap_mode_buttons_pos;
 
 	point_t tools_start_pos;
+
+	rect_t text_editor_rect;
+	point_t text_editor_panel_pos;
 }
 _layout = {
 	.map_rect = {{0, 20, 620, 324}},
@@ -109,6 +116,9 @@ _layout = {
 	.sprite_selector_snap_mode_buttons_pos = {524, 348},
 
 	.tools_start_pos = {622, 34},
+
+	.text_editor_rect = {{316, 26, 310, 324}},
+	.text_editor_panel_pos = {310, 20},
 };
 
 static void _draw_grid(surface_t surf) {
@@ -311,31 +321,74 @@ static void _entity_tool_select(computer_t *computer) {
 	}
 }
 
+// Entities should have a name
+// and maybe internally they should also be stored as lua tables but that would be kinda annoying to deal with probably
+// yeah im not doing that
+// I will keep the internal structure I have
+// also for the serialization I can just get them as a table as I already do for the get_ents or whatever api function
+// and then serialize that because I also have a function for that
+// that will also be less error prone probably than string formatting for serialization
+// and the data field should serialize automatically without me having to manually read what its value is I think
+// Then in deserialization I need some function to read a lua table into the internal structure
+// But I kinda needed that anyway even if I still used string formatting
+
+static void _create_entity(computer_t *computer, point_t pos, int sprite, int w, int h) {
+	size_t index = _find_empty_entity_index(computer);
+	entity_t *entity = &computer->ram->entities.entities[index];
+
+	entity->id[0] = 'e';
+
+	entity->x = pos.x;
+	entity->y = pos.y;
+	
+	entity->sprite = sprite;
+	entity->w = w;
+	entity->h = h;
+
+	file_append_string(&entity->data, STR(""));
+}
+
 static void _entity_tool_stamp(computer_t *computer) {
 	point_t mouse_pos = window_get_mouse_pos();
 	rect_t in_frame_rect = get_in_frame_rect();
 	rect_t in_frame_rect_in_sprites = get_in_frame_rect_in_sprites();
 
 	if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT) && point_in_rect(mouse_pos, _layout.map_rect)) {
-		size_t index = _find_empty_entity_index(computer);
-		entity_t *entity = &computer->ram->entities.entities[index];
-
-		entity->id[0] = 'e';
-
 		point_t pos = cam_screen_to_world(&_camera, POINT(mouse_pos.x - (in_frame_rect.w * _camera.zoom) / 2, mouse_pos.y - (in_frame_rect.h * _camera.zoom) / 2));
-		entity->x = pos.x;
-		entity->y = pos.y;
-		
-		entity->sprite = get_sprite_index();
-		entity->w = in_frame_rect_in_sprites.w;
-		entity->h = in_frame_rect_in_sprites.h;
+		_create_entity(computer, pos, get_sprite_index(), in_frame_rect_in_sprites.w, in_frame_rect_in_sprites.h);
 	}
+}
+
+static void _entity_tool_edit(computer_t *computer) {
+	point_t mouse_pos = window_get_mouse_pos();
+	point_t world_mouse_pos = cam_screen_to_world(&_camera, mouse_pos);
+	
+	if (!point_in_rect(mouse_pos, _layout.map_rect)) {
+		return;
+	}
+	
+	if (input_mouse_button_pressed(MOUSE_BUTTON_LEFT)) {
+		if (!(_edit_tool_selected_entity != -1 && point_in_rect(mouse_pos, _layout.text_editor_rect))) {
+			_edit_tool_selected_entity = _entity_under_pos(computer, world_mouse_pos);
+		}
+		// int64_t entity_under_mouse = 
+		// entity_t *entity = &computer->ram->entities.entities[entity_under_mouse];
+		
+	}
+
+	if (_edit_tool_selected_entity == -1) {
+		return;
+	}
+
+	entity_t *entity = &computer->ram->entities.entities[_edit_tool_selected_entity];
+	file_update(computer, &entity->data, _layout.text_editor_rect, computer->ram->code_editor_config);
 }
 
 static void _entity_editor_update(computer_t *computer) {
 	switch (_selected_entity_tool) {
 		case ENTITY_TOOL_SELECT: _entity_tool_select(computer); break;
 		case ENTITY_TOOL_STAMP: _entity_tool_stamp(computer); break;
+		case ENTIYY_TOOL_EDIT: _entity_tool_edit(computer); break;
 	}
 }
 
@@ -592,6 +645,12 @@ void map_editor_draw(computer_t *computer) {
 	// Tool bar
 	if (_selected_layer == ENTITY_LAYER) {
 		_selected_entity_tool = gui_button_array(computer->ram, _layout.tools_start_pos, g_skin_layout.map_editor.entity_tool_buttons, _selected_entity_tool);
+		
+		if (_selected_entity_tool == ENTIYY_TOOL_EDIT && _edit_tool_selected_entity != -1) {
+			entity_t *entity = &computer->ram->entities.entities[_edit_tool_selected_entity];
+			gfx_draw_surface_rect(&computer->ram->framebuffer, SKIN_SURF(computer->ram->skin.data), _layout.text_editor_panel_pos, g_skin_layout.map_editor.text_editor_rect, COLOR_NONE);
+			file_draw(computer, &entity->data, _layout.text_editor_rect, computer->ram->code_editor_config);
+		}
 	} else {
 
 	}

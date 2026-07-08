@@ -312,6 +312,8 @@ static struct {
 		
 		button_t entity_layer_button;
 		button_array_t tile_layer_buttons;
+
+		rect_t text_editor_rect;
 	} map_editor;
 
 	struct {
@@ -457,7 +459,7 @@ g_skin_layout = {
 				.pressed_rect = {{3344, 76, 16, 16}},
 			},
 			.increase = {0, 16},
-			.amount = 2,
+			.amount = 3,
 		},
 
 		.toggle_layer_button = {
@@ -478,6 +480,8 @@ g_skin_layout = {
 			.increase = {0, 16},
 			.amount = 4,
 		},
+
+		.text_editor_rect = {{4480, 0, 310, 324}},
 	},
 
 	.sound_editor = {

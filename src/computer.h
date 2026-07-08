@@ -84,7 +84,7 @@ Memory layout, global constants
 #define MIN_PATTERN_SPEED 1
 #define MAX_PATTERN_SPEED 255
 
-#define SKIN_WIDTH SCREEN_WIDTH * 7
+#define SKIN_WIDTH SCREEN_WIDTH * 8
 #define SKIN_HEIGHT SCREEN_HEIGHT
 
 #define GUI_FONT_INDEX 0
@@ -232,7 +232,8 @@ typedef struct shell {
 
 typedef struct entity {
 	uint8_t id[32]; // Unique
-	uint8_t tag[32]; // Not unique, can query
+	// uint8_t tag[32]; // Not unique, can query
+	file_t data;
 	
 	int32_t x;
 	int32_t y;
