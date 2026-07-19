@@ -268,9 +268,7 @@ static const palette_t g_builtin_palette = (palette_t){
 	},
 };
 
-// TODO: make substructs for each editor like in g_keybinds
 static struct {
-
 	struct {
 		button_t zinc_button;
 	

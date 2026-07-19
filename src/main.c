@@ -15,6 +15,7 @@ Main
 #include "common/io.h"
 #include "common/string.h"
 #include "res.h"
+#include "serialize.h"
 
 #ifdef BACKEND_SDL2
 #define SDL_MAIN_HANDLED
@@ -144,6 +145,9 @@ int main(int argc, char *argv[]) {
 	shell_init(&computer);
 
 	create_default_directories();
+
+	// string_t absolute_path = get_absolute_path(get_temp_allocator(), path_append(get_temp_allocator(), STR("discs"), STR("idksambdsanm")));
+	// set_game_path(&computer, absolute_path);
 	
 	// TODO: simplify the state switching logic
 	while (window_is_open()) {

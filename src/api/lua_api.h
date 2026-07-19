@@ -15,3 +15,5 @@ int lua_call_update();
 int lua_call_draw();
 
 void lua_quit();
+
+// string_t serialize_entities(allocator_t allocator, ram_t *ram);

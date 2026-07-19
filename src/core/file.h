@@ -52,7 +52,6 @@ ARRAY_DEFINE(file_action_t)
 
 typedef struct file {
 	string_t string;
-	size_t size;
 	size_t capacity;
 
 	struct {

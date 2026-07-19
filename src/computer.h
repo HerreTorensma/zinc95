@@ -99,6 +99,7 @@ Memory layout, global constants
 #define MAX_CHANNELS 12
 #define MAX_INSTRUMENTS 16
 #define MAX_ARRANGEMENTS 128
+#define PATTERNS_IN_ARRANGEMENT 6
 
 typedef uint8_t color_t;
 
@@ -231,21 +232,23 @@ typedef struct shell {
 } shell_t;
 
 typedef struct entity {
-	uint8_t id[32]; // Unique
+	// uint8_t id[32]; // Unique
 	// uint8_t tag[32]; // Not unique, can query
 	file_t data;
 	
 	int32_t x;
 	int32_t y;
-
+	
 	uint16_t sprite;
 	uint8_t w;
 	uint8_t h;
+	
+	uint8_t valid;
 } entity_t;
 
 typedef struct entities {
 	entity_t entities[MAX_ENTITIES];
-	uint64_t amount;
+	// uint64_t amount;
 } entities_t;
 
 typedef enum waveform {
@@ -261,14 +264,14 @@ typedef struct instrument {
 
 	uint8_t attack;
 	uint8_t decay;
-	float sustain;
+	uint8_t sustain; // For some reason this was a float first which it shouldn't have been at all I think
 	uint8_t release;
 } instrument_t;
 
 typedef struct pattern_step {
+	uint8_t instrument_index;
 	uint8_t pitch; // Ranges from 0 - 23, so 2 * 12 possibilities or 2 octaves
 	uint8_t volume;
-	uint8_t instrument_index;
 } pattern_step_t;
 
 #define STEPS_IN_PATTERN 64
@@ -281,7 +284,7 @@ typedef struct pattern {
 } pattern_t;
 
 typedef struct arrangement {
-	int16_t pattern_indices[6]; // Signed because -1 is used to indicate no pattern
+	int16_t pattern_indices[PATTERNS_IN_ARRANGEMENT]; // Signed because -1 is used to indicate no pattern
 } arrangement_t;
 
 // TODO: Manually align this stuff
@@ -363,7 +366,7 @@ typedef struct computer {
 
 	// file_t file;
 	file_t files[FILES_AMOUNT];
-	size_t active_files_amount;
+	uint64_t active_files_amount;
 
 	// TODO: use this
 	// file_collection_t file_collection;
@@ -437,11 +440,5 @@ void sprite_set_pixel(ram_t *ram, int sprite_sheet_index, int sprite_index, int 
 */
 
 void set_game_path(computer_t *computer, string_t new_path);
-
-// Takes absolute file path
-void game_save(computer_t *computer, string_t path);
-
-// Takes absolute file path
-int game_load(computer_t *computer, string_t path);
 
 void import_file(computer_t *computer, string_t path);

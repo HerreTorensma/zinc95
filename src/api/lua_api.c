@@ -303,7 +303,7 @@ static int _lua_get_ents(lua_State *lua) {
 	
 	int size = 0;
 	for (size_t i = 0; i < MAX_ENTITIES; i++) {
-		if (computer->ram->entities.entities[i].id[0] == '\0') {
+		if (!computer->ram->entities.entities[i].valid) {
 			size = i;
 			break;
 		}
@@ -552,3 +552,18 @@ void lua_quit() {
 	
 	_lua = NULL;
 }
+
+// string_t serialize_entities(allocator_t allocator, ram_t *ram) {
+// 	lua_State *l = luaL_newstate();
+// 	luaL_openlibs(l);
+
+// 	string_builder_t builder = {0};
+// 	string_builder_init(&builder, allocator, 8);
+
+// 	_lua_get_ents(l);
+// 	_serialize_lua_value(l, -1, &builder);
+
+// 	lua_close(l);
+
+// 	return builder.string;
+// }

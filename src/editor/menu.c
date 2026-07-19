@@ -4,6 +4,7 @@
 #include "gui.h"
 #include "../core/gfx.h"
 #include "../res.h"
+#include "../serialize.h"
 
 #include "code.h"
 #include "sprite.h"

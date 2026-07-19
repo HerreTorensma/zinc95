@@ -152,8 +152,15 @@ void string_builder_init(string_builder_t *builder, allocator_t allocator, size_
 void string_builder_append(string_builder_t *builder, string_t string) {
 	_string_builder_reserve(builder, builder->string.len + string.len);
 
-	memcpy(builder->string.data + builder->string.len, string.data, string.len * sizeof(char));
+	memcpy(builder->string.data + builder->string.len, string.data, string.len);
 	builder->string.len += string.len;
+}
+
+void string_builder_append_raw(string_builder_t *builder, uint8_t *data, uint64_t len) {
+	_string_builder_reserve(builder, builder->string.len + len);
+
+	memcpy(builder->string.data + builder->string.len, data, len);
+	builder->string.len += len;
 }
 
 void string_builder_append_char(string_builder_t *builder, uint8_t c) {

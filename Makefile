@@ -3,7 +3,7 @@ CFLAGS = -O2 -g -Wall -Wextra -Wsign-conversion -Wpedantic -std=c11 -Wno-unused-
 EXECUTABLE = zinc95
 
 # Source files
-SRC = src/main.c src/computer.c \
+SRC = src/main.c src/computer.c src/serialize.c \
 src/core/window_sdl2.c src/core/input.c src/core/input_sdl2.c src/core/gfx.c src/core/gfx_sdl2.c src/core/file.c src/core/audio.c src/core/audio_sdl2.c src/core/txt.c \
 src/editor/gui.c src/editor/menu.c  src/editor/code.c src/editor/sprite.c src/editor/map.c \
 src/editor/sound.c src/editor/music.c src/editor/shared.c \

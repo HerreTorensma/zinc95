@@ -7,6 +7,7 @@
 #include "gfx.h"
 #include "input.h"
 #include "../common/io.h"
+#include "../serialize.h"
 
 // Directly generates the rgb framebuffer from the textbuffer
 void txt_generate_rgb_framebuffer(computer_t *computer) {
@@ -390,8 +391,10 @@ void shell_init(computer_t *computer) {
 	shell_new_command(computer);
 
 	// TODO: remove eventually, it's just so I don't have to type it manually
-	_execute_command(computer, STR("load output"));
-	shell_new_command(computer);
+	// _execute_command(computer, STR("load idksambdsanm"));
+	// _execute_command(computer, STR("load output2"));
+	// _execute_command(computer, STR("load whatssss"));
+	// shell_new_command(computer);
 }
 
 void shell_update(computer_t *computer) {

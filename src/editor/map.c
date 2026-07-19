@@ -164,7 +164,7 @@ void map_editor_init(computer_t *computer) {
 // Returns index
 static int64_t _entity_under_pos(computer_t *computer, point_t pos) {
 	for (size_t i = 0; i < MAX_ENTITIES; i++) {
-		if (computer->ram->entities.entities[i].id[0] == '\0') {
+		if (!computer->ram->entities.entities[i].valid) {
 			continue;
 		}
 
@@ -212,7 +212,7 @@ static void _initialize_drag_state(computer_t *computer, point_t world_mouse_pos
 
 static size_t _find_empty_entity_index(computer_t *computer) {
 	for (size_t i = 0; i < MAX_ENTITIES; i++) {
-		if (computer->ram->entities.entities[i].id[0] == '\0') {
+		if (!computer->ram->entities.entities[i].valid) {
 			return i;
 		}
 	}
@@ -272,7 +272,7 @@ static void _entity_tool_select(computer_t *computer) {
 		// Add all entities within selection rect to _selected_entity_indices
 		for (size_t i = 0; i < MAX_ENTITIES; i++) {
 			entity_t *entity = &computer->ram->entities.entities[i];
-			if (entity->id[0] == '\0') {
+			if (!entity->valid) {
 				continue;
 			}
 
@@ -299,7 +299,7 @@ static void _entity_tool_select(computer_t *computer) {
 
 		for (size_t i = 0; i < MAX_ENTITIES; i++) {
 			entity_t *entity = &computer->ram->entities.entities[i];
-			if (entity->id[0] == '\0') {
+			if (!entity->valid) {
 				continue;
 			}
 
@@ -336,7 +336,8 @@ static void _create_entity(computer_t *computer, point_t pos, int sprite, int w,
 	size_t index = _find_empty_entity_index(computer);
 	entity_t *entity = &computer->ram->entities.entities[index];
 
-	entity->id[0] = 'e';
+	// entity->id[0] = 'e';
+	entity->valid = true;
 
 	entity->x = pos.x;
 	entity->y = pos.y;
@@ -529,7 +530,7 @@ void map_editor_draw(computer_t *computer) {
 	// Draw entities
 	if (!_entity_layer_hidden) {
 		for (size_t i = 0; i < MAX_ENTITIES; i++) {
-			if (computer->ram->entities.entities[i].id[0] == '\0') {
+			if (!computer->ram->entities.entities[i].valid) {
 				continue;
 			}
 	

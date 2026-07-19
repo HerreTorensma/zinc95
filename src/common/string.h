@@ -13,15 +13,15 @@
 
 // Length based string struct, not null-terminated
 typedef struct string {
-	char *data;
-	size_t len;
+	uint64_t len;
+	uint8_t *data;
 } string_t;
 
 // Compile time evaluated string macro (not used obv)
 // #define STR(s) {.data = s, .len = sizeof(s) - 1}
 
 // Runtime evaluated string macro
-#define STR(s) (string_t){.data = (char *)s, .len = strlen(s)}
+#define STR(s) (string_t){.data = (uint8_t *)s, .len = strlen(s)}
 
 // Define string array
 ARRAY_DEFINE(string_t)
@@ -72,6 +72,8 @@ typedef struct string_builder {
 void string_builder_init(string_builder_t *builder, allocator_t allocator, size_t initial_capacity);
 
 void string_builder_append(string_builder_t *builder, string_t string);
+
+void string_builder_append_raw(string_builder_t *builder, uint8_t *data, uint64_t len);
 
 void string_builder_append_char(string_builder_t *builder, uint8_t c);
 

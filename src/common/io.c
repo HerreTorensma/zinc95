@@ -4,8 +4,15 @@
 #include <assert.h>
 
 void file_write_string(string_t path, string_t string) {
-	FILE *file = fopen(string_to_c_string(get_temp_allocator(), path), "w");
-	fwrite(string.data, sizeof(char), string.len, file);
+	char *c_path = string_to_c_string(get_temp_allocator(), path);
+	FILE *file = fopen(c_path, "wb");
+
+	if (!file) {
+		printf("Could not open %s for writing\n", c_path);
+		return;
+	}
+
+	fwrite(string.data, sizeof(uint8_t), string.len, file);
 	fclose(file);
 }
 
@@ -26,7 +33,7 @@ string_t file_load_to_string(allocator_t allocator, string_t path) {
 	};
 	assert(string.data != NULL);
 
-	size_t read_len = fread(string.data, sizeof(char), file_size, file);
+	size_t read_len = fread(string.data, sizeof(uint8_t), file_size, file);
 	// assert(read_len == file_size);
 	
 	fclose(file);
