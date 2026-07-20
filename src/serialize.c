@@ -57,7 +57,7 @@ int write_u8(const writer_t *writer, const uint8_t value) {
 	return fwrite(&value, sizeof(uint8_t), 1, writer->file) == 1;
 }
 
-int write_u16(const writer_t *writer, const uint8_t value) {
+int write_u16(const writer_t *writer, const uint16_t value) {
 	return fwrite(&value, sizeof(uint16_t), 1, writer->file) == 1;
 }
 
@@ -158,7 +158,9 @@ void write_entity(const writer_t *writer, const entity_t *entity) {
 
 	// Text data
 	write_u64(writer, entity->data.string.len);
-	write_bytes(writer, entity->data.string.data, entity->data.string.len);
+	if (entity->data.string.len > 0) {
+		write_bytes(writer, entity->data.string.data, entity->data.string.len);
+	}
 }
 
 void write_pattern_step(const writer_t *writer, const pattern_step_t *step) {
@@ -288,6 +290,7 @@ void read_entity(const reader_t *reader, arena_t *arena, entity_t *entity) {
 		.len = len,
 	};
 
+	file_clear(&entity->data);
 	file_append_string(&entity->data, string);
 }
 
