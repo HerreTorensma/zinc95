@@ -2,6 +2,8 @@
 
 #include <math.h>
 
+// TODO: arpeggio
+
 const char *note_to_string_map[] = {
 	[NOTE_C] = "C",
 	[NOTE_CSHARP] = "C#",

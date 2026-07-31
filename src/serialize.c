@@ -8,6 +8,13 @@
 #include "computer.h"
 #include "core/file.h"
 #include "common/io.h"
+#include "common/serialize.h"
+
+// 3 parts
+// Static
+// Code
+// Entities
+// Each have their own crc hash
 
 // TODO: compression?
 // hash checksum
@@ -22,130 +29,32 @@ typedef struct header {
 	uint8_t magic[MAGIC_LEN];
 	uint32_t version;
 	uint32_t crc32_hash; // TODO: use
+	
+	// uint64_t data_size;
+	
+	// uint64_t uncompressed_size;
+	// uint64_t compressed_size;
 } header_t;
-
-uint64_t crc32(uint8_t *data, uint64_t len) {
-	return 0;
-}
-
-typedef struct writer {
-	FILE *file;
-	bool valid;
-} writer_t;
-
-writer_t writer_open(const string_t path) {
-	writer_t writer = {0};
-	writer.valid = true;
-
-	char *c_path = string_to_c_string(get_temp_allocator(), path);
-	writer.file = fopen(c_path, "wb");
-
-	if (!writer.file) {
-		printf("Could not open %s for writing\n", c_path);
-		writer.valid = false;
-	}
-
-	return writer;
-}
-
-void writer_close(writer_t *writer) {
-	fclose(writer->file);
-}
-
-// Writer helper functions
-int write_u8(const writer_t *writer, const uint8_t value) {
-	return fwrite(&value, sizeof(uint8_t), 1, writer->file) == 1;
-}
-
-int write_u16(const writer_t *writer, const uint16_t value) {
-	return fwrite(&value, sizeof(uint16_t), 1, writer->file) == 1;
-}
-
-int write_u32(const writer_t *writer, const uint32_t value) {
-	return fwrite(&value, sizeof(uint32_t), 1, writer->file) == 1;
-}
-
-int write_i32(const writer_t *writer, const int32_t value) {
-	return fwrite(&value, sizeof(int32_t), 1, writer->file) == 1;
-}
-
-int write_u64(const writer_t *writer, const uint64_t value) {
-	return fwrite(&value, sizeof(uint64_t), 1, writer->file) == 1;
-}
-
-int write_bytes(const writer_t *writer, const void *data, const size_t len) {
-	return fwrite(data, 1, len, writer->file) == len;
-}
-
-// --- READER ---
-
-typedef struct reader {
-	FILE *file;
-	bool valid;
-} reader_t;
-
-reader_t reader_open(string_t path) {
-	reader_t reader = {0};
-	reader.valid = true;
-
-	char *c_path = string_to_c_string(get_temp_allocator(), path);
-	reader.file = fopen(c_path, "rb");
-
-	if (!reader.file) {
-		printf("Could not open %s for reading\n", c_path);
-		reader.valid = false;
-	}
-
-	return reader;
-}
-
-void reader_close(reader_t *reader) {
-	fclose(reader->file);
-}
-
-int read_u8(const reader_t *reader, uint8_t *value) {
-	return fread(value, sizeof(uint8_t), 1, reader->file) == 1;
-}
-
-int read_u16(const reader_t *reader, uint16_t *value) {
-	return fread(value, sizeof(uint16_t), 1, reader->file) == 1;
-}
-
-int read_u32(const reader_t *reader, uint32_t *value) {
-	return fread(value, sizeof(uint32_t), 1, reader->file) == 1;
-}
-
-int read_i32(const reader_t *reader, int32_t *value) {
-	return fread(value, sizeof(int32_t), 1, reader->file) == 1;
-}
-
-int read_u64(const reader_t *reader, uint64_t *value) {
-	return fread(value, sizeof(uint64_t), 1, reader->file) == 1;
-}
-
-int read_bytes(const reader_t *reader, void *data, const size_t len) {
-	return fread(data, 1, len, reader->file) == len;
-}
 
 // --- Higher level ---
 
-void write_header(const writer_t *writer, const header_t *header) {
+static void _write_header(writer_t *writer, const header_t *header) {
 	write_bytes(writer, header->magic, MAGIC_LEN);
 	write_u32(writer, header->version);
 	write_u32(writer, header->crc32_hash);
 }
 
 // Change in case I ever decide to make the color_t a larger int
-int write_color(const writer_t *writer, const color_t value) {
+static int _write_color(writer_t *writer, const color_t value) {
 	return write_u8(writer, (uint8_t)value);
 }
 
-void write_sprite(const writer_t *writer, const sprite_t *sprite) {
+static void _write_sprite(writer_t *writer, const sprite_t *sprite) {
 	write_u32(writer, sprite->flags);
-	write_color(writer, sprite->color_key);
+	_write_color(writer, sprite->color_key);
 }
 
-void write_entity(const writer_t *writer, const entity_t *entity) {
+static void _write_entity(writer_t *writer, const entity_t *entity) {
 	if (!entity->valid) {
 		return;
 	}
@@ -163,13 +72,7 @@ void write_entity(const writer_t *writer, const entity_t *entity) {
 	}
 }
 
-void write_pattern_step(const writer_t *writer, const pattern_step_t *step) {
-	write_u8(writer, step->instrument_index);
-	write_u8(writer, step->pitch);
-	write_u8(writer, step->volume);
-}
-
-void write_instrument(const writer_t *writer, const instrument_t *instrument) {
+static void _write_instrument(writer_t *writer, const instrument_t *instrument) {
 	write_u8(writer, (uint8_t)instrument->waveform);
 
 	write_u8(writer, instrument->attack);
@@ -178,15 +81,21 @@ void write_instrument(const writer_t *writer, const instrument_t *instrument) {
 	write_u8(writer, instrument->release);
 }
 
-void write_pattern(const writer_t *writer, const pattern_t *pattern) {
+static void _write_pattern_step(writer_t *writer, const pattern_step_t *step) {
+	write_u8(writer, step->instrument_index);
+	write_u8(writer, step->pitch);
+	write_u8(writer, step->volume);
+}
+
+static void _write_pattern(writer_t *writer, const pattern_t *pattern) {
 	for (uint64_t i = 0; i < STEPS_IN_PATTERN; i++) {
-		write_pattern_step(writer, &pattern->steps[i]);
+		_write_pattern_step(writer, &pattern->steps[i]);
 	}
 	write_u8(writer, pattern->speed);
 	write_u8(writer, pattern->volume);
 }
 
-void write_arrangement(const writer_t *writer, const arrangement_t *arrangement) {
+static void _write_arrangement(writer_t *writer, const arrangement_t *arrangement) {
 	write_bytes(writer, arrangement->pattern_indices, PATTERNS_IN_ARRANGEMENT * sizeof(uint16_t));
 }
 
@@ -197,9 +106,9 @@ void game_save(const computer_t *computer, const string_t path) {
 	header_t header = {
 		.magic = "zinc",
 		.version = CURRENT_FILE_VERSION,
-		.crc32_hash = 0,
+		// .crc32_hash = compute_crc32(0, uint8_t *data, uint64_t len),
 	};
-	write_header(&writer, &header);
+	_write_header(&writer, &header);
 
 	// Code
 	write_u64(&writer, computer->active_files_amount);
@@ -214,7 +123,7 @@ void game_save(const computer_t *computer, const string_t path) {
 	
 	// Sprites
 	for (uint64_t i = 0; i < TOTAL_SPRITES; i++) {
-		write_sprite(&writer, &computer->ram->sprites[i]);
+		_write_sprite(&writer, &computer->ram->sprites[i]);
 	}
 
 	// Map
@@ -231,23 +140,26 @@ void game_save(const computer_t *computer, const string_t path) {
 	}
 	write_u64(&writer, entities_amount);
 	for (uint64_t i = 0; i < MAX_ENTITIES; i++) {
-		write_entity(&writer, &computer->ram->entities.entities[i]);
+		_write_entity(&writer, &computer->ram->entities.entities[i]);
 	}
 
 	// Instruments
 	for (uint64_t i = 0; i < MAX_INSTRUMENTS; i++) {
-		write_instrument(&writer, &computer->ram->instruments[i]);
+		_write_instrument(&writer, &computer->ram->instruments[i]);
 	}
 
 	// Patterns
 	for (uint64_t i = 0; i < PATTERN_AMOUNT; i++) {
-		write_pattern(&writer, &computer->ram->patterns[i]);
+		_write_pattern(&writer, &computer->ram->patterns[i]);
 	}
 
 	// Arrangements
 	for (uint64_t i = 0; i < MAX_ARRANGEMENTS; i++) {
-		write_arrangement(&writer, &computer->ram->arrangements[i]);
+		_write_arrangement(&writer, &computer->ram->arrangements[i]);
 	}
+
+	// Patch header
+	
 
 	writer_close(&writer);
 }

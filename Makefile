@@ -8,7 +8,7 @@ src/core/window_sdl2.c src/core/input.c src/core/input_sdl2.c src/core/gfx.c src
 src/editor/gui.c src/editor/menu.c  src/editor/code.c src/editor/sprite.c src/editor/map.c \
 src/editor/sound.c src/editor/music.c src/editor/shared.c \
 src/api/api.c src/api/lua_api.c \
-src/common/math2d.c src/common/mem.c src/common/string.c src/common/io.c \
+src/common/math2d.c src/common/mem.c src/common/string.c src/common/io.c src/common/serialize.c src/common/serialize_zlib.c \
 src/tests.c
 
 OBJ = $(SRC:.c=.o)
@@ -29,20 +29,20 @@ endif
 ifeq ($(PLAT),mingw)
 	SRC += src/common/io_windows.c
 	CFLAGS += -Iextern/sdl2/include -Iextern/lua-5.4.8/src
-	LDFLAGS = extern/lua-5.4.8/src/liblua.a -Lextern/sdl2/lib -lmingw32 -lSDL2main -lSDL2 -lm
+	LDFLAGS = extern/lua-5.4.8/src/liblua.a -Lextern/sdl2/lib -lmingw32 -lSDL2main -lSDL2 -lz -lm
 	EXECUTABLE = zinc95.exe
 endif
 
 ifeq ($(PLAT),linux)
 	SRC += src/common/io_posix.c
 	CFLAGS += -Iextern/lua-5.4.8/src
-	LDFLAGS = extern/lua-5.4.8/src/liblua.a -lSDL2 -lm
+	LDFLAGS = extern/lua-5.4.8/src/liblua.a -lSDL2 -lz -lm
 endif
 
 ifeq ($(PLAT),macosx)
 	SRC += src/common/io_posix.c
 	CFLAGS += -Iextern/sdl2/include -Iextern/lua-5.4.8/src -DPLATFORM_MACOSX
-	LDFLAGS = extern/lua-5.4.8/src/liblua.a -Lextern/sdl2/lib -lSDL2 -lm
+	LDFLAGS = extern/lua-5.4.8/src/liblua.a -Lextern/sdl2/lib -lSDL2 -lz -lm
 endif
 
 all: build
@@ -89,3 +89,11 @@ ifeq ($(PLAT),mingw)
 	rm -rf temp
 endif
 # TODO: add macosx support
+
+# TODO: finish windows support
+# lib_zlib:
+# 	mkdir -p extern
+# 	mkdir -p temp
+# 	curl -L -o temp/temp.tar.gz https://github.com/madler/zlib/releases/download/v1.3.2/zlib-1.3.2.tar.gz
+# 	tar -xzf temp/temp.tar.gz -C extern
+# 	rm -rf temp
