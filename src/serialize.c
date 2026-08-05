@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #include "common/mem.h"
 #include "common/string.h"
@@ -15,6 +16,7 @@
 // Code
 // Entities
 // Each have their own crc hash
+// Ill implement that later I think
 
 // TODO: compression?
 // hash checksum
@@ -25,15 +27,20 @@
 
 #define CURRENT_FILE_VERSION 1
 
+// Little endian
+
+// enum {
+// 	HEADER_FLAG_COMPRESSED = 1 << 0,
+// 	HEADER_
+// };
+
 typedef struct header {
 	uint8_t magic[MAGIC_LEN];
 	uint32_t version;
-	uint32_t crc32_hash; // TODO: use
 	
-	// uint64_t data_size;
-	
-	// uint64_t uncompressed_size;
-	// uint64_t compressed_size;
+	uint64_t uncompressed_size;
+	uint64_t compressed_size;
+	uint32_t crc; // TODO: use
 } header_t;
 
 // --- Higher level ---
@@ -41,7 +48,10 @@ typedef struct header {
 static void _write_header(writer_t *writer, const header_t *header) {
 	write_bytes(writer, header->magic, MAGIC_LEN);
 	write_u32(writer, header->version);
-	write_u32(writer, header->crc32_hash);
+	
+	write_u64(writer, header->uncompressed_size);
+	write_u64(writer, header->compressed_size);
+	write_u32(writer, header->crc);
 }
 
 // Change in case I ever decide to make the color_t a larger int
@@ -103,12 +113,18 @@ void game_save(const computer_t *computer, const string_t path) {
 	writer_t writer = writer_open(path);
 
 	// Header
-	header_t header = {
-		.magic = "zinc",
-		.version = CURRENT_FILE_VERSION,
-		// .crc32_hash = compute_crc32(0, uint8_t *data, uint64_t len),
-	};
+	header_t header = {0};
+	// header_t header = {
+	// 	.magic = "zinc",
+	// 	.version = CURRENT_FILE_VERSION,
+	// 	// .crc32_hash = compute_crc32(0, uint8_t *data, uint64_t len),
+	// };
+
+	uint64_t header_index = writer_tell(&writer);
 	_write_header(&writer, &header);
+	
+	payload_meta_t payload_meta = {0};
+	writer_begin_compression(&writer, &payload_meta);
 
 	// Code
 	write_u64(&writer, computer->active_files_amount);
@@ -158,16 +174,31 @@ void game_save(const computer_t *computer, const string_t path) {
 		_write_arrangement(&writer, &computer->ram->arrangements[i]);
 	}
 
+	writer_end_compression(&writer);
+
 	// Patch header
-	
+	header_t new_header = {
+		.magic = "zinc",
+		.version = CURRENT_FILE_VERSION,
+		.uncompressed_size = payload_meta.uncompressed_size,
+		.compressed_size = payload_meta.compressed_size,
+		.crc = payload_meta.crc,
+	};
+	writer_seek(&writer, header_index);
+	_write_header(&writer, &new_header);
 
 	writer_close(&writer);
 }
 
 void read_header(reader_t *reader, header_t *header) {
-	read_bytes(reader, header->magic, 4);
+	if (read_bytes(reader, header->magic, 4)) {
+		printf("Error reading magic number\n");
+	}
 	read_u32(reader, &header->version);
-	read_u32(reader, &header->crc32_hash);
+	
+	read_u64(reader, &header->uncompressed_size);
+	read_u64(reader, &header->compressed_size);
+	read_u32(reader, &header->crc);
 }
 
 int read_color(reader_t *reader, color_t *value) {
@@ -179,7 +210,7 @@ void read_sprite(reader_t *reader, sprite_t *sprite) {
 	read_color(reader, &sprite->color_key);
 }
 
-void read_entity(const reader_t *reader, arena_t *arena, entity_t *entity) {
+void read_entity(reader_t *reader, arena_t *arena, entity_t *entity) {
 	read_i32(reader, &entity->x);
 	read_i32(reader, &entity->y);
 	read_u16(reader, &entity->sprite);
@@ -206,7 +237,7 @@ void read_entity(const reader_t *reader, arena_t *arena, entity_t *entity) {
 	file_append_string(&entity->data, string);
 }
 
-void read_instrument(const reader_t *reader, instrument_t *instrument) {
+void read_instrument(reader_t *reader, instrument_t *instrument) {
 	read_u8(reader, (uint8_t *)&instrument->waveform);
 
 	read_u8(reader, &instrument->attack);
@@ -215,13 +246,13 @@ void read_instrument(const reader_t *reader, instrument_t *instrument) {
 	read_u8(reader, &instrument->release);
 }
 
-void read_pattern_step(const reader_t *reader, pattern_step_t *step) {
+void read_pattern_step(reader_t *reader, pattern_step_t *step) {
 	read_u8(reader, &step->instrument_index);
 	read_u8(reader, &step->pitch);
 	read_u8(reader, &step->volume);
 }
 
-void read_pattern(const reader_t *reader, pattern_t *pattern) {
+void read_pattern(reader_t *reader, pattern_t *pattern) {
 	for (uint64_t i = 0; i < STEPS_IN_PATTERN; i++) {
 		read_pattern_step(reader, &pattern->steps[i]);
 	}
@@ -229,9 +260,14 @@ void read_pattern(const reader_t *reader, pattern_t *pattern) {
 	read_u8(reader, &pattern->volume);
 }
 
-void read_arrangement(const reader_t *reader, arrangement_t *arrangement) {
+void read_arrangement(reader_t *reader, arrangement_t *arrangement) {
 	read_bytes(reader, arrangement->pattern_indices, PATTERNS_IN_ARRANGEMENT * sizeof(uint16_t));
 }
+
+// I think the whole thing should be loaded into memory first,
+// Then check if compressed size is equal to whats in the header
+// Then decompress and check uncompressed_size
+// And CRC
 
 int game_load(computer_t *computer, string_t path) {
 	// game_load_text(computer, path);
@@ -256,16 +292,26 @@ int game_load(computer_t *computer, string_t path) {
 		
 		return 1;
 	}
-
+	
 	if (header.version != CURRENT_FILE_VERSION) {
 		// Convert it or something
 	}
 
+	payload_meta_t payload_meta = {0};
+	reader_begin_decompression(&reader, &payload_meta);
+	// assert(reader.valid);
+
 	// Code
+	// if (read_u64(&reader, &computer->active_files_amount)) {
+	// 	// printf("active_files_amount: %zu\n", computer->active_files_amount);
+	// }
 	read_u64(&reader, &computer->active_files_amount);
+	printf("active_files_amount: %zu\n", computer->active_files_amount);
+
 	for (uint64_t i = 0; i < computer->active_files_amount; i++) {
 		uint64_t len = 0;
 		read_u64(&reader, &len);
+		printf("len: %zu\n", len);
 		
 		uint8_t *buffer = arena_alloc(&arena, len);
 		read_bytes(&reader, buffer, len);
@@ -294,6 +340,7 @@ int game_load(computer_t *computer, string_t path) {
 	// Entities
 	uint64_t entities_amount = 0;
 	read_u64(&reader, &entities_amount);
+	printf("entities_amount: %zu\n", entities_amount);
 	for (uint64_t i = 0; i < entities_amount; i++) {
 		read_entity(&reader, &arena, &computer->ram->entities.entities[i]);
 		computer->ram->entities.entities[i].valid = true;
@@ -314,9 +361,20 @@ int game_load(computer_t *computer, string_t path) {
 		read_arrangement(&reader, &computer->ram->arrangements[i]);
 	}
 
+	reader_end_decompression(&reader);
+
+	// Compare payload meta with that in the header
+	printf("                  %12s %12s\n", "header", "computed");
+	printf("uncompressed_size %12zu %12zu\n", header.uncompressed_size, payload_meta.uncompressed_size);
+	printf("compressed_size   %12zu %12zu\n", header.compressed_size, payload_meta.compressed_size);
+	printf("crc               %12u %12u\n", header.crc, payload_meta.crc);
+	assert(header.uncompressed_size == payload_meta.uncompressed_size);
+	assert(header.compressed_size == payload_meta.compressed_size);
+	assert(header.crc == payload_meta.crc);
+
 	reader_close(&reader);
 
 	arena_free(&arena);
 
-	return 0;
+	return OK;
 }

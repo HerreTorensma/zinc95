@@ -11,6 +11,9 @@
 	#define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
+#define OK 0
+#define ERR 1
+
 // TODO
 // #define print(...) _Generic((FIRST_ARG(__VA_ARGS__)),
 // 	string: prints,

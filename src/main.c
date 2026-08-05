@@ -16,6 +16,7 @@ Main
 #include "common/string.h"
 #include "res.h"
 #include "serialize.h"
+#include <stdlib.h>
 
 #ifdef BACKEND_SDL2
 #define SDL_MAIN_HANDLED
@@ -255,4 +256,6 @@ int main(int argc, char *argv[]) {
 
 	audio_deinit(&computer);
 	window_quit();
+
+	return EXIT_SUCCESS;
 }
