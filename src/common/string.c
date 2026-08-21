@@ -170,6 +170,16 @@ void string_builder_append_char(string_builder_t *builder, uint8_t c) {
 	builder->string.len++;
 }
 
+void string_builder_append_u8(string_builder_t *builder, uint8_t value) {
+	// TODO: check endianness and convert
+	string_builder_append(builder, (string_t){.data = (uint8_t *)&value, .len = sizeof(value)});
+}
+
+void string_builder_append_u16(string_builder_t *builder, uint16_t value) {
+	// TODO: check endianness and convert
+	string_builder_append(builder, (string_t){.data = (uint8_t *)&value, .len = sizeof(value)});
+}
+
 void string_builder_deinit(string_builder_t *builder) {
 	dealloc(builder->allocator, builder->string.data);
 	builder->string.len = 0;

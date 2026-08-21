@@ -1,4 +1,6 @@
 #include "serialize.h"
+#include "mem.h"
+#include "string.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -14,19 +16,16 @@
 
 // Its called a memory writer
 
-writer_t writer_open(const string_t path) {
-	writer_t writer = {0};
-	writer.valid = true;
-
+int writer_open(writer_t *writer, const string_t path) {
 	char *c_path = string_to_c_string(get_temp_allocator(), path);
-	writer.file = fopen(c_path, "wb");
+	writer->file = fopen(c_path, "wb");
 
-	if (!writer.file) {
+	if (!writer->file) {
 		printf("Could not open %s for writing\n", c_path);
-		writer.valid = false;
+		return ERR;
 	}
 
-	return writer;
+	return OK;
 }
 
 void writer_close(writer_t *writer) {
@@ -41,57 +40,13 @@ uint64_t writer_tell(writer_t *writer) {
 	return (uint64_t)ftell(writer->file);
 }
 
-// void writer_track_payload(writer_t *writer, payload_meta_t *payload_meta) {
-// 	payload_meta->crc = 0;
-// 	payload_meta->uncompressed_size = 0;
-// 	payload_meta->compressed_size = 0;
-
-// 	writer->payload_meta = payload_meta;
-// }
-
-// void reader_track_payload(reader_t *reader, payload_meta_t *payload_meta) {
-// 	payload_meta->crc = 0;
-// 	payload_meta->uncompressed_size = 0;
-// 	payload_meta->compressed_size = 0;
-
-// 	reader->payload_meta = payload_meta;
-// }
-
 // Returns 0 if correct (like most C programs I think)
 int write_bytes(writer_t *writer, const void *data, const size_t len) {
-	if (!writer->compression_enabled) {
-		// TODO: check if this return value makes sense
-		return fwrite(data, 1, len, writer->file) != len;
-	}
 
-	assert(writer->payload_meta != NULL);
+}
 
-	writer->payload_meta->uncompressed_size += len;
-	
-	writer->payload_meta->crc = crc32(writer->payload_meta->crc, data, len);
-
-	writer->zlib_stream.next_in = (Bytef *)data;
-	writer->zlib_stream.avail_in = (uInt)len;
-
-	while (writer->zlib_stream.avail_in > 0) {
-		writer->zlib_stream.next_out = writer->zlib_buffer;
-		writer->zlib_stream.avail_out = ZLIB_BUFFER_SIZE;
-
-		int ret = deflate(&writer->zlib_stream, Z_NO_FLUSH);
-		if (ret != Z_OK) {
-			return ERR;
-		}
-
-		size_t produced = ZLIB_BUFFER_SIZE - writer->zlib_stream.avail_out;
-
-		writer->payload_meta->compressed_size += produced;
-
-		if (produced && (fwrite(writer->zlib_buffer, 1, produced, writer->file) != produced)) {
-			return ERR;
-		}
-	}
-
-	return OK;
+int write_string(writer_t *writer, const string_t string) {
+	return write_bytes(writer, string.data, string.len);
 }
 
 // Writer helper functions
@@ -115,16 +70,40 @@ int write_u64(writer_t *writer, const uint64_t value) {
 	return write_bytes(writer, &value, sizeof(uint64_t));
 }
 
+int write_chunk_header(writer_t *writer, const chunk_header_t header) {
+	// chunk_type_t type;
+
+	// uint32_t crc;
+	// uint64_t uncompressed_size;
+	// uint64_t compressed_size;
+	write_u8(writer, header.type);
+	write_u64(writer, header.uncompressed_size);
+	write_u64(writer, header.compressed_size);
+	write_u32(writer, header.crc);
+}
+
+int write_chunk(writer_t *writer, const chunk_type_t type, string_t data) {
+	// Compress
+	string_t compressed = zip(get_heap_allocator(), data);
+
+	chunk_header_t header = {
+		.compressed_size = compressed.len,
+		.uncompressed_size = data.len,
+		.crc = crc(0, data),
+	};
+
+	write_chunk_header(writer, header);
+	write_string(writer, compressed);
+}
+
 reader_t reader_open(string_t path) {
 	reader_t reader = {0};
-	reader.valid = true;
 
 	char *c_path = string_to_c_string(get_temp_allocator(), path);
 	reader.file = fopen(c_path, "rb");
 
 	if (!reader.file) {
 		printf("Could not open %s for reading\n", c_path);
-		reader.valid = false;
 	}
 
 	return reader;
@@ -135,59 +114,11 @@ void reader_close(reader_t *reader) {
 }
 
 int read_bytes(reader_t *reader, void *data, const size_t len) {
-	if (!reader->decompression_enabled) {
-		return fread(data, 1, len, reader->file) != len;
-	}
-	assert(reader->payload_meta != NULL);
 
-	reader->zlib_stream.next_out = (Bytef *)data;
-	reader->zlib_stream.avail_out = (uInt)len;
+}
 
-	Bytef *out = (Bytef *)data;
-	uint64_t remaining = len;
+string_t read_string(allocator_t allocator, const size_t len) {
 
-	while (remaining > 0) {
-		reader->zlib_stream.next_out = out;
-		reader->zlib_stream.avail_out = (uInt)remaining;
-
-		if (reader->zlib_stream.avail_in == 0) {
-			size_t read = fread(reader->zlib_buffer, 1, ZLIB_BUFFER_SIZE, reader->file);
-
-			if (read == 0) {
-				return ERR;
-			}
-
-			reader->payload_meta->compressed_size += read;
-
-			reader->zlib_stream.next_in = (Bytef *)reader->zlib_buffer;
-			reader->zlib_stream.avail_in = (uInt)read;
-		}
-
-		int before = reader->zlib_stream.avail_out;
-
-		int ret = inflate(&reader->zlib_stream, Z_NO_FLUSH);
-
-		if (ret == Z_STREAM_END) {
-			// compressed block ended before filling requested data
-			return reader->zlib_stream.avail_out == 0;
-		}
-
-		if (ret != Z_OK) {
-			return ERR;
-		}
-
-		int produced = before - reader->zlib_stream.avail_out;
-		if (produced > 0) {
-			reader->payload_meta->uncompressed_size += produced;
-
-			reader->payload_meta->crc = crc32(reader->payload_meta->crc, out,produced);
-			out += produced;
-			remaining -= produced;
-		}
-	}
-
-	// return OK;
-	return remaining == 0 ? OK : ERR;
 }
 
 int read_u8(reader_t *reader, uint8_t *value) {
@@ -210,105 +141,39 @@ int read_u64(reader_t *reader, uint64_t *value) {
 	return read_bytes(reader, value, sizeof(uint64_t));
 }
 
-void writer_begin_compression(writer_t *writer, payload_meta_t *payload_meta) {
-	if (writer->compression_enabled) {
-		return;
-	}
+void read_chunk_header(reader_t *reader, chunk_header_t *header) {
 
-	payload_meta->crc = 0;
-	payload_meta->uncompressed_size = 0;
-	payload_meta->compressed_size = 0;
-	writer->payload_meta = payload_meta;
+}
 
-	writer->payload_meta->crc = crc32(0L, Z_NULL, 0);
+int buffer_read_bytes(string_builder_t *builder, void *data, const size_t len) {
 
-	writer->zlib_stream.zalloc = Z_NULL;
-	writer->zlib_stream.zfree = Z_NULL;
-	writer->zlib_stream.opaque = Z_NULL;
+}
 
-	writer->zlib_stream.avail_in = 0;
-	writer->zlib_stream.next_in = Z_NULL;
+int buffer_read_u8(string_builder_t *builder, uint8_t *value) {
 	
-	if (deflateInit(&writer->zlib_stream, Z_DEFAULT_COMPRESSION) != Z_OK) {
-		writer->valid = false;
-		return;
-	}
-
-	writer->compression_enabled = true;
 }
 
-// TODO FOR TOMORROW: compute crc and bytes read and stuff for reader
-// I should probably also store what compression algorithm is being used
+// --- CHUNK ---
 
-// Maybe this function should return crc, uncompressed size, compressed size
-// or just keep it part of the writer struct I think that might be easier
-void writer_end_compression(writer_t *writer) {
-	assert(writer->payload_meta != NULL);
+// static void _chunk_reserve(chunk_t *chunk, size_t needed_capacity) {
+// 	if (chunk->capacity >= needed_capacity) {
+// 		return;
+// 	}
 
-	if (!writer->compression_enabled) {
-		return;
-	}
+// 	size_t old_capacity = chunk->capacity;
 
-	int ret = 0;
+// 	chunk->capacity = get_next_power_of_2(needed_capacity);
 
-	do {
-		writer->zlib_stream.next_out = writer->zlib_buffer;
-		writer->zlib_stream.avail_out = ZLIB_BUFFER_SIZE;
-		
-		ret = deflate(&writer->zlib_stream, Z_FINISH);
-		if (ret != Z_OK && ret != Z_STREAM_END) {
-			writer->valid = false;
-			break;
-		}
+// 	char *new_data = heap_alloc(chunk->capacity * sizeof(char));
+// 	memcpy(new_data, chunk->string.data, old_capacity * sizeof(char));
 
-		size_t produced = ZLIB_BUFFER_SIZE - writer->zlib_stream.avail_out;
+// 	if (chunk->string.data != NULL) {
+// 		heap_dealloc(chunk->string.data);
+// 	}
 
-		if (produced) {
-			if (fwrite(writer->zlib_buffer, 1, produced, writer->file) != produced) {
-				writer->valid = false;
-				break;
-			}
+// 	chunk->string.data = new_data;
+// }
 
-			writer->payload_meta->compressed_size += produced;
-		}
-	} while (ret == Z_OK);
+// int chunk_write_u8(chunk_t *chunk, const uint8_t value) {
 
-	deflateEnd(&writer->zlib_stream);
-
-	writer->compression_enabled = false;
-}
-
-void reader_begin_decompression(reader_t *reader, payload_meta_t *payload_meta) {
-	if (reader->decompression_enabled) {
-		return;
-	}
-
-	payload_meta->crc = 0;
-	payload_meta->uncompressed_size = 0;
-	payload_meta->compressed_size = 0;
-	reader->payload_meta = payload_meta;
-
-	reader->zlib_stream.zalloc = Z_NULL;
-	reader->zlib_stream.zfree = Z_NULL;
-	reader->zlib_stream.opaque = Z_NULL;
-
-	reader->zlib_stream.avail_in = 0;
-	reader->zlib_stream.next_in = Z_NULL;
-
-	 if (inflateInit(&reader->zlib_stream) != Z_OK) {
-		reader->valid = false;
-		return;
-	}
-
-	reader->decompression_enabled = true;
-}
-
-void reader_end_decompression(reader_t *reader) {
-	if (!reader->decompression_enabled) {
-		return;
-	}
-
-	inflateEnd(&reader->zlib_stream);
-
-	reader->decompression_enabled = false;
-}
+// }

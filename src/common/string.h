@@ -66,6 +66,7 @@ typedef struct string_builder {
 	string_t string;
 	size_t capacity;
 	allocator_t allocator;
+	size_t position; // For reading
 } string_builder_t;
 
 // It grows automatically but the initial_capacity is still nice to prevent unnecessary allocations
@@ -76,6 +77,10 @@ void string_builder_append(string_builder_t *builder, string_t string);
 void string_builder_append_raw(string_builder_t *builder, uint8_t *data, uint64_t len);
 
 void string_builder_append_char(string_builder_t *builder, uint8_t c);
+
+void string_builder_append_u8(string_builder_t *builder, uint8_t value);
+
+void string_builder_append_u16(string_builder_t *builder, uint16_t value);
 
 void string_builder_deinit(string_builder_t *builder);
 
