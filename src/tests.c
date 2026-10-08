@@ -8,7 +8,6 @@ Unit tests for low level stuff
 
 #include "common/mem.h"
 #include "common/string.h"
-#include "common/io.h"
 
 // TODO: make arenas instead of using heap allocator
 

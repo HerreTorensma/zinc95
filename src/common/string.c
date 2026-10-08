@@ -1,15 +1,26 @@
 #include "string.h"
 #include "mem.h"
+#include "base.h"
 
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <stdarg.h>
 
+string_t alloc_string(allocator_t allocator, size_t capacity) {
+	return (string_t) {
+		.data = alloc(allocator, capacity),
+		// The len is zero since you're allocating an empty string
+		// although I might consider changing this? Idk if there is a good reason
+		.len = 0,
+	};
+}
+
 string_t temp_alloc_string(size_t capacity) {
 	return (string_t) {
-		.data = temp_alloc(capacity * sizeof(char)),
+		.data = temp_alloc(capacity),
 		// The len is zero since you're allocating an empty string
 		// although I might consider changing this? Idk if there is a good reason
 		.len = 0,
@@ -122,68 +133,134 @@ string_t_array_t string_split(allocator_t allocator, string_t string, char seper
 	return array;
 }
 
-static void _string_builder_reserve(string_builder_t *builder, size_t needed_capacity) {
-	if (builder->capacity >= needed_capacity) {
+static void _byte_buffer_reserve(byte_buffer_t *buffer, size_t needed_capacity) {
+	if (buffer->capacity >= needed_capacity) {
 		return;
 	}
 
-	size_t old_capacity = builder->capacity;
+	size_t old_capacity = buffer->capacity;
 
-	builder->capacity = get_next_power_of_2(needed_capacity);
+	buffer->capacity = get_next_power_of_2(needed_capacity);
 
-	char *new_data = alloc(builder->allocator, builder->capacity * sizeof(char));
-	memcpy(new_data, builder->string.data, old_capacity * sizeof(char));
+	uint8_t *new_data = alloc(buffer->allocator, buffer->capacity);
+	memcpy(new_data, buffer->string.data, old_capacity);
 
-	if (builder->string.data != NULL) {
-		dealloc(builder->allocator, builder->string.data);
+	if (buffer->string.data != NULL) {
+		dealloc(buffer->allocator, buffer->string.data);
 	}
 
-	builder->string.data = new_data;
+	buffer->string.data = new_data;
 }
 
-void string_builder_init(string_builder_t *builder, allocator_t allocator, size_t initial_capacity) {
-	builder->allocator = allocator;
-	builder->capacity = 0;
-	builder->string = (string_t){0};
+void byte_buffer_init(byte_buffer_t *buffer, allocator_t allocator, size_t initial_capacity) {
+	buffer->allocator = allocator;
+	buffer->capacity = 0;
+	buffer->string = (string_t){0};
+	buffer->read_position = 0;
 
-	_string_builder_reserve(builder, initial_capacity);
+	_byte_buffer_reserve(buffer, initial_capacity);
 }
 
-void string_builder_append(string_builder_t *builder, string_t string) {
-	_string_builder_reserve(builder, builder->string.len + string.len);
+void byte_buffer_init_from_string(byte_buffer_t *buffer, allocator_t allocator, string_t string) {
+	buffer->allocator = allocator;
+	buffer->capacity = string.len;
+	buffer->read_position = 0;
 
-	memcpy(builder->string.data + builder->string.len, string.data, string.len);
-	builder->string.len += string.len;
+	buffer->string = string_copy(allocator, string);
 }
 
-void string_builder_append_raw(string_builder_t *builder, uint8_t *data, uint64_t len) {
-	_string_builder_reserve(builder, builder->string.len + len);
+void byte_buffer_write_bytes(byte_buffer_t *buffer, const void *data, const uint64_t len) {
+	_byte_buffer_reserve(buffer, buffer->string.len + len);
 
-	memcpy(builder->string.data + builder->string.len, data, len);
-	builder->string.len += len;
+	memcpy(buffer->string.data + buffer->string.len, data, len);
+	buffer->string.len += len;
 }
 
-void string_builder_append_char(string_builder_t *builder, uint8_t c) {
-	_string_builder_reserve(builder, builder->string.len + 1);
-
-	builder->string.data[builder->string.len] = c;
-	builder->string.len++;
+// Actually I need to think about how to keep track of the string len now
+// Because it's like the maximum value that the position has ever been
+// I feel like there should be an easy solution to this somehow
+// Or I'm overlooking something
+void byte_buffer_write_string(byte_buffer_t *buffer, const string_t string) {
+	byte_buffer_write_bytes(buffer, string.data, string.len);
 }
 
-void string_builder_append_u8(string_builder_t *builder, uint8_t value) {
+void byte_buffer_write_char(byte_buffer_t *buffer, const uint8_t c) {
+	_byte_buffer_reserve(buffer, buffer->string.len + 1);
+
+	buffer->string.data[buffer->string.len] = c;
+	buffer->string.len++;
+}
+
+void byte_buffer_write_u8(byte_buffer_t *buffer, const uint8_t value) {
 	// TODO: check endianness and convert
-	string_builder_append(builder, (string_t){.data = (uint8_t *)&value, .len = sizeof(value)});
+	byte_buffer_write_bytes(buffer, &value, sizeof(value));
 }
 
-void string_builder_append_u16(string_builder_t *builder, uint16_t value) {
+void byte_buffer_write_u16(byte_buffer_t *buffer, uint16_t value) {
 	// TODO: check endianness and convert
-	string_builder_append(builder, (string_t){.data = (uint8_t *)&value, .len = sizeof(value)});
+	byte_buffer_write_bytes(buffer, &value, sizeof(value));
 }
 
-void string_builder_deinit(string_builder_t *builder) {
-	dealloc(builder->allocator, builder->string.data);
-	builder->string.len = 0;
-	builder->capacity = 0;
+void byte_buffer_write_u32(byte_buffer_t *buffer, uint32_t value) {
+	// TODO: check endianness and convert
+	byte_buffer_write_bytes(buffer, &value, sizeof(value));
+}
+
+void byte_buffer_write_i32(byte_buffer_t *buffer, int32_t value) {
+	// TODO: check endianness and convert
+	byte_buffer_write_bytes(buffer, &value, sizeof(value));
+}
+
+void byte_buffer_write_u64(byte_buffer_t *buffer, uint64_t value) {
+	// TODO: check endianness and convert
+	byte_buffer_write_bytes(buffer, &value, sizeof(value));
+}
+
+int byte_buffer_read_bytes(byte_buffer_t *buffer, void *data, size_t len) {
+	// Trying to read out of bounds
+	if (buffer->read_position + len > buffer->string.len) {
+		return ERR;
+	}
+
+	memcpy(data, buffer->string.data + buffer->read_position, len);
+	buffer->read_position += len;
+
+	return OK;
+}
+
+string_t byte_buffer_read_string(byte_buffer_t *buffer, allocator_t allocator, size_t len) {
+	string_t string = alloc_string(allocator, len);
+	byte_buffer_read_bytes(buffer, string.data, len);
+	string.len = len;
+	return string;
+}
+
+// Maybe I should make a wrapper for this
+void byte_buffer_read_u8(byte_buffer_t *buffer, uint8_t *value) {
+	byte_buffer_read_bytes(buffer, value, sizeof(uint8_t));
+}
+
+void byte_buffer_read_u16(byte_buffer_t *buffer, uint16_t *value) {
+	byte_buffer_read_bytes(buffer, value, sizeof(uint16_t));
+}
+
+void byte_buffer_read_u32(byte_buffer_t *buffer, uint32_t *value) {
+	byte_buffer_read_bytes(buffer, value, sizeof(uint32_t));
+}
+
+void byte_buffer_read_i32(byte_buffer_t *buffer, int32_t *value) {
+	byte_buffer_read_bytes(buffer, value, sizeof(int32_t));
+}
+
+void byte_buffer_read_u64(byte_buffer_t *buffer, uint64_t *value) {
+	byte_buffer_read_bytes(buffer, value, sizeof(uint64_t));
+}
+
+void byte_buffer_deinit(byte_buffer_t *buffer) {
+	dealloc(buffer->allocator, buffer->string.data);
+	buffer->string.len = 0;
+	buffer->capacity = 0;
+	buffer->read_position = 0;
 }
 
 bool is_alphabetic(char c) {
@@ -506,8 +583,8 @@ void bytes_to_hex(uint8_t bytes[], size_t len, char hex[]) {
 // TODO: finish this function
 // also add support for stuff like "% 4d"
 string_t format_string(allocator_t allocator, string_t base, ...) {
-	string_builder_t builder = {0};
-	string_builder_init(&builder, allocator, 8);
+	byte_buffer_t buffer = {0};
+	byte_buffer_init(&buffer, allocator, 8);
 
 	va_list args;
 	va_start(args, base);
@@ -518,13 +595,13 @@ string_t format_string(allocator_t allocator, string_t base, ...) {
 		if (base.data[i] == '%') {
 			switch (base.data[i + 1]) {
 				case 'c': {
-					string_builder_append_char(&builder, va_arg(args, int));
+					byte_buffer_write_char(&buffer, va_arg(args, int));
 					break;
 				}
 
 				case 'd': {
 					string_t int_string = int_to_string(allocator, va_arg(args, int));
-					string_builder_append(&builder, int_string);
+					byte_buffer_write_string(&buffer, int_string);
 					dealloc(allocator, int_string.data);
 					break;
 				}
@@ -538,18 +615,18 @@ string_t format_string(allocator_t allocator, string_t base, ...) {
 				}
 
 				case 's': {
-					string_builder_append(&builder, va_arg(args, string_t));
+					byte_buffer_write_string(&buffer, va_arg(args, string_t));
 					break;
 				}
 			}
 			i += 2;
 		} else {
-			string_builder_append_char(&builder, base.data[i]);
+			byte_buffer_write_char(&buffer, base.data[i]);
 			i++;
 		}
 	}
 
 	va_end(args);
 
-	return builder.string;
+	return buffer.string;
 }

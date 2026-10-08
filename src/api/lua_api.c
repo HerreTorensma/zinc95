@@ -156,7 +156,7 @@ static int _lua_print(lua_State *lua) {
 	return 0;
 }
 
-static void _serialize_lua_value(lua_State *lua, int index, string_builder_t *builder) {
+static void _serialize_lua_value(lua_State *lua, int index, byte_buffer_t *byte_buffer) {
 	// Make index absolute
 	if (index < 0) {
 		index = lua_gettop(lua) + index + 1;
@@ -166,9 +166,9 @@ static void _serialize_lua_value(lua_State *lua, int index, string_builder_t *bu
 
 	switch (type) {
 		case LUA_TSTRING: {
-			string_builder_append(builder, STR("\""));
-			string_builder_append(builder, STR(lua_tostring(lua, index)));
-			string_builder_append(builder, STR("\""));
+			byte_buffer_write_string(byte_buffer, STR("\""));
+			byte_buffer_write_string(byte_buffer, STR(lua_tostring(lua, index)));
+			byte_buffer_write_string(byte_buffer, STR("\""));
 			
 			break;
 		}
@@ -177,7 +177,7 @@ static void _serialize_lua_value(lua_State *lua, int index, string_builder_t *bu
 			// Using sprintf here because I can't be bothered to implement my own float to string function right now
 			char number_buffer[64];
 			sprintf(number_buffer, "%g", lua_tonumber(lua, index));
-			string_builder_append(builder, STR(number_buffer));
+			byte_buffer_write_string(byte_buffer, STR(number_buffer));
 			
 			break;
 		}
@@ -185,41 +185,41 @@ static void _serialize_lua_value(lua_State *lua, int index, string_builder_t *bu
 		case LUA_TBOOLEAN: {
 			int value = lua_toboolean(lua, index);
 			if (value) {
-				string_builder_append(builder, STR("true"));
+				byte_buffer_write_string(byte_buffer, STR("true"));
 			} else {
-				string_builder_append(builder, STR("false"));
+				byte_buffer_write_string(byte_buffer, STR("false"));
 			}
 			
 			break;
 		}
 
 		case LUA_TTABLE: {
-			string_builder_append(builder, STR("{"));
+			byte_buffer_write_string(byte_buffer, STR("{"));
 
 			lua_pushnil(lua);
 			while (lua_next(lua, index) != 0) {
 				// Index -1: value
 				// Index -2: key
 
-				string_builder_append(builder, STR("["));
+				byte_buffer_write_string(byte_buffer, STR("["));
 
-				_serialize_lua_value(lua, -2, builder);
+				_serialize_lua_value(lua, -2, byte_buffer);
 
-				string_builder_append(builder, STR("]"));
-				string_builder_append(builder, STR("="));
-				_serialize_lua_value(lua, -1, builder);
-				string_builder_append(builder, STR(","));
+				byte_buffer_write_string(byte_buffer, STR("]"));
+				byte_buffer_write_string(byte_buffer, STR("="));
+				_serialize_lua_value(lua, -1, byte_buffer);
+				byte_buffer_write_string(byte_buffer, STR(","));
 
 				lua_pop(lua, 1);
 			}
 
-			string_builder_append(builder, STR("}"));
+			byte_buffer_write_string(byte_buffer, STR("}"));
 			
 			break;
 		}
 
 		case LUA_TNIL: {
-			string_builder_append(builder, STR("nil"));
+			byte_buffer_write_string(byte_buffer, STR("nil"));
 
 			break;
 		}
@@ -239,10 +239,10 @@ static int _lua_save_to_slot(lua_State *lua) {
 			return luaL_error(lua, "Second argument is not a table");
 		}
 
-		string_builder_t builder = {0};
-		string_builder_init(&builder, get_heap_allocator(), 128);
-		string_builder_append(&builder, STR("return "));
-		_serialize_lua_value(lua, 2, &builder);
+		byte_buffer_t byte_buffer = {0};
+		byte_buffer_init(&byte_buffer, get_heap_allocator(), 128);
+		byte_buffer_write_string(&byte_buffer, STR("return "));
+		_serialize_lua_value(lua, 2, &byte_buffer);
 
 		string_t game_name = path_truncate_extension(path_get_filename(computer->game_path));
 		string_t game_saves_dir = path_append(get_temp_allocator(), STR("saves"), game_name);
@@ -252,9 +252,9 @@ static int _lua_save_to_slot(lua_State *lua) {
 		savefile_name = string_concat(get_temp_allocator(), savefile_name, STR(".lua"));
 		string_t absolute_path = get_absolute_path(get_temp_allocator(), savefile_name);
 
-		file_write_string(absolute_path, builder.string);
+		file_write_string(absolute_path, byte_buffer.string);
 
-		string_builder_deinit(&builder);
+		byte_buffer_deinit(&byte_buffer);
 	} else {
 		return luaL_error(lua, "Expected 2 arguments");
 	}
@@ -557,13 +557,13 @@ void lua_quit() {
 // 	lua_State *l = luaL_newstate();
 // 	luaL_openlibs(l);
 
-// 	string_builder_t builder = {0};
-// 	string_builder_init(&builder, allocator, 8);
+// 	string_byte_buffer_t byte_buffer = {0};
+// 	string_byte_buffer_init(&byte_buffer, allocator, 8);
 
 // 	_lua_get_ents(l);
-// 	_serialize_lua_value(l, -1, &builder);
+// 	_serialize_lua_value(l, -1, &byte_buffer);
 
 // 	lua_close(l);
 
-// 	return builder.string;
+// 	return byte_buffer.string;
 // }

@@ -27,6 +27,7 @@ typedef struct string {
 ARRAY_DEFINE(string_t)
 
 
+string_t alloc_string(allocator_t allocator, size_t capacity);
 
 string_t temp_alloc_string(size_t capacity);
 
@@ -60,29 +61,59 @@ string_t_array_t string_split(allocator_t allocator, string_t string, char seper
 
 
 
-// --- String builder ---
+// --- String buffer ---
 
-typedef struct string_builder {
+// It's more of an all-encompassing data structure for working with raw bytes (append, write, read etc.)
+// So I will probably rename it
+
+// And there should also be functions for writing that don't just append (maybe)
+// Bc I don't think I need them right now but it would make the API more complete
+// And seek and tell
+typedef struct byte_buffer {
 	string_t string;
 	size_t capacity;
 	allocator_t allocator;
-	size_t position; // For reading
-} string_builder_t;
+	size_t read_position; // For reading, can you believe that?
+} byte_buffer_t;
 
 // It grows automatically but the initial_capacity is still nice to prevent unnecessary allocations
-void string_builder_init(string_builder_t *builder, allocator_t allocator, size_t initial_capacity);
+void byte_buffer_init(byte_buffer_t *buffer, allocator_t allocator, size_t initial_capacity);
 
-void string_builder_append(string_builder_t *builder, string_t string);
+void byte_buffer_init_from_string(byte_buffer_t *buffer, allocator_t allocator, string_t string);
 
-void string_builder_append_raw(string_builder_t *builder, uint8_t *data, uint64_t len);
+void byte_buffer_write_bytes(byte_buffer_t *buffer, const void *data, const uint64_t len);
 
-void string_builder_append_char(string_builder_t *builder, uint8_t c);
+void byte_buffer_write_string(byte_buffer_t *buffer, const string_t string);
 
-void string_builder_append_u8(string_builder_t *builder, uint8_t value);
+void byte_buffer_write_char(byte_buffer_t *buffer, const uint8_t c);
 
-void string_builder_append_u16(string_builder_t *builder, uint16_t value);
+void byte_buffer_write_u8(byte_buffer_t *buffer, const uint8_t value);
 
-void string_builder_deinit(string_builder_t *builder);
+void byte_buffer_write_u16(byte_buffer_t *buffer, const uint16_t value);
+
+void byte_buffer_write_u32(byte_buffer_t *buffer, const uint32_t value);
+
+void byte_buffer_write_i32(byte_buffer_t *buffer, const int32_t value);
+
+void byte_buffer_write_u64(byte_buffer_t *buffer, const uint64_t value);
+
+int byte_buffer_read_bytes(byte_buffer_t *buffer, void *data, size_t len);
+
+string_t byte_buffer_read_string(byte_buffer_t *buffer, allocator_t allocator, size_t len);
+
+void byte_buffer_read_u8(byte_buffer_t *buffer, uint8_t *value);
+
+void byte_buffer_read_u16(byte_buffer_t *buffer, uint16_t *value);
+
+void byte_buffer_read_u32(byte_buffer_t *buffer, uint32_t *value);
+
+void byte_buffer_read_i32(byte_buffer_t *buffer, int32_t *value);
+
+void byte_buffer_read_u64(byte_buffer_t *buffer, uint64_t *value);
+
+void byte_buffer_deinit(byte_buffer_t *buffer);
+
+// --- Other stuff ---
 
 bool is_alphabetic(char c);
 
@@ -98,6 +129,8 @@ string_t int_to_string_formatted(allocator_t allocator, int number, int desired_
 
 int string_to_int(string_t string);
 
+// --- Path ---
+
 // Appends a path to another path
 string_t path_append(allocator_t allocator, string_t base, string_t appendage);
 
@@ -112,6 +145,8 @@ string_t path_truncate_extension(string_t path);
 string_t path_get_filename(string_t path);
 
 string_t path_get_filename_extension(string_t path);
+
+// --- Other stuff ---
 
 size_t visual_string_pos_to_string_pos(string_t string, size_t pos, size_t tab_size);
 

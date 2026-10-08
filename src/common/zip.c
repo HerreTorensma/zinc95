@@ -7,11 +7,15 @@ uint32_t crc(uint32_t crc, string_t string) {
 }
 
 string_t zip(allocator_t allocator, const string_t data) {
-	uLong compressed_len = compressBound(data.len);
+	uLongf compressed_len = compressBound(data.len);
 	uint8_t *buffer = alloc(allocator, compressed_len);
 
 	// TODO: error handling
-	int ret = compress2(buffer, &compressed_len, data.data, data.len, Z_BEST_COMPRESSION);
+	int ret = compress2(buffer, &compressed_len, data.data, (uLong)data.len, Z_BEST_COMPRESSION);
+	if (ret != Z_OK) {
+		dealloc(allocator, buffer);
+		return (string_t){0};
+	}
 
 	return (string_t){.data = buffer, .len = compressed_len};
 }
@@ -20,7 +24,12 @@ string_t unzip(allocator_t allocator, const string_t data, const size_t unzipped
 	uint8_t *buffer = alloc(allocator, unzipped_len);
 
 	// TODO: error handling
-	int ret = uncompress(buffer, &unzipped_len, data.data, data.len);
+	uLongf dest_len = unzipped_len;
+	int ret = uncompress(buffer, &dest_len, data.data, (uLong)data.len);
+	if (ret != Z_OK) {
+		dealloc(allocator, buffer);
+		return (string_t){0};
+	}
 
-	return (string_t){.data = buffer, .len = unzipped_len};
+	return (string_t){.data = buffer, .len = dest_len};
 }

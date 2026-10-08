@@ -36,19 +36,19 @@ string_t get_absolute_path(allocator_t allocator, string_t path) {
 void create_directory(string_t path) {
 	string_t_array_t array = string_split(get_temp_allocator(), path, '/');
 
-	string_builder_t builder = {0};
-	string_builder_init(&builder, get_temp_allocator(), PATH_MAX);
+	byte_buffer_t buffer = {0};
+	byte_buffer_init(&buffer, get_temp_allocator(), PATH_MAX);
 
-	string_builder_append(&builder, _get_root_path(get_temp_allocator()));
-	string_builder_append(&builder, STR("/"));
+	byte_buffer_write_string(&buffer, _get_root_path(get_temp_allocator()));
+	byte_buffer_write_string(&buffer, STR("/"));
 
 	// We have to create every subdirectory from the root of path seperately
 	for (size_t i = 0; i < array.len; i++) {
 		// TODO: create some path functions
-		string_builder_append(&builder, array.data[i]);
-		string_builder_append(&builder, STR("/"));
+		byte_buffer_write_string(&buffer, array.data[i]);
+		byte_buffer_write_string(&buffer, STR("/"));
 
-		if (mkdir(string_to_c_string(get_temp_allocator(), builder.string), 0755) != 0) {
+		if (mkdir(string_to_c_string(get_temp_allocator(), buffer.string), 0755) != 0) {
 			// Failed
 		}
 	}
